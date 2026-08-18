@@ -1,0 +1,119 @@
+import { useMemo, useState } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import Box from '@mui/material/Box'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import Avatar from '@mui/material/Avatar'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Divider from '@mui/material/Divider'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
+import LightModeIcon from '@mui/icons-material/LightMode'
+import MenuIcon from '@mui/icons-material/Menu'
+import LockResetIcon from '@mui/icons-material/LockReset'
+import LogoutIcon from '@mui/icons-material/Logout'
+import { useAuth } from '../state/auth'
+import { ROLE_LABELS } from './roleLabels'
+import Sidebar, { SIDEBAR_WIDTH } from './Sidebar'
+
+function initialsOf(name) {
+  return (name || '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('') || '?'
+}
+
+export default function AppLayout({ mode, setMode }) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const isSmall = useMediaQuery('(max-width:900px)')
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState(null)
+
+  const roleLabel = useMemo(() => ROLE_LABELS[user?.role] || user?.role, [user])
+
+  async function handleLogout() {
+    setMenuAnchor(null)
+    await logout()
+    navigate('/login', { replace: true })
+  }
+
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="sticky" elevation={0} sx={{
+        bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary',
+      }}>
+        <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
+          {isSmall && (
+            <IconButton size="small" onClick={() => setMobileOpen(true)}>
+              <MenuIcon fontSize="small" />
+            </IconButton>
+          )}
+          <PrecisionManufacturingIcon sx={{ color: '#3B82F6' }} />
+          <Typography sx={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.2 }}>
+            Centro de Trabajo FFT
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
+            <IconButton size="small" onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}>
+              {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+
+          <Box
+            onClick={(e) => setMenuAnchor(e.currentTarget)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', ml: 0.5, px: 1, py: 0.5, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' } }}
+          >
+            <Avatar sx={{ width: 30, height: 30, fontSize: 13, fontWeight: 700, bgcolor: '#3B82F6' }}>
+              {initialsOf(user?.name)}
+            </Avatar>
+            <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{user?.name}</Typography>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{roleLabel}</Typography>
+            </Box>
+          </Box>
+
+          <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{user?.name}</Typography>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{roleLabel} · Mi cuenta</Typography>
+            </Box>
+            <Divider />
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/cambiar-contrasena') }}>
+              <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
+              Cambiar contraseña
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+              Cerrar sesión
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ display: 'flex' }}>
+        <Sidebar
+          role={user?.role}
+          open={isSmall ? mobileOpen : true}
+          onClose={() => setMobileOpen(false)}
+          variant={isSmall ? 'temporary' : 'permanent'}
+        />
+        <Box sx={{
+          flex: 1, minWidth: 0,
+          px: { xs: 1.5, sm: 2, md: 3 }, py: { xs: 2, md: 2.5 },
+          maxWidth: 1600, mx: 'auto', width: '100%',
+        }}>
+          <Outlet />
+        </Box>
+      </Box>
+    </Box>
+  )
+}

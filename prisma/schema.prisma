@@ -1,0 +1,405 @@
+// Centro de Trabajo FFT — modelo de datos real (personal, importación, asignación diaria)
+// NOTA: este schema todavía no se ha aplicado a ninguna base de datos.
+// No ejecutar prisma migrate / db push / seed hasta aprobación explícita.
+
+// ⚠️ ANTES DE PRODUCCIÓN CON DATOS REALES: "partialIndexes" es una Preview Feature de Prisma
+// (introducida en 7.4). La usamos ahora en desarrollo porque prisma validate / migrate diff /
+// el SQL generado confirman que funciona correctamente para el índice único parcial de
+// DailyAssignment. Pero antes de tener datos reales hay que decidir explícitamente entre:
+//   A) Mantener la feature, fijando (pin) una versión de Prisma ya validada en este proyecto, o
+//   B) Quitar `where` de @@unique aquí y mover el índice parcial a una migración SQL manual
+//      (CREATE UNIQUE INDEX ... WHERE status = 'ACTIVE'), fuera del control de Prisma Migrate.
+// No decidir esto en automático — queda pendiente de revisión explícita antes de ir a producción.
+// El generator "prisma-client" (nuevo, TS-first) emite archivos .ts que Node plano no puede
+// ejecutar sin un transpilador (issue conocido de Prisma: github.com/prisma/prisma/issues/28116).
+// Como este proyecto es JavaScript puro (sin build step para el servidor), usamos el generator
+// clasico "prisma-client-js", que si emite JS plano ejecutable directamente.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================================================================
+// USUARIOS DEL SISTEMA (login) — separado por completo de Employee
+// =====================================================================
+
+enum UserRole {
+  ADMINISTRADOR
+  SUPERVISOR
+  LIDER
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  employeeNumber     String?   @unique
+  username           String?   @unique
+  name               String
+  passwordHash       String
+  role               UserRole
+  active             Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Opcional: si este User corresponde a un trabajador real, se enlaza explícitamente aquí.
+  // Un User NO necesita ser Employee (ej. un admin de sistemas puro).
+  employeeId String?   @unique
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  assignedDailyAssignments DailyAssignment[]                 @relation("DailyAssignmentAssignedBy")
+  endedDailyAssignments    DailyAssignment[]                 @relation("DailyAssignmentEndedBy")
+  movementsPerformed       EmployeeMovement[]                @relation("MovementMovedBy")
+  attendanceRegistered     Attendance[]                      @relation("AttendanceRegisteredBy")
+  importBatchesTriggered   ImportBatch[]                     @relation("ImportBatchTriggeredBy")
+  bajaConflictsResolved    BajaConflict[]                    @relation("BajaConflictResolvedBy")
+  skillsAdded              EmployeeSkill[]                   @relation("EmployeeSkillAddedBy")
+  skillsDeactivated        EmployeeSkill[]                   @relation("EmployeeSkillDeactivatedBy")
+  reconciliationsResolved  EmployeeReconciliationCandidate[] @relation("EmployeeReconciliationResolvedBy")
+
+  @@index([role])
+}
+
+// =====================================================================
+// CATÁLOGO REAL DE PERSONAL FFT
+// =====================================================================
+
+model Employee {
+  id             String   @id @default(cuid())
+  employeeNumber String?  @unique
+  fullName       String
+  photoUrl       String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  importSources                      EmployeeImportSource[]
+  skills                             EmployeeSkill[]
+  attendanceImportRefs               ImportedAttendanceReference[]
+  attendance                         Attendance[]
+  dailyAssignments                   DailyAssignment[]
+  movements                          EmployeeMovement[]
+  bajaConflicts                      BajaConflict[]
+  linkedUser                         User?
+  reconciliationCandidatesAsExisting EmployeeReconciliationCandidate[] @relation("ReconciliationExistingEmployee")
+
+  @@index([fullName])
+}
+
+// =====================================================================
+// IMPORTACIÓN DE LAYOUT FFT.xlsx (BASE / BAJAS) — trazabilidad, nunca destructiva
+// =====================================================================
+
+enum ImportBatchStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model ImportBatch {
+  id               String            @id @default(cuid())
+  fileName         String
+  // Hash SHA-256 del archivo completo. Se calcula ANTES de crear el batch: si ya existe un
+  // ImportBatch COMPLETED con este mismo fileHash, no se crea nada nuevo (ni Employee, ni
+  // EmployeeImportSource, ni EmployeeReconciliationCandidate, ni BajaConflict) — se responde
+  // con el batch existente. Así re-subir el mismo LAYOUT FFT.xlsx es 100% idempotente.
+  fileHash         String            @unique
+  sheet            String
+  startedAt        DateTime          @default(now())
+  finishedAt       DateTime?
+  totalRows        Int               @default(0)
+  newEmployees     Int               @default(0)
+  updatedEmployees Int               @default(0)
+  skippedRows      Int               @default(0)
+  conflictsFound   Int               @default(0)
+  status           ImportBatchStatus @default(RUNNING)
+
+  triggeredByUserId String
+  triggeredBy       User   @relation("ImportBatchTriggeredBy", fields: [triggeredByUserId], references: [id])
+
+  importSources            EmployeeImportSource[]
+  bajaConflicts            BajaConflict[]
+  reconciliationCandidates EmployeeReconciliationCandidate[]
+}
+
+// Fila cruda de BASE que originó o actualizó un Employee.
+// ZONA se guarda únicamente como referencia histórica de import, nunca como línea permanente.
+// ACTIVIDAD se guarda tal cual (código), sin interpretar su significado.
+model EmployeeImportSource {
+  id              String      @id @default(cuid())
+  employeeId      String
+  employee        Employee    @relation(fields: [employeeId], references: [id])
+  importBatchId   String
+  importBatch     ImportBatch @relation(fields: [importBatchId], references: [id])
+  sourceSheet     String // "BASE" | "BAJAS"
+  sourceRowNumber Int
+  rawZona         String?
+  rawActividad    String?
+  rawAsistencia   String?
+  rawPrestamo     String?
+  importedAt      DateTime    @default(now())
+
+  attendanceReference ImportedAttendanceReference?
+
+  // Evita duplicar la misma fila del Excel dos veces dentro del mismo batch (defensa extra,
+  // más allá de la idempotencia por fileHash a nivel de ImportBatch).
+  @@unique([importBatchId, sourceSheet, sourceRowNumber])
+  @@index([employeeId])
+  @@index([importBatchId])
+}
+
+// Catálogo de habilidades. code = código crudo de ACTIVIDAD tal como aparece en el Excel
+// (LC, EM, L, PE, M, LIDER, TC, TG, E, C, PC, SA, ...). description queda nula hasta que
+// un admin la documente manualmente — nunca se infiere automáticamente.
+model Skill {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  employeeSkills EmployeeSkill[]
+  workstations   Workstation[]
+}
+
+enum SkillLevel {
+  PUEDE_CUBRIR
+  INTERMEDIO
+  EXPERTO
+}
+
+enum EmployeeSkillSource {
+  IMPORTED
+  MANUAL
+}
+
+// Retirar una habilidad SIEMPRE es un soft-delete (active=false + deactivatedAt/By) — nunca un
+// DELETE físico. Las recomendaciones de candidatos solo deben considerar active=true.
+model EmployeeSkill {
+  id                  String              @id @default(cuid())
+  employeeId          String
+  employee            Employee            @relation(fields: [employeeId], references: [id])
+  skillId             String
+  skill               Skill               @relation(fields: [skillId], references: [id])
+  level               SkillLevel?
+  source              EmployeeSkillSource @default(IMPORTED)
+  active              Boolean             @default(true)
+  addedByUserId       String?
+  addedBy             User?               @relation("EmployeeSkillAddedBy", fields: [addedByUserId], references: [id])
+  deactivatedAt       DateTime?
+  deactivatedByUserId String?
+  deactivatedBy       User?               @relation("EmployeeSkillDeactivatedBy", fields: [deactivatedByUserId], references: [id])
+  createdAt           DateTime            @default(now())
+
+  @@unique([employeeId, skillId])
+}
+
+// Cola de revisión admin para posibles coincidencias de nombre entre BASE y BAJAS.
+// NUNCA se resuelve automáticamente ni desactiva un Employee por coincidencia de nombre.
+enum BajaConflictStatus {
+  PENDING
+  CONFIRMED_SAME_PERSON
+  CONFIRMED_DIFFERENT_PERSON
+  IGNORED
+}
+
+model BajaConflict {
+  id               String             @id @default(cuid())
+  employeeId       String?
+  employee         Employee?          @relation(fields: [employeeId], references: [id])
+  bajaFullName     String
+  bajaRowNumber    Int
+  importBatchId    String
+  importBatch      ImportBatch        @relation(fields: [importBatchId], references: [id])
+  status           BajaConflictStatus @default(PENDING)
+  resolvedByUserId String?
+  resolvedBy       User?              @relation("BajaConflictResolvedBy", fields: [resolvedByUserId], references: [id])
+  resolvedAt       DateTime?
+  notes            String?
+  createdAt        DateTime           @default(now())
+
+  @@index([importBatchId])
+  @@index([status])
+}
+
+// Cola de revisión admin para posibles coincidencias de nombre entre un Employee YA EXISTENTE
+// con employeeNumber = null y una fila nueva de una importación posterior con el mismo nombre
+// normalizado. NUNCA se crea ni se fusiona automáticamente en este caso — la fila candidata se
+// guarda aquí con sus datos crudos (sin tocar Employee/EmployeeImportSource) hasta que un admin
+// decida si es la misma persona, una persona distinta, o se ignora.
+enum EmployeeReconciliationStatus {
+  PENDING
+  CONFIRMED_SAME_PERSON
+  CONFIRMED_DIFFERENT_PERSON
+  IGNORED
+}
+
+model EmployeeReconciliationCandidate {
+  id                       String                       @id @default(cuid())
+  existingEmployeeId       String
+  existingEmployee         Employee                     @relation("ReconciliationExistingEmployee", fields: [existingEmployeeId], references: [id])
+  importBatchId            String
+  importBatch              ImportBatch                  @relation(fields: [importBatchId], references: [id])
+  candidateSourceRowNumber Int
+  candidateFullName        String
+  candidateEmployeeNumber  String?
+  candidateRawZona         String?
+  candidateRawActividad    String?
+  candidateRawAsistencia   String?
+  candidateRawPrestamo     String?
+  status                   EmployeeReconciliationStatus @default(PENDING)
+  resolvedByUserId         String?
+  resolvedBy               User?                        @relation("EmployeeReconciliationResolvedBy", fields: [resolvedByUserId], references: [id])
+  resolvedAt               DateTime?
+  notes                    String?
+  createdAt                DateTime                     @default(now())
+
+  @@index([existingEmployeeId])
+  @@index([importBatchId])
+  @@index([status])
+}
+
+// Valor crudo de ASISTENCIA (A/F/I/V) tal como venía en el Excel al momento de importar.
+// Completamente independiente del pase de lista real (Attendance) generado día a día por la
+// app — SIN ninguna FK hacia Attendance. Se relaciona con Employee y con la fila exacta de
+// EmployeeImportSource que lo originó (trazabilidad hasta el batch, sin duplicar datos).
+model ImportedAttendanceReference {
+  id                     String               @id @default(cuid())
+  employeeId             String
+  employee               Employee             @relation(fields: [employeeId], references: [id])
+  employeeImportSourceId String               @unique
+  employeeImportSource   EmployeeImportSource @relation(fields: [employeeImportSourceId], references: [id])
+  rawCode                String // "A" | "F" | "I" | "V" tal cual, sin interpretar
+  importedAt             DateTime             @default(now())
+
+  @@index([employeeId])
+}
+
+// =====================================================================
+// PASE DE LISTA REAL (generado por la aplicación, no por el Excel)
+// =====================================================================
+
+enum AttendanceStatus {
+  PRESENTE
+  AUSENTE
+  RETARDO
+}
+
+model Attendance {
+  id                 String           @id @default(cuid())
+  employeeId         String
+  employee           Employee         @relation(fields: [employeeId], references: [id])
+  date               DateTime         @db.Date
+  shift              String           @default("GENERAL")
+  checkInAt          DateTime?
+  status             AttendanceStatus
+  registeredByUserId String
+  registeredBy       User             @relation("AttendanceRegisteredBy", fields: [registeredByUserId], references: [id])
+  createdAt          DateTime         @default(now())
+
+  // Evita doble pase de lista del mismo empleado el mismo día/turno.
+  // shift tiene default no-nulo precisamente para que este unique sea 100% efectivo en Postgres
+  // (un UNIQUE con columnas NULL no bloquea duplicados con NULL en esa columna).
+  @@unique([employeeId, date, shift])
+  @@index([date])
+}
+
+// =====================================================================
+// ESTRUCTURA FÍSICA: ÁREAS DE TRABAJO Y ESTACIONES
+// =====================================================================
+
+model WorkArea {
+  id           String   @id @default(cuid())
+  code         String   @unique // "L1".."L10", "CAJAS", "DMT", "PAL", "ACC", "CONVEYOR"
+  name         String
+  displayOrder Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  workstations Workstation[]
+}
+
+model Workstation {
+  id              String   @id @default(cuid())
+  workAreaId      String
+  workArea        WorkArea @relation(fields: [workAreaId], references: [id])
+  name            String
+  requiredSkillId String?
+  requiredSkill   Skill?   @relation(fields: [requiredSkillId], references: [id])
+  capacity        Int      @default(1)
+  displayOrder    Int      @default(0)
+  active          Boolean  @default(true)
+
+  dailyAssignments DailyAssignment[]
+  movementsFrom    EmployeeMovement[] @relation("MovementFromWorkstation")
+  movementsTo      EmployeeMovement[] @relation("MovementToWorkstation")
+
+  @@unique([workAreaId, name])
+}
+
+// =====================================================================
+// ASIGNACIÓN DIARIA (dónde está cada persona hoy) Y MOVIMIENTOS (historial)
+// =====================================================================
+
+enum DailyAssignmentStatus {
+  ACTIVE
+  ENDED
+}
+
+enum AssignmentEndReason {
+  MOVED
+  RELEASED
+  SHIFT_END
+  CORRECTION
+}
+
+model DailyAssignment {
+  id               String                @id @default(cuid())
+  employeeId       String
+  employee         Employee              @relation(fields: [employeeId], references: [id])
+  date             DateTime              @db.Date
+  shift            String                @default("GENERAL")
+  workstationId    String
+  workstation      Workstation           @relation(fields: [workstationId], references: [id])
+  status           DailyAssignmentStatus @default(ACTIVE)
+  assignedAt       DateTime              @default(now())
+  assignedByUserId String
+  assignedBy       User                  @relation("DailyAssignmentAssignedBy", fields: [assignedByUserId], references: [id])
+  endedAt          DateTime?
+  endedByUserId    String?
+  endedBy          User?                 @relation("DailyAssignmentEndedBy", fields: [endedByUserId], references: [id])
+  endReason        AssignmentEndReason?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  // Solo una asignación ACTIVE por empleado/día — índice único PARCIAL vía la preview feature
+  // "partialIndexes" (ver advertencia junto al generator client sobre revisarlo antes de prod).
+  // Además se revalida dentro de una transacción server-side (con lock) al crear/mover
+  // asignaciones, como segunda capa de defensa ante condiciones de carrera.
+  @@unique([employeeId, date], where: { status: "ACTIVE" })
+  @@index([employeeId, date])
+  @@index([workstationId, date])
+}
+
+model EmployeeMovement {
+  id                String       @id @default(cuid())
+  employeeId        String
+  employee          Employee     @relation(fields: [employeeId], references: [id])
+  date              DateTime     @db.Date
+  fromWorkstationId String?
+  fromWorkstation   Workstation? @relation("MovementFromWorkstation", fields: [fromWorkstationId], references: [id])
+  toWorkstationId   String
+  toWorkstation     Workstation  @relation("MovementToWorkstation", fields: [toWorkstationId], references: [id])
+  movedAt           DateTime     @default(now())
+  movedByUserId     String
+  movedBy           User         @relation("MovementMovedBy", fields: [movedByUserId], references: [id])
+
+  // Append-only: la API nunca debe exponer UPDATE ni DELETE sobre esta tabla.
+  @@index([employeeId, date])
+  @@index([toWorkstationId, date])
+}

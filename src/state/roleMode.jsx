@@ -1,38 +1,22 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext } from 'react'
+import { useAuth } from './auth'
 
 /* ─────────────────────────────────────────────
-   Modo de operacion (Empleado / Supervisor) — NO es
-   autenticacion real (el proyecto no tiene backend/login
-   propio). Es un selector de UI honesto: distingue que
-   acciones se ofrecen (autoasignarse vs asignar/mover a
-   cualquiera) sin fingir seguridad que no existe. El dia que
-   haya un sistema de permisos real, este selector se
-   sustituye por el rol de la sesion autenticada.
+   Modo de operacion (Empleado / Supervisor) — ahora derivado del ROL REAL de la sesion
+   autenticada (User.role), como lo anticipaba este mismo archivo antes de que existiera
+   login. ADMINISTRADOR/SUPERVISOR/LIDER son todos personal de sistema (nunca un Employee de
+   piso autoasignandose), asi que los tres operan en modo "SUPERVISOR" para estos componentes.
+   Ya no hay switcher de UI ni localStorage: el rol viene del backend, no se puede fingir.
    ───────────────────────────────────────────── */
 
 const RoleModeContext = createContext(null)
 
-const STORAGE_KEY = 'cp_role_mode'
-
-function readInitialMode() {
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    return stored === 'EMPLEADO' ? 'EMPLEADO' : 'SUPERVISOR'
-  } catch {
-    return 'SUPERVISOR'
-  }
-}
-
 export function RoleModeProvider({ children }) {
-  const [mode, setModeState] = useState(readInitialMode)
-
-  const setMode = (next) => {
-    setModeState(next)
-    try { window.localStorage.setItem(STORAGE_KEY, next) } catch { /* ignore */ }
-  }
+  const { user } = useAuth()
+  const mode = user ? 'SUPERVISOR' : 'EMPLEADO'
 
   return (
-    <RoleModeContext.Provider value={{ mode, setMode, isSupervisor: mode === 'SUPERVISOR' }}>
+    <RoleModeContext.Provider value={{ mode, isSupervisor: mode === 'SUPERVISOR' }}>
       {children}
     </RoleModeContext.Provider>
   )

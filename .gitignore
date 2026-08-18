@@ -5,10 +5,18 @@ node_modules/
 dist/
 dist-ssr/
 
+# Prisma Client generado (se regenera con `prisma generate`, no se versiona)
+/generated/
+
 # Entorno / secretos — nunca subir valores reales
 .env
 .env.local
 .env.*.local
+.env.production
+.env.preview
+.env.development
+# .env.example SÍ debe versionarse (es solo la lista de nombres, sin valores) — nunca agregar
+# una regla que la excluya.
 
 # Vercel
 .vercel/
@@ -16,6 +24,16 @@ dist-ssr/
 # Logs
 *.log
 npm-debug.log*
+
+# PIDs de procesos de desarrollo locales (dev-server.js, vite)
+*.pid
+
+# Archivos temporales de scripts de verificación puntual (no forman parte del proyecto)
+_tmp*
+
+# SQL de referencia usado solo para revisar la migración antes de aplicarla — la migración
+# real y versionable vive en prisma/migrations/. Este directorio no se commitea.
+prisma/_preview-sql/
 
 # Editor / OS
 .DS_Store

@@ -1,0 +1,29 @@
+import bcrypt from 'bcryptjs'
+import { prisma } from '../../server-lib/prisma.js'
+import { requireAuth, publicUser } from '../../server-lib/auth.js'
+
+export default requireAuth(async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const { currentPassword, newPassword } = req.body || {}
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' })
+  }
+
+  // Si viene de una contraseña temporal (mustChangePassword), no exigimos la actual.
+  if (!req.user.mustChangePassword) {
+    if (!currentPassword) {
+      return res.status(400).json({ error: 'Indica tu contraseña actual' })
+    }
+    const valid = await bcrypt.compare(currentPassword, req.user.passwordHash)
+    if (!valid) return res.status(401).json({ error: 'Contraseña actual incorrecta' })
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  const updated = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { passwordHash, mustChangePassword: false },
+  })
+
+  return res.status(200).json({ user: publicUser(updated) })
+})
