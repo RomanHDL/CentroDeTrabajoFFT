@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import { alpha, useTheme } from '@mui/material/styles'
 import { WORK_CENTERS } from '../../data/production/catalog'
-import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from '../../data/production/realPersonnelSnapshot'
+import { BASE_SNAPSHOT_DATE, getPeopleByArea, getPeopleWithoutArea } from '../../data/production/personnelByArea'
 
 /* ─────────────────────────────────────────────
    Vista tipo "plano" agrupada por area — inspirada en el diseño
@@ -20,12 +20,6 @@ import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from '../../data/producti
    que sigue empezando vacio hasta que exista un check-in real o la
    importacion formal a Neon.
    ───────────────────────────────────────────── */
-
-function mapAreaZonaToId(areaZona) {
-  if (!areaZona) return null
-  if (areaZona.startsWith('LINEA ')) return 'LINEA' + areaZona.split(' ')[1]
-  return areaZona
-}
 
 function AreaBox({ area, people, color, onOpenLine }) {
   return (
@@ -79,18 +73,8 @@ export default function AreasLayoutView({ onOpenLine }) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
 
-  const peopleByArea = useMemo(() => {
-    const map = {}
-    REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
-      const areaId = mapAreaZonaToId(p.areaZona)
-      if (!areaId) return
-      map[areaId] = map[areaId] || []
-      map[areaId].push(p)
-    })
-    return map
-  }, [])
-
-  const sinZona = useMemo(() => REAL_PERSONNEL_SNAPSHOT.filter((p) => !p.areaZona), [])
+  const peopleByArea = useMemo(() => getPeopleByArea(), [])
+  const sinZona = useMemo(() => getPeopleWithoutArea(), [])
 
   const productionAreas = WORK_CENTERS.filter((w) => w.isProduction)
   const supportAreas = WORK_CENTERS.filter((w) => !w.isProduction)

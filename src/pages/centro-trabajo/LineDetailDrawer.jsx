@@ -25,13 +25,12 @@ import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
 import { lineSummary } from '../../data/production/selectors'
-import { hourlySeriesFor, stationBreakdown } from '../../data/production/production'
+import { getPeopleByArea, BASE_SNAPSHOT_DATE } from '../../data/production/personnelByArea'
 import {
   getLineWorkstationsWithOccupancy, getUnassignedPresentToday, getSuggestedCandidates, checkInEmployee,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useRoleMode } from '../../state/roleMode'
-import HourlyTrendChart from './HourlyTrendChart'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
@@ -40,8 +39,6 @@ import LineHistoryDialog from './LineHistoryDialog'
 import WorkstationCard from './WorkstationCard'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
-
-const ACCENT_HEX = { blue: '#3B82F6', green: '#10B981', amber: '#F59E0B', red: '#EF4444', slate: '#64748B' }
 
 export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const ps = usePageStyles()
@@ -58,9 +55,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const [actionError, setActionError] = useState('')
 
   const summary = useMemo(() => (workCenterId ? lineSummary(workCenterId) : null), [workCenterId, version])
-  const hourly = useMemo(() => (workCenterId ? hourlySeriesFor(workCenterId).map(h => ({ hour: h.hour, quantity: h.quantity })) : []), [workCenterId])
-  const productionStations = useMemo(() => (workCenterId ? stationBreakdown(workCenterId) : []), [workCenterId])
   const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
+  const snapshotPeople = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId])
   const unassigned = useMemo(() => getUnassignedPresentToday(), [version])
 
   const selectedStation = useMemo(() => {
@@ -81,7 +77,6 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   )
 
   if (!summary) return null
-  const accentColor = ACCENT_HEX[summary.tone.accent] || ACCENT_HEX.slate
 
   const handleAssignSuggested = (candidate) => {
     setActionError('')
@@ -125,8 +120,13 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
         <Typography sx={{ fontWeight: 800, fontSize: 20, letterSpacing: -0.4 }}>{summary.name}</Typography>
         <Chip
           size="small"
-          label={summary.status.label}
-          sx={{ fontWeight: 700, bgcolor: `${summary.status.dot}22`, color: summary.status.dot, border: `1px solid ${summary.status.dot}55` }}
+          label={summary.personnel > 0 ? 'Con personal' : 'Sin personal hoy'}
+          sx={{
+            fontWeight: 700,
+            bgcolor: summary.personnel > 0 ? '#10B98122' : '#94A3B822',
+            color: summary.personnel > 0 ? '#10B981' : '#64748B',
+            border: `1px solid ${summary.personnel > 0 ? '#10B98155' : '#94A3B855'}`,
+          }}
         />
         <Box sx={{ flex: 1 }} />
         <Button
@@ -141,13 +141,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
       </Box>
 
       <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* KPI row — produccion/avance solo tienen sentido en areas de produccion */}
+        {/* KPI row — puramente operativo, sin metricas de produccion (esas viven en Dashboard) */}
         <Grid container spacing={1.5} sx={{ mb: 3 }}>
           {[
-            ...(summary.isProduction ? [
-              { label: 'Producción hoy', value: summary.target == null ? 'Sin datos' : `${summary.production.toLocaleString('es-MX')} / ${summary.target.toLocaleString('es-MX')}`, accent: 'blue' },
-              { label: 'Avance', value: `${summary.pct ?? 0}%`, accent: summary.tone.accent },
-            ] : []),
             { label: 'Personal', value: `${summary.personnel} / ${summary.capacityTotal}`, accent: 'purple' },
             { label: 'Estaciones ocupadas', value: `${summary.stationsOccupied}`, accent: 'green' },
             { label: 'Estaciones disponibles', value: `${summary.stationsAvailable}`, accent: summary.stationsAvailable > 0 ? 'amber' : 'slate' },
@@ -244,37 +240,41 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
               </Box>
             </Paper>
 
-            {summary.isProduction && (
-              <>
-                <Paper elevation={0} sx={ps.card}>
-                  <Box sx={ps.cardHeader}>
-                    <Typography sx={ps.cardHeaderTitle}>Producción por estación</Typography>
-                    <Typography sx={ps.cardHeaderSubtitle}>Sin fuente real de producción conectada todavía</Typography>
-                  </Box>
-                  <Box sx={{ p: 2 }}>
-                    {productionStations.length === 0 ? (
-                      <EmptyState compact title="Sin datos" description="No hay desglose de producción por estación." />
-                    ) : (
-                      <Grid container spacing={1.5}>
-                        {productionStations.map((s) => (
-                          <Grid item xs={6} sm={4} md={3} key={s.station}>
-                            <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary' }}>{s.station}</Typography>
-                              <Typography sx={{ fontSize: 18, fontWeight: 800, mt: 0.25 }}>{s.production} <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>pzas</Typography></Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
+            <Paper elevation={0} sx={ps.card}>
+              <Box sx={ps.cardHeader}>
+                <Typography sx={ps.cardHeaderTitle}>Personal ({snapshotPeople.length})</Typography>
+                <Typography sx={ps.cardHeaderSubtitle}>
+                  Snapshot real de LAYOUT FFT.xlsx ({BASE_SNAPSHOT_DATE}) — sin número de empleado porque el
+                  Excel no lo trae todavía
+                </Typography>
+              </Box>
+              <Box sx={{ p: 2 }}>
+                {snapshotPeople.length === 0 ? (
+                  <EmptyState compact title="Sin personal en el Excel para esta área" />
+                ) : (
+                  <Grid container spacing={1.5}>
+                    {snapshotPeople.map((p) => (
+                      <Grid item xs={12} sm={6} md={4} key={p.id}>
+                        <Stack
+                          direction="row" spacing={1.5} alignItems="center"
+                          sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                        >
+                          <EmployeeAvatar employee={{ name: p.name }} size={40} />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: 13.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {p.name}
+                            </Typography>
+                            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                              Núm. pendiente{p.asistencia ? ` · ${p.asistencia}` : ''}
+                            </Typography>
+                          </Box>
+                        </Stack>
                       </Grid>
-                    )}
-                  </Box>
-                </Paper>
-
-                <Paper elevation={0} sx={{ ...ps.card, mt: 2, p: 2 }}>
-                  <Typography sx={ps.cardHeaderTitle}>Producción por hora</Typography>
-                  <HourlyTrendChart data={hourly} height={180} />
-                </Paper>
-              </>
-            )}
+                    ))}
+                  </Grid>
+                )}
+              </Box>
+            </Paper>
           </Grid>
 
           {/* Columna lateral */}

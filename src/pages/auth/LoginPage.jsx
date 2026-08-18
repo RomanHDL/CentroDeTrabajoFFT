@@ -67,7 +67,7 @@ export default function LoginPage() {
             Centro de Trabajo FFT
           </Typography>
           <Typography color="text.secondary" sx={{ fontSize: 13, textAlign: 'center' }}>
-            Control de Producción y Personal
+            Organización de áreas, líneas, estaciones y personal
           </Typography>
         </Box>
 

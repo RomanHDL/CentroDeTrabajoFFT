@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import ThemeProvider from '@mui/material/styles/ThemeProvider'
 import CssBaseline from '@mui/material/CssBaseline'
 import { buildTheme } from './ui/theme'
@@ -9,7 +9,8 @@ import ProtectedRoute from './routing/ProtectedRoute'
 import AppLayout from './layout/AppLayout'
 import LoginPage from './pages/auth/LoginPage'
 import ChangePasswordPage from './pages/auth/ChangePasswordPage'
-import ControlProduccionPage from './pages/control-produccion/ControlProduccionPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
 
 export default function App() {
@@ -25,7 +26,9 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
 
             <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
-              <Route path="/" element={<ControlProduccionPage />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
               <Route
                 path="/usuarios"
                 element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsuariosPage /></ProtectedRoute>}

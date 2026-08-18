@@ -5,17 +5,19 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Box from '@mui/material/Box'
 import DashboardIcon from '@mui/icons-material/Dashboard'
+import FactoryIcon from '@mui/icons-material/Factory'
 import GroupIcon from '@mui/icons-material/Group'
 import { NavLink } from 'react-router-dom'
 
 export const SIDEBAR_WIDTH = 224
 
-// El sidebar es solo UX: agrupa el modulo de "Centro de Produccion" (Dashboard, Produccion,
-// Personal, Pase de lista, Asignaciones, Movimientos y Reportes viven ahi mismo como tabs) y,
-// solo para ADMINISTRADOR, el modulo de Usuarios. La proteccion real esta en el backend
-// (requireRole en cada API), no en que este menu se muestre u oculte.
+// El sidebar es solo UX: dos modulos separados (Dashboard = metricas/resumen,
+// Centro de Trabajo = areas/lineas/estaciones/personal/operacion) y, solo para
+// ADMINISTRADOR, Usuarios. La proteccion real esta en el backend (requireRole
+// en cada API), no en que este menu se muestre u oculte.
 const NAV_ITEMS = [
-  { to: '/', label: 'Centro de Producción', icon: DashboardIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
+  { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
+  { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, roles: ['ADMINISTRADOR'] },
 ]
 

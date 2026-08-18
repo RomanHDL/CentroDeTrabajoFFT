@@ -1,0 +1,65 @@
+import { useState } from 'react'
+import Box from '@mui/material/Box'
+import Paper from '@mui/material/Paper'
+import Typography from '@mui/material/Typography'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
+import { usePageStyles } from '../../ui/pageStyles'
+import AreasLayoutView from './AreasLayoutView'
+import LineasTab from './LineasTab'
+import EstacionesTab from './EstacionesTab'
+import PersonalDeHoyTab from './PersonalDeHoyTab'
+import LineDetailDrawer from './LineDetailDrawer'
+
+const TABS = [
+  { key: 'areas', label: 'Áreas de trabajo' },
+  { key: 'lineas', label: 'Líneas' },
+  { key: 'estaciones', label: 'Estaciones' },
+  { key: 'personal', label: 'Personal' },
+]
+
+/* Centro de Trabajo = OPERACION. Sin KPIs ejecutivos, sin produccion,
+   sin tendencias, sin alertas — eso vive en Dashboard. Aqui solo se
+   administra/consulta el entorno: areas, lineas, estaciones y
+   personal, con datos reales (snapshot de BASE + asignacion diaria
+   real cuando exista). */
+export default function CentroTrabajoPage() {
+  const ps = usePageStyles()
+  const [tab, setTab] = useState('areas')
+  const [selectedLine, setSelectedLine] = useState(null)
+
+  return (
+    <Box sx={ps.page}>
+      <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+        <Box sx={ps.cardHeader}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={ps.pageTitle}>Centro de Trabajo</Typography>
+            <Typography sx={ps.pageSubtitle}>Organización de áreas, líneas, estaciones y personal</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ px: { xs: 1, md: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 46,
+              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontSize: 13.5, minHeight: 46 },
+            }}
+          >
+            {TABS.map((t) => <Tab key={t.key} value={t.key} label={t.label} />)}
+          </Tabs>
+        </Box>
+      </Paper>
+
+      {tab === 'areas' && <AreasLayoutView onOpenLine={setSelectedLine} />}
+      {tab === 'lineas' && <LineasTab onOpenLine={setSelectedLine} />}
+      {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} />}
+      {tab === 'personal' && <PersonalDeHoyTab />}
+
+      <LineDetailDrawer workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={() => setSelectedLine(null)} />
+    </Box>
+  )
+}
