@@ -10,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
-    "create-admin": "node --env-file=.env.local scripts/create-initial-admin.mjs"
+    "create-admin": "node --env-file=.env.local scripts/create-initial-admin.mjs",
+    "reset-password": "node --env-file=.env.local scripts/reset-user-password.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
