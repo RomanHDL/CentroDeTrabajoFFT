@@ -63,30 +63,38 @@ export default function LineCard({ summary, onOpen }) {
         </Typography>
       )}
 
-      <Box sx={{ mt: 0.5 }}>
-        <Stack direction="row" alignItems="baseline" spacing={0.75}>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
-            {summary.production.toLocaleString('es-MX')}
+      {summary.target == null ? (
+        <Box sx={{ mt: 0.5 }}>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontStyle: 'italic' }}>
+            Sin datos de producción todavía
           </Typography>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
-            / {summary.target.toLocaleString('es-MX')} piezas
-          </Typography>
-        </Stack>
-
-        <Box sx={{ mt: 1 }}>
-          <Box sx={ps.progressBar}>
-            <Box sx={{ ...ps.progressFill(pct, accentColor), bgcolor: accentColor }} />
-          </Box>
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
-            <Typography sx={{ fontSize: 12, fontWeight: 700, color: accentColor }}>
-              {pct}% — {summary.tone.label}
+        </Box>
+      ) : (
+        <Box sx={{ mt: 0.5 }}>
+          <Stack direction="row" alignItems="baseline" spacing={0.75}>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
+              {summary.production.toLocaleString('es-MX')}
             </Typography>
-            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-              +{summary.ultimaHora} última hora
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+              / {summary.target.toLocaleString('es-MX')} piezas
             </Typography>
           </Stack>
+
+          <Box sx={{ mt: 1 }}>
+            <Box sx={ps.progressBar}>
+              <Box sx={{ ...ps.progressFill(pct, accentColor), bgcolor: accentColor }} />
+            </Box>
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: accentColor }}>
+                {pct}% — {summary.tone.label}
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                +{summary.ultimaHora} última hora
+              </Typography>
+            </Stack>
+          </Box>
         </Box>
-      </Box>
+      )}
     </Paper>
   )
 }

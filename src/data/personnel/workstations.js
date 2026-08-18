@@ -26,12 +26,23 @@ const ROLE_LABELS = {
   'Capacitación': 'Instructor',
 }
 
-/* Cantidad de estaciones por centro de trabajo — a proposito
-   NO todas iguales, para dejar claro que es configurable por
-   linea (ejemplo pedido: Cajas 4, DMT 6). */
+/* Cantidad de estaciones por centro de trabajo — NO todas iguales.
+   LINEA0 y LINEA1 quedan mas grandes porque el snapshot real de BASE
+   les tiene mas gente (10 y 7). Paletizado y Accesorios tambien se
+   ajustaron hacia arriba porque en la realidad tienen mucha gente
+   (12 y 15 respectivamente) — no tendria sentido dejarlos en 4-5
+   estaciones si ahi trabajan muchas mas personas que eso. El resto de
+   las lineas (2-10) quedan en 5 o 6 segun lo que confirmaste; ajusta
+   estos numeros libremente cuando tengan el dato exacto por linea. */
 const STATION_COUNT_BY_LINE = {
-  L1: 5, L2: 5, L3: 5, L4: 5, L5: 5, L6: 5, L7: 5, L8: 5, L9: 5, L10: 5,
-  CAJAS: 4, DMT: 6, PAL: 5, ACC: 4, CONVEYOR: 5,
+  LINEA0: 10,
+  LINEA1: 7,
+  LINEA2: 5, LINEA3: 6, LINEA4: 6, LINEA5: 6,
+  LINEA6: 5, LINEA7: 5, LINEA8: 5, LINEA9: 5, LINEA10: 5,
+  CAJAS: 4, DMT: 6, PALETIZADO: 12, ACCESORIOS: 16, CONVEYOR: 5, CALIDAD: 7,
+  // HIGH_VALUE, CAPACITACION, TEAM_LEADER, SOPORTE, LIMPIEZA, GERENTE,
+  // SUPERVISOR: sin numero real de estaciones especificado todavia,
+  // usan el default de abajo (5) hasta que se configure.
 }
 
 function buildWorkstations() {

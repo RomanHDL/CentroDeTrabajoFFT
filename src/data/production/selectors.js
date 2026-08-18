@@ -1,5 +1,5 @@
 import { WORK_CENTERS, OPERATIONAL_STATUS, workCenterById } from './catalog'
-import { CURRENT_PRODUCTION_TODAY, OPERATIONAL_STATUS_BY_WC, lastHourDelta } from './production'
+import { HAS_PRODUCTION_SOURCE, lastHourDelta } from './production'
 import { getAreaCountToday, getPersonnelPresentToday, getLineWorkstationsWithOccupancy } from '../personnel/repository'
 import { getLineCapacity } from '../personnel/workstations'
 
@@ -30,18 +30,24 @@ export function progressTone(pct) {
   return { tone: 'bad', label: 'Retraso importante', accent: 'red' }
 }
 
-export function operationalStatusOf(workCenterId) {
-  const key = OPERATIONAL_STATUS_BY_WC[workCenterId] || 'OPERANDO'
+/* Sin fuente real de produccion conectada todavia, el estado
+   operativo no puede calcularse honestamente — SIN_DATOS para
+   todos en vez de asumir "Operando". */
+export function operationalStatusOf() {
+  const key = HAS_PRODUCTION_SOURCE ? 'OPERANDO' : 'SIN_DATOS'
   return { key, ...OPERATIONAL_STATUS[key] }
 }
 
-/* Resumen por linea/area, listo para las cards del dashboard. */
+/* Resumen por linea/area, listo para las cards del dashboard.
+   production/target quedan en 0/null hasta que exista una
+   fuente real de produccion — nunca se inventan. */
 export function lineSummary(workCenterId) {
   const wc = workCenterById(workCenterId)
   if (!wc) return null
-  const production = CURRENT_PRODUCTION_TODAY[workCenterId] || 0
+  const production = 0
+  const target = wc.dailyTarget // null: sin meta configurada
   const personnel = getAreaCountToday(workCenterId)
-  const pct = cumplimientoPct(production, wc.dailyTarget)
+  const pct = cumplimientoPct(production, target)
   const workstations = getLineWorkstationsWithOccupancy(workCenterId)
   const stationsOccupied = workstations.filter(w => w.occupants.length > 0).length
   const stationsAvailable = workstations.filter(w => w.isAvailable).length
@@ -49,18 +55,19 @@ export function lineSummary(workCenterId) {
     id: wc.id,
     name: wc.name,
     kind: wc.kind,
+    isProduction: wc.isProduction,
     personnel,
     capacityTotal: getLineCapacity(workCenterId),
     stationsOccupied,
     stationsAvailable,
     production,
-    target: wc.dailyTarget,
+    target,
     pct,
-    diferencia: diferencia(production, wc.dailyTarget),
+    diferencia: target == null ? null : diferencia(production, target),
     productividad: productividadPorPersona(production, personnel),
     ultimaHora: lastHourDelta(workCenterId),
     tone: progressTone(pct),
-    status: operationalStatusOf(workCenterId),
+    status: operationalStatusOf(),
   }
 }
 
@@ -72,10 +79,12 @@ export function allLineSummaries() {
 export function generalKpis() {
   const summaries = allLineSummaries()
   const totalProduction = summaries.reduce((s, r) => s + r.production, 0)
-  const totalTarget = summaries.reduce((s, r) => s + r.target, 0)
+  const totalTarget = summaries.reduce((s, r) => s + (r.target || 0), 0)
   const activeEmployees = getPersonnelPresentToday()
   const operating = summaries.filter(r => r.status.key === 'OPERANDO').length
-  const topLine = summaries.reduce((top, r) => (!top || r.production > top.production ? r : top), null)
+  const topLine = HAS_PRODUCTION_SOURCE
+    ? summaries.reduce((top, r) => (!top || r.production > top.production ? r : top), null)
+    : null
 
   return {
     personalActivo: activeEmployees,
@@ -89,22 +98,8 @@ export function generalKpis() {
 }
 
 /* Alertas derivadas del estado real de cada linea — nunca
-   texto inventado, siempre calculado desde los datos. */
+   texto inventado. Sin fuente de produccion no hay nada que
+   alertar de produccion todavia (queda vacio, no se simula). */
 export function buildAlerts() {
-  const summaries = allLineSummaries()
-  const alerts = []
-
-  summaries.forEach((r) => {
-    if (r.status.key === 'DETENIDO') {
-      alerts.push({ level: 'bad', text: `${r.name} detenida` })
-    } else if (r.pct != null && r.pct < 60) {
-      alerts.push({ level: 'bad', text: `${r.name} debajo del 60% de meta (${r.pct}%)` })
-    } else if (r.status.key === 'ATENCION') {
-      alerts.push({ level: 'warn', text: `${r.name} en atención — ${r.pct ?? 0}% de avance` })
-    } else if (r.pct != null && r.pct >= 100) {
-      alerts.push({ level: 'ok', text: `${r.name} superó su meta (${r.pct}%)` })
-    }
-  })
-
-  return alerts
+  return []
 }

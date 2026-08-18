@@ -141,11 +141,13 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
       </Box>
 
       <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* KPI row */}
+        {/* KPI row — produccion/avance solo tienen sentido en areas de produccion */}
         <Grid container spacing={1.5} sx={{ mb: 3 }}>
           {[
-            { label: 'Producción hoy', value: `${summary.production.toLocaleString('es-MX')} / ${summary.target.toLocaleString('es-MX')}`, accent: 'blue' },
-            { label: 'Avance', value: `${summary.pct ?? 0}%`, accent: summary.tone.accent },
+            ...(summary.isProduction ? [
+              { label: 'Producción hoy', value: summary.target == null ? 'Sin datos' : `${summary.production.toLocaleString('es-MX')} / ${summary.target.toLocaleString('es-MX')}`, accent: 'blue' },
+              { label: 'Avance', value: `${summary.pct ?? 0}%`, accent: summary.tone.accent },
+            ] : []),
             { label: 'Personal', value: `${summary.personnel} / ${summary.capacityTotal}`, accent: 'purple' },
             { label: 'Estaciones ocupadas', value: `${summary.stationsOccupied}`, accent: 'green' },
             { label: 'Estaciones disponibles', value: `${summary.stationsAvailable}`, accent: summary.stationsAvailable > 0 ? 'amber' : 'slate' },
@@ -242,33 +244,37 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
               </Box>
             </Paper>
 
-            <Paper elevation={0} sx={ps.card}>
-              <Box sx={ps.cardHeader}>
-                <Typography sx={ps.cardHeaderTitle}>Producción por estación</Typography>
-                <Typography sx={ps.cardHeaderSubtitle}>Mock de producción — no se mezcla con presencia real</Typography>
-              </Box>
-              <Box sx={{ p: 2 }}>
-                {productionStations.length === 0 ? (
-                  <EmptyState compact title="Sin datos" description="No hay desglose de producción por estación." />
-                ) : (
-                  <Grid container spacing={1.5}>
-                    {productionStations.map((s) => (
-                      <Grid item xs={6} sm={4} md={3} key={s.station}>
-                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                          <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary' }}>{s.station}</Typography>
-                          <Typography sx={{ fontSize: 18, fontWeight: 800, mt: 0.25 }}>{s.production} <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>pzas</Typography></Typography>
-                        </Paper>
+            {summary.isProduction && (
+              <>
+                <Paper elevation={0} sx={ps.card}>
+                  <Box sx={ps.cardHeader}>
+                    <Typography sx={ps.cardHeaderTitle}>Producción por estación</Typography>
+                    <Typography sx={ps.cardHeaderSubtitle}>Sin fuente real de producción conectada todavía</Typography>
+                  </Box>
+                  <Box sx={{ p: 2 }}>
+                    {productionStations.length === 0 ? (
+                      <EmptyState compact title="Sin datos" description="No hay desglose de producción por estación." />
+                    ) : (
+                      <Grid container spacing={1.5}>
+                        {productionStations.map((s) => (
+                          <Grid item xs={6} sm={4} md={3} key={s.station}>
+                            <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary' }}>{s.station}</Typography>
+                              <Typography sx={{ fontSize: 18, fontWeight: 800, mt: 0.25 }}>{s.production} <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>pzas</Typography></Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
                       </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </Box>
-            </Paper>
+                    )}
+                  </Box>
+                </Paper>
 
-            <Paper elevation={0} sx={{ ...ps.card, mt: 2, p: 2 }}>
-              <Typography sx={ps.cardHeaderTitle}>Producción por hora</Typography>
-              <HourlyTrendChart data={hourly} height={180} />
-            </Paper>
+                <Paper elevation={0} sx={{ ...ps.card, mt: 2, p: 2 }}>
+                  <Typography sx={ps.cardHeaderTitle}>Producción por hora</Typography>
+                  <HourlyTrendChart data={hourly} height={180} />
+                </Paper>
+              </>
+            )}
           </Grid>
 
           {/* Columna lateral */}

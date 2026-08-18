@@ -39,6 +39,7 @@ export default function ProduccionSemanalTab() {
   const chartData = totals.map(t => ({ ...t, accent: progressTone(t.cumplimiento).accent }))
   const weekTotal = totals.reduce((s, r) => s + r.production, 0)
   const weekTarget = totals.reduce((s, r) => s + r.target, 0)
+  const weekCumplimiento = weekTarget > 0 ? Math.round((weekTotal / weekTarget) * 100) : 0
 
   return (
     <Box>
@@ -61,9 +62,9 @@ export default function ProduccionSemanalTab() {
           </Paper>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Paper elevation={0} sx={ps.kpiCard(progressTone(Math.round((weekTotal / weekTarget) * 100)).accent)}>
+          <Paper elevation={0} sx={ps.kpiCard(progressTone(weekTarget > 0 ? weekCumplimiento : null).accent)}>
             <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Cumplimiento</Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{Math.round((weekTotal / weekTarget) * 100)}%</Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{weekTarget > 0 ? `${weekCumplimiento}%` : '—'}</Typography>
           </Paper>
         </Grid>
       </Grid>

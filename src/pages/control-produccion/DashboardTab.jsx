@@ -9,14 +9,15 @@ import FlagIcon from '@mui/icons-material/Flag'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import { usePageStyles } from '../../ui/pageStyles'
-import { KpiCard } from '../../ui'
+import { KpiCard, EmptyState } from '../../ui'
 import { allLineSummaries, generalKpis, buildAlerts } from '../../data/production/selectors'
-import { hourlyTrendTotal } from '../../data/production/production'
+import { hourlyTrendTotal, HAS_PRODUCTION_SOURCE } from '../../data/production/production'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import ComparisonChart from './ComparisonChart'
 import HourlyTrendChart from './HourlyTrendChart'
-import LineCard from './LineCard'
+import AreasLayoutView from './AreasLayoutView'
 import AlertsPanel from './AlertsPanel'
 
 export default function DashboardTab({ onOpenLine }) {
@@ -45,7 +46,12 @@ export default function DashboardTab({ onOpenLine }) {
           <KpiCard title="Meta del día" value={kpis.metaDia.toLocaleString('es-MX')} subtitle="piezas" icon={<FlagIcon />} accent="slate" />
         </Grid>
         <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Avance" value={`${kpis.avancePct ?? 0}%`} icon={<TrendingUpIcon />} accent={kpis.avancePct >= 100 ? 'green' : kpis.avancePct >= 80 ? 'blue' : kpis.avancePct >= 60 ? 'amber' : 'red'} />
+          <KpiCard
+            title="Avance"
+            value={HAS_PRODUCTION_SOURCE ? `${kpis.avancePct ?? 0}%` : 'Sin datos'}
+            icon={<TrendingUpIcon />}
+            accent={!HAS_PRODUCTION_SOURCE ? 'slate' : kpis.avancePct >= 100 ? 'green' : kpis.avancePct >= 80 ? 'blue' : kpis.avancePct >= 60 ? 'amber' : 'red'}
+          />
         </Grid>
         <Grid item xs={6} sm={4} md={2}>
           <KpiCard title="Líneas operando" value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`} icon={<PrecisionManufacturingIcon />} accent="cyan" />
@@ -62,19 +68,24 @@ export default function DashboardTab({ onOpenLine }) {
           <Typography sx={ps.cardHeaderSubtitle}>Comparativa de todas las líneas y áreas — hoy</Typography>
         </Box>
         <Box sx={{ p: 2 }}>
-          <ComparisonChart data={comparisonData} />
+          {HAS_PRODUCTION_SOURCE ? (
+            <ComparisonChart data={comparisonData} />
+          ) : (
+            <EmptyState
+              compact
+              icon={<BarChartIcon />}
+              title="Sin datos de producción todavía"
+              description="Este dashboard todavía no tiene una fuente real de piezas producidas conectada."
+            />
+          )}
         </Box>
       </Paper>
 
-      {/* Cards de areas */}
+      {/* Plano de areas — diseño inspirado en el layout real del Excel */}
       <Typography sx={{ ...ps.sectionTitle, mb: 1.5 }}>Áreas de producción</Typography>
-      <Grid container spacing={1.5} sx={{ mb: 3 }}>
-        {summaries.map((s) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={s.id}>
-            <LineCard summary={s} onOpen={onOpenLine} />
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ mb: 3 }}>
+        <AreasLayoutView onOpenLine={onOpenLine} />
+      </Box>
 
       {/* Tendencia + alertas */}
       <Grid container spacing={2}>
@@ -85,7 +96,11 @@ export default function DashboardTab({ onOpenLine }) {
               <Typography sx={ps.cardHeaderSubtitle}>Producción total durante el turno</Typography>
             </Box>
             <Box sx={{ p: 2 }}>
-              <HourlyTrendChart data={hourlyTotal} height={230} />
+              {HAS_PRODUCTION_SOURCE ? (
+                <HourlyTrendChart data={hourlyTotal} height={230} />
+              ) : (
+                <EmptyState compact title="Sin datos de producción todavía" />
+              )}
             </Box>
           </Paper>
         </Grid>
