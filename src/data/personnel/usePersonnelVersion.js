@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react'
+import { subscribe } from './repository'
+
+/* Fuerza un re-render cuando cambian datos de personal
+   (check-in/movimiento) sin importar en que componente se
+   originó la escritura. Usar como dependencia de useMemo. */
+export function usePersonnelVersion() {
+  const [version, setVersion] = useState(0)
+  useEffect(() => subscribe(() => setVersion(v => v + 1)), [])
+  return version
+}
