@@ -8,11 +8,8 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import WbSunnyIcon from '@mui/icons-material/WbSunny'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import FlagIcon from '@mui/icons-material/Flag'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import PersonOffIcon from '@mui/icons-material/PersonOff'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import { usePageStyles } from '../../ui/pageStyles'
 import { KpiCard, EmptyState } from '../../ui'
@@ -66,30 +63,24 @@ export default function DashboardPage() {
         </Box>
       </Paper>
 
-      {/* KPIs generales */}
+      {/* KPIs generales — simplificado a 3 (personal, faltante, lineas
+          operando); produccion/meta/avance/mayor produccion se retiraron
+          a peticion del usuario (no hay fuente real de produccion). */}
       <Grid container spacing={1.5} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Personal presente hoy" value={kpis.personalActivo} icon={<PeopleAltIcon />} accent="blue" />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Producción de hoy" value={kpis.produccionHoy.toLocaleString('es-MX')} subtitle="piezas" icon={<Inventory2Icon />} accent="blue" />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Meta del día" value={kpis.metaDia.toLocaleString('es-MX')} subtitle="piezas" icon={<FlagIcon />} accent="slate" />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
+        <Grid item xs={12} sm={4}>
           <KpiCard
-            title="Avance"
-            value={HAS_PRODUCTION_SOURCE ? `${kpis.avancePct ?? 0}%` : 'Sin datos'}
-            icon={<TrendingUpIcon />}
-            accent={!HAS_PRODUCTION_SOURCE ? 'slate' : kpis.avancePct >= 100 ? 'green' : kpis.avancePct >= 80 ? 'blue' : kpis.avancePct >= 60 ? 'amber' : 'red'}
+            title="Personal presente hoy"
+            value={`${kpis.personalActivo} / ${kpis.personalIdeal}`}
+            subtitle={`${kpis.personalActivo} personas de una plantilla de ${kpis.personalIdeal}`}
+            icon={<PeopleAltIcon />}
+            accent="blue"
           />
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Líneas operando" value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`} icon={<PrecisionManufacturingIcon />} accent="cyan" />
+        <Grid item xs={12} sm={4}>
+          <KpiCard title="Personal faltante" value={`${kpis.personalFaltante}`} subtitle="personas" icon={<PersonOffIcon />} accent={kpis.personalFaltante > 0 ? 'red' : 'green'} />
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <KpiCard title="Mayor producción" value={HAS_PRODUCTION_SOURCE ? (kpis.lineaTop?.name || '—') : '—'} subtitle={HAS_PRODUCTION_SOURCE && kpis.lineaTop ? `${kpis.lineaTop.production.toLocaleString('es-MX')} piezas` : ''} icon={<EmojiEventsIcon />} accent="purple" />
+        <Grid item xs={12} sm={4}>
+          <KpiCard title="Líneas operando" value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`} icon={<PrecisionManufacturingIcon />} accent="cyan" />
         </Grid>
       </Grid>
 

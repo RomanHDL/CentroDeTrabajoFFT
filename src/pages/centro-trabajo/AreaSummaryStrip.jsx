@@ -7,6 +7,7 @@ import Button from '@mui/material/Button'
 import { alpha } from '@mui/material/styles'
 import { COLOR_GROUPS } from '../../data/production/layoutZones'
 import { getAllAreaSummaries, getStaffingTotals } from '../../data/production/personnelByArea'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 
 const VISIBLE_LIMIT = 8
 
@@ -20,8 +21,9 @@ const VISIBLE_LIMIT = 8
    ───────────────────────────────────────────── */
 export default function AreaSummaryStrip({ onSelectArea }) {
   const [showAll, setShowAll] = useState(false)
-  const summaries = useMemo(() => getAllAreaSummaries(), [])
-  const totals = useMemo(() => getStaffingTotals(), [])
+  const version = usePersonnelVersion()
+  const summaries = useMemo(() => getAllAreaSummaries(), [version])
+  const totals = useMemo(() => getStaffingTotals(), [version])
   const withPeople = summaries.filter((s) => s.count > 0)
   const visible = showAll ? summaries : withPeople.slice(0, VISIBLE_LIMIT)
 

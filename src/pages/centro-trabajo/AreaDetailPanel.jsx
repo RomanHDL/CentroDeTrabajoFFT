@@ -11,7 +11,9 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { workCenterById, hasLineStations } from '../../data/production/catalog'
-import { getAreaHeadcount, getPeopleByArea, getFftPeopleWithLine, getAreaStaffing } from '../../data/production/personnelByArea'
+import { getPeopleByArea, getFftPeopleWithLine, getAreaStaffing } from '../../data/production/personnelByArea'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
 
 function StaffingLine({ staffing }) {
@@ -61,20 +63,22 @@ function PendingEmployeeNumberNote() {
 
 function PersonRow({ person, secondary, onClickSecondary }) {
   return (
-    <Stack direction="row" spacing={1.25} alignItems="center">
-      <EmployeeAvatar employee={{ name: person.name }} size={32} />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>{person.name}</Typography>
-      </Box>
-      {secondary && (
-        <Chip
-          size="small"
-          label={secondary}
-          onClick={onClickSecondary}
-          sx={{ height: 20, fontSize: 10, cursor: onClickSecondary ? 'pointer' : 'default' }}
-        />
-      )}
-    </Stack>
+    <DraggablePersonChip employeeId={person.id}>
+      <Stack direction="row" spacing={1.25} alignItems="center">
+        <EmployeeAvatar employee={{ name: person.name }} size={32} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>{person.name}</Typography>
+        </Box>
+        {secondary && (
+          <Chip
+            size="small"
+            label={secondary}
+            onClick={(e) => { e.stopPropagation(); onClickSecondary?.() }}
+            sx={{ height: 20, fontSize: 10, cursor: onClickSecondary ? 'pointer' : 'default' }}
+          />
+        )}
+      </Stack>
+    </DraggablePersonChip>
   )
 }
 
@@ -88,6 +92,7 @@ function PersonRow({ person, secondary, onClickSecondary }) {
    ───────────────────────────────────────────── */
 export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDrawer }) {
   const ps = usePageStyles()
+  usePersonnelVersion()
   const [showAllFft, setShowAllFft] = useState(false)
   const [showAllPeople, setShowAllPeople] = useState(false)
 
@@ -245,7 +250,7 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         onClick={() => onOpenFullDrawer(area.id)}
         sx={{ mt: 2, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
       >
-        Ver gestión completa
+        Asignar empleado
       </Button>
 
       <Divider sx={{ my: 2 }} />

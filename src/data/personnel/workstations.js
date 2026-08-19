@@ -69,12 +69,18 @@ function buildWorkstations() {
       // Un solo puesto generico (no es "Montaje/Prueba/..."): permite
       // que el check-in diario funcione para cualquier area sin
       // inventar estaciones de linea que no le corresponden.
+      //
+      // La capacidad NO se ata a idealHeadcount: IDEAL es plantilla
+      // esperada (para mostrar "Faltan N"/advertir), no un limite
+      // tecnico que deba bloquear una asignacion. Un numero alto fijo
+      // evita que checkInEmployee/moveEmployee rechacen a la persona
+      // 21 en un area con ideal=20.
       map[wc.id] = [{
         id: `${wc.id}-GENERAL`,
         lineId: wc.id,
         name: wc.name,
         requiredRole: wc.name,
-        capacity: wc.idealHeadcount ?? 50,
+        capacity: 999,
         order: 1,
         status: 'ACTIVA',
       }]

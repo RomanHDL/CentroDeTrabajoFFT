@@ -15,6 +15,9 @@ import { alpha } from '@mui/material/styles'
 import { PHYSICAL_ZONES, FFT_LINE_IDS, COLOR_GROUPS, getAuxiliaryAreas, colorForArea } from '../data/production/layoutZones'
 import { getAreaHeadcount, getPeopleByArea, hasAnyPersonnelToday, getAreaStaffing } from '../data/production/personnelByArea'
 import { workCenterById } from '../data/production/catalog'
+import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
+import { useEmployeeDropTarget } from '../ui/dnd'
+import DraggablePersonChip from '../ui/DraggablePersonChip'
 import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
@@ -27,23 +30,22 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 
    NO es una copia al pixel del CAD real, es una aproximacion de
    posicion/proporcion pensada para pantalla. FFT muestra sus 10
-   lineas reales (LINEA1..LINEA10 del catalogo) como barras
-   individuales — nunca se inventan lineas que no esten en el
-   catalogo. NO existe "Linea 0": ese texto crudo del Excel se
-   reclasifica como PROYECTO ("Linea de proyecto"), un area
-   independiente que se dibuja debajo de Sorting, no dentro del
-   bloque FFT. Los tags de nombres dentro de Palletizing/Accessories/
-   Proyecto son una MUESTRA de personal real (personnelByArea.js),
-   nunca inventados.
+   lineas reales (LINEA1..LINEA10 del catalogo) — Linea 1 se dibuja
+   HORIZONTAL (asi es en el piso real), Linea 2..10 como barras
+   verticales, nunca se inventan lineas que no esten en el catalogo.
+   Sorting se retiro del layout (a peticion del usuario, sin borrar
+   nada del catalogo/backend). Los tags de nombres dentro de
+   Palletizing/Accessories/Proyecto son una MUESTRA de personal real
+   (personnelByArea.js) y a la vez origen de arrastre (drag & drop);
+   toda zona/linea/area valida es tambien destino de soltar.
    ───────────────────────────────────────────── */
 
 const ZONE_COLORS = {
-  SORTING: '#64748B',
   PROYECTO: '#3B82F6',
   CONVEYOR: '#3B82F6',
   FFT: '#3B82F6',
   HIGHVALUE: '#F43F5E',
-  MIDEA: '#A855F7',
+  DMT: '#F59E0B',
   PALLETIZING: '#10B981',
   PNP: '#64748B',
   BOXPREP: '#F59E0B',
@@ -97,10 +99,20 @@ function isZoneSelected(zone, selection) {
   return false
 }
 
+/* Resalte visual comun de "zona valida para soltar aqui" — borde y
+   fondo azules + texto opcional, nunca solo color (siempre lleva
+   texto en alguna parte del padre). */
+function dropHighlightSx(isOver) {
+  if (!isOver) return {}
+  return { borderColor: '#3B82F6 !important', bgcolor: (t) => `${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.22 : 0.14)} !important`, boxShadow: '0 0 0 3px rgba(59,130,246,.25) !important' }
+}
+
 /* Cada linea se dibuja como una barra fisica vertical (no un boton
    redondo) — numero de linea arriba, "riel" de color al centro,
-   conteo real abajo. Todas ocupan el mismo ancho (flex:1) para leerse
-   como bandas paralelas de una zona de produccion. */
+   conteo real abajo. Usada para Linea 2..10 (Linea 1 es horizontal,
+   ver LineOneBar). Tambien es destino de soltar: arrastrar a alguien
+   aqui NUNCA elige estacion por si sola, solo marca la linea — el
+   picker de estacion se abre despues (DndAssignProvider). */
 function LineBar({ lineId, selected, onClick }) {
   const count = getAreaHeadcount(lineId)
   const line = workCenterById(lineId)
@@ -108,8 +120,10 @@ function LineBar({ lineId, selected, onClick }) {
   const color = ZONE_COLORS.FFT
   const hasPeople = count > 0
   const tone = staffingTone(count, line?.idealHeadcount ?? null)
+  const { isOver, dropProps } = useEmployeeDropTarget(lineId)
   return (
     <Box
+      {...dropProps}
       onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
       sx={{
         flex: '1 1 0', minWidth: 42, height: '100%',
@@ -120,6 +134,7 @@ function LineBar({ lineId, selected, onClick }) {
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
         transition: 'all .15s ease',
         '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
+        ...dropHighlightSx(isOver),
       }}
     >
       <Typography sx={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>{label}</Typography>
@@ -134,12 +149,50 @@ function LineBar({ lineId, selected, onClick }) {
   )
 }
 
-/* Tag compacto de una persona real — usado como muestra dentro de
-   Palletizing/Accessories, igual al lenguaje visual del mockup
-   aprobado (icono + nombre). Nunca lleva numero de empleado
-   inventado. */
-function PersonTag({ name }) {
+/* Linea 1 — HORIZONTAL, como es en el piso real (a diferencia de
+   Linea 2..10, verticales). Misma logica de datos/drop que LineBar,
+   solo cambia la orientacion visual. */
+function LineOneBar({ selected, onClick }) {
+  const lineId = 'LINEA1'
+  const count = getAreaHeadcount(lineId)
+  const line = workCenterById(lineId)
+  const color = ZONE_COLORS.FFT
+  const hasPeople = count > 0
+  const tone = staffingTone(count, line?.idealHeadcount ?? null)
+  const { isOver, dropProps } = useEmployeeDropTarget(lineId)
   return (
+    <Box
+      {...dropProps}
+      onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
+      sx={{
+        display: 'flex', alignItems: 'center', gap: 1.25, width: '100%', minHeight: 46,
+        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', px: 1.5, py: 1,
+        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
+        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
+        boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
+        transition: 'all .15s ease',
+        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
+        ...dropHighlightSx(isOver),
+      }}
+    >
+      <Typography sx={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.3, flexShrink: 0 }}>{line?.name || 'Línea 1'}</Typography>
+      <Box sx={{ flex: 1, height: 6, borderRadius: 999, bgcolor: hasPeople ? color : alpha(color, 0.18) }} />
+      <Typography sx={{ fontSize: 12, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary', flexShrink: 0 }}>
+        {tone ? tone.chipLabel : count}
+      </Typography>
+      {tone && (
+        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: tone.statusColor, flexShrink: 0 }}>{tone.statusLabel}</Typography>
+      )}
+    </Box>
+  )
+}
+
+/* Tag compacto de una persona real — usado como muestra dentro de
+   Palletizing/Accessories/Proyecto, igual al lenguaje visual del
+   mockup aprobado (icono + nombre). Nunca lleva numero de empleado
+   inventado. Tambien es origen de arrastre (mover a otra area). */
+function PersonTag({ id, name }) {
+  const chip = (
     <Chip
       size="small"
       icon={<PersonIcon sx={{ fontSize: 13 }} />}
@@ -147,6 +200,8 @@ function PersonTag({ name }) {
       sx={{ height: 22, fontSize: 10.5, fontWeight: 700, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
     />
   )
+  if (!id) return chip
+  return <DraggablePersonChip employeeId={id}>{chip}</DraggablePersonChip>
 }
 
 /* Cuadricula decorativa (estaciones/slots fisicos) — puramente
@@ -162,16 +217,16 @@ function MiniGridDecoration({ color, rows = 2, cols = 5 }) {
   )
 }
 
-/* Muestra de personal real en tags — usada dentro de Palletizing y
-   Accessories para que la zona se sienta "viva" en vez de una caja
-   vacia, sin inventar a nadie ni mostrar mas de lo que realmente
-   hay (TAG_SAMPLE_LIMIT). */
+/* Muestra de personal real en tags — usada dentro de Palletizing,
+   Accessories y Proyecto para que la zona se sienta "viva" en vez de
+   una caja vacia, sin inventar a nadie ni mostrar mas de lo que
+   realmente hay (TAG_SAMPLE_LIMIT). */
 function PersonTagSample({ areaId }) {
   const people = getPeopleByArea()[areaId] || []
   if (people.length === 0) return null
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignContent: 'flex-start', width: '100%' }}>
-      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => <PersonTag key={p.id} name={p.name} />)}
+      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} />)}
     </Box>
   )
 }
@@ -182,8 +237,11 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
   const count = headcountForZone(zone)
   const ideal = idealForZone(zone)
   const tone = staffingTone(count, ideal)
+  const dropAreaId = zone.areaIds.length === 1 ? zone.areaIds[0] : null
+  const { isOver, dropProps } = useEmployeeDropTarget(dropAreaId)
   return (
     <Box
+      {...dropProps}
       onClick={() => onClick(zone)}
       sx={{
         position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.5,
@@ -194,6 +252,7 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
         transition: 'all .15s ease',
         '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08) },
         ...sx,
+        ...dropHighlightSx(isOver),
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
@@ -211,6 +270,9 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
       {tone && (
         <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor }}>{tone.statusLabel}</Typography>
       )}
+      {isOver && dropAreaId && (
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#3B82F6' }}>Soltar para asignar a {zone.label}</Typography>
+      )}
       {children && <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'flex-start' }}>{children}</Box>}
     </Box>
   )
@@ -225,8 +287,10 @@ function ConveyorBanner({ selected, onClick }) {
   const staffing = getAreaStaffing('CONVEYOR')
   const tone = staffingTone(staffing.real, staffing.ideal)
   const people = getPeopleByArea()['CONVEYOR'] || []
+  const { isOver, dropProps } = useEmployeeDropTarget('CONVEYOR')
   return (
     <Box
+      {...dropProps}
       onClick={() => onClick(zone)}
       sx={{
         display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap',
@@ -235,6 +299,7 @@ function ConveyorBanner({ selected, onClick }) {
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
         transition: 'all .15s ease',
         '&:hover': { borderColor: color },
+        ...dropHighlightSx(isOver),
       }}
     >
       <Typography sx={{ fontWeight: 800, fontSize: 13.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>
@@ -249,7 +314,7 @@ function ConveyorBanner({ selected, onClick }) {
         <Chip size="small" label={`${staffing.real} persona${staffing.real === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700 }} />
       )}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flex: 1 }}>
-        {people.slice(0, 2).map((p) => <PersonTag key={p.id} name={p.name} />)}
+        {people.slice(0, 2).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} />)}
       </Box>
     </Box>
   )
@@ -257,6 +322,7 @@ function ConveyorBanner({ selected, onClick }) {
 
 export default function WorkAreaMap({ selection, onSelect }) {
   const [zoom, setZoom] = useState(1)
+  usePersonnelVersion()
   const operating = hasAnyPersonnelToday()
 
   function handleZoneClick(zoneKey) {
@@ -308,139 +374,130 @@ export default function WorkAreaMap({ selection, onSelect }) {
 
       <Box sx={{ overflow: 'auto' }}>
         <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 1.5,
-              minWidth: 860,
-              gridTemplateColumns: { xs: '1fr', md: '1fr 2.2fr 1.1fr' },
-              gridTemplateAreas: {
-                xs: `"sorting" "conveyor" "fft" "extras" "palletizing"`,
-                md: `"sorting conveyor palletizing" "sorting fft palletizing" "sorting extras palletizing"`,
-              },
-            }}
-          >
-            <Box sx={{ gridArea: 'sorting', display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
-              <ZoneBox
-                zone={PHYSICAL_ZONES.SORTING}
-                selected={isZoneSelected(PHYSICAL_ZONES.SORTING, selection)}
-                onClick={() => handleZoneClick('SORTING')}
-                sx={{ flex: 4 }}
-              />
-              <ZoneBox
-                zone={PHYSICAL_ZONES.PROYECTO}
-                selected={isZoneSelected(PHYSICAL_ZONES.PROYECTO, selection)}
-                onClick={() => handleZoneClick('PROYECTO')}
-                sx={{ flex: 6 }}
-              >
-                <PersonTagSample areaId="PROYECTO" />
-              </ZoneBox>
-            </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 860 }}>
+            <ConveyorBanner
+              selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
+              onClick={() => handleZoneClick('CONVEYOR')}
+            />
 
-            <Box sx={{ gridArea: 'conveyor' }}>
-              <ConveyorBanner
-                selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
-                onClick={() => handleZoneClick('CONVEYOR')}
-              />
-            </Box>
-
-            <Box sx={{ gridArea: 'fft', display: 'flex', gap: 1.5 }}>
-              <ZoneBox
-                zone={PHYSICAL_ZONES.FFT}
-                selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
-                onClick={() => handleZoneClick('FFT')}
-                minHeight={360}
-                sx={{ flex: 3 }}
-              >
-                <Box sx={{ display: 'flex', gap: 0.75, width: '100%', height: '100%' }}>
-                  {FFT_LINE_IDS.map((lineId) => (
-                    <LineBar
-                      key={lineId}
-                      lineId={lineId}
-                      selected={selection?.type === 'area' && selection.id === lineId}
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+              {/* Columna principal: FFT (Linea 1 horizontal + L2-10) + Linea de proyecto */}
+              <Box sx={{ flex: 3, minWidth: 380, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <ZoneBox
+                  zone={PHYSICAL_ZONES.FFT}
+                  selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
+                  onClick={() => handleZoneClick('FFT')}
+                  minHeight={300}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', height: '100%' }}>
+                    <LineOneBar
+                      selected={selection?.type === 'area' && selection.id === 'LINEA1'}
                       onClick={handleLineClick}
                     />
-                  ))}
-                </Box>
-              </ZoneBox>
+                    <Box sx={{ display: 'flex', gap: 0.75, flex: 1, minHeight: 190 }}>
+                      {FFT_LINE_IDS.filter((id) => id !== 'LINEA1').map((lineId) => (
+                        <LineBar
+                          key={lineId}
+                          lineId={lineId}
+                          selected={selection?.type === 'area' && selection.id === lineId}
+                          onClick={handleLineClick}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </ZoneBox>
 
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <ZoneBox
+                  zone={PHYSICAL_ZONES.PROYECTO}
+                  selected={isZoneSelected(PHYSICAL_ZONES.PROYECTO, selection)}
+                  onClick={() => handleZoneClick('PROYECTO')}
+                  minHeight={110}
+                >
+                  <PersonTagSample areaId="PROYECTO" />
+                </ZoneBox>
+              </Box>
+
+              {/* High Value + DMT */}
+              <Box sx={{ flex: 1, minWidth: 170, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <ZoneBox
                   zone={PHYSICAL_ZONES.HIGHVALUE}
                   selected={isZoneSelected(PHYSICAL_ZONES.HIGHVALUE, selection)}
                   onClick={() => handleZoneClick('HIGHVALUE')}
-                  minHeight={172}
+                  minHeight={190}
                   sx={{ flex: 1 }}
                 >
                   <MiniGridDecoration color={ZONE_COLORS.HIGHVALUE} rows={2} cols={5} />
                 </ZoneBox>
                 <ZoneBox
-                  zone={PHYSICAL_ZONES.MIDEA}
-                  selected={isZoneSelected(PHYSICAL_ZONES.MIDEA, selection)}
-                  onClick={() => handleZoneClick('MIDEA')}
-                  minHeight={172}
+                  zone={PHYSICAL_ZONES.DMT}
+                  selected={isZoneSelected(PHYSICAL_ZONES.DMT, selection)}
+                  onClick={() => handleZoneClick('DMT')}
+                  minHeight={190}
                   sx={{ flex: 1 }}
-                />
+                >
+                  <PersonTagSample areaId="DMT" />
+                </ZoneBox>
+              </Box>
+
+              {/* Palletizing */}
+              <Box sx={{ flex: 1.6, minWidth: 220 }}>
+                <ZoneBox
+                  zone={PHYSICAL_ZONES.PALLETIZING}
+                  selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
+                  onClick={() => handleZoneClick('PALLETIZING')}
+                  minHeight={420}
+                  sx={{ height: '100%' }}
+                >
+                  <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
+                    <Box sx={{
+                      width: '32%', minWidth: 60, borderRadius: 1.5, alignSelf: 'stretch',
+                      bgcolor: (t) => alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
+                      border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
+                    }} />
+                    <Box sx={{ flex: 1 }}>
+                      <PersonTagSample areaId="PALETIZADO" />
+                    </Box>
+                  </Stack>
+                </ZoneBox>
               </Box>
             </Box>
 
-            <Box sx={{ gridArea: 'palletizing' }}>
-              <ZoneBox
-                zone={PHYSICAL_ZONES.PALLETIZING}
-                selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
-                onClick={() => handleZoneClick('PALLETIZING')}
-                minHeight={640}
-                sx={{ height: '100%' }}
-              >
-                <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
-                  <Box sx={{
-                    width: '32%', minWidth: 60, borderRadius: 1.5, alignSelf: 'stretch',
-                    bgcolor: (t) => alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
-                    border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
-                  }} />
-                  <Box sx={{ flex: 1 }}>
-                    <PersonTagSample areaId="PALETIZADO" />
-                  </Box>
-                </Stack>
-              </ZoneBox>
-            </Box>
-
-            <Box sx={{ gridArea: 'extras', display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.PNP}
                 selected={isZoneSelected(PHYSICAL_ZONES.PNP, selection)}
                 onClick={() => handleZoneClick('PNP')}
-                minHeight={170}
-                sx={{ flex: 1 }}
+                minHeight={140}
+                sx={{ flex: 1, minWidth: 150 }}
               />
               <ZoneBox
                 zone={PHYSICAL_ZONES.BOXPREP}
                 selected={isZoneSelected(PHYSICAL_ZONES.BOXPREP, selection)}
                 onClick={() => handleZoneClick('BOXPREP')}
-                minHeight={170}
-                sx={{ flex: 1 }}
+                minHeight={140}
+                sx={{ flex: 1, minWidth: 150 }}
               />
               <ZoneBox
                 zone={PHYSICAL_ZONES.ACCESSORIES}
                 selected={isZoneSelected(PHYSICAL_ZONES.ACCESSORIES, selection)}
                 onClick={() => handleZoneClick('ACCESSORIES')}
-                minHeight={170}
-                sx={{ flex: 1.4 }}
+                minHeight={140}
+                sx={{ flex: 1.4, minWidth: 220 }}
               >
                 <PersonTagSample areaId="ACCESORIOS" />
               </ZoneBox>
             </Box>
-          </Box>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5, minWidth: 860 }}>
-            {getAuxiliaryAreas().map((area) => (
-              <AuxAreaBox
-                key={area.id}
-                area={area}
-                selected={selection?.type === 'area' && selection.id === area.id}
-                onClick={(id) => onSelect({ type: 'area', id })}
-              />
-            ))}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+              {getAuxiliaryAreas().map((area) => (
+                <AuxAreaBox
+                  key={area.id}
+                  area={area}
+                  selected={selection?.type === 'area' && selection.id === area.id}
+                  onClick={(id) => onSelect({ type: 'area', id })}
+                />
+              ))}
+            </Box>
           </Box>
         </Box>
       </Box>
@@ -459,20 +516,23 @@ export default function WorkAreaMap({ selection, onSelect }) {
 
 const NAME_INLINE_LIMIT = 5
 
-/* Areas auxiliares (Cajas, DMT, Calidad, Team Lead, Supervisor,
-   etc.) — se muestran debajo del bloque fisico principal, ordenadas
-   por el layout real del Excel. Las que tienen poca gente muestran
-   los nombres reales directamente en la caja (igual que el plano
-   real); las que tienen mas gente solo muestran el conteo, para no
-   saturar el layout — el detalle completo sigue estando a un click
-   de distancia en el panel. */
+/* Areas auxiliares (Cajas, Calidad, Team Lead, Supervisor, etc.) —
+   se muestran debajo del bloque fisico principal, ordenadas por el
+   layout real del Excel. Las que tienen poca gente muestran los
+   nombres reales directamente en la caja (igual que el plano real,
+   y arrastrables); las que tienen mas gente solo muestran el
+   conteo, para no saturar el layout — el detalle completo sigue
+   estando a un click de distancia en el panel. Tambien es destino
+   de soltar. */
 function AuxAreaBox({ area, selected, onClick }) {
   const color = colorForArea(area.id)
   const people = getPeopleByArea()[area.id] || []
   const showNames = people.length > 0 && people.length <= NAME_INLINE_LIMIT
   const tone = staffingTone(people.length, area.idealHeadcount ?? null)
+  const { isOver, dropProps } = useEmployeeDropTarget(area.id)
   return (
     <Box
+      {...dropProps}
       onClick={() => onClick(area.id)}
       sx={{
         flex: '1 1 150px', minWidth: 150, maxWidth: 210, borderRadius: 2, cursor: 'pointer', userSelect: 'none',
@@ -481,6 +541,7 @@ function AuxAreaBox({ area, selected, onClick }) {
         boxShadow: selected ? `0 0 0 3px ${alpha(color, 0.2)}` : 'none',
         transition: 'all .15s ease',
         '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08) },
+        ...dropHighlightSx(isOver),
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
@@ -499,10 +560,12 @@ function AuxAreaBox({ area, selected, onClick }) {
       {showNames && (
         <Stack spacing={0.5}>
           {people.map((p) => (
-            <Stack key={p.id} direction="row" spacing={0.6} alignItems="center">
-              <EmployeeAvatar employee={{ name: p.name }} size={18} />
-              <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.primary' }}>{p.name}</Typography>
-            </Stack>
+            <DraggablePersonChip key={p.id} employeeId={p.id}>
+              <Stack direction="row" spacing={0.6} alignItems="center">
+                <EmployeeAvatar employee={{ name: p.name }} size={18} />
+                <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.primary' }}>{p.name}</Typography>
+              </Stack>
+            </DraggablePersonChip>
           ))}
         </Stack>
       )}

@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import { alpha, useTheme } from '@mui/material/styles'
+import { useEmployeeDropTargetStation } from '../../ui/dnd'
 import EmployeeAvatar from './EmployeeAvatar'
 
 /**
@@ -12,25 +13,29 @@ import EmployeeAvatar from './EmployeeAvatar'
  * Se dibuja dentro de un grid responsive (repeat(auto-fit, ...))
  * en vez de una fila horizontal con scroll — asi caben todas las
  * estaciones de una linea grande (p.ej. Accesorios, 16) sin cortar
- * nada ni depender de scroll lateral.
+ * nada ni depender de scroll lateral. Una estacion DISPONIBLE
+ * tambien es destino de soltar: arrastrar a alguien aqui elige esa
+ * estacion exacta (nunca una automatica).
  */
-export default function WorkstationCard({ workstation, selected, onSelect, onEmployeeClick }) {
+export default function WorkstationCard({ workAreaId, workstation, selected, onSelect, onEmployeeClick }) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
+  const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name, { disabled: !available })
 
   return (
     <Paper
       elevation={0}
+      {...dropProps}
       onClick={() => onSelect(workstation)}
       sx={{
         p: 1.25, borderRadius: 2.5, textAlign: 'center', cursor: 'pointer', height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         border: '1.5px solid',
         borderStyle: available ? 'dashed' : 'solid',
-        borderColor: selected ? '#3B82F6' : available ? (d ? 'rgba(245,158,11,.4)' : '#F59E0B') : 'divider',
-        bgcolor: available ? alpha('#F59E0B', d ? 0.06 : 0.05) : 'background.paper',
+        borderColor: isOver ? '#3B82F6' : selected ? '#3B82F6' : available ? (d ? 'rgba(245,158,11,.4)' : '#F59E0B') : 'divider',
+        bgcolor: isOver ? alpha('#3B82F6', d ? 0.18 : 0.1) : available ? alpha('#F59E0B', d ? 0.06 : 0.05) : 'background.paper',
         transition: 'all .15s ease',
         '&:hover': { borderColor: '#3B82F6' },
       }}

@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { buildTheme } from './ui/theme'
 import { AuthProvider } from './state/auth'
 import { RoleModeProvider } from './state/roleMode'
+import { DndAssignProvider } from './state/dndAssign'
 import ProtectedRoute from './routing/ProtectedRoute'
 import AppLayout from './layout/AppLayout'
 import LoginPage from './pages/auth/LoginPage'
@@ -12,6 +13,7 @@ import ChangePasswordPage from './pages/auth/ChangePasswordPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
+import ToastHost from './ui/ToastHost'
 
 export default function App() {
   const [mode, setMode] = useState('light')
@@ -22,23 +24,26 @@ export default function App() {
       <CssBaseline />
       <AuthProvider>
         <RoleModeProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
+          <DndAssignProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
 
-            <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
-              <Route
-                path="/usuarios"
-                element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsuariosPage /></ProtectedRoute>}
-              />
-            </Route>
+              <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
+                <Route
+                  path="/usuarios"
+                  element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsuariosPage /></ProtectedRoute>}
+                />
+              </Route>
 
-            {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
-                usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
-            <Route path="/cambiar-contrasena" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-          </Routes>
+              {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
+                  usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
+              <Route path="/cambiar-contrasena" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
+            </Routes>
+            <ToastHost />
+          </DndAssignProvider>
         </RoleModeProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -1,6 +1,7 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
 import { WORK_CENTERS, workCenterById } from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
+import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees } from '../personnel/repository'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -22,7 +23,10 @@ function mapAreaZonaToId(areaZona) {
   return areaZona
 }
 
-export function getPeopleByArea() {
+/* Snapshot PURO (nunca cambia en runtime) — solo para el/los lugar(es)
+   que explicitamente quieren mostrar la referencia historica de BASE
+   tal cual se importo, sin mezclar movimientos del dia. */
+export function getSnapshotPeopleByArea() {
   const map = {}
   REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
     const areaId = mapAreaZonaToId(p.areaZona)
@@ -33,8 +37,57 @@ export function getPeopleByArea() {
   return map
 }
 
+/* Personal "efectivo" de HOY, por area — la fuente que alimenta
+   TODO el REAL de Ideal/Real/Diferencia y el layout visual.
+
+   Modelo: el snapshot de BASE es el punto de partida (para quien
+   nadie ha tocado todavia desde la web hoy). En cuanto un empleado
+   recibe un movimiento hoy (checkInEmployee/moveEmployee/
+   releaseAssignment — repository.js, unica fuente que escribe
+   asignaciones), su ubicacion pasa a depender EXCLUSIVAMENTE de esa
+   asignacion diaria en vivo: nunca vuelve a su zona historica del
+   Excel, y si fue liberado no cuenta en ninguna area (no se "cae"
+   de regreso al snapshot). Esto es lo que permite que arrastrar a
+   alguien cambie el REAL mostrado (15/20 -> 16/20) sin reescribir
+   el snapshot ni crear una segunda fuente de verdad paralela — el
+   snapshot nunca se modifica, y la asignacion diaria sigue viviendo
+   unicamente en repository.js/store.js (ver nota de persistencia en
+   ese archivo: hoy es localStorage, esta capa es agnostica a eso). */
+export function getPeopleByArea() {
+  const map = {}
+  const touchedToday = new Set(getMovementsForDate().map((m) => m.employeeId))
+
+  REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
+    if (touchedToday.has(p.id)) return
+    const areaId = mapAreaZonaToId(p.areaZona)
+    if (!areaId) return
+    map[areaId] = map[areaId] || []
+    map[areaId].push(p)
+  })
+
+  getAssignmentsForDate().forEach((a) => {
+    const employee = getEmployeeById(a.employeeId)
+    if (!employee) return
+    map[a.areaId] = map[a.areaId] || []
+    if (!map[a.areaId].some((x) => x.id === employee.id)) {
+      map[a.areaId].push({ id: employee.id, name: employee.name, areaZona: null, rawZona: null, asistencia: null })
+    }
+  })
+
+  return map
+}
+
 export function getPeopleWithoutArea() {
   return REAL_PERSONNEL_SNAPSHOT.filter((p) => !p.areaZona)
+}
+
+/* Personal disponible para asignar (fuente del drag & drop): toda
+   persona del directorio que HOY no tiene ubicacion efectiva en
+   ninguna area (nunca tuvo zona, o fue liberada hoy). Calculado,
+   nunca listado a mano. */
+export function getAvailablePersonnelToday() {
+  const placedIds = new Set(Object.values(getPeopleByArea()).flat().map((p) => p.id))
+  return getAllEmployees().filter((e) => !placedIds.has(e.id))
 }
 
 /* Indicador honesto de "Area operando" del layout — true si hay al

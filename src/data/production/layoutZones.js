@@ -10,11 +10,14 @@
    un area real del catalogo — es el bloque que agrupa LINEA1..10
    (10 lineas reales; NO existe "Linea 0" — lo que antes se leia
    como L0 es en realidad PROYECTO/"Linea de proyecto", un area
-   independiente que se muestra debajo de Sorting, no dentro de FFT).
-   Sorting / PNP-POC-PEN / Box Prep / Midea aparecen en el plano
-   real pero hoy no tienen ningun area del catalogo mapeada 1:1;
-   se muestran igual (para respetar el plano completo) pero su
-   detalle es honesto: "sin datos", nunca personal inventado.
+   independiente que se muestra en el layout, no dentro de FFT).
+   Sorting se elimino del layout operativo a peticion del usuario
+   (no aporta valor visual actual); no se borro ningun dato de
+   catalogo/backend relacionado, solo dejo de pintarse aqui.
+   PNP-POC-PEN / Box Prep aparecen en el plano real pero hoy no
+   tienen ningun area del catalogo mapeada 1:1; se muestran igual
+   (para respetar el plano completo) pero su detalle es honesto:
+   "sin datos", nunca personal inventado.
    ───────────────────────────────────────────── */
 
 import { WORK_CENTERS, LINES_ONLY } from './catalog'
@@ -22,12 +25,11 @@ import { WORK_CENTERS, LINES_ONLY } from './catalog'
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
-  SORTING: { id: 'SORTING', label: 'Sorting', areaIds: [] },
   PROYECTO: { id: 'PROYECTO', label: 'Línea de proyecto', areaIds: ['PROYECTO'] },
   CONVEYOR: { id: 'CONVEYOR', label: 'Conveyor', areaIds: ['CONVEYOR'] },
   FFT: { id: 'FFT', label: 'Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
-  HIGHVALUE: { id: 'HIGHVALUE', label: 'High Value / Midea', areaIds: ['HIGH_VALUE'] },
-  MIDEA: { id: 'MIDEA', label: 'Midea and Mixed Products', areaIds: [] },
+  HIGHVALUE: { id: 'HIGHVALUE', label: 'High Value', areaIds: ['HIGH_VALUE'] },
+  DMT: { id: 'DMT', label: 'DMT', areaIds: ['DMT'] },
   PALLETIZING: { id: 'PALLETIZING', label: 'Palletizing', areaIds: ['PALETIZADO'] },
   PNP: { id: 'PNP', label: 'PNP / POC / PEN', areaIds: [] },
   BOXPREP: { id: 'BOXPREP', label: 'Box Prep', areaIds: [] },

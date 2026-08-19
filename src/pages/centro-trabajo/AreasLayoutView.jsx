@@ -12,10 +12,12 @@ import { useTheme } from '@mui/material/styles'
 import CloseIcon from '@mui/icons-material/Close'
 import { usePageStyles } from '../../ui/pageStyles'
 import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { PHYSICAL_ZONES } from '../../data/production/layoutZones'
 import WorkAreaMap, { describeZoneSelection } from '../../components/WorkAreaMap'
 import AreaDetailPanel from './AreaDetailPanel'
 import AreaSummaryStrip from './AreaSummaryStrip'
+import AvailablePersonnelTray from './AvailablePersonnelTray'
 
 /* ─────────────────────────────────────────────
    "Areas de trabajo" — antes era una cuadricula de cajas con
@@ -29,6 +31,7 @@ export default function AreasLayoutView({ onOpenLine }) {
   const ps = usePageStyles()
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  usePersonnelVersion()
   const [selection, setSelection] = useState(null)
   const [showSinZona, setShowSinZona] = useState(false)
   const sinZona = getPeopleWithoutArea()
@@ -46,7 +49,8 @@ export default function AreasLayoutView({ onOpenLine }) {
   return (
     <Box>
       <Typography sx={{ fontSize: 11, color: 'text.secondary', mb: 1.5 }}>
-        Snapshot real de personal desde LAYOUT FFT.xlsx (hoja BASE) — {BASE_SNAPSHOT_DATE}. Números de empleado
+        Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {BASE_SNAPSHOT_DATE}. Arrastrar o
+        asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot. Números de empleado
         pendientes: BASE no trae esa columna todavía.
       </Typography>
 
@@ -87,6 +91,10 @@ export default function AreasLayoutView({ onOpenLine }) {
         </Box>
         {panel}
       </Drawer>
+
+      <Paper elevation={0} sx={{ ...ps.card, mt: 2.5, p: 2 }}>
+        <AvailablePersonnelTray />
+      </Paper>
 
       <AreaSummaryStrip onSelectArea={handleSelectArea} />
 

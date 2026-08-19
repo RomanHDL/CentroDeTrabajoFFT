@@ -1,7 +1,8 @@
-import { WORK_CENTERS, OPERATIONAL_STATUS, workCenterById } from './catalog'
+import { WORK_CENTERS, LINES_ONLY, OPERATIONAL_STATUS, workCenterById } from './catalog'
 import { HAS_PRODUCTION_SOURCE, lastHourDelta } from './production'
-import { getAreaCountToday, getPersonnelPresentToday, getLineWorkstationsWithOccupancy } from '../personnel/repository'
+import { getLineWorkstationsWithOccupancy } from '../personnel/repository'
 import { getLineCapacity } from '../personnel/workstations'
+import { getAreaHeadcount, getStaffingTotals } from './personnelByArea'
 
 /* ── Calculos de productividad (centralizados, no en UI) ── */
 
@@ -46,7 +47,7 @@ export function lineSummary(workCenterId) {
   if (!wc) return null
   const production = 0
   const target = wc.dailyTarget // null: sin meta configurada
-  const personnel = getAreaCountToday(workCenterId)
+  const personnel = getAreaHeadcount(workCenterId)
   const pct = cumplimientoPct(production, target)
   const workstations = getLineWorkstationsWithOccupancy(workCenterId)
   const stationsOccupied = workstations.filter(w => w.occupants.length > 0).length
@@ -75,25 +76,23 @@ export function allLineSummaries() {
   return WORK_CENTERS.map(wc => lineSummary(wc.id))
 }
 
-/* KPIs generales del dashboard. */
+/* KPIs generales del dashboard — simplificado a lo que el negocio
+   puede sostener hoy sin inventar datos: personal presente vs
+   plantilla, personal faltante (calculado, nunca guardado a mano) y
+   lineas operando. "Operando" = tiene al menos una persona asignada
+   hoy (unico criterio real disponible sin fuente de produccion);
+   solo cuenta LINEA1..10, nunca las demas areas como si fueran
+   lineas. */
 export function generalKpis() {
-  const summaries = allLineSummaries()
-  const totalProduction = summaries.reduce((s, r) => s + r.production, 0)
-  const totalTarget = summaries.reduce((s, r) => s + (r.target || 0), 0)
-  const activeEmployees = getPersonnelPresentToday()
-  const operating = summaries.filter(r => r.status.key === 'OPERANDO').length
-  const topLine = HAS_PRODUCTION_SOURCE
-    ? summaries.reduce((top, r) => (!top || r.production > top.production ? r : top), null)
-    : null
+  const totals = getStaffingTotals()
+  const lineasOperando = LINES_ONLY.filter((w) => getAreaHeadcount(w.id) > 0).length
 
   return {
-    personalActivo: activeEmployees,
-    produccionHoy: totalProduction,
-    metaDia: totalTarget,
-    avancePct: cumplimientoPct(totalProduction, totalTarget),
-    lineasOperando: operating,
-    lineasTotal: summaries.length,
-    lineaTop: topLine,
+    personalActivo: totals.realTotal,
+    personalIdeal: totals.idealTotal,
+    personalFaltante: Math.max(0, -totals.diff),
+    lineasOperando,
+    lineasTotal: LINES_ONLY.length,
   }
 }
 

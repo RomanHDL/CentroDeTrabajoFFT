@@ -66,7 +66,7 @@ export default function DashboardWorkAreaSection() {
                     >
                       <ListItemText
                         primary={area?.name || areaId}
-                        secondary={`${count} persona${count === 1 ? '' : 's'} en el snapshot real`}
+                        secondary={`${count} persona${count === 1 ? '' : 's'} hoy`}
                         primaryTypographyProps={{ fontWeight: 700, fontSize: 13.5 }}
                         secondaryTypographyProps={{ fontSize: 11.5 }}
                       />
