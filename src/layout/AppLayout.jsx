@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import AppBar from '@mui/material/AppBar'
@@ -20,7 +20,7 @@ import LockResetIcon from '@mui/icons-material/LockReset'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../state/auth'
 import { ROLE_LABELS } from './roleLabels'
-import Sidebar, { SIDEBAR_WIDTH } from './Sidebar'
+import Sidebar from './Sidebar'
 
 function initialsOf(name) {
   return (name || '')
@@ -35,8 +35,23 @@ export default function AppLayout({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const isSmall = useMediaQuery('(max-width:900px)')
+  const isTabletRange = useMediaQuery('(min-width:900px) and (max-width:1280px)')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState(null)
+  const [collapsed, setCollapsed] = useState(false)
+  const [collapseTouched, setCollapseTouched] = useState(false)
+
+  // Tablet inicia colapsado (mas espacio para el layout operativo);
+  // desktop inicia expandido. Una vez el usuario lo toca, se respeta
+  // su eleccion manual y ya no se pisa al cambiar de tamaño.
+  useEffect(() => {
+    if (!collapseTouched) setCollapsed(isTabletRange)
+  }, [isTabletRange, collapseTouched])
+
+  function handleToggleCollapse() {
+    setCollapseTouched(true)
+    setCollapsed((c) => !c)
+  }
 
   const roleLabel = useMemo(() => ROLE_LABELS[user?.role] || user?.role, [user])
 
@@ -105,6 +120,8 @@ export default function AppLayout({ mode, setMode }) {
           open={isSmall ? mobileOpen : true}
           onClose={() => setMobileOpen(false)}
           variant={isSmall ? 'temporary' : 'permanent'}
+          collapsed={collapsed}
+          onToggleCollapse={handleToggleCollapse}
         />
         <Box sx={{
           flex: 1, minWidth: 0,

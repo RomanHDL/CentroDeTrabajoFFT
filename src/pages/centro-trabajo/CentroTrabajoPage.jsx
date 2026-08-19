@@ -34,7 +34,7 @@ export default function CentroTrabajoPage() {
         <Box sx={ps.cardHeader}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={ps.pageTitle}>Centro de Trabajo</Typography>
-            <Typography sx={ps.pageSubtitle}>Organización de áreas, líneas, estaciones y personal</Typography>
+            <Typography sx={ps.pageSubtitle}>Organización operativa por áreas, líneas, estaciones y personal</Typography>
           </Box>
         </Box>
 

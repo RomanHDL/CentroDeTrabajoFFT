@@ -1,83 +1,47 @@
-import React, { useMemo } from 'react'
+import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
-import { alpha, useTheme } from '@mui/material/styles'
-import { WORK_CENTERS } from '../../data/production/catalog'
-import { BASE_SNAPSHOT_DATE, getPeopleByArea, getPeopleWithoutArea } from '../../data/production/personnelByArea'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
+import CloseIcon from '@mui/icons-material/Close'
+import { usePageStyles } from '../../ui/pageStyles'
+import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
+import { PHYSICAL_ZONES } from '../../data/production/layoutZones'
+import WorkAreaMap, { describeZoneSelection } from '../../components/WorkAreaMap'
+import AreaDetailPanel from './AreaDetailPanel'
+import AreaSummaryStrip from './AreaSummaryStrip'
 
 /* ─────────────────────────────────────────────
-   Vista tipo "plano" agrupada por area — inspirada en el diseño
-   visual real de la hoja LAYOUT del Excel (cajas agrupadas por
-   area, con los nombres reales adentro), en vez de las tarjetas
-   uniformes anteriores.
-
-   Es una vista de REFERENCIA del snapshot de BASE (personal real,
-   sin numero de empleado porque el Excel no lo trae) — no esta
-   conectada al sistema de asignacion diaria real (DailyAssignment),
-   que sigue empezando vacio hasta que exista un check-in real o la
-   importacion formal a Neon.
+   "Areas de trabajo" — antes era una cuadricula de cajas con
+   listas de nombres; ahora su elemento principal es el layout
+   operativo del piso (WorkAreaMap), con un panel de detalle a la
+   derecha (desktop/tablet) o en un Drawer inferior (movil). Reusa
+   los mismos datos reales que ya alimentaban la vista anterior
+   (personnelByArea.js) — nada nuevo se inventa aqui.
    ───────────────────────────────────────────── */
-
-function AreaBox({ area, people, color, onOpenLine }) {
-  return (
-    <Paper
-      elevation={0}
-      onClick={() => onOpenLine?.(area.id)}
-      sx={{
-        minWidth: 150, flex: '1 1 150px', maxWidth: 230,
-        border: '1px solid', borderColor: alpha(color, 0.35),
-        borderTop: `3px solid ${color}`,
-        borderRadius: 1.5, p: 1.25, cursor: onOpenLine ? 'pointer' : 'default',
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.07 : 0.045),
-        transition: 'transform .15s ease',
-        '&:hover': onOpenLine ? { transform: 'translateY(-2px)' } : {},
-      }}
-    >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5, color: 'text.primary' }}>{area.name}</Typography>
-        <Chip size="small" label={people.length} sx={{ height: 18, fontSize: 10.5, fontWeight: 700 }} />
-      </Stack>
-      {people.length === 0 ? (
-        <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>Sin personal en el Excel</Typography>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.15 }}>
-          {people.map((p) => (
-            <Typography key={p.id} sx={{ fontSize: 11.5, color: 'text.primary', lineHeight: 1.5 }}>· {p.name}</Typography>
-          ))}
-        </Box>
-      )}
-    </Paper>
-  )
-}
-
-function AreaSection({ title, color, areas, peopleByArea, onOpenLine, sx }) {
-  if (!areas.length) return null
-  return (
-    <Box sx={sx}>
-      <Box sx={{ bgcolor: color, color: '#fff', borderRadius: 1.5, px: 1.5, py: 0.6, fontWeight: 800, fontSize: 12.5, mb: 1, display: 'inline-block' }}>
-        {title}
-      </Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
-        {areas.map((area) => (
-          <AreaBox key={area.id} area={area} people={peopleByArea[area.id] || []} color={color} onOpenLine={onOpenLine} />
-        ))}
-      </Box>
-    </Box>
-  )
-}
-
 export default function AreasLayoutView({ onOpenLine }) {
+  const ps = usePageStyles()
   const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  const [selection, setSelection] = useState(null)
+  const [showSinZona, setShowSinZona] = useState(false)
+  const sinZona = getPeopleWithoutArea()
 
-  const peopleByArea = useMemo(() => getPeopleByArea(), [])
-  const sinZona = useMemo(() => getPeopleWithoutArea(), [])
+  function handleSelectArea(id) {
+    if (id === 'FFT' || id === '__FFT__') {
+      setSelection(describeZoneSelection(PHYSICAL_ZONES.FFT))
+      return
+    }
+    setSelection({ type: 'area', id })
+  }
 
-  const productionAreas = WORK_CENTERS.filter((w) => w.isProduction)
-  const supportAreas = WORK_CENTERS.filter((w) => !w.isProduction)
+  const panel = <AreaDetailPanel selection={selection} onSelectArea={handleSelectArea} onOpenFullDrawer={onOpenLine} />
 
   return (
     <Box>
@@ -86,39 +50,69 @@ export default function AreasLayoutView({ onOpenLine }) {
         pendientes: BASE no trae esa columna todavía.
       </Typography>
 
-      <AreaSection
-        title="Líneas de producción y áreas"
-        color="#10B981"
-        areas={productionAreas}
-        peopleByArea={peopleByArea}
-        onOpenLine={onOpenLine}
-      />
+      <Paper elevation={0} sx={ps.card}>
+        <Box sx={ps.cardHeader}>
+          <Box>
+            <Typography sx={ps.cardHeaderTitle}>Layout operativo del área</Typography>
+            <Typography sx={ps.cardHeaderSubtitle}>
+              Vista del centro de trabajo basada en el layout real — haz click en una zona para ver detalles
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+          <WorkAreaMap selection={selection} onSelect={setSelection} size="lg" showLegend />
+        </Box>
+      </Paper>
 
-      <AreaSection
-        title="Soporte y liderazgo"
-        color="#64748B"
-        areas={supportAreas}
-        peopleByArea={peopleByArea}
-        onOpenLine={onOpenLine}
-        sx={{ mt: 2.5 }}
-      />
+      {/* Ventana flotante con el detalle — mismo patron en desktop/tablet
+          (Drawer lateral derecho) y movil (Drawer inferior), para que
+          click en cualquier zona/area siempre abra algo visible al
+          instante, sin depender de una columna fija en pantalla. */}
+      <Drawer
+        anchor={isDesktop ? 'right' : 'bottom'}
+        open={!!selection}
+        onClose={() => setSelection(null)}
+        PaperProps={{
+          sx: isDesktop
+            ? { width: 420 }
+            : { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85vh' },
+        }}
+      >
+        <Box sx={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          p: 1.5, borderBottom: '1px solid', borderColor: 'divider',
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: 15 }}>Detalle del área</Typography>
+          <IconButton onClick={() => setSelection(null)}><CloseIcon /></IconButton>
+        </Box>
+        {panel}
+      </Drawer>
+
+      <AreaSummaryStrip onSelectArea={handleSelectArea} />
 
       {sinZona.length > 0 && (
         <Paper
           elevation={0}
           sx={{
             mt: 2.5, p: 1.75, borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
-            bgcolor: d ? 'rgba(148,163,184,.06)' : 'rgba(148,163,184,.08)',
+            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(148,163,184,.06)' : 'rgba(148,163,184,.08)'),
           }}
         >
-          <Typography sx={{ fontWeight: 800, fontSize: 12.5, mb: 1 }}>
-            Sin zona asignada en el Excel ({sinZona.length})
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-            {sinZona.map((p) => (
-              <Chip key={p.id} size="small" label={p.asistencia ? `${p.name} (${p.asistencia})` : p.name} />
-            ))}
-          </Box>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>
+              Personal sin área asignada ({sinZona.length})
+            </Typography>
+            <Button size="small" onClick={() => setShowSinZona((v) => !v)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+              {showSinZona ? 'Ocultar' : 'Ver lista'}
+            </Button>
+          </Stack>
+          {showSinZona && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.25 }}>
+              {sinZona.map((p) => (
+                <Chip key={p.id} size="small" label={p.asistencia ? `${p.name} (${p.asistencia})` : p.name} />
+              ))}
+            </Box>
+          )}
         </Paper>
       )}
     </Box>

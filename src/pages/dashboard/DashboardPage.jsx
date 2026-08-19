@@ -24,7 +24,7 @@ import ExportMenuButton from '../centro-trabajo/ExportMenuButton'
 import ComparisonChart from './ComparisonChart'
 import HourlyTrendChart from './HourlyTrendChart'
 import AlertsPanel from './AlertsPanel'
-import FactoryLayoutMap from './FactoryLayoutMap'
+import DashboardWorkAreaSection from './DashboardWorkAreaSection'
 
 export default function DashboardPage() {
   const ps = usePageStyles()
@@ -93,6 +93,20 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
+      {/* Layout del area de trabajo — inmediatamente despues de los KPIs,
+          es uno de los elementos principales del Dashboard. */}
+      <Paper elevation={0} sx={{ ...ps.card, mb: 3 }}>
+        <Box sx={ps.cardHeader}>
+          <Typography sx={ps.cardHeaderTitle}>Layout del área de trabajo</Typography>
+          <Typography sx={ps.cardHeaderSubtitle}>
+            Interpretación web del plano real — haz click en una zona para ver su personal
+          </Typography>
+        </Box>
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
+          <DashboardWorkAreaSection />
+        </Box>
+      </Paper>
+
       {/* Comparativa por linea */}
       <Paper elevation={0} sx={{ ...ps.card, mb: 3 }}>
         <Box sx={ps.cardHeader}>
@@ -114,7 +128,7 @@ export default function DashboardPage() {
       </Paper>
 
       {/* Tendencia + alertas */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={2}>
         <Grid item xs={12} md={8}>
           <Paper elevation={0} sx={ps.card}>
             <Box sx={ps.cardHeader}>
@@ -134,19 +148,6 @@ export default function DashboardPage() {
           <AlertsPanel alerts={alerts} />
         </Grid>
       </Grid>
-
-      {/* Layout interactivo del area de trabajo */}
-      <Paper elevation={0} sx={ps.card}>
-        <Box sx={ps.cardHeader}>
-          <Typography sx={ps.cardHeaderTitle}>Layout del área de trabajo</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
-            Interpretación web del plano real — haz click en una zona para ver su personal
-          </Typography>
-        </Box>
-        <Box sx={{ p: 2, overflowX: 'auto' }}>
-          <FactoryLayoutMap />
-        </Box>
-      </Paper>
     </Box>
   )
 }
