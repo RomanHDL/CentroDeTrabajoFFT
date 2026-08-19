@@ -24,36 +24,71 @@ export const CURRENT_SHIFT = 'Matutino'
    grafica de produccion por hora (cuando exista fuente real). */
 export const SHIFT_HOURS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00']
 
+/* AREA_TYPES — distincion conceptual explicita, para que la UI
+   nunca vuelva a asumir "si es un area, entonces tiene estaciones
+   de linea":
+
+   PRODUCTION_LINE  -> Linea 1..10. Unicas que usan el template de
+                       estaciones/puestos (Montaje, Prueba electrica,
+                       Etiquetado, etc. — data/personnel/workstations.js).
+   WORK_AREA        -> areas productivas/operativas con su propia
+                       forma de trabajar (Paletizado, Accesorios,
+                       Cajas, High Value, Conveyor, DMT, Linea de
+                       proyecto, Calidad). NUNCA reciben el template
+                       de estaciones de linea.
+   SUPPORT_AREA     -> grupos/funciones de personal, no producen en
+                       estaciones (Capacitacion, Team Leader,
+                       Soporte, Limpieza, Gerente, Supervisor).
+
+   `idealHeadcount` = plantilla oficial (tabla IDEAL/REAL/DIFERENCIA
+   proporcionada). null cuando el area no tiene plantilla oficial
+   definida todavia (p. ej. CALIDAD no aparece en esa tabla) — NUNCA
+   se inventa un ideal. El "REAL" NUNCA se guarda aqui: siempre se
+   calcula desde el personal real (personnelByArea.getAreaHeadcount),
+   para no duplicar una fuente de verdad. */
+export const AREA_TYPES = {
+  PRODUCTION_LINE: 'PRODUCTION_LINE',
+  WORK_AREA: 'WORK_AREA',
+  SUPPORT_AREA: 'SUPPORT_AREA',
+}
+
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'Línea 1', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA2', name: 'Línea 2', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA3', name: 'Línea 3', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA4', name: 'Línea 4', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA5', name: 'Línea 5', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA6', name: 'Línea 6', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA7', name: 'Línea 7', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA8', name: 'Línea 8', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA9', name: 'Línea 9', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'LINEA10', name: 'Línea 10', kind: 'linea', isProduction: true, dailyTarget: null },
-  { id: 'PROYECTO', name: 'Línea de proyecto', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'PALETIZADO', name: 'Paletizado', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'CAJAS', name: 'Cajas', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'ACCESORIOS', name: 'Accesorios', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'CONVEYOR', name: 'Conveyor', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'DMT', name: 'DMT', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'HIGH_VALUE', name: 'High Value', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'CALIDAD', name: 'Calidad', kind: 'area', isProduction: true, dailyTarget: null },
-  { id: 'CAPACITACION', name: 'Capacitación', kind: 'area', isProduction: false, dailyTarget: null },
-  { id: 'TEAM_LEADER', name: 'Team Leader', kind: 'area', isProduction: false, dailyTarget: null },
-  { id: 'SOPORTE', name: 'Soporte', kind: 'area', isProduction: false, dailyTarget: null },
-  { id: 'LIMPIEZA', name: 'Limpieza', kind: 'area', isProduction: false, dailyTarget: null },
-  { id: 'GERENTE', name: 'Gerente', kind: 'area', isProduction: false, dailyTarget: null },
-  { id: 'SUPERVISOR', name: 'Supervisor', kind: 'area', isProduction: false, dailyTarget: null },
+  { id: 'LINEA1', name: 'Línea 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA2', name: 'Línea 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA3', name: 'Línea 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA4', name: 'Línea 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA5', name: 'Línea 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA6', name: 'Línea 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA7', name: 'Línea 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA8', name: 'Línea 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA9', name: 'Línea 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA10', name: 'Línea 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'PROYECTO', name: 'Línea de proyecto', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
+  { id: 'PALETIZADO', name: 'Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
+  { id: 'CAJAS', name: 'Cajas', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'ACCESORIOS', name: 'Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
+  { id: 'CONVEYOR', name: 'Conveyor', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'DMT', name: 'DMT', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'HIGH_VALUE', name: 'High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 14 },
+  { id: 'CALIDAD', name: 'Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'CAPACITACION', name: 'Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'TEAM_LEADER', name: 'Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'SOPORTE', name: 'Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },
+  { id: 'LIMPIEZA', name: 'Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'GERENTE', name: 'Gerente', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'SUPERVISOR', name: 'Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
 ]
 
 export const LINES_ONLY = WORK_CENTERS.filter(w => w.kind === 'linea')
 export const PRODUCTION_CENTERS = WORK_CENTERS.filter(w => w.isProduction)
 export const SUPPORT_CENTERS = WORK_CENTERS.filter(w => !w.isProduction)
+
+/* Unica fuente de verdad de "esta area usa el template de
+   estaciones de linea" — antes esto se asumia implicitamente para
+   TODO WORK_CENTER (el bug conceptual reportado). */
+export function hasLineStations(workCenterId) {
+  return workCenterById(workCenterId)?.type === AREA_TYPES.PRODUCTION_LINE
+}
 
 export const STATIONS = [
   'Montaje',

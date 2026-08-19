@@ -10,10 +10,29 @@ import GroupsIcon from '@mui/icons-material/Groups'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { workCenterById } from '../../data/production/catalog'
-import { getAreaHeadcount, getPeopleByArea, getFftPeopleWithLine } from '../../data/production/personnelByArea'
-import { getWorkstationsForLine } from '../../data/personnel/workstations'
+import { workCenterById, hasLineStations } from '../../data/production/catalog'
+import { getAreaHeadcount, getPeopleByArea, getFftPeopleWithLine, getAreaStaffing } from '../../data/production/personnelByArea'
 import EmployeeAvatar from './EmployeeAvatar'
+
+function StaffingLine({ staffing }) {
+  if (staffing.ideal == null) {
+    return <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mb: 2 }}>Sin plantilla definida</Typography>
+  }
+  const complete = staffing.status === 'COMPLETA'
+  const missing = staffing.ideal - staffing.real
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+      <Chip
+        size="small"
+        label={`${staffing.real} / ${staffing.ideal}`}
+        sx={{ height: 20, fontSize: 11, fontWeight: 800, bgcolor: complete ? '#10B98122' : '#EF444422', color: complete ? '#047857' : '#B91C1C' }}
+      />
+      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: complete ? '#10B981' : '#EF4444' }}>
+        {complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
+      </Typography>
+    </Stack>
+  )
+}
 
 const SAMPLE_LIMIT = 8
 
@@ -96,6 +115,9 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
   if (selection.type === 'zoneGroup') {
     const people = getFftPeopleWithLine()
     const visible = showAllFft ? people : people.slice(0, SAMPLE_LIMIT)
+    const idealSum = selection.areaIds.reduce((s, id) => s + (workCenterById(id)?.idealHeadcount ?? 0), 0)
+    const fftComplete = people.length >= idealSum
+    const fftMissing = idealSum - people.length
     return (
       <Box sx={{ p: 2.5 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -106,15 +128,25 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Total de personas
         </Typography>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, mt: 0.25 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
           <GroupsIcon sx={{ color: '#3B82F6' }} />
           <Typography sx={{ fontWeight: 800, fontSize: 22 }}>{people.length} personas</Typography>
+        </Stack>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+          <Chip
+            size="small"
+            label={`${people.length} / ${idealSum}`}
+            sx={{ height: 20, fontSize: 11, fontWeight: 800, bgcolor: fftComplete ? '#10B98122' : '#EF444422', color: fftComplete ? '#047857' : '#B91C1C' }}
+          />
+          <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: fftComplete ? '#10B981' : '#EF4444' }}>
+            {fftComplete ? 'Completa' : fftMissing === 1 ? 'Falta 1' : `Faltan ${fftMissing}`}
+          </Typography>
         </Stack>
 
         <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Líneas ({selection.areaIds.length})</Typography>
         <Grid container spacing={1} sx={{ mb: 2 }}>
           {selection.areaIds.map((id) => {
-            const count = getAreaHeadcount(id)
+            const staffing = getAreaStaffing(id)
             const line = workCenterById(id)
             return (
               <Grid item xs={6} key={id}>
@@ -126,7 +158,9 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
                   }}
                 >
                   <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{line?.name}</Typography>
-                  <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{count} persona{count === 1 ? '' : 's'}</Typography>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: staffing.status === 'COMPLETA' ? '#10B981' : '#EF4444' }}>
+                    {staffing.real} / {staffing.ideal}
+                  </Typography>
                 </Box>
               </Grid>
             )
@@ -159,10 +193,10 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
 
   const area = workCenterById(selection.id)
   if (!area) return null
-  const isLine = area.kind === 'linea'
+  const isLine = hasLineStations(area.id)
   const people = getPeopleByArea()[selection.id] || []
   const visible = showAllPeople ? people : people.slice(0, SAMPLE_LIMIT)
-  const stationCount = getWorkstationsForLine(area.id).length
+  const staffing = getAreaStaffing(area.id)
 
   return (
     <Box sx={{ p: 2.5 }}>
@@ -185,13 +219,11 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
       <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
         Total de personas
       </Typography>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25, mb: 1 }}>
         <GroupsIcon sx={{ color: '#3B82F6' }} />
         <Typography sx={{ fontWeight: 800, fontSize: 22 }}>{people.length} personas</Typography>
       </Stack>
-      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mb: 2 }}>
-        Estaciones configuradas: {stationCount}
-      </Typography>
+      <StaffingLine staffing={staffing} />
 
       <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Personal asignado</Typography>
       {people.length === 0 ? (

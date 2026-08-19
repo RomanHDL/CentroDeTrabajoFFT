@@ -13,7 +13,7 @@ import OpenInFullIcon from '@mui/icons-material/OpenInFull'
 import PersonIcon from '@mui/icons-material/Person'
 import { alpha } from '@mui/material/styles'
 import { PHYSICAL_ZONES, FFT_LINE_IDS, COLOR_GROUPS, getAuxiliaryAreas, colorForArea } from '../data/production/layoutZones'
-import { getAreaHeadcount, getPeopleByArea, hasAnyPersonnelToday } from '../data/production/personnelByArea'
+import { getAreaHeadcount, getPeopleByArea, hasAnyPersonnelToday, getAreaStaffing } from '../data/production/personnelByArea'
 import { workCenterById } from '../data/production/catalog'
 import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 
@@ -56,6 +56,33 @@ function headcountForZone(zone) {
   return zone.areaIds.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
 }
 
+/* Ideal sumado de una zona fisica (solo tiene sentido si TODAS sus
+   areas tienen plantilla oficial — p. ej. FFT, donde las 10 lineas
+   la tienen). Si a alguna le falta, no se muestra comparacion para
+   no mezclar "sin plantilla" con un total parcial enganoso. */
+function idealForZone(zone) {
+  if (zone.areaIds.length === 0) return null
+  const ideals = zone.areaIds.map((id) => workCenterById(id)?.idealHeadcount)
+  if (ideals.some((v) => v == null)) return null
+  return ideals.reduce((s, v) => s + v, 0)
+}
+
+/* Tono visual REAL vs IDEAL — un solo lugar para decidir colores,
+   nunca pantalla completa en rojo: solo un chip/texto discreto. */
+function staffingTone(real, ideal) {
+  if (ideal == null) return null
+  const complete = real >= ideal
+  const missing = ideal - real
+  return {
+    complete,
+    chipLabel: `${real} / ${ideal}`,
+    chipColor: complete ? '#047857' : '#B91C1C',
+    chipBg: complete ? '#10B98122' : '#EF444422',
+    statusLabel: complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`,
+    statusColor: complete ? '#10B981' : '#EF4444',
+  }
+}
+
 export function describeZoneSelection(zone) {
   if (zone.areaIds.length === 0) return { type: 'empty', id: zone.id, label: zone.label }
   if (zone.areaIds.length === 1) return { type: 'area', id: zone.areaIds[0] }
@@ -80,6 +107,7 @@ function LineBar({ lineId, selected, onClick }) {
   const label = (line?.name || lineId).replace('Línea ', 'L')
   const color = ZONE_COLORS.FFT
   const hasPeople = count > 0
+  const tone = staffingTone(count, line?.idealHeadcount ?? null)
   return (
     <Box
       onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
@@ -99,7 +127,9 @@ function LineBar({ lineId, selected, onClick }) {
         width: 6, flex: 1, borderRadius: 999, my: 0.5,
         bgcolor: hasPeople ? color : alpha(color, 0.18),
       }} />
-      <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 700 }}>{count}</Typography>
+      <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary' }}>
+        {tone ? tone.chipLabel : count}
+      </Typography>
     </Box>
   )
 }
@@ -150,11 +180,13 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
   const color = ZONE_COLORS[zone.id] || '#64748B'
   const hasData = zone.areaIds.length > 0
   const count = headcountForZone(zone)
+  const ideal = idealForZone(zone)
+  const tone = staffingTone(count, ideal)
   return (
     <Box
       onClick={() => onClick(zone)}
       sx={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.75,
+        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.5,
         borderRadius: 2.5, cursor: 'pointer', userSelect: 'none', p: 1.5, minHeight,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
@@ -168,12 +200,17 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
         <Typography sx={{ fontWeight: 800, fontSize: 14, color: 'text.primary', lineHeight: 1.2 }}>
           {zone.label}
         </Typography>
-        {hasData ? (
-          <Chip size="small" label={`${count} persona${count === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700, flexShrink: 0 }} />
-        ) : (
+        {!hasData ? (
           <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontStyle: 'italic', flexShrink: 0 }}>Sin datos</Typography>
+        ) : tone ? (
+          <Chip size="small" label={tone.chipLabel} sx={{ height: 20, fontSize: 10.5, fontWeight: 800, flexShrink: 0, bgcolor: tone.chipBg, color: tone.chipColor }} />
+        ) : (
+          <Chip size="small" label={`${count} persona${count === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700, flexShrink: 0 }} />
         )}
       </Stack>
+      {tone && (
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor }}>{tone.statusLabel}</Typography>
+      )}
       {children && <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'flex-start' }}>{children}</Box>}
     </Box>
   )
@@ -185,7 +222,8 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
 function ConveyorBanner({ selected, onClick }) {
   const zone = PHYSICAL_ZONES.CONVEYOR
   const color = ZONE_COLORS.CONVEYOR
-  const count = getAreaHeadcount('CONVEYOR')
+  const staffing = getAreaStaffing('CONVEYOR')
+  const tone = staffingTone(staffing.real, staffing.ideal)
   const people = getPeopleByArea()['CONVEYOR'] || []
   return (
     <Box
@@ -202,7 +240,14 @@ function ConveyorBanner({ selected, onClick }) {
       <Typography sx={{ fontWeight: 800, fontSize: 13.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>
         {zone.label}
       </Typography>
-      <Chip size="small" label={`${count} persona${count === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700 }} />
+      {tone ? (
+        <>
+          <Chip size="small" label={tone.chipLabel} sx={{ height: 20, fontSize: 10.5, fontWeight: 800, bgcolor: tone.chipBg, color: tone.chipColor }} />
+          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: tone.statusColor }}>{tone.statusLabel}</Typography>
+        </>
+      ) : (
+        <Chip size="small" label={`${staffing.real} persona${staffing.real === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700 }} />
+      )}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flex: 1 }}>
         {people.slice(0, 2).map((p) => <PersonTag key={p.id} name={p.name} />)}
       </Box>
@@ -425,6 +470,7 @@ function AuxAreaBox({ area, selected, onClick }) {
   const color = colorForArea(area.id)
   const people = getPeopleByArea()[area.id] || []
   const showNames = people.length > 0 && people.length <= NAME_INLINE_LIMIT
+  const tone = staffingTone(people.length, area.idealHeadcount ?? null)
   return (
     <Box
       onClick={() => onClick(area.id)}
@@ -437,12 +483,19 @@ function AuxAreaBox({ area, selected, onClick }) {
         '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08) },
       }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: showNames ? 1 : 0 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
         <Typography sx={{ fontWeight: 800, fontSize: 12.5, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.3 }}>
           {area.name}
         </Typography>
-        <Chip size="small" label={`${people.length} persona${people.length === 1 ? '' : 's'}`} sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }} />
+        {tone ? (
+          <Chip size="small" label={tone.chipLabel} sx={{ height: 18, fontSize: 9.5, fontWeight: 800, bgcolor: tone.chipBg, color: tone.chipColor }} />
+        ) : (
+          <Chip size="small" label={`${people.length} persona${people.length === 1 ? '' : 's'}`} sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }} />
+        )}
       </Stack>
+      {tone && (
+        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: tone.statusColor, mb: showNames ? 0.75 : 0 }}>{tone.statusLabel}</Typography>
+      )}
       {showNames && (
         <Stack spacing={0.5}>
           {people.map((p) => (

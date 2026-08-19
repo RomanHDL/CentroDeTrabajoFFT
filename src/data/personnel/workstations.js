@@ -1,19 +1,29 @@
 /* ─────────────────────────────────────────────
-   Workstation — catalogo de estaciones por linea.
+   Workstation — catalogo de estaciones/puestos.
 
-   Cada linea tiene su propia cantidad de estaciones
-   (configurable, NO hardcodeado a 5 para todas). El nombre
-   de estacion es el mismo vocabulario que ya existia en
-   data/production/catalog.js (STATIONS), asi las
-   asignaciones (que guardan stationId como el nombre de la
-   estacion) siguen siendo compatibles sin cambiar su forma.
+   REGLA CONCEPTUAL (corregida): el template de estaciones de linea
+   (Montaje, Prueba electrica, Limpieza, Etiquetado, etc.) SOLO
+   aplica a Linea 1..10 (catalog.js: type === 'PRODUCTION_LINE').
+   Antes se generaba ese mismo template para CUALQUIER area del
+   catalogo (Paletizado, Cajas, Accesorios, Team Leader, etc.), lo
+   cual era incorrecto: esas areas no trabajan por "estaciones de
+   linea", tienen su propia forma de operar (ver
+   data/production/personnelByArea.getAreaStaffing para el
+   ideal/real de cada una).
+
+   Para el resto de las areas (WORK_AREA / SUPPORT_AREA) se genera
+   UN solo puesto generico con el nombre de la propia area — esto
+   NO se muestra como "Distribucion de estaciones" en la UI, existe
+   solo para que el check-in diario (checkInEmployee/moveEmployee,
+   que requieren areaId+stationId) siga funcionando para cualquier
+   area sin inventar puestos de linea que no existen ahi.
    ───────────────────────────────────────────── */
 
-import { WORK_CENTERS, STATIONS } from '../production/catalog'
+import { WORK_CENTERS, STATIONS, AREA_TYPES } from '../production/catalog'
 
-/* Etiqueta de rol legible para cada estacion — solo texto de
-   presentacion, la compatibilidad de habilidades sigue
-   usando el nombre de estacion como vocabulario unico. */
+/* Etiqueta de rol legible para cada estacion de LINEA — solo texto
+   de presentacion, la compatibilidad de habilidades sigue usando
+   el nombre de estacion como vocabulario unico. */
 const ROLE_LABELS = {
   'Montaje': 'Operador de Montaje',
   'Prueba eléctrica': 'Técnico eléctrico',
@@ -26,45 +36,49 @@ const ROLE_LABELS = {
   'Capacitación': 'Instructor',
 }
 
-/* Cantidad de estaciones por centro de trabajo — NO todas iguales.
-   LINEA1 queda mas grande porque el snapshot real de BASE le tiene
-   mas gente (7). Paletizado y Accesorios tambien se ajustaron hacia
-   arriba porque en la realidad tienen mucha gente (12 y 15
-   respectivamente) — no tendria sentido dejarlos en 4-5 estaciones
-   si ahi trabajan muchas mas personas que eso. Linea de proyecto
-   (antes clasificada por error como "Linea 0") conserva sus 10
-   estaciones. El resto de las lineas (2-10) quedan en 5 o 6 segun
-   lo que confirmaste; ajusta estos numeros libremente cuando tengan
-   el dato exacto por linea. */
+/* Cantidad de estaciones por LINEA — NO todas iguales. Linea 1
+   queda mas grande porque el snapshot real de BASE le tiene mas
+   gente (7). El resto (2-10) queda en 5-7 segun lo confirmado;
+   ajusta estos numeros libremente cuando tengan el dato exacto. */
 const STATION_COUNT_BY_LINE = {
-  PROYECTO: 10,
   LINEA1: 7,
   LINEA2: 5, LINEA3: 6, LINEA4: 6, LINEA5: 6,
   LINEA6: 5, LINEA7: 5, LINEA8: 5, LINEA9: 5, LINEA10: 5,
-  CAJAS: 4, DMT: 6, PALETIZADO: 12, ACCESORIOS: 16, CONVEYOR: 5, CALIDAD: 7,
-  // HIGH_VALUE, CAPACITACION, TEAM_LEADER, SOPORTE, LIMPIEZA, GERENTE,
-  // SUPERVISOR: sin numero real de estaciones especificado todavia,
-  // usan el default de abajo (5) hasta que se configure.
 }
 
 function buildWorkstations() {
   const map = {}
   WORK_CENTERS.forEach((wc) => {
-    const count = STATION_COUNT_BY_LINE[wc.id] || 5
-    const stations = []
-    for (let i = 0; i < count; i += 1) {
-      const name = STATIONS[i % STATIONS.length]
-      stations.push({
-        id: `${wc.id}-${i + 1}`,
+    if (wc.type === AREA_TYPES.PRODUCTION_LINE) {
+      const count = STATION_COUNT_BY_LINE[wc.id] || 5
+      const stations = []
+      for (let i = 0; i < count; i += 1) {
+        const name = STATIONS[i % STATIONS.length]
+        stations.push({
+          id: `${wc.id}-${i + 1}`,
+          lineId: wc.id,
+          name,
+          requiredRole: ROLE_LABELS[name] || name,
+          capacity: 1,
+          order: i + 1,
+          status: 'ACTIVA',
+        })
+      }
+      map[wc.id] = stations
+    } else {
+      // Un solo puesto generico (no es "Montaje/Prueba/..."): permite
+      // que el check-in diario funcione para cualquier area sin
+      // inventar estaciones de linea que no le corresponden.
+      map[wc.id] = [{
+        id: `${wc.id}-GENERAL`,
         lineId: wc.id,
-        name,
-        requiredRole: ROLE_LABELS[name] || name,
-        capacity: 1,
-        order: i + 1,
+        name: wc.name,
+        requiredRole: wc.name,
+        capacity: wc.idealHeadcount ?? 50,
+        order: 1,
         status: 'ACTIVA',
-      })
+      }]
     }
-    map[wc.id] = stations
   })
   return map
 }

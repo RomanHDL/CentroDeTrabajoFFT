@@ -23,9 +23,9 @@ import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import HistoryIcon from '@mui/icons-material/History'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
+import { CURRENT_SHIFT, workCenterById, hasLineStations } from '../../data/production/catalog'
 import { lineSummary } from '../../data/production/selectors'
-import { getPeopleByArea, BASE_SNAPSHOT_DATE } from '../../data/production/personnelByArea'
+import { getPeopleByArea, BASE_SNAPSHOT_DATE, getAreaStaffing } from '../../data/production/personnelByArea'
 import {
   getLineWorkstationsWithOccupancy, getUnassignedPresentToday, getSuggestedCandidates, checkInEmployee,
 } from '../../data/personnel/repository'
@@ -56,6 +56,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const [includeAbsent, setIncludeAbsent] = useState(false)
   const [actionError, setActionError] = useState('')
 
+  const isLine = workCenterId ? hasLineStations(workCenterId) : false
+  const staffing = useMemo(() => (workCenterId ? getAreaStaffing(workCenterId) : null), [workCenterId, version])
   const summary = useMemo(() => (workCenterId ? lineSummary(workCenterId) : null), [workCenterId, version])
   const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
   const snapshotPeople = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId])
@@ -145,14 +147,30 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
       </Box>
 
       <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* KPI row — puramente operativo, sin metricas de produccion (esas viven en Dashboard) */}
+        {/* KPI row — puramente operativo, sin metricas de produccion (esas viven en Dashboard).
+            Linea 1-10: personal en vivo + estaciones (logica original, sin cambios).
+            Otras areas: NO tienen estaciones de linea — el KPI relevante es la plantilla
+            oficial (Ideal/Real/Diferencia), nunca un conteo de "estaciones" inventado. */}
         <Grid container spacing={1.5} sx={{ mb: 3 }}>
-          {[
+          {(isLine ? [
             { label: 'Personal', value: `${summary.personnel} / ${summary.capacityTotal}`, accent: 'purple' },
             { label: 'Estaciones ocupadas', value: `${summary.stationsOccupied}`, accent: 'green' },
             { label: 'Estaciones disponibles', value: `${summary.stationsAvailable}`, accent: summary.stationsAvailable > 0 ? 'amber' : 'slate' },
             { label: 'Turno · Fecha', value: `${CURRENT_SHIFT}`, subtitle: dayjs().format('DD/MM/YYYY'), accent: 'cyan' },
-          ].map((k) => (
+          ] : [
+            { label: 'Plantilla ideal', value: staffing.ideal != null ? `${staffing.ideal}` : 'Sin definir', accent: 'purple' },
+            { label: 'Personal actual', value: `${staffing.real}`, accent: 'cyan' },
+            {
+              label: 'Faltante',
+              value: staffing.diff == null ? '—' : staffing.diff >= 0 ? '0' : `${Math.abs(staffing.diff)}`,
+              accent: staffing.diff == null ? 'slate' : staffing.diff >= 0 ? 'green' : 'amber',
+            },
+            {
+              label: 'Estado',
+              value: staffing.status === 'SIN_PLANTILLA' ? 'Sin plantilla definida' : staffing.status === 'COMPLETA' ? 'Completa' : `Falta${Math.abs(staffing.diff) === 1 ? '' : 'n'} ${Math.abs(staffing.diff)}`,
+              accent: staffing.status === 'COMPLETA' ? 'green' : staffing.status === 'FALTAN' ? 'red' : 'slate',
+            },
+          ]).map((k) => (
             <Grid item xs={6} sm={4} md={2} key={k.label}>
               <Paper elevation={0} sx={ps.kpiCard(k.accent)}>
                 <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k.label}</Typography>
@@ -168,31 +186,33 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
         <Grid container spacing={2}>
           {/* Columna principal */}
           <Grid item xs={12} md={8.5}>
-            <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-              <Box sx={ps.cardHeader}>
-                <Box>
-                  <Typography sx={ps.cardHeaderTitle}>Distribución de estaciones</Typography>
-                  <Typography sx={ps.cardHeaderSubtitle}>Toca una estación para ver detalles o asignar personal</Typography>
+            {isLine && (
+              <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+                <Box sx={ps.cardHeader}>
+                  <Box>
+                    <Typography sx={ps.cardHeaderTitle}>Distribución de estaciones</Typography>
+                    <Typography sx={ps.cardHeaderSubtitle}>Toca una estación para ver detalles o asignar personal</Typography>
+                  </Box>
                 </Box>
-              </Box>
-              <Box sx={{
-                p: 2, display: 'grid', gap: 1.25,
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              }}>
-                {workstations.map((w) => (
-                  <WorkstationCard
-                    key={w.id}
-                    workstation={w}
-                    selected={selectedStation?.name === w.name}
-                    onSelect={(ws) => {
-                      setSelectedStationName(ws.name)
-                      if (ws.isAvailable) setAssignStation(ws)
-                    }}
-                    onEmployeeClick={(emp) => setHistoryEmployee(emp)}
-                  />
-                ))}
-              </Box>
-            </Paper>
+                <Box sx={{
+                  p: 2, display: 'grid', gap: 1.25,
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                }}>
+                  {workstations.map((w) => (
+                    <WorkstationCard
+                      key={w.id}
+                      workstation={w}
+                      selected={selectedStation?.name === w.name}
+                      onSelect={(ws) => {
+                        setSelectedStationName(ws.name)
+                        if (ws.isAvailable) setAssignStation(ws)
+                      }}
+                      onEmployeeClick={(emp) => setHistoryEmployee(emp)}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+            )}
 
             <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
               <Box sx={ps.cardHeader}>
@@ -286,61 +306,63 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
 
           {/* Columna lateral */}
           <Grid item xs={12} md={3.5}>
-            <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-              <Box sx={ps.cardHeader}>
-                <Typography sx={ps.cardHeaderTitle}>
-                  {selectedStation ? `Estación ${selectedStation.isAvailable ? 'disponible' : 'ocupada'}` : 'Estación'}
-                </Typography>
-              </Box>
-              <Box sx={{ p: 2 }}>
-                {!selectedStation && (
-                  <EmptyState compact title="Selecciona una estación" description="Toca cualquier estación para ver su detalle." />
-                )}
-                {selectedStation && (
-                  <>
-                    <Typography sx={{ fontWeight: 800, fontSize: 18, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>
-                      {selectedStation.name}
-                    </Typography>
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.5 }}>
-                      Rol requerido: <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}/{selectedStation.capacity}
-                    </Typography>
+            {isLine && (
+              <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+                <Box sx={ps.cardHeader}>
+                  <Typography sx={ps.cardHeaderTitle}>
+                    {selectedStation ? `Estación ${selectedStation.isAvailable ? 'disponible' : 'ocupada'}` : 'Estación'}
+                  </Typography>
+                </Box>
+                <Box sx={{ p: 2 }}>
+                  {!selectedStation && (
+                    <EmptyState compact title="Selecciona una estación" description="Toca cualquier estación para ver su detalle." />
+                  )}
+                  {selectedStation && (
+                    <>
+                      <Typography sx={{ fontWeight: 800, fontSize: 18, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>
+                        {selectedStation.name}
+                      </Typography>
+                      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.5 }}>
+                        Rol requerido: <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}/{selectedStation.capacity}
+                      </Typography>
 
-                    {selectedStation.occupants.length > 0 && (
-                      <Stack spacing={1} sx={{ mb: 1.5 }}>
-                        {selectedStation.occupants.map(o => (
-                          <Stack key={o.id} direction="row" spacing={1.25} alignItems="center" onClick={() => setHistoryEmployee(o.employee)} sx={{ cursor: 'pointer' }}>
-                            <EmployeeAvatar employee={o.employee} size={36} />
-                            <Box>
-                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{o.employeeNumber} — {o.employee?.name}</Typography>
-                              <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Entrada {o.checkInAt}</Typography>
-                            </Box>
-                          </Stack>
-                        ))}
-                      </Stack>
-                    )}
+                      {selectedStation.occupants.length > 0 && (
+                        <Stack spacing={1} sx={{ mb: 1.5 }}>
+                          {selectedStation.occupants.map(o => (
+                            <Stack key={o.id} direction="row" spacing={1.25} alignItems="center" onClick={() => setHistoryEmployee(o.employee)} sx={{ cursor: 'pointer' }}>
+                              <EmployeeAvatar employee={o.employee} size={36} />
+                              <Box>
+                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{o.employeeNumber} — {o.employee?.name}</Typography>
+                                <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Entrada {o.checkInAt}</Typography>
+                              </Box>
+                            </Stack>
+                          ))}
+                        </Stack>
+                      )}
 
-                    {selectedStation.isAvailable && (
-                      <>
-                        <Divider sx={{ my: 1.5 }} />
-                        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Personal sugerido</Typography>
-                        {suggestions.length === 0 ? (
-                          <EmptyState compact title="Sin candidatos" description="Nadie presente hoy tiene esta habilidad registrada todavía." />
-                        ) : (
-                          <Stack spacing={1}>
-                            {suggestions.map(c => (
-                              <SuggestedEmployeeCard key={c.employee.id} candidate={c} onAssign={handleAssignSuggested} disabled={!c.present} />
-                            ))}
-                          </Stack>
-                        )}
-                        <Button size="small" onClick={() => setIncludeAbsent(v => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
-                          {includeAbsent ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
-                        </Button>
-                      </>
-                    )}
-                  </>
-                )}
-              </Box>
-            </Paper>
+                      {selectedStation.isAvailable && (
+                        <>
+                          <Divider sx={{ my: 1.5 }} />
+                          <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Personal sugerido</Typography>
+                          {suggestions.length === 0 ? (
+                            <EmptyState compact title="Sin candidatos" description="Nadie presente hoy tiene esta habilidad registrada todavía." />
+                          ) : (
+                            <Stack spacing={1}>
+                              {suggestions.map(c => (
+                                <SuggestedEmployeeCard key={c.employee.id} candidate={c} onAssign={handleAssignSuggested} disabled={!c.present} />
+                              ))}
+                            </Stack>
+                          )}
+                          <Button size="small" onClick={() => setIncludeAbsent(v => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
+                            {includeAbsent ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </Box>
+              </Paper>
+            )}
 
             <Paper elevation={0} sx={ps.card}>
               <Box sx={ps.cardHeader}>

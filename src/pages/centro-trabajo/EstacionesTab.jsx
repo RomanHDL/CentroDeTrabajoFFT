@@ -9,12 +9,16 @@ import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody'
 import Chip from '@mui/material/Chip'
 import { usePageStyles } from '../../ui/pageStyles'
-import { WORK_CENTERS } from '../../data/production/catalog'
+import { WORK_CENTERS, hasLineStations } from '../../data/production/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import { getLineWorkstationsWithOccupancy } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 
-/* Estaciones/puestos configurados por area — la capacidad viene de
+/* Estaciones/puestos configurados — SOLO Linea 1-10 trabaja por
+   estaciones reales (Montaje, Prueba electrica, etc.); el resto de
+   las areas (Paletizado, Cajas, Team Leader, etc.) tiene su propia
+   forma de operar y se consulta en la pestaña "Areas de trabajo"
+   (Ideal/Real/Diferencia), no aqui. La capacidad viene de
    workstations.js (configuracion, no del personal actual). La
    ocupacion (cuantas estan ocupadas hoy) si depende de asignaciones
    reales, que hoy empiezan vacias hasta que exista un check-in. */
@@ -22,7 +26,7 @@ export default function EstacionesTab({ onOpenLine }) {
   const version = usePersonnelVersion()
   const ps = usePageStyles()
 
-  const rows = useMemo(() => WORK_CENTERS.map((area) => {
+  const rows = useMemo(() => WORK_CENTERS.filter((area) => hasLineStations(area.id)).map((area) => {
     const stations = getWorkstationsForLine(area.id)
     const withOccupancy = getLineWorkstationsWithOccupancy(area.id)
     const occupied = withOccupancy.filter((w) => w.occupants?.length > 0).length

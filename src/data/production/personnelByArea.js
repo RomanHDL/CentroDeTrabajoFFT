@@ -51,6 +51,36 @@ export function getAreaHeadcount(areaId) {
   return getPeopleByArea()[areaId]?.length || 0
 }
 
+/* Ideal (plantilla oficial, catalog.js) vs Real (SIEMPRE calculado
+   aqui desde el personal real, nunca guardado a mano) — nunca se
+   duplica manualmente el valor "real": si cambia la fuente de datos,
+   este numero cambia solo. Si el area no tiene plantilla oficial
+   definida (ideal null), no se inventa una — status queda
+   'SIN_PLANTILLA' y la UI debe mostrar "Sin plantilla definida". */
+export function getAreaStaffing(areaId) {
+  const wc = workCenterById(areaId)
+  const real = getAreaHeadcount(areaId)
+  const ideal = wc?.idealHeadcount ?? null
+  if (ideal == null) return { ideal: null, real, diff: null, status: 'SIN_PLANTILLA' }
+  return { ideal, real, diff: real - ideal, status: real >= ideal ? 'COMPLETA' : 'FALTAN' }
+}
+
+/* Total general de plantilla — suma SOLO sobre areas con ideal
+   oficial definido (asi el total coincide exactamente con la tabla
+   IDEAL/REAL/DIFERENCIA proporcionada, sin mezclar areas sin
+   plantilla como Calidad). */
+export function getStaffingTotals() {
+  const withIdeal = WORK_CENTERS.filter((w) => w.idealHeadcount != null)
+  const idealTotal = withIdeal.reduce((sum, w) => sum + w.idealHeadcount, 0)
+  const realTotal = withIdeal.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
+  return {
+    idealTotal,
+    realTotal,
+    diff: realTotal - idealTotal,
+    coveragePct: idealTotal > 0 ? Math.round((realTotal / idealTotal) * 1000) / 10 : null,
+  }
+}
+
 /* Todas las personas de las 10 lineas de FFT juntas, con la linea
    de cada quien anotada (para el panel agregado de FFT). */
 export function getFftPeopleWithLine() {
@@ -69,10 +99,11 @@ export function getFftPeopleWithLine() {
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
+  const fftIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
   const entries = [
-    { id: 'FFT', name: 'FFT', count: fftCount, group: colorGroupForArea('LINEA1') },
+    { id: 'FFT', name: 'FFT', count: fftCount, ideal: fftIdeal, group: colorGroupForArea('LINEA1') },
     ...WORK_CENTERS.filter((w) => w.kind === 'area').map((w) => ({
-      id: w.id, name: w.name, count: byArea[w.id]?.length || 0, group: colorGroupForArea(w.id),
+      id: w.id, name: w.name, count: byArea[w.id]?.length || 0, ideal: w.idealHeadcount ?? null, group: colorGroupForArea(w.id),
     })),
   ]
   return entries.sort((a, b) => b.count - a.count)
