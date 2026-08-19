@@ -30,6 +30,13 @@ export function getPeopleWithoutArea() {
   return REAL_PERSONNEL_SNAPSHOT.filter((p) => !p.areaZona)
 }
 
+/* Indicador honesto de "Area operando" del layout — true si hay al
+   menos una persona real ubicada en alguna zona hoy (derivado del
+   snapshot, no un booleano inventado). */
+export function hasAnyPersonnelToday() {
+  return Object.keys(getPeopleByArea()).length > 0
+}
+
 /* Conteo centralizado por area — una sola fuente para layout del
    Dashboard, Centro de Trabajo y "Resumen por area", asi si cambia
    la fuente (BASE -> asignacion real) solo cambia aqui. */

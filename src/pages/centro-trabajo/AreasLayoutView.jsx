@@ -60,7 +60,7 @@ export default function AreasLayoutView({ onOpenLine }) {
           </Box>
         </Box>
         <Box sx={{ p: { xs: 2, md: 2.5 } }}>
-          <WorkAreaMap selection={selection} onSelect={setSelection} size="lg" showLegend />
+          <WorkAreaMap selection={selection} onSelect={setSelection} />
         </Box>
       </Paper>
 

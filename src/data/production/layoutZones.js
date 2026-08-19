@@ -20,7 +20,9 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
   SORTING: { id: 'SORTING', label: 'Sorting', areaIds: [] },
-  FFT: { id: 'FFT', label: 'FFT', areaIds: FFT_LINE_IDS },
+  CONVEYOR: { id: 'CONVEYOR', label: 'Conveyor', areaIds: ['CONVEYOR'] },
+  FFT: { id: 'FFT', label: 'Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
+  HIGHVALUE: { id: 'HIGHVALUE', label: 'High Value / Midea', areaIds: ['HIGH_VALUE'] },
   MIDEA: { id: 'MIDEA', label: 'Midea and Mixed Products', areaIds: [] },
   PALLETIZING: { id: 'PALLETIZING', label: 'Palletizing', areaIds: ['PALETIZADO'] },
   PNP: { id: 'PNP', label: 'PNP / POC / PEN', areaIds: [] },

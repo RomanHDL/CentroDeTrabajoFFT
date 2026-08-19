@@ -32,7 +32,7 @@ export default function DashboardWorkAreaSection() {
 
   return (
     <Box>
-      <WorkAreaMap selection={selection} onSelect={handleSelect} size="md" />
+      <WorkAreaMap selection={selection} onSelect={handleSelect} />
 
       <Drawer anchor="right" open={!!selection} onClose={() => setSelection(null)}>
         <Box sx={{ width: { xs: '100vw', sm: 380 }, p: 2.5 }}>
