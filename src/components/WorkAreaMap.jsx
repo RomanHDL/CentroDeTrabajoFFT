@@ -26,16 +26,20 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    pagina via onSelect().
 
    NO es una copia al pixel del CAD real, es una aproximacion de
-   posicion/proporcion pensada para pantalla. FFT muestra sus 11
-   lineas reales (LINEA0..LINEA10 del catalogo) como barras
+   posicion/proporcion pensada para pantalla. FFT muestra sus 10
+   lineas reales (LINEA1..LINEA10 del catalogo) como barras
    individuales — nunca se inventan lineas que no esten en el
-   catalogo. Los tags de nombres dentro de Palletizing/Accessories
-   son una MUESTRA de personal real (personnelByArea.js), nunca
-   inventados.
+   catalogo. NO existe "Linea 0": ese texto crudo del Excel se
+   reclasifica como PROYECTO ("Linea de proyecto"), un area
+   independiente que se dibuja debajo de Sorting, no dentro del
+   bloque FFT. Los tags de nombres dentro de Palletizing/Accessories/
+   Proyecto son una MUESTRA de personal real (personnelByArea.js),
+   nunca inventados.
    ───────────────────────────────────────────── */
 
 const ZONE_COLORS = {
   SORTING: '#64748B',
+  PROYECTO: '#3B82F6',
   CONVEYOR: '#3B82F6',
   FFT: '#3B82F6',
   HIGHVALUE: '#F43F5E',
@@ -271,14 +275,21 @@ export default function WorkAreaMap({ selection, onSelect }) {
               },
             }}
           >
-            <Box sx={{ gridArea: 'sorting' }}>
+            <Box sx={{ gridArea: 'sorting', display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.SORTING}
                 selected={isZoneSelected(PHYSICAL_ZONES.SORTING, selection)}
                 onClick={() => handleZoneClick('SORTING')}
-                minHeight={640}
-                sx={{ height: '100%' }}
+                sx={{ flex: 4 }}
               />
+              <ZoneBox
+                zone={PHYSICAL_ZONES.PROYECTO}
+                selected={isZoneSelected(PHYSICAL_ZONES.PROYECTO, selection)}
+                onClick={() => handleZoneClick('PROYECTO')}
+                sx={{ flex: 6 }}
+              >
+                <PersonTagSample areaId="PROYECTO" />
+              </ZoneBox>
             </Box>
 
             <Box sx={{ gridArea: 'conveyor' }}>

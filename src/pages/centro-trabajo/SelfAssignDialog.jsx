@@ -61,7 +61,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
     if (submitting || !employee || !stationId) return
     setSubmitting(true)
     setError('')
-    const res = checkInEmployee({ employeeNumber: employee.employeeNumber, areaId, stationId, shift: CURRENT_SHIFT })
+    const res = checkInEmployee({ employeeId: employee.id, employeeNumber: employee.employeeNumber, areaId, stationId, shift: CURRENT_SHIFT })
     setSubmitting(false)
     if (res.status === 'OK') {
       setResult(res)

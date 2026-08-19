@@ -73,6 +73,7 @@ export default function RegisterPersonnelDialog({ open, onClose, fixedAreaId = n
     setError('')
 
     const res = checkInEmployee({
+      employeeId: form.employee?.id,
       employeeNumber,
       name: needsName ? form.name : undefined,
       areaId,

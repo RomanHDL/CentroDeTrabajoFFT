@@ -39,6 +39,7 @@ import LineHistoryDialog from './LineHistoryDialog'
 import WorkstationCard from './WorkstationCard'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
+import StationAssignDialog from './StationAssignDialog'
 
 export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const ps = usePageStyles()
@@ -51,6 +52,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const [historyEmployee, setHistoryEmployee] = useState(null)
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
   const [selectedStationName, setSelectedStationName] = useState(null)
+  const [assignStation, setAssignStation] = useState(null)
   const [includeAbsent, setIncludeAbsent] = useState(false)
   const [actionError, setActionError] = useState('')
 
@@ -82,6 +84,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
     setActionError('')
     if (!candidate.assignment) {
       const res = checkInEmployee({
+        employeeId: candidate.employee.id,
         employeeNumber: candidate.employee.employeeNumber,
         areaId: workCenterId,
         stationId: selectedStation.name,
@@ -101,6 +104,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
     if (!selectedStation || !selectedStation.isAvailable) return
     setActionError('')
     const res = checkInEmployee({
+      employeeId: person.employee?.id,
       employeeNumber: person.employeeNumber,
       areaId: workCenterId,
       stationId: selectedStation.name,
@@ -180,7 +184,10 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
                     key={w.id}
                     workstation={w}
                     selected={selectedStation?.name === w.name}
-                    onSelect={(ws) => setSelectedStationName(ws.name)}
+                    onSelect={(ws) => {
+                      setSelectedStationName(ws.name)
+                      if (ws.isAvailable) setAssignStation(ws)
+                    }}
                     onEmployeeClick={(emp) => setHistoryEmployee(emp)}
                   />
                 ))}
@@ -365,6 +372,13 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
         </Grid>
       </Box>
 
+      <StationAssignDialog
+        open={Boolean(assignStation)}
+        onClose={() => setAssignStation(null)}
+        areaId={workCenterId}
+        station={assignStation}
+        onDone={() => {}}
+      />
       <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
       <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
       <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />

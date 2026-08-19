@@ -25,7 +25,6 @@ export const CURRENT_SHIFT = 'Matutino'
 export const SHIFT_HOURS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00']
 
 export const WORK_CENTERS = [
-  { id: 'LINEA0', name: 'Línea 0', kind: 'linea', isProduction: true, dailyTarget: null },
   { id: 'LINEA1', name: 'Línea 1', kind: 'linea', isProduction: true, dailyTarget: null },
   { id: 'LINEA2', name: 'Línea 2', kind: 'linea', isProduction: true, dailyTarget: null },
   { id: 'LINEA3', name: 'Línea 3', kind: 'linea', isProduction: true, dailyTarget: null },
@@ -36,6 +35,7 @@ export const WORK_CENTERS = [
   { id: 'LINEA8', name: 'Línea 8', kind: 'linea', isProduction: true, dailyTarget: null },
   { id: 'LINEA9', name: 'Línea 9', kind: 'linea', isProduction: true, dailyTarget: null },
   { id: 'LINEA10', name: 'Línea 10', kind: 'linea', isProduction: true, dailyTarget: null },
+  { id: 'PROYECTO', name: 'Línea de proyecto', kind: 'area', isProduction: true, dailyTarget: null },
   { id: 'PALETIZADO', name: 'Paletizado', kind: 'area', isProduction: true, dailyTarget: null },
   { id: 'CAJAS', name: 'Cajas', kind: 'area', isProduction: true, dailyTarget: null },
   { id: 'ACCESORIOS', name: 'Accesorios', kind: 'area', isProduction: true, dailyTarget: null },

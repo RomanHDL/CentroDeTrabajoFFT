@@ -337,15 +337,24 @@ export function getMovesCountForDate(date = todayISO()) {
  * - Si el numero no existe: status NEEDS_NAME (crear con {employeeNumber, name} y reintentar).
  * - Si ya tiene una asignacion activa hoy: status CONFLICT (nunca se sobreescribe silenciosamente).
  * - Si todo esta bien: crea DailyAssignment + EmployeeMovement (type CHECK_IN) y devuelve OK.
+ *
+ * employeeId (opcional): cuando quien llama ya tiene resuelto un
+ * empleado especifico (p. ej. de un resultado de busqueda), pasarlo
+ * evita resolver por employeeNumber. Esto importa porque el
+ * snapshot real de BASE trae decenas de personas con el mismo
+ * employeeNumber literal 'PENDIENTE' (no tienen numero real
+ * todavia) — buscar por numero en ese caso encontraria a la
+ * PRIMERA persona con ese numero, no a la que el usuario eligio.
  */
-export function checkInEmployee({ employeeNumber, name, areaId, stationId, shift }) {
+export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stationId, shift }) {
   const number = String(employeeNumber || '').trim()
-  if (!number) return { status: 'ERROR', message: 'Captura un número de empleado.' }
+  if (!employeeId && !number) return { status: 'ERROR', message: 'Captura un número de empleado.' }
   if (!areaId) return { status: 'ERROR', message: 'Selecciona el área/línea.' }
   if (!stationId) return { status: 'ERROR', message: 'Selecciona el rol/estación.' }
 
-  let employee = getEmployeeByNumber(number)
+  let employee = employeeId ? getEmployeeById(employeeId) : getEmployeeByNumber(number)
   if (!employee) {
+    if (employeeId) return { status: 'ERROR', message: 'Empleado no encontrado.' }
     if (!name || !name.trim()) {
       return { status: 'NEEDS_NAME', employeeNumber: number }
     }

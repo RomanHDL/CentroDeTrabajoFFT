@@ -7,7 +7,10 @@
 
    PHYSICAL_ZONES son las zonas del plano fisico compartido por el
    Dashboard y Centro de Trabajo (mismo <WorkAreaMap>). "FFT" no es
-   un area real del catalogo — es el bloque que agrupa LINEA0..10.
+   un area real del catalogo — es el bloque que agrupa LINEA1..10
+   (10 lineas reales; NO existe "Linea 0" — lo que antes se leia
+   como L0 es en realidad PROYECTO/"Linea de proyecto", un area
+   independiente que se muestra debajo de Sorting, no dentro de FFT).
    Sorting / PNP-POC-PEN / Box Prep / Midea aparecen en el plano
    real pero hoy no tienen ningun area del catalogo mapeada 1:1;
    se muestran igual (para respetar el plano completo) pero su
@@ -20,6 +23,7 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
   SORTING: { id: 'SORTING', label: 'Sorting', areaIds: [] },
+  PROYECTO: { id: 'PROYECTO', label: 'Línea de proyecto', areaIds: ['PROYECTO'] },
   CONVEYOR: { id: 'CONVEYOR', label: 'Conveyor', areaIds: ['CONVEYOR'] },
   FFT: { id: 'FFT', label: 'Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
   HIGHVALUE: { id: 'HIGHVALUE', label: 'High Value / Midea', areaIds: ['HIGH_VALUE'] },
@@ -54,7 +58,7 @@ export const COLOR_GROUPS = {
 }
 
 const AREA_TO_GROUP = {
-  PALETIZADO: 'PRODUCCION', ACCESORIOS: 'PRODUCCION', CONVEYOR: 'PRODUCCION',
+  PALETIZADO: 'PRODUCCION', ACCESORIOS: 'PRODUCCION', CONVEYOR: 'PRODUCCION', PROYECTO: 'PRODUCCION',
   CAJAS: 'SOPORTE_PRODUCCION', DMT: 'SOPORTE_PRODUCCION',
   CALIDAD: 'CALIDAD_VALOR', HIGH_VALUE: 'CALIDAD_VALOR',
   SOPORTE: 'SOPORTE', LIMPIEZA: 'SOPORTE',

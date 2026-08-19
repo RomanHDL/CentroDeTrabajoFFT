@@ -27,15 +27,17 @@ const ROLE_LABELS = {
 }
 
 /* Cantidad de estaciones por centro de trabajo — NO todas iguales.
-   LINEA0 y LINEA1 quedan mas grandes porque el snapshot real de BASE
-   les tiene mas gente (10 y 7). Paletizado y Accesorios tambien se
-   ajustaron hacia arriba porque en la realidad tienen mucha gente
-   (12 y 15 respectivamente) — no tendria sentido dejarlos en 4-5
-   estaciones si ahi trabajan muchas mas personas que eso. El resto de
-   las lineas (2-10) quedan en 5 o 6 segun lo que confirmaste; ajusta
-   estos numeros libremente cuando tengan el dato exacto por linea. */
+   LINEA1 queda mas grande porque el snapshot real de BASE le tiene
+   mas gente (7). Paletizado y Accesorios tambien se ajustaron hacia
+   arriba porque en la realidad tienen mucha gente (12 y 15
+   respectivamente) — no tendria sentido dejarlos en 4-5 estaciones
+   si ahi trabajan muchas mas personas que eso. Linea de proyecto
+   (antes clasificada por error como "Linea 0") conserva sus 10
+   estaciones. El resto de las lineas (2-10) quedan en 5 o 6 segun
+   lo que confirmaste; ajusta estos numeros libremente cuando tengan
+   el dato exacto por linea. */
 const STATION_COUNT_BY_LINE = {
-  LINEA0: 10,
+  PROYECTO: 10,
   LINEA1: 7,
   LINEA2: 5, LINEA3: 6, LINEA4: 6, LINEA5: 6,
   LINEA6: 5, LINEA7: 5, LINEA8: 5, LINEA9: 5, LINEA10: 5,
