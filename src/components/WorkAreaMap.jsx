@@ -59,8 +59,6 @@ const ZONE_COLORS = {
   INSUMOS: '#A855F7',
   SUMINISTRO: '#06B6D4',
   PALLETIZING: '#10B981',
-  PNP: '#64748B',
-  BOXPREP: '#F59E0B',
   ACCESSORIES: '#EF4444',
 }
 
@@ -133,7 +131,7 @@ function dropHighlightSx(isOver) {
 function LineBar({ lineId, selected, onClick }) {
   const count = getAreaHeadcount(lineId)
   const line = workCenterById(lineId)
-  const label = (line?.name || lineId).replace('Línea ', 'L')
+  const label = line?.name || lineId
   const color = ZONE_COLORS.FFT
   const hasPeople = count > 0
   const tone = staffingTone(count, line?.idealHeadcount ?? null)
@@ -143,7 +141,7 @@ function LineBar({ lineId, selected, onClick }) {
       {...dropProps}
       onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
       sx={{
-        flex: '1 1 0', minWidth: 42, height: '100%',
+        flex: '1 1 0', minWidth: 50, height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
         borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', py: 1, px: 0.25,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
@@ -154,7 +152,7 @@ function LineBar({ lineId, selected, onClick }) {
         ...dropHighlightSx(isOver),
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>{label}</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: 11, lineHeight: 1.1, whiteSpace: 'nowrap' }}>{label}</Typography>
       <Box sx={{
         width: 6, flex: 1, borderRadius: 999, my: 0.5,
         bgcolor: hasPeople ? color : alpha(color, 0.18),
@@ -515,23 +513,6 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 onClick={() => handleZoneClick('CONVEYOR')}
               />
             </Box>
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1.5 }}>
-            <ZoneBox
-              zone={PHYSICAL_ZONES.PNP}
-              selected={isZoneSelected(PHYSICAL_ZONES.PNP, selection)}
-              onClick={() => handleZoneClick('PNP')}
-              minHeight={90}
-              sx={{ flex: 1, minWidth: 150 }}
-            />
-            <ZoneBox
-              zone={PHYSICAL_ZONES.BOXPREP}
-              selected={isZoneSelected(PHYSICAL_ZONES.BOXPREP, selection)}
-              onClick={() => handleZoneClick('BOXPREP')}
-              minHeight={90}
-              sx={{ flex: 1, minWidth: 150 }}
-            />
           </Box>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5 }}>

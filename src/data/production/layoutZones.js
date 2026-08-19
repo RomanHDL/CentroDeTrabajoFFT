@@ -14,10 +14,15 @@
    Sorting se elimino del layout operativo a peticion del usuario
    (no aporta valor visual actual); no se borro ningun dato de
    catalogo/backend relacionado, solo dejo de pintarse aqui.
-   PNP-POC-PEN / Box Prep aparecen en el plano real pero hoy no
-   tienen ningun area del catalogo mapeada 1:1; se muestran igual
-   (para respetar el plano completo) pero su detalle es honesto:
-   "sin datos", nunca personal inventado.
+   PNP-POC-PEN y Box Prep tambien se retiraron del layout (a peticion
+   del usuario, 2026-08-19) — no tenian ningun area del catalogo
+   mapeada, eran solo placeholders "Sin datos"; no se borro ningun
+   dato real, simplemente dejaron de pintarse aqui.
+
+   Los `label` de aqui son los titulos que se ven en las cajas
+   principales del layout — todos empiezan con "CT " (Centro de
+   Trabajo), igual que `name` en catalog.js, para que el titulo de
+   la caja y el titulo del detalle/drawer coincidan siempre.
    ───────────────────────────────────────────── */
 
 import { WORK_CENTERS, LINES_ONLY } from './catalog'
@@ -25,17 +30,15 @@ import { WORK_CENTERS, LINES_ONLY } from './catalog'
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
-  PROYECTO: { id: 'PROYECTO', label: 'Línea de proyecto', areaIds: ['PROYECTO'] },
-  CONVEYOR: { id: 'CONVEYOR', label: 'Conveyor', areaIds: ['CONVEYOR'] },
-  FFT: { id: 'FFT', label: 'Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
-  HIGHVALUE: { id: 'HIGHVALUE', label: 'Midea / High Value', areaIds: ['HIGH_VALUE'] },
-  SELLADO: { id: 'SELLADO', label: 'Sellado', areaIds: ['SELLADO'] },
-  INSUMOS: { id: 'INSUMOS', label: 'Insumos', areaIds: ['INSUMOS'] },
-  SUMINISTRO: { id: 'SUMINISTRO', label: 'Suministro de material', areaIds: ['SUMINISTRO_MATERIAL'] },
-  PALLETIZING: { id: 'PALLETIZING', label: 'Palletizing', areaIds: ['PALETIZADO'] },
-  PNP: { id: 'PNP', label: 'PNP / POC / PEN', areaIds: [] },
-  BOXPREP: { id: 'BOXPREP', label: 'Box Prep', areaIds: [] },
-  ACCESSORIES: { id: 'ACCESSORIES', label: 'Accessories', areaIds: ['ACCESORIOS'] },
+  PROYECTO: { id: 'PROYECTO', label: 'CT 0', areaIds: ['PROYECTO'] },
+  CONVEYOR: { id: 'CONVEYOR', label: 'CT Conveyor', areaIds: ['CONVEYOR'] },
+  FFT: { id: 'FFT', label: 'CT Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
+  HIGHVALUE: { id: 'HIGHVALUE', label: 'CT Midea / High Value', areaIds: ['HIGH_VALUE'] },
+  SELLADO: { id: 'SELLADO', label: 'CT Sellado', areaIds: ['SELLADO'] },
+  INSUMOS: { id: 'INSUMOS', label: 'CT Insumos', areaIds: ['INSUMOS'] },
+  SUMINISTRO: { id: 'SUMINISTRO', label: 'CT Suministro de material', areaIds: ['SUMINISTRO_MATERIAL'] },
+  PALLETIZING: { id: 'PALLETIZING', label: 'CT Paletizado', areaIds: ['PALETIZADO'] },
+  ACCESSORIES: { id: 'ACCESSORIES', label: 'CT Accesorios', areaIds: ['ACCESORIOS'] },
 }
 
 const IDS_IN_PHYSICAL_ZONES = new Set(
