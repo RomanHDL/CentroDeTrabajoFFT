@@ -43,6 +43,15 @@ export function useEmployeeDropTargetStation(areaId, stationName, { disabled = f
   return useDropHandlers(areaId && stationName && !disabled ? (employeeId) => dnd.requestAssignToStation(employeeId, areaId, stationName) : null)
 }
 
+/* Suelta sobre "Personal disponible" (o una zona "Quitar
+   asignacion") — quita a la persona de su area actual en vez de
+   asignarla a algo. Si la persona no tenia asignacion hoy,
+   requestRelease no hace nada (no hay nada que quitar). */
+export function useEmployeeDropTargetRelease({ disabled = false } = {}) {
+  const dnd = useDndAssign()
+  return useDropHandlers(!disabled ? (employeeId) => dnd.requestRelease(employeeId) : null)
+}
+
 function useDropHandlers(onEmployeeDropped) {
   const [isOver, setIsOver] = useState(false)
 

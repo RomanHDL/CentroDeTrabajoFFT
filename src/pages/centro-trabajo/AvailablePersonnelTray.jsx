@@ -6,6 +6,7 @@ import { alpha } from '@mui/material/styles'
 import { getAvailablePersonnelToday } from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useDndAssign } from '../../state/dndAssign'
+import { useEmployeeDropTargetRelease } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { EmptyState } from '../../ui'
 import EmployeeAvatar from './EmployeeAvatar'
@@ -27,14 +28,25 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
   const version = usePersonnelVersion()
   const dnd = useDndAssign()
   const people = getAvailablePersonnelToday()
+  const { isOver, dropProps } = useEmployeeDropTargetRelease()
 
   return (
-    <Box>
+    <Box
+      {...dropProps}
+      sx={{
+        p: 1, borderRadius: 2, border: '1.5px dashed', borderColor: isOver ? '#3B82F6' : 'transparent',
+        bgcolor: (t) => (isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent'),
+        transition: 'all .15s ease',
+      }}
+    >
       <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>
         {title} ({people.length})
       </Typography>
+      {isOver && (
+        <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', mb: 1 }}>Soltar aquí para quitar la asignación</Typography>
+      )}
       {people.length === 0 ? (
-        <EmptyState compact title="Nadie disponible" description="Todo el personal del directorio ya tiene ubicación asignada hoy." />
+        <EmptyState compact title="No hay personal disponible sin asignación." description="Todo el personal activo ya tiene ubicación asignada hoy." />
       ) : (
         <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { height: 6 } }}>
           {people.map((p) => (

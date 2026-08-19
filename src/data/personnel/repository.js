@@ -3,9 +3,10 @@ import {
   readEmployees, writeEmployees, readAssignments, writeAssignments, readMovements, writeMovements,
   readAttendance, writeAttendance, readSkills, writeSkills,
 } from './store'
-import { EMPLOYEE_DIRECTORY } from './directory'
+import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
+import { CURRENT_SHIFT } from '../production/catalog'
 
 /* ─────────────────────────────────────────────
    Modelo conceptual:
@@ -61,6 +62,18 @@ export function getEmployeeById(employeeId) {
   return getAllEmployees().find(e => e.id === employeeId) || null
 }
 
+/* Unico selector centralizado de "personal que puede aparecer en
+   busqueda/sugerencias/disponibles/registro" — todo lo demas
+   (searchEmployees, getSuggestedCandidates, disponibles en el
+   layout) filtra a traves de este, nunca con su propia regla ad
+   hoc. getAllEmployees() sigue devolviendo TODOS (incluye bajas)
+   porque el historial/auditoria/resolucion de asignaciones ya
+   existentes debe seguir funcionando para cualquier persona,
+   elegible o no. */
+export function getAssignableEmployees() {
+  return getAllEmployees().filter(isEmployeeEligible)
+}
+
 export function createEmployee({ employeeNumber, name }) {
   const number = String(employeeNumber).trim()
   const employees = readEmployees()
@@ -80,7 +93,7 @@ export function createEmployee({ employeeNumber, name }) {
 export function searchEmployees(query, limit = 20) {
   const q = String(query || '').trim().toLowerCase()
   if (!q) return []
-  return getAllEmployees()
+  return getAssignableEmployees()
     .filter(e => e.employeeNumber.includes(q) || e.name.toLowerCase().includes(q))
     .slice(0, limit)
 }
@@ -290,7 +303,7 @@ export function getSuggestedCandidates(lineId, stationName, { includeAbsent = fa
   getAssignmentsForDate(date).forEach(a => presentIds.add(a.employeeId))
   const assignmentByEmployee = new Map(getAssignmentsForDate(date).map(a => [a.employeeId, a]))
 
-  const candidates = getAllEmployees()
+  const candidates = getAssignableEmployees()
     .filter(e => hasSkill(e.id, stationName))
     .map((e) => {
       const present = presentIds.has(e.id)
@@ -467,34 +480,50 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
  * Libera el puesto de un empleado sin quitarlo de "presente
  * hoy" (queda en Personal sin asignacion). Conserva el
  * historial: agrega un movimiento tipo RELEASE, no borra nada.
+ *
+ * fallbackFromAreaId: cubre a alguien que HOY todavia nadie ha
+ * tocado (aparece en un area solo por su zona del snapshot de BASE,
+ * nunca tuvo un DailyAssignment real) — no hay fila que borrar,
+ * pero igual se registra el movimiento RELEASE (con el area de
+ * origen que quien llama ya conoce, p. ej. desde getPeopleByArea)
+ * para que quede "tocado" hoy y deje de contarse ahi. Si hay una
+ * asignacion real activa, esta SIEMPRE tiene prioridad y el
+ * fallback se ignora.
  */
-export function releaseAssignment(employeeId) {
+export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
   const date = todayISO()
+  const employee = getEmployeeById(employeeId)
   const assignments = readAssignments()
   const idx = assignments.findIndex(a => a.employeeId === employeeId && a.date === date)
-  if (idx === -1) {
-    return { status: 'ERROR', message: 'El empleado no tiene una asignación activa hoy.' }
+
+  let fromAreaId = fallbackFromAreaId
+  let fromStationId = null
+  let shift = CURRENT_SHIFT
+
+  if (idx !== -1) {
+    const current = assignments[idx]
+    fromAreaId = current.areaId
+    fromStationId = current.stationId
+    shift = current.shift
+    assignments.splice(idx, 1)
+    writeAssignments(assignments)
+    if (employee) ensureAttendance(employee, date, current.shift)
+  } else if (!fallbackFromAreaId) {
+    return { status: 'ERROR', message: 'El empleado no tiene una ubicación asignada hoy.' }
   }
-
-  const current = assignments[idx]
-  assignments.splice(idx, 1)
-  writeAssignments(assignments)
-
-  const employee = getEmployeeById(employeeId)
-  if (employee) ensureAttendance(employee, date, current.shift)
 
   const movements = readMovements()
   movements.push({
     id: makeId('mov'),
     employeeId,
-    employeeNumber: current.employeeNumber,
+    employeeNumber: employee?.employeeNumber,
     date,
-    fromAreaId: current.areaId,
-    fromStationId: current.stationId,
+    fromAreaId,
+    fromStationId,
     toAreaId: null,
     toStationId: null,
     movedAt: nowTime(),
-    shift: current.shift,
+    shift,
     movedBy: null,
     type: 'RELEASE',
   })

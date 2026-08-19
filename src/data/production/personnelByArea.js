@@ -1,7 +1,7 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
 import { WORK_CENTERS, workCenterById } from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
-import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees } from '../personnel/repository'
+import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAssignableEmployees } from '../personnel/repository'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -81,13 +81,28 @@ export function getPeopleWithoutArea() {
   return REAL_PERSONNEL_SNAPSHOT.filter((p) => !p.areaZona)
 }
 
+/* Donde aparece HOY una persona (efectivo: snapshot o vivo, lo
+   mismo que ve el layout) — para mostrarlo en el buscador aunque
+   nunca haya sido "tocada" via check-in/drag (p. ej. alguien del
+   snapshot de Calidad que todavia nadie movio hoy). null si no
+   aparece en ninguna area. */
+export function getEffectiveAreaForEmployee(employeeId) {
+  const byArea = getPeopleByArea()
+  for (const areaId of Object.keys(byArea)) {
+    if (byArea[areaId].some((p) => p.id === employeeId)) return areaId
+  }
+  return null
+}
+
 /* Personal disponible para asignar (fuente del drag & drop): toda
-   persona del directorio que HOY no tiene ubicacion efectiva en
-   ninguna area (nunca tuvo zona, o fue liberada hoy). Calculado,
-   nunca listado a mano. */
+   persona ELEGIBLE (getAssignableEmployees — activa, no baja) que
+   HOY no tiene ubicacion efectiva en ninguna area (nunca tuvo zona,
+   o fue liberada hoy). Calculado, nunca listado a mano. Si el
+   resultado es 0 es correcto: significa que todo el personal
+   elegible ya esta ubicado en alguna area hoy. */
 export function getAvailablePersonnelToday() {
   const placedIds = new Set(Object.values(getPeopleByArea()).flat().map((p) => p.id))
-  return getAllEmployees().filter((e) => !placedIds.has(e.id))
+  return getAssignableEmployees().filter((e) => !placedIds.has(e.id))
 }
 
 /* Indicador honesto de "Area operando" del layout — true si hay al

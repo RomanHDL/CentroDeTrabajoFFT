@@ -44,6 +44,9 @@ import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
 import StationAssignDialog from './StationAssignDialog'
 import AvailablePersonnelTray from './AvailablePersonnelTray'
+import AssignedPersonChip from './AssignedPersonChip'
+import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
+import { useDndAssign } from '../../state/dndAssign'
 
 /* Zona de "soltar aqui" generica — usada tanto en areas sin
    estaciones (unico destino posible) como arriba de la grilla de
@@ -73,6 +76,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
+  const dnd = useDndAssign()
 
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
@@ -163,41 +167,31 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
       </Box>
 
       <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {isLine ? (
-          /* Linea 1-10: se conserva integramente la vista operativa con
-             estaciones (KPIs + Distribucion de estaciones + candidatos
-             sugeridos) — unico cambio es agregar drag & drop encima de
-             la logica existente, sin quitar nada. */
-          <Grid container spacing={1.5} sx={{ mb: 3 }}>
-            {[
-              { label: 'Plantilla ideal', value: staffing.ideal != null ? `${staffing.ideal}` : 'Sin definir', accent: 'purple' },
-              { label: 'Personal actual', value: `${staffing.real}`, accent: 'cyan' },
-              { label: 'Estaciones ocupadas', value: `${workstations.filter(w => w.occupants.length > 0).length}`, accent: 'green' },
-              { label: 'Turno · Fecha', value: `${CURRENT_SHIFT}`, subtitle: dayjs().format('DD/MM/YYYY'), accent: 'cyan' },
-            ].map((k) => (
-              <Grid item xs={6} sm={4} md={2} key={k.label}>
-                <Paper elevation={0} sx={ps.kpiCard(k.accent)}>
-                  <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k.label}</Typography>
-                  <Typography sx={{ fontSize: 19, fontWeight: 800, mt: 0.5 }}>{k.value}</Typography>
-                  {k.subtitle && <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>{k.subtitle}</Typography>}
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          /* Areas sin estaciones (Paletizado, Accesorios, Cajas, DMT,
-             High Value, Soporte, etc.): encabezado compacto en vez de
-             4 cards grandes — la info importante es real/ideal +
-             faltante, no un desglose de "estaciones". */
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontSize: 22, fontWeight: 800 }}>
-              {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal}` : personnelCountLabel}
+        {/* Encabezado compacto — NUNCA cards KPI grandes, ni en Linea
+           1-10 ni en el resto de las areas. Real/Ideal/Faltante (y
+           turno/fecha para lineas) va integrado aqui en 1-2 lineas. */}
+        <Box sx={{ mb: 2 }}>
+          <Typography sx={{ fontSize: 22, fontWeight: 800 }}>
+            {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal} personas` : personnelCountLabel}
+            {staffing.ideal != null && (
+              <Typography component="span" sx={{ fontSize: 15, fontWeight: 700, color: staffing.status === 'COMPLETA' ? '#10B981' : '#EF4444', ml: 1 }}>
+                · {staffing.status === 'COMPLETA' ? 'Completa' : `Falta${Math.abs(staffing.diff) === 1 ? '' : 'n'} ${Math.abs(staffing.diff)}`}
+              </Typography>
+            )}
+          </Typography>
+          {staffing.ideal == null && (
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Sin plantilla definida</Typography>
+          )}
+          {isLine && (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
+              Turno {CURRENT_SHIFT} · {dayjs().format('DD/MM/YYYY')}
             </Typography>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: staffing.status === 'COMPLETA' ? '#10B981' : staffing.status === 'FALTAN' ? '#EF4444' : 'text.secondary' }}>
-              {staffing.status === 'SIN_PLANTILLA' ? 'Sin plantilla definida' : staffing.status === 'COMPLETA' ? 'Completa' : `Falta${Math.abs(staffing.diff) === 1 ? '' : 'n'} ${Math.abs(staffing.diff)}`}
-            </Typography>
-          </Box>
-        )}
+          )}
+        </Box>
+
+        <Box sx={{ mb: 3, maxWidth: 480 }}>
+          <EmployeeAssignSearchBar areaId={workCenterId} />
+        </Box>
 
         {actionError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>{actionError}</Alert>}
 
@@ -265,6 +259,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
                             <TableCell align="right">
                               <Button size="small" onClick={() => setHistoryEmployee(r.employee)} sx={{ textTransform: 'none', fontWeight: 700 }}>
                                 Ver detalle
+                              </Button>
+                              <Button size="small" color="error" onClick={() => dnd.requestRelease(r.employeeId)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                                Quitar
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -368,19 +365,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
                     <Grid container spacing={1.5}>
                       {people.map((p) => (
                         <Grid item xs={12} sm={6} md={4} key={p.id}>
-                          <DraggablePersonChip employeeId={p.id}>
-                            <Stack
-                              direction="row" spacing={1.5} alignItems="center"
-                              sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-                            >
-                              <EmployeeAvatar employee={{ name: p.name }} size={40} />
-                              <Box sx={{ minWidth: 0 }}>
-                                <Typography sx={{ fontWeight: 700, fontSize: 13.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {p.name}
-                                </Typography>
-                              </Box>
-                            </Stack>
-                          </DraggablePersonChip>
+                          <AssignedPersonChip employeeId={p.id} name={p.name} />
                         </Grid>
                       ))}
                     </Grid>

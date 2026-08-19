@@ -9,8 +9,8 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import { CURRENT_SHIFT, hasLineStations, workCenterById } from '../data/production/catalog'
 import { getWorkstationsForLine } from '../data/personnel/workstations'
-import { getCurrentAssignment, checkInEmployee, getEmployeeById, getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
-import { getAreaStaffing } from '../data/production/personnelByArea'
+import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
+import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
 import { showToast } from '../ui/toast'
 
@@ -42,6 +42,7 @@ const DndAssignContext = createContext(null)
 export function DndAssignProvider({ children }) {
   const [stationPicker, setStationPicker] = useState(null) // { employee, current, targetAreaId }
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
+  const [releaseTarget, setReleaseTarget] = useState(null) // { employee, currentAssignment }
 
   function warnIfOverIdeal(areaId) {
     const wc = workCenterById(areaId)
@@ -101,7 +102,40 @@ export function DndAssignProvider({ children }) {
     finalize(employee, current, targetAreaId, stationName)
   }
 
-  const value = useMemo(() => ({ requestAssign, requestAssignToStation }), [])
+  /* Quitar a alguien de su area actual (sin asignarlo a otro lado) —
+     pide confirmacion ligera y termina el DailyAssignment activo via
+     releaseAssignment (repository.js: quita la fila, agrega un
+     EmployeeMovement tipo RELEASE, conserva historial).
+
+     Si la persona nunca fue "tocada" hoy (solo aparece en un area
+     por su zona del snapshot de BASE, sin DailyAssignment real) no
+     hay fila que borrar — se usa el area EFECTIVA (la misma que ve
+     el layout, getEffectiveAreaForEmployee) como origen para que el
+     RELEASE quede registrado igual y la persona deje de contarse
+     ahi. Si no aparece en ninguna area, no hay nada que quitar. */
+  function requestRelease(employeeId) {
+    const employee = getEmployeeById(employeeId)
+    if (!employee) return
+    const current = getCurrentAssignment(employeeId)
+    const effectiveAreaId = current?.areaId || getEffectiveAreaForEmployee(employeeId)
+    if (!effectiveAreaId) return
+    setReleaseTarget({ employee, currentAssignment: current || { areaId: effectiveAreaId, stationId: null } })
+  }
+
+  function confirmRelease() {
+    if (!releaseTarget) return
+    const { employee, currentAssignment } = releaseTarget
+    const areaName = workCenterById(currentAssignment.areaId)?.name || currentAssignment.areaId
+    const res = releaseAssignment(employee.id, currentAssignment.areaId)
+    if (res.status === 'OK') {
+      showToast(`${employee.name} removido de ${areaName}.`)
+    } else {
+      showToast(res.message || 'No se pudo quitar la asignación.', 'error')
+    }
+    setReleaseTarget(null)
+  }
+
+  const value = useMemo(() => ({ requestAssign, requestAssignToStation, requestRelease }), [])
 
   const pickerStations = stationPicker ? getLineWorkstationsWithOccupancy(stationPicker.targetAreaId) : []
 
@@ -172,6 +206,26 @@ export function DndAssignProvider({ children }) {
           }}
         />
       )}
+
+      <Dialog open={Boolean(releaseTarget)} onClose={() => setReleaseTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        {releaseTarget && (
+          <>
+            <DialogTitle sx={{ fontWeight: 800 }}>Quitar del área</DialogTitle>
+            <DialogContent>
+              <Typography sx={{ fontSize: 14 }}>
+                ¿Quitar a <b>{releaseTarget.employee.name}</b> de{' '}
+                <b>{workCenterById(releaseTarget.currentAssignment.areaId)?.name || releaseTarget.currentAssignment.areaId}</b>?
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setReleaseTarget(null)}>Cancelar</Button>
+              <Button variant="contained" color="error" onClick={confirmRelease} sx={{ fontWeight: 700 }}>
+                Quitar
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </DndAssignContext.Provider>
   )
 }
