@@ -15,11 +15,18 @@ export { BASE_SNAPSHOT_DATE }
    corresponde a una linea FFT real — operativamente es "Linea de
    proyecto" (area independiente, catalog.js id PROYECTO). El dato
    crudo (rawZona) se conserva intacto en el snapshot para no perder
-   historial; solo la clasificacion operativa cambia aqui. */
+   historial; solo la clasificacion operativa cambia aqui.
+
+   Caso especial: "DMT" tambien es zona cruda real de BASE, pero en
+   el plano fisico del piso (confirmado 2026-08-19) DMT y High Value
+   son el mismo bloque operativo ("CT MIDEA/HV") — catalog.js ya no
+   tiene un area DMT separada, asi que quien traiga esa zona cruda
+   se cuenta dentro de HIGH_VALUE. */
 function mapAreaZonaToId(areaZona) {
   if (!areaZona) return null
   if (areaZona === 'LINEA 0') return 'PROYECTO'
   if (areaZona.startsWith('LINEA ')) return 'LINEA' + areaZona.split(' ')[1]
+  if (areaZona === 'DMT') return 'HIGH_VALUE'
   return areaZona
 }
 

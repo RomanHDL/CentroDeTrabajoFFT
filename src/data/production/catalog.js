@@ -33,7 +33,8 @@ export const SHIFT_HOURS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
                        Etiquetado, etc. — data/personnel/workstations.js).
    WORK_AREA        -> areas productivas/operativas con su propia
                        forma de trabajar (Paletizado, Accesorios,
-                       Cajas, High Value, Conveyor, DMT, Linea de
+                       Cajas, Midea/High Value, Conveyor, Sellado,
+                       Insumos, Suministro de material, Linea de
                        proyecto, Calidad). NUNCA reciben el template
                        de estaciones de linea.
    SUPPORT_AREA     -> grupos/funciones de personal, no producen en
@@ -68,9 +69,23 @@ export const WORK_CENTERS = [
   { id: 'CAJAS', name: 'Cajas', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
   { id: 'ACCESORIOS', name: 'Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
   { id: 'CONVEYOR', name: 'Conveyor', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'DMT', name: 'DMT', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'HIGH_VALUE', name: 'High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 14 },
+  /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
+     por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
+     dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal
+     14+2=16, el total general de plantilla no cambia). Quien tenga
+     zona "DMT" en el snapshot de BASE se sigue contando aqui (ver
+     personnelByArea.mapAreaZonaToId). */
+  { id: 'HIGH_VALUE', name: 'Midea / High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 16 },
   { id: 'CALIDAD', name: 'Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  /* Sellado / Insumos / Suministro de material: areas nuevas del
+     plano fisico real (pizarron del piso, 2026-08-19), confirmadas
+     por el usuario como areas nuevas de verdad — todavia SIN
+     plantilla oficial ni personal identificado, por eso
+     idealHeadcount queda null (nunca se inventa) hasta que se
+     confirme la tabla IDEAL/REAL correspondiente. */
+  { id: 'SELLADO', name: 'Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'INSUMOS', name: 'Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'SUMINISTRO_MATERIAL', name: 'Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'CAPACITACION', name: 'Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'TEAM_LEADER', name: 'Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'SOPORTE', name: 'Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },

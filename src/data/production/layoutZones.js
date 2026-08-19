@@ -28,8 +28,10 @@ export const PHYSICAL_ZONES = {
   PROYECTO: { id: 'PROYECTO', label: 'Línea de proyecto', areaIds: ['PROYECTO'] },
   CONVEYOR: { id: 'CONVEYOR', label: 'Conveyor', areaIds: ['CONVEYOR'] },
   FFT: { id: 'FFT', label: 'Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
-  HIGHVALUE: { id: 'HIGHVALUE', label: 'High Value', areaIds: ['HIGH_VALUE'] },
-  DMT: { id: 'DMT', label: 'DMT', areaIds: ['DMT'] },
+  HIGHVALUE: { id: 'HIGHVALUE', label: 'Midea / High Value', areaIds: ['HIGH_VALUE'] },
+  SELLADO: { id: 'SELLADO', label: 'Sellado', areaIds: ['SELLADO'] },
+  INSUMOS: { id: 'INSUMOS', label: 'Insumos', areaIds: ['INSUMOS'] },
+  SUMINISTRO: { id: 'SUMINISTRO', label: 'Suministro de material', areaIds: ['SUMINISTRO_MATERIAL'] },
   PALLETIZING: { id: 'PALLETIZING', label: 'Palletizing', areaIds: ['PALETIZADO'] },
   PNP: { id: 'PNP', label: 'PNP / POC / PEN', areaIds: [] },
   BOXPREP: { id: 'BOXPREP', label: 'Box Prep', areaIds: [] },
@@ -61,7 +63,7 @@ export const COLOR_GROUPS = {
 
 const AREA_TO_GROUP = {
   PALETIZADO: 'PRODUCCION', ACCESORIOS: 'PRODUCCION', CONVEYOR: 'PRODUCCION', PROYECTO: 'PRODUCCION',
-  CAJAS: 'SOPORTE_PRODUCCION', DMT: 'SOPORTE_PRODUCCION',
+  CAJAS: 'SOPORTE_PRODUCCION', SELLADO: 'SOPORTE_PRODUCCION', INSUMOS: 'SOPORTE_PRODUCCION', SUMINISTRO_MATERIAL: 'SOPORTE_PRODUCCION',
   CALIDAD: 'CALIDAD_VALOR', HIGH_VALUE: 'CALIDAD_VALOR',
   SOPORTE: 'SOPORTE', LIMPIEZA: 'SOPORTE',
   TEAM_LEADER: 'ADMINISTRATIVO', SUPERVISOR: 'ADMINISTRATIVO', GERENTE: 'ADMINISTRATIVO', CAPACITACION: 'ADMINISTRATIVO',

@@ -28,16 +28,26 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    Centro de Trabajo abre panel + detalle completo) que decide cada
    pagina via onSelect().
 
+   Layout ajustado 2026-08-19 al pizarron real del piso (foto
+   proporcionada por el usuario): Linea 1 y Linea de proyecto (CT1 y
+   CT0) se dibujan como barras horizontales a la DERECHA del bloque
+   de lineas verticales (no arriba); las lineas 2..10 van en orden
+   DESCENDENTE de izquierda a derecha (L10..L2), igual que en el
+   pizarron; Midea y High Value son el MISMO bloque fisico
+   ("CT MIDEA/HV" — ver catalog.js, se fusionaron); se agregan
+   Sellado, Insumos y Suministro de material como areas nuevas
+   reales, todavia sin plantilla oficial ni personal identificado
+   (nunca se inventa: si no hay dato, se muestra "Sin datos"). El
+   Conveyor se dibuja abajo (no arriba), junto a Sellado, tal como
+   aparece en el pizarron.
+
    NO es una copia al pixel del CAD real, es una aproximacion de
-   posicion/proporcion pensada para pantalla. FFT muestra sus 10
-   lineas reales (LINEA1..LINEA10 del catalogo) — Linea 1 se dibuja
-   HORIZONTAL (asi es en el piso real), Linea 2..10 como barras
-   verticales, nunca se inventan lineas que no esten en el catalogo.
-   Sorting se retiro del layout (a peticion del usuario, sin borrar
-   nada del catalogo/backend). Los tags de nombres dentro de
-   Palletizing/Accessories/Proyecto son una MUESTRA de personal real
-   (personnelByArea.js) y a la vez origen de arrastre (drag & drop);
-   toda zona/linea/area valida es tambien destino de soltar.
+   posicion/proporcion pensada para pantalla. Nunca se inventan
+   lineas/areas que no esten en el catalogo. Los tags de nombres
+   dentro de Palletizing/Accessories/Proyecto son una MUESTRA de
+   personal real (personnelByArea.js) y a la vez origen de arrastre
+   (drag & drop); toda zona/linea/area valida es tambien destino de
+   soltar.
    ───────────────────────────────────────────── */
 
 const ZONE_COLORS = {
@@ -45,7 +55,9 @@ const ZONE_COLORS = {
   CONVEYOR: '#3B82F6',
   FFT: '#3B82F6',
   HIGHVALUE: '#F43F5E',
-  DMT: '#F59E0B',
+  SELLADO: '#F59E0B',
+  INSUMOS: '#A855F7',
+  SUMINISTRO: '#06B6D4',
   PALLETIZING: '#10B981',
   PNP: '#64748B',
   BOXPREP: '#F59E0B',
@@ -53,6 +65,10 @@ const ZONE_COLORS = {
 }
 
 const TAG_SAMPLE_LIMIT = 8
+
+/* L10..L2 de izquierda a derecha (descendente), igual que el
+   pizarron real — Linea 1 se dibuja aparte (ver HorizontalAreaBar). */
+const VERTICAL_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1').slice().reverse()
 
 function headcountForZone(zone) {
   return zone.areaIds.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
@@ -107,12 +123,13 @@ function dropHighlightSx(isOver) {
   return { borderColor: '#3B82F6 !important', bgcolor: (t) => `${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.22 : 0.14)} !important`, boxShadow: '0 0 0 3px rgba(59,130,246,.25) !important' }
 }
 
-/* Cada linea se dibuja como una barra fisica vertical (no un boton
-   redondo) — numero de linea arriba, "riel" de color al centro,
-   conteo real abajo. Usada para Linea 2..10 (Linea 1 es horizontal,
-   ver LineOneBar). Tambien es destino de soltar: arrastrar a alguien
-   aqui NUNCA elige estacion por si sola, solo marca la linea — el
-   picker de estacion se abre despues (DndAssignProvider). */
+/* Cada linea (2..10) se dibuja como una barra fisica vertical (no un
+   boton redondo) — numero de linea arriba, "riel" de color al
+   centro, conteo real abajo. Linea 1 y Linea de proyecto son
+   horizontales (ver HorizontalAreaBar). Tambien es destino de
+   soltar: arrastrar a alguien aqui NUNCA elige estacion por si
+   sola, solo marca la linea — el picker de estacion se abre despues
+   (DndAssignProvider). */
 function LineBar({ lineId, selected, onClick }) {
   const count = getAreaHeadcount(lineId)
   const line = workCenterById(lineId)
@@ -149,39 +166,42 @@ function LineBar({ lineId, selected, onClick }) {
   )
 }
 
-/* Linea 1 — HORIZONTAL, como es en el piso real (a diferencia de
-   Linea 2..10, verticales). Misma logica de datos/drop que LineBar,
-   solo cambia la orientacion visual. */
-function LineOneBar({ selected, onClick }) {
-  const lineId = 'LINEA1'
-  const count = getAreaHeadcount(lineId)
-  const line = workCenterById(lineId)
+/* Barra horizontal generica — Linea 1 y Linea de proyecto (CT1/CT0
+   del pizarron), dibujadas a la derecha del bloque de lineas
+   verticales, igual que en el piso real. Misma logica de
+   datos/drop que LineBar, solo cambia la orientacion visual; el
+   drop target ya sabe por si solo si `areaId` es una linea
+   (abre el picker de estacion) o no. */
+function HorizontalAreaBar({ areaId, selected, onClick, sx }) {
+  const count = getAreaHeadcount(areaId)
+  const area = workCenterById(areaId)
   const color = ZONE_COLORS.FFT
   const hasPeople = count > 0
-  const tone = staffingTone(count, line?.idealHeadcount ?? null)
-  const { isOver, dropProps } = useEmployeeDropTarget(lineId)
+  const tone = staffingTone(count, area?.idealHeadcount ?? null)
+  const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
     <Box
       {...dropProps}
-      onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
+      onClick={(e) => { e.stopPropagation(); onClick(areaId) }}
       sx={{
-        display: 'flex', alignItems: 'center', gap: 1.25, width: '100%', minHeight: 46,
-        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', px: 1.5, py: 1,
+        display: 'flex', alignItems: 'center', gap: 1, width: '100%', minHeight: 46,
+        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', px: 1.25, py: 1,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
         transition: 'all .15s ease',
         '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
         ...dropHighlightSx(isOver),
+        ...sx,
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.3, flexShrink: 0 }}>{line?.name || 'Línea 1'}</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.2, flexShrink: 0 }}>{area?.name || areaId}</Typography>
       <Box sx={{ flex: 1, height: 6, borderRadius: 999, bgcolor: hasPeople ? color : alpha(color, 0.18) }} />
-      <Typography sx={{ fontSize: 12, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary', flexShrink: 0 }}>
+      <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary', flexShrink: 0 }}>
         {tone ? tone.chipLabel : count}
       </Typography>
       {tone && (
-        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: tone.statusColor, flexShrink: 0 }}>{tone.statusLabel}</Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor, flexShrink: 0 }}>{tone.statusLabel}</Typography>
       )}
     </Box>
   )
@@ -206,7 +226,7 @@ function PersonTag({ id, name }) {
 
 /* Cuadricula decorativa (estaciones/slots fisicos) — puramente
    visual, no representa datos reales por celda; se usa para dar
-   presencia a zonas pequenas como High Value. */
+   presencia a zonas pequenas como Midea/High Value. */
 function MiniGridDecoration({ color, rows = 2, cols = 5 }) {
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 0.4, width: '100%', alignContent: 'center' }}>
@@ -278,9 +298,8 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
   )
 }
 
-/* Franja horizontal del Conveyor, arriba del bloque FFT — igual que
-   en el plano real, el conveyor corre transversal por encima de las
-   lineas. */
+/* Franja horizontal del Conveyor — junto a Sellado, en la parte
+   inferior del layout (igual que en el pizarron real del piso). */
 function ConveyorBanner({ selected, onClick }) {
   const zone = PHYSICAL_ZONES.CONVEYOR
   const color = ZONE_COLORS.CONVEYOR
@@ -293,7 +312,7 @@ function ConveyorBanner({ selected, onClick }) {
       {...dropProps}
       onClick={() => onClick(zone)}
       sx={{
-        display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap',
+        display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap', height: '100%',
         borderRadius: 2, cursor: 'pointer', userSelect: 'none', px: 1.75, py: 1,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
@@ -320,6 +339,8 @@ function ConveyorBanner({ selected, onClick }) {
   )
 }
 
+const GRID_COLUMNS = '1.3fr 1fr 2.4fr 1fr'
+
 export default function WorkAreaMap({ selection, onSelect }) {
   const [zoom, setZoom] = useState(1)
   usePersonnelVersion()
@@ -329,8 +350,8 @@ export default function WorkAreaMap({ selection, onSelect }) {
     onSelect(describeZoneSelection(PHYSICAL_ZONES[zoneKey]))
   }
 
-  function handleLineClick(lineId) {
-    onSelect({ type: 'area', id: lineId })
+  function handleAreaClick(areaId) {
+    onSelect({ type: 'area', id: areaId })
   }
 
   return (
@@ -374,130 +395,154 @@ export default function WorkAreaMap({ selection, onSelect }) {
 
       <Box sx={{ overflow: 'auto' }}>
         <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 860 }}>
-            <ConveyorBanner
-              selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
-              onClick={() => handleZoneClick('CONVEYOR')}
-            />
-
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-              {/* Columna principal: FFT (Linea 1 horizontal + L2-10) + Linea de proyecto */}
-              <Box sx={{ flex: 3, minWidth: 380, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <ZoneBox
-                  zone={PHYSICAL_ZONES.FFT}
-                  selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
-                  onClick={() => handleZoneClick('FFT')}
-                  minHeight={300}
-                >
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', height: '100%' }}>
-                    <LineOneBar
-                      selected={selection?.type === 'area' && selection.id === 'LINEA1'}
-                      onClick={handleLineClick}
-                    />
-                    <Box sx={{ display: 'flex', gap: 0.75, flex: 1, minHeight: 190 }}>
-                      {FFT_LINE_IDS.filter((id) => id !== 'LINEA1').map((lineId) => (
-                        <LineBar
-                          key={lineId}
-                          lineId={lineId}
-                          selected={selection?.type === 'area' && selection.id === lineId}
-                          onClick={handleLineClick}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                </ZoneBox>
-
-                <ZoneBox
-                  zone={PHYSICAL_ZONES.PROYECTO}
-                  selected={isZoneSelected(PHYSICAL_ZONES.PROYECTO, selection)}
-                  onClick={() => handleZoneClick('PROYECTO')}
-                  minHeight={110}
-                >
-                  <PersonTagSample areaId="PROYECTO" />
-                </ZoneBox>
-              </Box>
-
-              {/* High Value + DMT */}
-              <Box sx={{ flex: 1, minWidth: 170, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <ZoneBox
-                  zone={PHYSICAL_ZONES.HIGHVALUE}
-                  selected={isZoneSelected(PHYSICAL_ZONES.HIGHVALUE, selection)}
-                  onClick={() => handleZoneClick('HIGHVALUE')}
-                  minHeight={190}
-                  sx={{ flex: 1 }}
-                >
-                  <MiniGridDecoration color={ZONE_COLORS.HIGHVALUE} rows={2} cols={5} />
-                </ZoneBox>
-                <ZoneBox
-                  zone={PHYSICAL_ZONES.DMT}
-                  selected={isZoneSelected(PHYSICAL_ZONES.DMT, selection)}
-                  onClick={() => handleZoneClick('DMT')}
-                  minHeight={190}
-                  sx={{ flex: 1 }}
-                >
-                  <PersonTagSample areaId="DMT" />
-                </ZoneBox>
-              </Box>
-
-              {/* Palletizing */}
-              <Box sx={{ flex: 1.6, minWidth: 220 }}>
-                <ZoneBox
-                  zone={PHYSICAL_ZONES.PALLETIZING}
-                  selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
-                  onClick={() => handleZoneClick('PALLETIZING')}
-                  minHeight={420}
-                  sx={{ height: '100%' }}
-                >
-                  <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
-                    <Box sx={{
-                      width: '32%', minWidth: 60, borderRadius: 1.5, alignSelf: 'stretch',
-                      bgcolor: (t) => alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
-                      border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
-                    }} />
-                    <Box sx={{ flex: 1 }}>
-                      <PersonTagSample areaId="PALETIZADO" />
-                    </Box>
-                  </Stack>
-                </ZoneBox>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              <ZoneBox
-                zone={PHYSICAL_ZONES.PNP}
-                selected={isZoneSelected(PHYSICAL_ZONES.PNP, selection)}
-                onClick={() => handleZoneClick('PNP')}
-                minHeight={140}
-                sx={{ flex: 1, minWidth: 150 }}
-              />
-              <ZoneBox
-                zone={PHYSICAL_ZONES.BOXPREP}
-                selected={isZoneSelected(PHYSICAL_ZONES.BOXPREP, selection)}
-                onClick={() => handleZoneClick('BOXPREP')}
-                minHeight={140}
-                sx={{ flex: 1, minWidth: 150 }}
-              />
+          <Box sx={{
+            display: 'grid', gap: 1.5, minWidth: 960,
+            gridTemplateColumns: GRID_COLUMNS,
+            gridTemplateRows: 'auto 400px auto',
+            gridTemplateAreas: `
+              "acc        insumos    insumos    suministro"
+              "palletizing midea     fft        side"
+              "sellado    sellado    conveyor   conveyor"
+            `,
+          }}>
+            <Box sx={{ gridArea: 'acc' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.ACCESSORIES}
                 selected={isZoneSelected(PHYSICAL_ZONES.ACCESSORIES, selection)}
                 onClick={() => handleZoneClick('ACCESSORIES')}
-                minHeight={140}
-                sx={{ flex: 1.4, minWidth: 220 }}
+                minHeight={64}
               >
                 <PersonTagSample areaId="ACCESORIOS" />
               </ZoneBox>
             </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-              {getAuxiliaryAreas().map((area) => (
-                <AuxAreaBox
-                  key={area.id}
-                  area={area}
-                  selected={selection?.type === 'area' && selection.id === area.id}
-                  onClick={(id) => onSelect({ type: 'area', id })}
-                />
-              ))}
+            <Box sx={{ gridArea: 'insumos' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.INSUMOS}
+                selected={isZoneSelected(PHYSICAL_ZONES.INSUMOS, selection)}
+                onClick={() => handleZoneClick('INSUMOS')}
+                minHeight={64}
+              />
             </Box>
+
+            <Box sx={{ gridArea: 'suministro' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.SUMINISTRO}
+                selected={isZoneSelected(PHYSICAL_ZONES.SUMINISTRO, selection)}
+                onClick={() => handleZoneClick('SUMINISTRO')}
+                minHeight={64}
+              />
+            </Box>
+
+            <Box sx={{ gridArea: 'palletizing', height: '100%' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.PALLETIZING}
+                selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
+                onClick={() => handleZoneClick('PALLETIZING')}
+                sx={{ height: '100%' }}
+              >
+                <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
+                  <Box sx={{
+                    width: '32%', minWidth: 60, borderRadius: 1.5, alignSelf: 'stretch',
+                    bgcolor: (t) => alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
+                    border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
+                  }} />
+                  <Box sx={{ flex: 1 }}>
+                    <PersonTagSample areaId="PALETIZADO" />
+                  </Box>
+                </Stack>
+              </ZoneBox>
+            </Box>
+
+            <Box sx={{ gridArea: 'midea', height: '100%' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.HIGHVALUE}
+                selected={isZoneSelected(PHYSICAL_ZONES.HIGHVALUE, selection)}
+                onClick={() => handleZoneClick('HIGHVALUE')}
+                sx={{ height: '100%' }}
+              >
+                <MiniGridDecoration color={ZONE_COLORS.HIGHVALUE} rows={2} cols={4} />
+              </ZoneBox>
+            </Box>
+
+            <Box sx={{ gridArea: 'fft', height: '100%' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.FFT}
+                selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
+                onClick={() => handleZoneClick('FFT')}
+                sx={{ height: '100%' }}
+              >
+                <Box sx={{ display: 'flex', gap: 0.75, width: '100%', height: '100%' }}>
+                  {VERTICAL_LINE_IDS.map((lineId) => (
+                    <LineBar
+                      key={lineId}
+                      lineId={lineId}
+                      selected={selection?.type === 'area' && selection.id === lineId}
+                      onClick={handleAreaClick}
+                    />
+                  ))}
+                </Box>
+              </ZoneBox>
+            </Box>
+
+            <Box sx={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
+              <HorizontalAreaBar
+                areaId="LINEA1"
+                selected={selection?.type === 'area' && selection.id === 'LINEA1'}
+                onClick={handleAreaClick}
+                sx={{ flex: 1 }}
+              />
+              <HorizontalAreaBar
+                areaId="PROYECTO"
+                selected={selection?.type === 'area' && selection.id === 'PROYECTO'}
+                onClick={handleAreaClick}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+
+            <Box sx={{ gridArea: 'sellado' }}>
+              <ZoneBox
+                zone={PHYSICAL_ZONES.SELLADO}
+                selected={isZoneSelected(PHYSICAL_ZONES.SELLADO, selection)}
+                onClick={() => handleZoneClick('SELLADO')}
+                minHeight={64}
+              />
+            </Box>
+
+            <Box sx={{ gridArea: 'conveyor' }}>
+              <ConveyorBanner
+                selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
+                onClick={() => handleZoneClick('CONVEYOR')}
+              />
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1.5 }}>
+            <ZoneBox
+              zone={PHYSICAL_ZONES.PNP}
+              selected={isZoneSelected(PHYSICAL_ZONES.PNP, selection)}
+              onClick={() => handleZoneClick('PNP')}
+              minHeight={90}
+              sx={{ flex: 1, minWidth: 150 }}
+            />
+            <ZoneBox
+              zone={PHYSICAL_ZONES.BOXPREP}
+              selected={isZoneSelected(PHYSICAL_ZONES.BOXPREP, selection)}
+              onClick={() => handleZoneClick('BOXPREP')}
+              minHeight={90}
+              sx={{ flex: 1, minWidth: 150 }}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5 }}>
+            {getAuxiliaryAreas().map((area) => (
+              <AuxAreaBox
+                key={area.id}
+                area={area}
+                selected={selection?.type === 'area' && selection.id === area.id}
+                onClick={handleAreaClick}
+              />
+            ))}
           </Box>
         </Box>
       </Box>
