@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import AppBar from '@mui/material/AppBar'
@@ -31,26 +31,36 @@ function initialsOf(name) {
     .join('') || '?'
 }
 
+const CLOSE_DELAY_MS = 320
+const HOTSPOT_WIDTH = 14
+
 export default function AppLayout({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const isSmall = useMediaQuery('(max-width:900px)')
-  const isTabletRange = useMediaQuery('(min-width:900px) and (max-width:1280px)')
+  // Puntero real del dispositivo, no ancho de pantalla: un mouse/trackpad
+  // real habilita el auto-hide por hover; touch (tablet/movil) usa el
+  // drawer clasico con hamburguesa, sin depender de hover.
+  const hasFineHover = useMediaQuery('(hover: hover) and (pointer: fine)')
+
   const [mobileOpen, setMobileOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState(null)
-  const [collapsed, setCollapsed] = useState(false)
-  const [collapseTouched, setCollapseTouched] = useState(false)
+  const [hoverOpen, setHoverOpen] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const closeTimer = useRef(null)
 
-  // Tablet inicia colapsado (mas espacio para el layout operativo);
-  // desktop inicia expandido. Una vez el usuario lo toca, se respeta
-  // su eleccion manual y ya no se pisa al cambiar de tamaño.
-  useEffect(() => {
-    if (!collapseTouched) setCollapsed(isTabletRange)
-  }, [isTabletRange, collapseTouched])
-
-  function handleToggleCollapse() {
-    setCollapseTouched(true)
-    setCollapsed((c) => !c)
+  function clearCloseTimer() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+  function openOnHover() {
+    clearCloseTimer()
+    setHoverOpen(true)
+  }
+  function scheduleClose() {
+    clearCloseTimer()
+    closeTimer.current = setTimeout(() => setHoverOpen(false), CLOSE_DELAY_MS)
   }
 
   const roleLabel = useMemo(() => ROLE_LABELS[user?.role] || user?.role, [user])
@@ -62,12 +72,12 @@ export default function AppLayout({ mode, setMode }) {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', overflowX: 'hidden' }}>
       <AppBar position="sticky" elevation={0} sx={{
         bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary',
       }}>
         <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
-          {isSmall && (
+          {!hasFineHover && (
             <IconButton size="small" onClick={() => setMobileOpen(true)}>
               <MenuIcon fontSize="small" />
             </IconButton>
@@ -114,22 +124,35 @@ export default function AppLayout({ mode, setMode }) {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: 'flex' }}>
-        <Sidebar
-          role={user?.role}
-          open={isSmall ? mobileOpen : true}
-          onClose={() => setMobileOpen(false)}
-          variant={isSmall ? 'temporary' : 'permanent'}
-          collapsed={collapsed}
-          onToggleCollapse={handleToggleCollapse}
+      {hasFineHover && (
+        // Hotspot invisible: entrar aqui abre el sidebar. Una vez abierto,
+        // el propio sidebar (mas ancho, mismo left:0) lo cubre por completo,
+        // asi que el mouse nunca "pierde" cobertura entre los dos elementos.
+        <Box
+          onMouseEnter={openOnHover}
+          sx={{
+            position: 'fixed', left: 0, top: 56, bottom: 0, width: HOTSPOT_WIDTH,
+            zIndex: (t) => t.zIndex.drawer + 1,
+          }}
         />
-        <Box sx={{
-          flex: 1, minWidth: 0,
-          px: { xs: 1.5, sm: 2, md: 3 }, py: { xs: 2, md: 2.5 },
-          maxWidth: 1600, mx: 'auto', width: '100%',
-        }}>
-          <Outlet />
-        </Box>
+      )}
+
+      <Sidebar
+        role={user?.role}
+        open={hasFineHover ? hoverOpen : mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        variant={hasFineHover ? 'overlay' : 'temporary'}
+        pinned={pinned}
+        onTogglePin={() => setPinned((p) => !p)}
+        onMouseEnter={hasFineHover ? openOnHover : undefined}
+        onMouseLeave={hasFineHover ? scheduleClose : undefined}
+      />
+
+      <Box sx={{
+        px: { xs: 1.5, sm: 2, md: 3 }, py: { xs: 2, md: 2.5 },
+        maxWidth: 1600, mx: 'auto', width: '100%',
+      }}>
+        <Outlet />
       </Box>
     </Box>
   )

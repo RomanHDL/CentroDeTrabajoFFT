@@ -163,27 +163,27 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
 
         <Grid container spacing={2}>
           {/* Columna principal */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={8.5}>
             <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
               <Box sx={ps.cardHeader}>
                 <Box>
-                  <Typography sx={ps.cardHeaderTitle}>Distribución actual de la línea</Typography>
+                  <Typography sx={ps.cardHeaderTitle}>Distribución de estaciones</Typography>
                   <Typography sx={ps.cardHeaderSubtitle}>Toca una estación para ver detalles o asignar personal</Typography>
                 </Box>
               </Box>
-              <Box sx={{ p: 2, overflowX: 'auto' }}>
-                <Stack direction="row" alignItems="stretch" sx={{ width: 'max-content' }}>
-                  {workstations.map((w, idx) => (
-                    <WorkstationCard
-                      key={w.id}
-                      workstation={w}
-                      selected={selectedStation?.name === w.name}
-                      isLast={idx === workstations.length - 1}
-                      onSelect={(ws) => setSelectedStationName(ws.name)}
-                      onEmployeeClick={(emp) => setHistoryEmployee(emp)}
-                    />
-                  ))}
-                </Stack>
+              <Box sx={{
+                p: 2, display: 'grid', gap: 1.25,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              }}>
+                {workstations.map((w) => (
+                  <WorkstationCard
+                    key={w.id}
+                    workstation={w}
+                    selected={selectedStation?.name === w.name}
+                    onSelect={(ws) => setSelectedStationName(ws.name)}
+                    onEmployeeClick={(emp) => setHistoryEmployee(emp)}
+                  />
+                ))}
               </Box>
             </Paper>
 
@@ -278,7 +278,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
           </Grid>
 
           {/* Columna lateral */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3.5}>
             <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
               <Box sx={ps.cardHeader}>
                 <Typography sx={ps.cardHeaderTitle}>
@@ -286,6 +286,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
                 </Typography>
               </Box>
               <Box sx={{ p: 2 }}>
+                {!selectedStation && (
+                  <EmptyState compact title="Selecciona una estación" description="Toca cualquier estación para ver su detalle." />
+                )}
                 {selectedStation && (
                   <>
                     <Typography sx={{ fontWeight: 800, fontSize: 18, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>

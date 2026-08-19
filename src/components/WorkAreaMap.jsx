@@ -58,26 +58,37 @@ function isZoneSelected(zone, selection) {
   return false
 }
 
-function LineChip({ lineId, selected, dense, onClick }) {
+/* Cada linea se dibuja como una barra fisica vertical (no un boton
+   redondo) — numero de linea arriba, "riel" de color al centro,
+   conteo real abajo. Todas ocupan el mismo ancho (flex:1) para leerse
+   como bandas paralelas de una zona de produccion, no como chips
+   flotando sueltos. */
+function LineBar({ lineId, selected, dense, onClick }) {
   const count = getAreaHeadcount(lineId)
   const line = workCenterById(lineId)
   const label = (line?.name || lineId).replace('Línea ', 'L')
   const color = ZONE_COLORS.FFT
+  const hasPeople = count > 0
   return (
     <Box
       onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
       sx={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 1.25, cursor: 'pointer', userSelect: 'none',
+        flex: '1 1 0', minWidth: dense ? 32 : 42, height: '100%',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', py: dense ? 0.75 : 1, px: 0.25,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.28 : 0.16) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
-        minWidth: dense ? 40 : 48, minHeight: dense ? 34 : 42, px: 0.5,
+        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
+        boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: color, transform: 'translateY(-1px)' },
+        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: dense ? 10.5 : 11.5, lineHeight: 1.1 }}>{label}</Typography>
-      <Typography sx={{ fontSize: 9, color: 'text.secondary', fontWeight: 600 }}>{count}</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: dense ? 10.5 : 12, lineHeight: 1.1 }}>{label}</Typography>
+      <Box sx={{
+        width: dense ? 4 : 6, flex: 1, borderRadius: 999, my: 0.5,
+        bgcolor: hasPeople ? color : alpha(color, 0.18),
+      }} />
+      <Typography sx={{ fontSize: dense ? 9.5 : 10.5, color: 'text.secondary', fontWeight: 700 }}>{count}</Typography>
     </Box>
   )
 }
@@ -111,7 +122,7 @@ function AuxAreaBox({ area, selected, onClick }) {
         <Typography sx={{ fontWeight: 800, fontSize: 12.5, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.3 }}>
           {area.name}
         </Typography>
-        <Chip size="small" label={people.length > 0 ? `${people.length} persona${people.length === 1 ? '' : 's'}` : 'Sin datos'} sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }} />
+        <Chip size="small" label={`${people.length} persona${people.length === 1 ? '' : 's'}`} sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }} />
       </Stack>
       {showNames && (
         <Stack spacing={0.5}>
@@ -155,7 +166,7 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
           <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontStyle: 'italic', flexShrink: 0 }}>Sin datos</Typography>
         )}
       </Stack>
-      {children}
+      {children && <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>{children}</Box>}
     </Box>
   )
 }
@@ -198,7 +209,7 @@ export default function WorkAreaMap({ selection, onSelect, size = 'md', showLege
             sx={{
               display: 'grid',
               gap: lg ? 1.5 : 1.25,
-              minWidth: lg ? 760 : 620,
+              minWidth: lg ? 820 : 700,
               gridTemplateColumns: { xs: '1fr', md: lg ? '1fr 2.2fr 1.1fr' : '1fr 2fr 1fr' },
               gridTemplateAreas: {
                 xs: `"sorting" "fft" "extras" "palletizing"`,
@@ -211,23 +222,23 @@ export default function WorkAreaMap({ selection, onSelect, size = 'md', showLege
                 zone={PHYSICAL_ZONES.SORTING}
                 selected={isZoneSelected(PHYSICAL_ZONES.SORTING, selection)}
                 onClick={() => handleZoneClick('SORTING')}
-                minHeight={lg ? 220 : 160}
+                minHeight={380}
                 sx={{ height: '100%' }}
               />
             </Box>
 
             <Box sx={{ gridArea: 'fft', display: 'flex', flexDirection: 'column', gap: lg ? 1.5 : 1 }}>
-              <Box sx={{ display: 'flex', gap: lg ? 1.5 : 1 }}>
+              <Box sx={{ display: 'flex', gap: lg ? 1.5 : 1, height: '100%' }}>
                 <ZoneBox
                   zone={PHYSICAL_ZONES.FFT}
                   selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
                   onClick={() => handleZoneClick('FFT')}
-                  minHeight={lg ? 190 : 130}
+                  minHeight={360}
                   sx={{ flex: 3 }}
                 >
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+                  <Box sx={{ display: 'flex', gap: lg ? 0.75 : 0.5, width: '100%', height: '100%' }}>
                     {FFT_LINE_IDS.map((lineId) => (
-                      <LineChip
+                      <LineBar
                         key={lineId}
                         lineId={lineId}
                         dense={!lg}
@@ -241,7 +252,7 @@ export default function WorkAreaMap({ selection, onSelect, size = 'md', showLege
                   zone={PHYSICAL_ZONES.MIDEA}
                   selected={isZoneSelected(PHYSICAL_ZONES.MIDEA, selection)}
                   onClick={() => handleZoneClick('MIDEA')}
-                  minHeight={lg ? 190 : 130}
+                  minHeight={360}
                   sx={{ flex: 1 }}
                 />
               </Box>
@@ -252,7 +263,7 @@ export default function WorkAreaMap({ selection, onSelect, size = 'md', showLege
                 zone={PHYSICAL_ZONES.PALLETIZING}
                 selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
                 onClick={() => handleZoneClick('PALLETIZING')}
-                minHeight={lg ? 220 : 160}
+                minHeight={380}
                 sx={{ height: '100%' }}
               />
             </Box>
@@ -262,28 +273,28 @@ export default function WorkAreaMap({ selection, onSelect, size = 'md', showLege
                 zone={PHYSICAL_ZONES.PNP}
                 selected={isZoneSelected(PHYSICAL_ZONES.PNP, selection)}
                 onClick={() => handleZoneClick('PNP')}
-                minHeight={lg ? 110 : 80}
+                minHeight={170}
                 sx={{ flex: 1 }}
               />
               <ZoneBox
                 zone={PHYSICAL_ZONES.BOXPREP}
                 selected={isZoneSelected(PHYSICAL_ZONES.BOXPREP, selection)}
                 onClick={() => handleZoneClick('BOXPREP')}
-                minHeight={lg ? 110 : 80}
+                minHeight={170}
                 sx={{ flex: 1 }}
               />
               <ZoneBox
                 zone={PHYSICAL_ZONES.ACCESSORIES}
                 selected={isZoneSelected(PHYSICAL_ZONES.ACCESSORIES, selection)}
                 onClick={() => handleZoneClick('ACCESSORIES')}
-                minHeight={lg ? 110 : 80}
+                minHeight={170}
                 sx={{ flex: 1 }}
               />
             </Box>
           </Box>
 
           {lg && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5, minWidth: 760 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5, minWidth: 820 }}>
               {getAuxiliaryAreas().map((area) => (
                 <AuxAreaBox
                   key={area.id}
