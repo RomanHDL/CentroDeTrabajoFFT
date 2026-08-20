@@ -41,6 +41,17 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    Conveyor se dibuja abajo (no arriba), junto a Sellado, tal como
    aparece en el pizarron.
 
+   Ajuste 2026-08-20 (a peticion del usuario): Paletizado es la caja
+   grande de la columna izquierda (antes lo era Accesorios), abarca
+   las dos primeras filas de la cuadricula (gridTemplateAreas repite
+   "palletizing" en ambas filas) para que su propio contenido defina
+   el alto real sin forzar a Insumos/Suministro a estirarse vacios.
+   Accesorios pasa a la fila de arriba, en la misma columna que Midea
+   (queda literalmente arriba de esa caja). Insumos/Suministro usan
+   alignSelf:'start' para no estirarse a la altura de Accesorios —
+   se quedan pegados a su propio contenido, sin espacio en blanco
+   dentro de la tarjeta.
+
    NO es una copia al pixel del CAD real, es una aproximacion de
    posicion/proporcion pensada para pantalla. Nunca se inventan
    lineas/areas que no esten en el catalogo. Los tags de nombres
@@ -398,9 +409,9 @@ export default function WorkAreaMap({ selection, onSelect }) {
             gridTemplateColumns: GRID_COLUMNS,
             gridTemplateRows: 'auto 400px auto',
             gridTemplateAreas: `
-              "acc        insumos    insumos    suministro"
-              "palletizing midea     fft        side"
-              "sellado    sellado    conveyor   conveyor"
+              "palletizing acc        insumos    suministro"
+              "palletizing midea      fft        side"
+              "sellado     sellado    conveyor   conveyor"
             `,
           }}>
             <Box sx={{ gridArea: 'acc' }}>
@@ -414,7 +425,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
               </ZoneBox>
             </Box>
 
-            <Box sx={{ gridArea: 'insumos' }}>
+            <Box sx={{ gridArea: 'insumos', alignSelf: 'start' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.INSUMOS}
                 selected={isZoneSelected(PHYSICAL_ZONES.INSUMOS, selection)}
@@ -423,7 +434,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
               />
             </Box>
 
-            <Box sx={{ gridArea: 'suministro' }}>
+            <Box sx={{ gridArea: 'suministro', alignSelf: 'start' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.SUMINISTRO}
                 selected={isZoneSelected(PHYSICAL_ZONES.SUMINISTRO, selection)}
