@@ -47,10 +47,14 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    "palletizing" en ambas filas) para que su propio contenido defina
    el alto real sin forzar a Insumos/Suministro a estirarse vacios.
    Accesorios pasa a la fila de arriba, en la misma columna que Midea
-   (queda literalmente arriba de esa caja). Insumos/Suministro usan
-   alignSelf:'start' para no estirarse a la altura de Accesorios —
-   se quedan pegados a su propio contenido, sin espacio en blanco
-   dentro de la tarjeta.
+   (queda literalmente arriba de esa caja). Insumos/Suministro se
+   estiran a la altura completa de esa fila (height:100%, minHeight
+   160) para que se vean como tarjetas grandes en vez de dejar
+   espacio en blanco sin ocupar. La fila de Midea/FFT/CT1-CT0 se
+   agrando de 400 a 480px (mismo motivo: menos espacio sin usar,
+   barras de linea mas altas). CT 0 y CT 1 (barras horizontales de la
+   columna derecha) intercambiaron su orden — CT 0 arriba, CT 1
+   abajo — a peticion explicita del usuario.
 
    NO es una copia al pixel del CAD real, es una aproximacion de
    posicion/proporcion pensada para pantalla. Nunca se inventan
@@ -407,7 +411,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
           <Box sx={{
             display: 'grid', gap: 1.5, minWidth: 960,
             gridTemplateColumns: GRID_COLUMNS,
-            gridTemplateRows: 'auto 400px auto',
+            gridTemplateRows: 'auto 480px auto',
             gridTemplateAreas: `
               "palletizing acc        insumos    suministro"
               "palletizing midea      fft        side"
@@ -425,21 +429,23 @@ export default function WorkAreaMap({ selection, onSelect }) {
               </ZoneBox>
             </Box>
 
-            <Box sx={{ gridArea: 'insumos', alignSelf: 'start' }}>
+            <Box sx={{ gridArea: 'insumos' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.INSUMOS}
                 selected={isZoneSelected(PHYSICAL_ZONES.INSUMOS, selection)}
                 onClick={() => handleZoneClick('INSUMOS')}
-                minHeight={64}
+                minHeight={160}
+                sx={{ height: '100%' }}
               />
             </Box>
 
-            <Box sx={{ gridArea: 'suministro', alignSelf: 'start' }}>
+            <Box sx={{ gridArea: 'suministro' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.SUMINISTRO}
                 selected={isZoneSelected(PHYSICAL_ZONES.SUMINISTRO, selection)}
                 onClick={() => handleZoneClick('SUMINISTRO')}
-                minHeight={64}
+                minHeight={160}
+                sx={{ height: '100%' }}
               />
             </Box>
 
@@ -496,14 +502,14 @@ export default function WorkAreaMap({ selection, onSelect }) {
 
             <Box sx={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
               <HorizontalAreaBar
-                areaId="LINEA1"
-                selected={selection?.type === 'area' && selection.id === 'LINEA1'}
+                areaId="PROYECTO"
+                selected={selection?.type === 'area' && selection.id === 'PROYECTO'}
                 onClick={handleAreaClick}
                 sx={{ flex: 1 }}
               />
               <HorizontalAreaBar
-                areaId="PROYECTO"
-                selected={selection?.type === 'area' && selection.id === 'PROYECTO'}
+                areaId="LINEA1"
+                selected={selection?.type === 'area' && selection.id === 'LINEA1'}
                 onClick={handleAreaClick}
                 sx={{ flex: 1 }}
               />
