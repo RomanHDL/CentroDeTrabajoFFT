@@ -41,6 +41,9 @@ export default function EmployeeSearchField({ label = 'Número o nombre de emple
           <EmployeeAvatar employee={option} size={32} />
           <Box>
             <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{option.employeeNumber} — {option.name}</Typography>
+            {option.fechaIngreso && (
+              <Typography sx={{ fontSize: 11.5, opacity: 0.6 }}>Ingreso: {option.fechaIngreso}</Typography>
+            )}
           </Box>
         </Box>
       )}

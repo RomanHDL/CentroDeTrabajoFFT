@@ -1,44 +1,68 @@
 /* ────────────────────────────────────────────
-   Snapshot REAL de personal, extraido de LAYOUT FFT.xlsx (hoja BASE)
-   el 2026-08-18. 116 filas, ninguna inventada.
+   Snapshot REAL de personal. La base son las 116 filas extraidas de
+   LAYOUT FFT.xlsx (hoja BASE) el 2026-08-18, ninguna inventada
+   (ids "base-N"). A partir del 2026-08-20 se agregaron ademas
+   personas que SOLO existen en "ASISTENCIA FFT SEM 34.xlsx" y no
+   tenian ninguna fila equivalente en BASE (ids "sem34-N") — ver mas
+   abajo.
 
    - name: EMPLEADO tal como viene en el Excel (Title Case para lectura).
    - areaZona: ZONA normalizada al catalogo de areas (catalog.js). null si
-     BASE no traia zona para esa persona (ausente/sin ubicacion actual).
-   - rawZona: ZONA exactamente como aparece en el Excel, sin normalizar
-     (ej. "ACCESORIOS3", "CALIDAD11") — se conserva para no perder
-     informacion, aunque areaZona ya la agrupo razonablemente.
-   - actividad/asistencia: codigos crudos de BASE, SIN interpretar
-     significado (igual que el resto del proyecto).
+     no se conoce una zona para esa persona (ausente/sin ubicacion actual).
+   - rawZona: ZONA exactamente como aparece en el Excel de origen, sin
+     normalizar (ej. "ACCESORIOS3", "CALIDAD11", "Chofer") — se conserva
+     para no perder informacion, aunque areaZona ya la agrupo razonablemente.
+   - actividad/asistencia: codigos crudos de BASE (2026-08-18), SIN
+     interpretar significado. Solo existen para gente "base-N"; el
+     personal "sem34-N" no participo del snapshot de BASE, por lo que
+     no tiene estos dos campos.
+   - fechaIngreso: fecha de ingreso tal como viene en SEM 34 ("DD/MM/AAAA"),
+     sin interpretar. null cuando SEM 34 no la trae para esa persona.
 
-   BASE no tiene columna de numero de empleado. El 2026-08-19 se
-   cruzo este snapshot contra "ASISTENCIA FFT SEM 34.xlsx" (unica
-   hoja usada: "Asistencia FFT SEM 34", semana del 17-21/08/2026) en
-   dos rondas (scripts/_match-employee-numbers-tmp.mjs y
-   scripts/_match2-tmp.mjs, ambos temporales, no versionados). Solo
+   BASE no tiene columna de numero de empleado. El cruce contra SEM 34
+   ("Asistencia FFT SEM 34", semana del 17-21/08/2026) se hizo en 3
+   rondas (scripts/_match-employee-numbers-tmp.mjs, _match2-tmp.mjs y
+   _apply-sem34-roster-tmp.mjs, todos temporales, no versionados). Solo
    se agrego `employeeNumber`/nombre completo cuando la coincidencia
-   fue INEQUIVOCA: un unico candidato con ese nombre, validado por
-   area compatible entre ambas hojas Y/O por el codigo de asistencia
-   del 18/08 (mismo dia del snapshot de BASE) coincidiendo en ambas
-   hojas. `employeeNumber` solo se puso cuando SEM 34 tenia numero
-   real (no "Proyecto"/"Nuevo"/vacio) para ese candidato; si el
-   nombre quedo confirmado pero SEM 34 no tenia numero real todavia,
-   se actualizo solo el nombre.
+   fue INEQUIVOCA: un unico candidato con ese nombre, validado por area
+   compatible entre ambas hojas Y/O por el codigo de asistencia del
+   18/08 coincidiendo en ambas hojas. `employeeNumber` solo se puso
+   cuando SEM 34 tenia numero real (no "Proyecto"/"Nuevo"/vacio); si el
+   nombre quedo confirmado pero sin numero real todavia, se actualizo
+   solo el nombre (y ahora tambien la fecha de ingreso, si la hay).
 
    Ronda 1: 42 de 116 resueltos (nombre + numero).
-   Ronda 2: 22 mas (8 con numero real + nombre, 14 solo nombre
-   completo — SEM 34 no trae numero real para esas personas todavia).
-   Total resuelto: 64 de 116. Quedan 52 sin este dato porque el
-   nombre corto de BASE no fue suficiente para identificar a la
-   persona correcta sin riesgo de equivocarse (nombres repetidos sin
-   forma de desambiguar, sin zona para validar y el dia 18/08
-   tampoco confirma, o candidatos en conflicto) — no se inventa ni
-   se adivina. EMPLOYEE_DIRECTORY los muestra como 'PENDIENTE'.
+   Ronda 2: 22 mas (8 con numero real + nombre, 14 solo nombre completo).
+   Ronda 3 (2026-08-20, con la lista completa de SEM 34 nombre+numero+
+   fecha de ingreso que dio el usuario): 19 resoluciones nuevas +
+   fecha de ingreso para 76 personas (66 via numero de empleado ya
+   conocido, 10 a mano para quienes SEM 34 aun no trae numero real) +
+   20 personas agregadas que NO estaban en BASE (ids "sem34-1".."sem34-20":
+   la mayoria en "Produccion" generico, sin decir que linea especifica,
+   por eso su areaZona queda como texto libre "PRODUCCION" en vez de
+   inventar una linea — no aparecen en el layout, solo en el modulo de
+   Personal). Total resuelto con nombre/numero: 83 de 136. Quedan sin
+   este dato los casos ambiguos (nombres repetidos sin forma de
+   desambiguar, p. ej. varios "Luis"/"Juan"/"Ricardo"/"Jesus" con mas de
+   un candidato posible) — no se inventa ni se adivina cual es cual.
 
-   Excepcion deliberada: 2 personas (Socorro/base-32, Olga/base-66)
-   con evidencia de coincidencia en SEM 34 se dejaron SIN actualizar
-   a peticion explicita del usuario, quien las considera baja por
-   ahora — no se debe reabrir esto sin que el usuario lo confirme.
+   Excepcion deliberada: 8 personas ("baja") se dejan SIN TOCAR a
+   peticion explicita del usuario (2026-08-19, reconfirmado 2026-08-20
+   pese a que la lista de SEM 34 trae evidencia fuerte — nombre+numero+
+   fecha — para 5 de las 8): Miguel/base-11, Reynaldo/base-12,
+   Daniela/base-31, Socorro/base-32, Marco/base-65, Olga/base-66,
+   Janeth/base-87, Jonhatan/base-107. No se debe reabrir esto sin que
+   el usuario lo confirme.
+
+   Areas nuevas "Chofer" e "Ingenieria" (SEM 34): por decision del
+   usuario (2026-08-20) NO tienen bloque de layout — el personal ahi
+   es elegible y buscable en el modulo de Personal, pero no aparece en
+   el plano visual (areaZona no coincide con ningun id de catalog.js).
+
+   "Roman Herrera de Leon" #3647 (area "Practicante" en SEM 34) es el
+   usuario administrador de la app, no personal de piso — se excluye
+   siempre de cualquier cruce (nunca se le asigna a "base-101 Roman",
+   que es una persona real distinta de Paletizado).
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
@@ -46,7 +70,7 @@ export const BASE_SNAPSHOT_DATE = '2026-08-18'
 export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-1",
-    "name": "Ayde",
+    "name": "Aide Mendoza Gutierrez",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "LC",
@@ -59,15 +83,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "18/06/2026"
   },
   {
     "id": "base-3",
-    "name": "Rosa",
+    "employeeNumber": "3591",
+    "name": "Rosa Maria Rodriguez Cruz",
     "areaZona": null,
     "rawZona": null,
     "actividad": "LC",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "09/03/2026"
   },
   {
     "id": "base-4",
@@ -76,7 +103,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "18/06/2026"
   },
   {
     "id": "base-5",
@@ -84,7 +112,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "10/03/2026"
   },
   {
     "id": "base-6",
@@ -93,7 +122,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "29/06/2026"
   },
   {
     "id": "base-7",
@@ -102,7 +132,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "29/06/2026"
   },
   {
     "id": "base-8",
@@ -111,7 +142,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/10/2025"
   },
   {
     "id": "base-9",
@@ -119,7 +151,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "LC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "27/12/2024"
   },
   {
     "id": "base-10",
@@ -128,7 +161,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "08/05/2025"
   },
   {
     "id": "base-11",
@@ -161,7 +195,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "15/05/2025"
   },
   {
     "id": "base-15",
@@ -170,7 +205,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "28/07/2026"
   },
   {
     "id": "base-16",
@@ -178,11 +214,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": null,
     "rawZona": null,
     "actividad": "EM",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "08/06/2026"
   },
   {
     "id": "base-17",
-    "name": "Antonio",
+    "name": "Antonio Rocha Ipiña",
     "areaZona": null,
     "rawZona": null,
     "actividad": "EM",
@@ -203,7 +240,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "04/12/2025"
   },
   {
     "id": "base-20",
@@ -215,11 +253,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-21",
-    "name": "Diego",
+    "employeeNumber": "3372",
+    "name": "Diego Alberto Tamez Vazquez",
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "13/10/2025"
   },
   {
     "id": "base-22",
@@ -227,15 +267,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "EM",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "03/02/2026"
   },
   {
     "id": "base-23",
-    "name": "Francisco",
+    "employeeNumber": "3984",
+    "name": "Francisco Gomez Cruz",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "05/08/2026"
   },
   {
     "id": "base-24",
@@ -244,15 +287,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "30/06/2026"
   },
   {
     "id": "base-25",
-    "name": "Patricia",
+    "employeeNumber": "3470",
+    "name": "Patricia Obregón Cerdas",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "09/06/2026"
   },
   {
     "id": "base-26",
@@ -261,7 +307,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "02/04/2025"
   },
   {
     "id": "base-27",
@@ -270,7 +317,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS5",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "13/01/2026"
   },
   {
     "id": "base-28",
@@ -279,15 +327,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "27/09/2025"
   },
   {
     "id": "base-29",
-    "name": "Sara",
+    "employeeNumber": "3889",
+    "name": "Sarah Estefania Juarez Alvarado",
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/07/2026"
   },
   {
     "id": "base-30",
@@ -296,7 +347,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "29/06/2026"
   },
   {
     "id": "base-31",
@@ -321,7 +373,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "09/12/2024"
   },
   {
     "id": "base-34",
@@ -338,7 +391,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "30/06/2026"
   },
   {
     "id": "base-36",
@@ -347,15 +401,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/07/2026"
   },
   {
     "id": "base-37",
-    "name": "Alexis",
+    "employeeNumber": "3932",
+    "name": "Alexis Gomez Jimenez",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "PE",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "27/07/2026"
   },
   {
     "id": "base-38",
@@ -364,7 +421,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "PE",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "29/07/2026"
   },
   {
     "id": "base-39",
@@ -373,7 +431,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "PE",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "12/01/2026"
   },
   {
     "id": "base-40",
@@ -389,7 +448,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "L",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "05/08/2026"
   },
   {
     "id": "base-42",
@@ -398,7 +458,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "PE",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/01/2026"
   },
   {
     "id": "base-43",
@@ -407,7 +468,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
     "actividad": "PE",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "27/05/2025"
   },
   {
     "id": "base-44",
@@ -432,7 +494,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "M",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "09/08/2026"
   },
   {
     "id": "base-47",
@@ -444,11 +507,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-48",
-    "name": "Juan E",
+    "employeeNumber": "3924",
+    "name": "Juan Eduardo Cuellar Ruiz",
     "areaZona": null,
     "rawZona": null,
     "actividad": "M",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "23/07/2026"
   },
   {
     "id": "base-49",
@@ -465,7 +530,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "M",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "28/07/2026"
   },
   {
     "id": "base-51",
@@ -497,7 +563,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": null,
     "rawZona": null,
     "actividad": "M",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "08/11/2026"
   },
   {
     "id": "base-55",
@@ -505,7 +572,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "M",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "08/12/2026"
   },
   {
     "id": "base-56",
@@ -522,15 +590,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "CAJAS",
     "rawZona": "CAJAS",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "30/12/2024"
   },
   {
     "id": "base-58",
-    "name": "Yesica",
+    "employeeNumber": "2570",
+    "name": "Yessica Guadalupe Luna Barboza",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "26/08/2025"
   },
   {
     "id": "base-59",
@@ -539,15 +610,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "26/02/2026"
   },
   {
     "id": "base-60",
-    "name": "Evelyn",
+    "employeeNumber": "3743",
+    "name": "Evelin Yasmin Bautista Martinez",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "04/03/2026"
   },
   {
     "id": "base-61",
@@ -556,7 +630,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 7",
     "rawZona": "LINEA 7",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "16/10/2025"
   },
   {
     "id": "base-62",
@@ -573,7 +648,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "CAPACITACION",
     "rawZona": "CAPACITACION",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "01/09/2025"
   },
   {
     "id": "base-64",
@@ -582,7 +658,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "20/07/2026"
   },
   {
     "id": "base-65",
@@ -615,7 +692,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "14/01/2026"
   },
   {
     "id": "base-69",
@@ -624,7 +702,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": null,
     "rawZona": null,
     "actividad": "TC",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "28/07/2026"
   },
   {
     "id": "base-70",
@@ -633,11 +712,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": "TC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "24/06/2026"
   },
   {
     "id": "base-71",
-    "name": "Brayan",
+    "employeeNumber": "3237",
+    "name": "Brayan Alejandro Lopez Ibarra",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": "TC",
@@ -645,19 +726,23 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-72",
-    "name": "Williams",
+    "employeeNumber": "3982",
+    "name": "Wiliams de la Cruz",
     "areaZona": null,
     "rawZona": null,
     "actividad": "TC",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "13/8/2028"
   },
   {
     "id": "base-73",
-    "name": "Juan",
+    "employeeNumber": "3818",
+    "name": "Juan Bohorquez",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": "TG",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/06/2026"
   },
   {
     "id": "base-74",
@@ -666,7 +751,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": null,
     "rawZona": null,
     "actividad": "TG",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "13/8/2027"
   },
   {
     "id": "base-75",
@@ -691,7 +777,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "C",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "11/06/2025"
   },
   {
     "id": "base-78",
@@ -700,7 +787,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "PC",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "01/09/2025"
   },
   {
     "id": "base-79",
@@ -709,7 +797,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS4",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "10/02/2026"
   },
   {
     "id": "base-80",
@@ -718,7 +807,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS3",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "13/01/2026"
   },
   {
     "id": "base-81",
@@ -727,7 +817,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS0",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "14/10/2025"
   },
   {
     "id": "base-82",
@@ -736,7 +827,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS4",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "21/01/2026"
   },
   {
     "id": "base-83",
@@ -745,7 +837,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS2",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "03/07/2026"
   },
   {
     "id": "base-84",
@@ -754,7 +847,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS1",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "03/02/2026"
   },
   {
     "id": "base-85",
@@ -763,15 +857,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS5",
     "actividad": "SA",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "03/06/2026"
   },
   {
     "id": "base-86",
-    "name": "Gustavo",
+    "employeeNumber": "3489",
+    "name": "Gustavo Israel Garibay García",
     "areaZona": "CAJAS",
     "rawZona": "CAJAS",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "26/11/2025"
   },
   {
     "id": "base-87",
@@ -820,7 +917,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "CALIDAD",
     "rawZona": "CALIDAD3",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "19/07/2026"
   },
   {
     "id": "base-93",
@@ -837,7 +935,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "CAPACITACION",
     "rawZona": "CAPACITACION",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "25/03/2026"
   },
   {
     "id": "base-95",
@@ -854,7 +953,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "DMT",
     "rawZona": "DMT",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "13/01/2026"
   },
   {
     "id": "base-97",
@@ -871,7 +971,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "LIMPIEZA",
     "rawZona": "LIMPIEZA",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "07/10/2025"
   },
   {
     "id": "base-99",
@@ -880,7 +981,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "19/09/2025"
   },
   {
     "id": "base-100",
@@ -889,7 +991,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "19/05/2025"
   },
   {
     "id": "base-101",
@@ -901,11 +1004,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-102",
-    "name": "Luis",
+    "employeeNumber": "3915",
+    "name": "Luis Manuel de Jesus Faz Serrano",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "21/07/2026"
   },
   {
     "id": "base-103",
@@ -914,7 +1019,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "28/07/2026"
   },
   {
     "id": "base-104",
@@ -922,7 +1028,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "25/01/2026"
   },
   {
     "id": "base-105",
@@ -931,15 +1038,18 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "SUPERVISOR",
     "rawZona": "SUPERVISOR",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "08/03/2025"
   },
   {
     "id": "base-106",
-    "name": "Diego",
+    "employeeNumber": "2573",
+    "name": "Diego Julián Marín Zamudio",
     "areaZona": "TEAM_LEADER",
     "rawZona": "TEAM LEADER",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "05/08/2024"
   },
   {
     "id": "base-107",
@@ -951,19 +1061,23 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-108",
-    "name": "Angel",
+    "employeeNumber": "3977",
+    "name": "Angel Ricardo Flores Vargas",
     "areaZona": null,
     "rawZona": null,
     "actividad": null,
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "05/08/2026"
   },
   {
     "id": "base-109",
-    "name": "Brayan",
+    "employeeNumber": "3861",
+    "name": "Brayan Alejandro Antonio Margarito",
     "areaZona": "CAJAS",
     "rawZona": "CAJAS",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "25/06/2026"
   },
   {
     "id": "base-110",
@@ -972,7 +1086,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "17/06/2026"
   },
   {
     "id": "base-111",
@@ -1004,7 +1119,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "27/12/2024"
   },
   {
     "id": "base-115",
@@ -1012,7 +1128,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "13/08/2026"
   },
   {
     "id": "base-116",
@@ -1021,5 +1138,159 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "rawZona": "CAJAS",
     "actividad": null,
     "asistencia": "A"
+  },
+  {
+    "id": "sem34-1",
+    "employeeNumber": "3486",
+    "name": "Sabina Sanchez Hernández",
+    "areaZona": "ACCESORIOS",
+    "rawZona": "Accesorios",
+    "fechaIngreso": null
+  },
+  {
+    "id": "sem34-2",
+    "name": "Jose Francisco Franco Vara",
+    "areaZona": "PALETIZADO",
+    "rawZona": "Paletizado",
+    "fechaIngreso": "17/08/2026"
+  },
+  {
+    "id": "sem34-3",
+    "employeeNumber": "3492",
+    "name": "David Delfin Rodriguez",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "23/07/2026"
+  },
+  {
+    "id": "sem34-4",
+    "name": "Brayan Gonzalez Sanchez",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "17/06/2026"
+  },
+  {
+    "id": "sem34-5",
+    "employeeNumber": "3878",
+    "name": "Jose Gustavo Aguilar Corpus",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "06/07/2026"
+  },
+  {
+    "id": "sem34-6",
+    "name": "Javier Aguilar De Dios",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "08/12/2026"
+  },
+  {
+    "id": "sem34-7",
+    "name": "Alexis Garcia Garcia",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "08/12/2026"
+  },
+  {
+    "id": "sem34-8",
+    "name": "Juan Hernandez Gonzalez",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "08/12/2026"
+  },
+  {
+    "id": "sem34-9",
+    "name": "Ricardo Yandel Sanchez Alviso",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "08/06/2026"
+  },
+  {
+    "id": "sem34-10",
+    "employeeNumber": "2888",
+    "name": "Angel Ismael Romero Rojas",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "28/05/2026"
+  },
+  {
+    "id": "sem34-11",
+    "employeeNumber": "3736",
+    "name": "Manuel Alejandro Ramos Barron",
+    "areaZona": "CHOFER",
+    "rawZona": "Chofer",
+    "fechaIngreso": "27/02/2026"
+  },
+  {
+    "id": "sem34-12",
+    "employeeNumber": "2661",
+    "name": "Diciembre Alfonso Alvarado",
+    "areaZona": "CHOFER",
+    "rawZona": "Chofer",
+    "fechaIngreso": "22/06/2025"
+  },
+  {
+    "id": "sem34-13",
+    "employeeNumber": "2678",
+    "name": "Jose Juan Bocanegra",
+    "areaZona": "INGENIERIA",
+    "rawZona": "Ingenieria",
+    "fechaIngreso": "25/02/2025"
+  },
+  {
+    "id": "sem34-14",
+    "employeeNumber": "2663",
+    "name": "Luis Hernandez Hernandez",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "05/08/2026"
+  },
+  {
+    "id": "sem34-15",
+    "employeeNumber": "3883",
+    "name": "Luis Angel Rangel Espindola",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "07/07/2026"
+  },
+  {
+    "id": "sem34-16",
+    "employeeNumber": "3096",
+    "name": "Luis Alfredo Salas Rocha",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": null
+  },
+  {
+    "id": "sem34-17",
+    "employeeNumber": "3188",
+    "name": "Juan de Dios Arellano Rodriguez",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "26/06/2026"
+  },
+  {
+    "id": "sem34-18",
+    "employeeNumber": "2986",
+    "name": "Juan Godinez Bautista",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "13/06/2026"
+  },
+  {
+    "id": "sem34-19",
+    "employeeNumber": "3885",
+    "name": "Ricardo Antonio Rodriguez Guzman",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "07/07/2026"
+  },
+  {
+    "id": "sem34-20",
+    "employeeNumber": "3251",
+    "name": "Jesus Perez Cruz",
+    "areaZona": "PRODUCCION",
+    "rawZona": "Produccion",
+    "fechaIngreso": "10/10/2025"
   }
 ]
