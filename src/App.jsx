@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import ThemeProvider from '@mui/material/styles/ThemeProvider'
 import CssBaseline from '@mui/material/CssBaseline'
 import { buildTheme } from './ui/theme'
@@ -7,6 +7,8 @@ import { AuthProvider } from './state/auth'
 import { RoleModeProvider } from './state/roleMode'
 import { DndAssignProvider } from './state/dndAssign'
 import ProtectedRoute from './routing/ProtectedRoute'
+import RequireDesktop from './routing/RequireDesktop'
+import DefaultRedirect from './routing/DefaultRedirect'
 import AppLayout from './layout/AppLayout'
 import LoginPage from './pages/auth/LoginPage'
 import ChangePasswordPage from './pages/auth/ChangePasswordPage'
@@ -30,13 +32,13 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
 
               <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route index element={<DefaultRedirect />} />
+                <Route path="/dashboard" element={<RequireDesktop><DashboardPage /></RequireDesktop>} />
                 <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
                 <Route path="/registro-personal" element={<RegistroPersonalPage />} />
                 <Route
                   path="/usuarios"
-                  element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsuariosPage /></ProtectedRoute>}
+                  element={<ProtectedRoute roles={['ADMINISTRADOR']}><RequireDesktop><UsuariosPage /></RequireDesktop></ProtectedRoute>}
                 />
               </Route>
 

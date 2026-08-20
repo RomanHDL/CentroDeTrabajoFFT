@@ -14,6 +14,7 @@ import GroupIcon from '@mui/icons-material/Group'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { NavLink } from 'react-router-dom'
+import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 
 export const SIDEBAR_WIDTH = 232
 
@@ -27,6 +28,15 @@ const NAV_ITEMS = [
   { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, roles: ['ADMINISTRADOR'] },
 ]
+
+/* En touch (tablet/celular de piso, 2026-08-20 a peticion del
+   usuario) el menu se reduce a estas dos, EN ESTE ORDEN — Registro
+   de personal primero (es la pantalla de entrada del dia), Centro de
+   Trabajo despues. Dashboard/Usuarios siguen existiendo tal cual
+   para quien entra desde una computadora (ver RequireDesktop, que
+   bloquea esas rutas por URL directa en touch, no solo aqui en el
+   menu). */
+const TOUCH_NAV_ORDER = ['/registro-personal', '/centro-trabajo']
 
 function NavList({ items, onItemClick }) {
   return (
@@ -70,7 +80,11 @@ function NavList({ items, onItemClick }) {
    Login/logout/roles/ProtectedRoute no se tocan: es solo
    presentacion de la misma lista de rutas de siempre. */
 export default function Sidebar({ role, open, onClose, variant, pinned, onTogglePin, onMouseEnter, onMouseLeave }) {
-  const items = NAV_ITEMS.filter((item) => item.roles.includes(role))
+  const isTouch = useIsTouchDevice()
+  const byRole = NAV_ITEMS.filter((item) => item.roles.includes(role))
+  const items = isTouch
+    ? TOUCH_NAV_ORDER.map((to) => byRole.find((item) => item.to === to)).filter(Boolean)
+    : byRole
 
   if (variant === 'overlay') {
     return (

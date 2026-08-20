@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import AppBar from '@mui/material/AppBar'
@@ -11,7 +11,6 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Divider from '@mui/material/Divider'
 import ListItemIcon from '@mui/material/ListItemIcon'
-import useMediaQuery from '@mui/material/useMediaQuery'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
@@ -20,6 +19,7 @@ import LockResetIcon from '@mui/icons-material/LockReset'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../state/auth'
 import { ROLE_LABELS } from './roleLabels'
+import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 import Sidebar from './Sidebar'
 
 function initialsOf(name) {
@@ -40,7 +40,22 @@ export default function AppLayout({ mode, setMode }) {
   // Puntero real del dispositivo, no ancho de pantalla: un mouse/trackpad
   // real habilita el auto-hide por hover; touch (tablet/movil) usa el
   // drawer clasico con hamburguesa, sin depender de hover.
-  const hasFineHover = useMediaQuery('(hover: hover) and (pointer: fine)')
+  const isTouch = useIsTouchDevice()
+  const hasFineHover = !isTouch
+
+  // Una vez adentro de la app (login ya quedo en vertical, ver
+  // LoginPage), en touch se intenta fijar horizontal — es la
+  // orientacion pensada para tablet en piso. "Best effort": la
+  // Screen Orientation API solo permite lock() en pantalla completa o
+  // dentro de una PWA instalada (Chrome/Android); Safari/iOS no la
+  // implementa en absoluto. Si falla o no existe, no rompe nada, el
+  // layout responsive sigue funcionando igual en cualquier orientacion.
+  useEffect(() => {
+    if (!isTouch) return
+    const orientation = window.screen?.orientation
+    if (!orientation?.lock) return
+    orientation.lock('landscape').catch(() => {})
+  }, [isTouch])
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState(null)

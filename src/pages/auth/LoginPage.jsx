@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
@@ -19,6 +19,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  // Login siempre en vertical (tarjeta angosta, pensada para portrait)
+  // — ya adentro de la app, en touch se intenta horizontal (ver
+  // AppLayout). "Best effort": la Screen Orientation API solo
+  // permite lock() en pantalla completa o PWA instalada
+  // (Chrome/Android); Safari/iOS no la implementa. Si falla o no
+  // existe, el diseño ya centrado/angosto de esta tarjeta se ve bien
+  // en portrait de todas formas, con o sin el lock real.
+  useEffect(() => {
+    const orientation = window.screen?.orientation
+    if (!orientation?.lock) return
+    orientation.lock('portrait').catch(() => {})
+  }, [])
 
   if (!sessionLoading && user) {
     const from = location.state?.from?.pathname || '/'

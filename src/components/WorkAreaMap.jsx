@@ -56,6 +56,17 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    columna derecha) intercambiaron su orden — CT 0 arriba, CT 1
    abajo — a peticion explicita del usuario.
 
+   Pulido touch/tablet (2026-08-20): LineBar/HorizontalAreaBar y los
+   controles de zoom se agrandaron un poco (minWidth/minHeight y
+   tamaño de IconButton) para que sean comodos con el dedo, no solo
+   con cursor de mouse preciso. El drag & drop de personas sigue
+   siendo HTML5 nativo (no confiable en touch — ver src/ui/dnd.js),
+   por eso CADA superficie que asigna/mueve personal ya tenia desde
+   antes una alternativa real de click/tap (WorkstationCard,
+   AvailablePersonnelTray con scopedAreaId, SuggestedEmployeeCard,
+   EmployeeAssignSearchBar) — no dependen del drag para funcionar en
+   tablet.
+
    NO es una copia al pixel del CAD real, es una aproximacion de
    posicion/proporcion pensada para pantalla. Nunca se inventan
    lineas/areas que no esten en el catalogo. Los tags de nombres
@@ -156,7 +167,7 @@ function LineBar({ lineId, selected, onClick }) {
       {...dropProps}
       onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
       sx={{
-        flex: '1 1 0', minWidth: 50, height: '100%',
+        flex: '1 1 0', minWidth: 58, height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
         borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', py: 1, px: 0.25,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
@@ -197,7 +208,7 @@ function HorizontalAreaBar({ areaId, selected, onClick, sx }) {
       {...dropProps}
       onClick={(e) => { e.stopPropagation(); onClick(areaId) }}
       sx={{
-        display: 'flex', alignItems: 'center', gap: 1, width: '100%', minHeight: 46,
+        display: 'flex', alignItems: 'center', gap: 1, width: '100%', minHeight: 52,
         borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', px: 1.25, py: 1,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
@@ -381,12 +392,12 @@ export default function WorkAreaMap({ selection, onSelect }) {
             size="small"
             startIcon={<CenterFocusStrongIcon fontSize="small" />}
             onClick={() => setZoom(1)}
-            sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary' }}
+            sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary', minHeight: 40 }}
           >
             Ajustar vista
           </Button>
           <Tooltip title="Alejar">
-            <IconButton size="small" onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2)))}>
+            <IconButton sx={{ width: 40, height: 40 }} onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2)))}>
               <RemoveIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -394,12 +405,12 @@ export default function WorkAreaMap({ selection, onSelect }) {
             {Math.round(zoom * 100)}%
           </Typography>
           <Tooltip title="Acercar">
-            <IconButton size="small" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}>
+            <IconButton sx={{ width: 40, height: 40 }} onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}>
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Ampliar vista">
-            <IconButton size="small" onClick={() => setZoom(1.3)}>
+            <IconButton sx={{ width: 40, height: 40 }} onClick={() => setZoom(1.3)}>
               <OpenInFullIcon fontSize="small" />
             </IconButton>
           </Tooltip>
