@@ -13,17 +13,32 @@
 
    BASE no tiene columna de numero de empleado. El 2026-08-19 se
    cruzo este snapshot contra "ASISTENCIA FFT SEM 34.xlsx" (unica
-   hoja usada: "Asistencia FFT SEM 34", semana del 17-21/08/2026) por
-   nombre completo + area, via scripts/_match-employee-numbers-tmp.mjs
-   (script temporal, no versionado). Solo se agrego `employeeNumber`
-   cuando la coincidencia fue INEQUIVOCA: un unico candidato con ese
-   nombre, area compatible entre ambas hojas, y numero real (no
-   "Proyecto"/"Nuevo"/vacio) en SEM 34. Fueron 42 de 116. El resto
-   se queda sin este campo (EMPLOYEE_DIRECTORY los muestra como
-   'PENDIENTE') porque el nombre no fue suficiente para identificar
-   a la persona correcta sin riesgo de equivocarse (nombres
-   repetidos, sin zona para validar, o SEM 34 tampoco tenia numero
-   real todavia) — no se inventa ni se adivina un numero.
+   hoja usada: "Asistencia FFT SEM 34", semana del 17-21/08/2026) en
+   dos rondas (scripts/_match-employee-numbers-tmp.mjs y
+   scripts/_match2-tmp.mjs, ambos temporales, no versionados). Solo
+   se agrego `employeeNumber`/nombre completo cuando la coincidencia
+   fue INEQUIVOCA: un unico candidato con ese nombre, validado por
+   area compatible entre ambas hojas Y/O por el codigo de asistencia
+   del 18/08 (mismo dia del snapshot de BASE) coincidiendo en ambas
+   hojas. `employeeNumber` solo se puso cuando SEM 34 tenia numero
+   real (no "Proyecto"/"Nuevo"/vacio) para ese candidato; si el
+   nombre quedo confirmado pero SEM 34 no tenia numero real todavia,
+   se actualizo solo el nombre.
+
+   Ronda 1: 42 de 116 resueltos (nombre + numero).
+   Ronda 2: 22 mas (8 con numero real + nombre, 14 solo nombre
+   completo — SEM 34 no trae numero real para esas personas todavia).
+   Total resuelto: 64 de 116. Quedan 52 sin este dato porque el
+   nombre corto de BASE no fue suficiente para identificar a la
+   persona correcta sin riesgo de equivocarse (nombres repetidos sin
+   forma de desambiguar, sin zona para validar y el dia 18/08
+   tampoco confirma, o candidatos en conflicto) — no se inventa ni
+   se adivina. EMPLOYEE_DIRECTORY los muestra como 'PENDIENTE'.
+
+   Excepcion deliberada: 2 personas (Socorro/base-32, Olga/base-66)
+   con evidencia de coincidencia en SEM 34 se dejaron SIN actualizar
+   a peticion explicita del usuario, quien las considera baja por
+   ahora — no se debe reabrir esto sin que el usuario lo confirme.
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
@@ -65,7 +80,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-5",
-    "name": "Migdalia",
+    "name": "Migdalia Georgina Ramirez Díaz",
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "LC",
@@ -100,7 +115,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-9",
-    "name": "Angie",
+    "name": "Angie Neil Garrido Castellanos",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "LC",
@@ -108,7 +123,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-10",
-    "name": "Alfredo",
+    "employeeNumber": "2871",
+    "name": "Jose Alfredo Morales Reyes",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
     "actividad": "EM",
@@ -158,7 +174,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-16",
-    "name": "Ramiro",
+    "name": "Ramiro Aguilar Rubio",
     "areaZona": null,
     "rawZona": null,
     "actividad": "EM",
@@ -207,7 +223,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-22",
-    "name": "Cesar",
+    "name": "Cesar Hernandez Hernandez",
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
     "actividad": "EM",
@@ -223,7 +239,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-24",
-    "name": "Lidia",
+    "employeeNumber": "3872",
+    "name": "Lidia Esther Rivera Gomez",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
@@ -308,7 +325,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-34",
-    "name": "Valentin",
+    "name": "Valentin Cruz Martinez",
     "areaZona": null,
     "rawZona": null,
     "actividad": "L",
@@ -368,7 +385,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-41",
-    "name": "Edgar",
+    "name": "Edgar Solis Cruz",
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "L",
@@ -476,7 +493,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-54",
-    "name": "Kevin",
+    "name": "Kevin Alejandro Cira Ramirez",
     "areaZona": null,
     "rawZona": null,
     "actividad": "M",
@@ -484,7 +501,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-55",
-    "name": "Eleazar",
+    "name": "Jose Eleazar Hernandez",
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
     "actividad": "M",
@@ -534,7 +551,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-61",
-    "name": "Uriel",
+    "employeeNumber": "3310",
+    "name": "Edgar Uriel Sanchez Morales",
     "areaZona": "LINEA 7",
     "rawZona": "LINEA 7",
     "actividad": "LIDER",
@@ -550,7 +568,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-63",
-    "name": "Cecilia",
+    "employeeNumber": "3085",
+    "name": "Sandra Cecilia Perez Cruz",
     "areaZona": "CAPACITACION",
     "rawZona": "CAPACITACION",
     "actividad": "LIDER",
@@ -600,7 +619,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-69",
-    "name": "David",
+    "employeeNumber": "3942",
+    "name": "Jesus David Hernandez Zuniga",
     "areaZona": null,
     "rawZona": null,
     "actividad": "TC",
@@ -641,7 +661,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-74",
-    "name": "Jose",
+    "employeeNumber": "3981",
+    "name": "Jose Sanchez",
     "areaZona": null,
     "rawZona": null,
     "actividad": "TG",
@@ -649,7 +670,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-75",
-    "name": "Nathalie",
+    "name": "Nathalie del Valle Zapata Lopez",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": "E",
@@ -657,7 +678,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-76",
-    "name": "Yusley",
+    "name": "Yusley Montes",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": "E",
@@ -665,7 +686,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-77",
-    "name": "Mary Dd",
+    "employeeNumber": "2718",
+    "name": "Maria de Jesus de Dios Carrazo",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "C",
@@ -709,7 +731,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-82",
-    "name": "Esmeralda",
+    "employeeNumber": "3626",
+    "name": "Esmeralda Catalina Llanas Tinajero",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS4",
     "actividad": "SA",
@@ -835,7 +858,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-97",
-    "name": "Mireya",
+    "name": "Mireya Josefina Lopez Zapata",
     "areaZona": "LIMPIEZA",
     "rawZona": "LIMPIEZA",
     "actividad": null,
@@ -895,7 +918,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-104",
-    "name": "Blaise",
+    "name": "Estime Blaise",
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
     "actividad": null,
@@ -977,7 +1000,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-114",
-    "name": "Denilson",
+    "name": "Denilson Edilber Castro",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
@@ -985,7 +1008,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-115",
-    "name": "Mauricio",
+    "name": "Mauricio Hernandez Clixtro",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
     "actividad": null,
