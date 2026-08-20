@@ -4,9 +4,12 @@
 
    Antes traia 36 nombres inventados. Ahora viene del snapshot
    REAL de BASE (LAYOUT FFT.xlsx) — mismo dato que alimenta el
-   plano visual de areas. Ninguno tiene employeeNumber real
-   porque BASE no trae esa columna: se muestra 'PENDIENTE' y el
-   numero real llegara con la importacion formal (Etapa 2).
+   plano visual de areas. BASE no trae numero de empleado; ese dato
+   llego despues (2026-08-19) desde "ASISTENCIA FFT SEM 34.xlsx"
+   (hoja de la semana 34, la unica usada — ver `employeeNumber` en
+   realPersonnelSnapshot.js) cruzando por nombre + area, SOLO donde
+   la coincidencia fue inequivoca. Quien no tenga `employeeNumber`
+   en el snapshot todavia no tiene numero confirmado -> 'PENDIENTE'.
 
    `eligible` — HOY el sistema NO tiene ninguna hoja BAJAS
    importada (ni en JS ni en Prisma/Neon: ese modelo existe pero
@@ -24,7 +27,7 @@ import { REAL_PERSONNEL_SNAPSHOT } from '../production/realPersonnelSnapshot'
 
 export const EMPLOYEE_DIRECTORY = REAL_PERSONNEL_SNAPSHOT.map((p) => ({
   id: p.id,
-  employeeNumber: 'PENDIENTE',
+  employeeNumber: p.employeeNumber || 'PENDIENTE',
   name: p.name,
   status: 'Activo',
   createdAt: null,

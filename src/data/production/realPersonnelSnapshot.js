@@ -11,9 +11,19 @@
    - actividad/asistencia: codigos crudos de BASE, SIN interpretar
      significado (igual que el resto del proyecto).
 
-   BASE no tiene columna de numero de empleado — por eso NINGUNO de
-   estos 116 tiene employeeNumber real; se muestra PENDIENTE para
-   todos hasta la importacion formal con reconciliacion (Etapa 2).
+   BASE no tiene columna de numero de empleado. El 2026-08-19 se
+   cruzo este snapshot contra "ASISTENCIA FFT SEM 34.xlsx" (unica
+   hoja usada: "Asistencia FFT SEM 34", semana del 17-21/08/2026) por
+   nombre completo + area, via scripts/_match-employee-numbers-tmp.mjs
+   (script temporal, no versionado). Solo se agrego `employeeNumber`
+   cuando la coincidencia fue INEQUIVOCA: un unico candidato con ese
+   nombre, area compatible entre ambas hojas, y numero real (no
+   "Proyecto"/"Nuevo"/vacio) en SEM 34. Fueron 42 de 116. El resto
+   se queda sin este campo (EMPLOYEE_DIRECTORY los muestra como
+   'PENDIENTE') porque el nombre no fue suficiente para identificar
+   a la persona correcta sin riesgo de equivocarse (nombres
+   repetidos, sin zona para validar, o SEM 34 tampoco tenia numero
+   real todavia) — no se inventa ni se adivina un numero.
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
@@ -29,6 +39,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-2",
+    "employeeNumber": "3842",
     "name": "Thelma",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
@@ -45,6 +56,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-4",
+    "employeeNumber": "3844",
     "name": "Ezelin",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
@@ -61,6 +73,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-6",
+    "employeeNumber": "3866",
     "name": "Yailen",
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
@@ -69,6 +82,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-7",
+    "employeeNumber": "3865",
     "name": "Peraza",
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
@@ -77,6 +91,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-8",
+    "employeeNumber": "3285",
     "name": "Francisca",
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
@@ -125,6 +140,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-14",
+    "employeeNumber": "2898",
     "name": "Saul",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
@@ -133,6 +149,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-15",
+    "employeeNumber": "3939",
     "name": "Elian",
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
@@ -165,6 +182,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-19",
+    "employeeNumber": "3499",
     "name": "Pedro",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
@@ -221,6 +239,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-26",
+    "employeeNumber": "2767",
     "name": "Gudelia",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
@@ -229,6 +248,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-27",
+    "employeeNumber": "3580",
     "name": "Norma",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS5",
@@ -237,6 +257,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-28",
+    "employeeNumber": "3101",
     "name": "Veronica",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
@@ -253,6 +274,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-30",
+    "employeeNumber": "3864",
     "name": "Victor",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
@@ -277,6 +299,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-33",
+    "employeeNumber": "2626",
     "name": "Ulises",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
@@ -293,6 +316,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-35",
+    "employeeNumber": "3871",
     "name": "Karol",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
@@ -301,6 +325,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-36",
+    "employeeNumber": "3891",
     "name": "Edith",
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
@@ -317,6 +342,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-38",
+    "employeeNumber": "3559",
     "name": "Esly",
     "areaZona": "LINEA 1",
     "rawZona": "LINEA 1",
@@ -325,6 +351,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-39",
+    "employeeNumber": "3555",
     "name": "Delfina",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
@@ -349,6 +376,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-42",
+    "employeeNumber": "3540",
     "name": "Nancy",
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
@@ -357,6 +385,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-43",
+    "employeeNumber": "2945",
     "name": "Lourdes",
     "areaZona": "LINEA 4",
     "rawZona": "LINEA 4",
@@ -381,6 +410,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-46",
+    "employeeNumber": "3963",
     "name": "Bryan",
     "areaZona": "LINEA 3",
     "rawZona": "LINEA 3",
@@ -413,6 +443,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-50",
+    "employeeNumber": "3938",
     "name": "Hector",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
@@ -469,6 +500,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-57",
+    "employeeNumber": "2641",
     "name": "Ernesto",
     "areaZona": "CAJAS",
     "rawZona": "CAJAS",
@@ -485,6 +517,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-59",
+    "employeeNumber": "3650",
     "name": "Lizbeth",
     "areaZona": "LINEA 2",
     "rawZona": "LINEA 2",
@@ -525,6 +558,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-64",
+    "employeeNumber": "3912",
     "name": "Oscar",
     "areaZona": "LINEA 0",
     "rawZona": "LINEA 0",
@@ -557,6 +591,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-68",
+    "employeeNumber": "3595",
     "name": "Idalia",
     "areaZona": "LINEA 5",
     "rawZona": "LINEA 5",
@@ -573,6 +608,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-70",
+    "employeeNumber": "3860",
     "name": "Axel",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
@@ -637,6 +673,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-78",
+    "employeeNumber": "3086",
     "name": "Juany",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
@@ -645,6 +682,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-79",
+    "employeeNumber": "3719",
     "name": "Damaris",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS4",
@@ -653,6 +691,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-80",
+    "employeeNumber": "3575",
     "name": "Karen",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS3",
@@ -661,6 +700,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-81",
+    "employeeNumber": "3361",
     "name": "Daniel",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS0",
@@ -677,6 +717,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-83",
+    "employeeNumber": "3016",
     "name": "Angela",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS2",
@@ -685,6 +726,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-84",
+    "employeeNumber": "3678",
     "name": "Emiret",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS1",
@@ -693,6 +735,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-85",
+    "employeeNumber": "3544",
     "name": "Evelyn",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS5",
@@ -749,6 +792,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-92",
+    "employeeNumber": "3914",
     "name": "Daniela",
     "areaZona": "CALIDAD",
     "rawZona": "CALIDAD3",
@@ -765,6 +809,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-94",
+    "employeeNumber": "2738",
     "name": "Badillo",
     "areaZona": "CAPACITACION",
     "rawZona": "CAPACITACION",
@@ -781,6 +826,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-96",
+    "employeeNumber": "3568",
     "name": "Jovani",
     "areaZona": "DMT",
     "rawZona": "DMT",
@@ -797,6 +843,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-98",
+    "employeeNumber": "3280",
     "name": "Sofia",
     "areaZona": "LIMPIEZA",
     "rawZona": "LIMPIEZA",
@@ -805,6 +852,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-99",
+    "employeeNumber": "3133",
     "name": "Elias",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
@@ -813,6 +861,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-100",
+    "employeeNumber": "2686",
     "name": "Paulino",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
@@ -837,6 +886,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-103",
+    "employeeNumber": "3401",
     "name": "Rodrigo",
     "areaZona": "SOPORTE",
     "rawZona": "SOPORTE",
@@ -853,6 +903,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-105",
+    "employeeNumber": "2701",
     "name": "Cain",
     "areaZona": "SUPERVISOR",
     "rawZona": "SUPERVISOR",
@@ -893,6 +944,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-110",
+    "employeeNumber": "3841",
     "name": "Genaro",
     "areaZona": "PALETIZADO",
     "rawZona": "PALETIZADO",
