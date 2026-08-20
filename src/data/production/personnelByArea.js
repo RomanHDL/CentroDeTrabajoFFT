@@ -1,7 +1,7 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
-import { WORK_CENTERS, workCenterById } from './catalog'
+import { WORK_CENTERS, workCenterById, hasLineStations } from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
-import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAssignableEmployees } from '../personnel/repository'
+import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees, getAssignableEmployees, todayISO } from '../personnel/repository'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -82,6 +82,61 @@ export function getPeopleByArea() {
   })
 
   return map
+}
+
+/* Pase de lista "efectivo" de HOY — para la pestaña Personal del
+   Centro de Trabajo. A peticion del usuario (2026-08-20), esta
+   tabla ya NO exige que alguien registre manualmente a cada
+   persona: parte de getPeopleByArea() (mismo calculo que ya usa el
+   layout) y solo LLENA el hueco de quien todavia no tiene una fila
+   de asignacion real hoy, sin pisarla si ya existe (checkInEmployee/
+   moveEmployee siguen siendo la fuente de verdad en cuanto alguien
+   se registra o se mueve de verdad).
+
+   Para no inventar datos que no tenemos: una fila "por snapshot"
+   nunca lleva hora de entrada ni turno (esos campos quedan null; la
+   UI los muestra como "—", nunca una hora inventada), y en Linea 1..10
+   (hasLineStations) tampoco lleva una estacion especifica (Montaje/
+   Prueba electrica/etc. — BASE no dice quien hace que puesto) — solo
+   en areas WORK_AREA/SUPPORT_AREA se usa el puesto generico real que
+   workstations.js ya define para ese area (nunca uno de linea).
+
+   Esta funcion NO se usa para exportar a Excel (excelExport.js sigue
+   usando getTodayRoster() de repository.js, que refleja SOLO
+   check-ins/movimientos reales — el pase de lista exportable debe
+   seguir siendo evidencia real, no una fila sintetica). */
+export function getEffectiveTodayRoster() {
+  const employeesById = new Map(getAllEmployees().map((e) => [e.id, e]))
+
+  const real = getAssignmentsForDate().map((a) => ({
+    ...a,
+    employee: employeesById.get(a.employeeId) || null,
+    source: 'REGISTRO',
+  }))
+  const realIds = new Set(real.map((r) => r.employeeId))
+
+  const byArea = getPeopleByArea()
+  const synthetic = []
+  Object.keys(byArea).forEach((areaId) => {
+    byArea[areaId].forEach((p) => {
+      if (realIds.has(p.id)) return
+      const employee = employeesById.get(p.id) || null
+      synthetic.push({
+        id: `snapshot-${p.id}`,
+        employeeId: p.id,
+        employeeNumber: employee?.employeeNumber || 'PENDIENTE',
+        employee,
+        areaId,
+        stationId: hasLineStations(areaId) ? null : (workCenterById(areaId)?.name || areaId),
+        checkInAt: null,
+        shift: null,
+        date: todayISO(),
+        source: 'SNAPSHOT',
+      })
+    })
+  })
+
+  return [...real, ...synthetic].sort((a, b) => ((a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1))
 }
 
 export function getPeopleWithoutArea() {

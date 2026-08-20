@@ -23,8 +23,9 @@ import HistoryIcon from '@mui/icons-material/History'
 import { usePageStyles } from '../../ui/pageStyles'
 import { KpiCard, EmptyState } from '../../ui'
 import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
+import { getEffectiveTodayRoster } from '../../data/production/personnelByArea'
 import {
-  getTodayRoster, getPersonnelPresentToday, getLinesWithPersonnelToday, getMovesCountForDate,
+  getMovesCountForDate,
   searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -50,9 +51,9 @@ export default function PersonalDeHoyTab() {
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
   const [historyEmployee, setHistoryEmployee] = useState(null)
 
-  const roster = useMemo(() => getTodayRoster(), [version])
-  const presentToday = useMemo(() => getPersonnelPresentToday(), [version])
-  const linesWithPersonnel = useMemo(() => getLinesWithPersonnelToday(), [version])
+  const roster = useMemo(() => getEffectiveTodayRoster(), [version])
+  const presentToday = roster.length
+  const linesWithPersonnel = useMemo(() => new Set(roster.map((r) => r.areaId)).size, [roster])
   const movesToday = useMemo(() => getMovesCountForDate(todayISO()), [version])
   const unassigned = useMemo(() => getUnassignedPresentToday(), [version])
 
@@ -205,11 +206,15 @@ export default function PersonalDeHoyTab() {
                   <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{r.employeeNumber}</TableCell>
                   <TableCell sx={ps.cellText}>{r.employee?.name || '—'}</TableCell>
                   <TableCell sx={ps.cellTextSecondary}>{areaLabel(r.areaId)}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.stationId}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.checkInAt}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.shift}</TableCell>
+                  <TableCell sx={ps.cellTextSecondary}>{r.stationId || 'Sin estación'}</TableCell>
+                  <TableCell sx={ps.cellTextSecondary}>{r.checkInAt || '—'}</TableCell>
+                  <TableCell sx={ps.cellTextSecondary}>{r.shift || '—'}</TableCell>
                   <TableCell>
-                    <Chip size="small" label="Presente" sx={ps.statusChip('COMPLETADA')} />
+                    {r.source === 'SNAPSHOT' ? (
+                      <Chip size="small" label="Por snapshot" sx={ps.statusChip('PENDIENTE')} />
+                    ) : (
+                      <Chip size="small" label="Registrado hoy" sx={ps.statusChip('COMPLETADA')} />
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
