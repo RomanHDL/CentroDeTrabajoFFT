@@ -12,6 +12,7 @@ import LoginPage from './pages/auth/LoginPage'
 import ChangePasswordPage from './pages/auth/ChangePasswordPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
+import RegistroPersonalPage from './pages/registro-personal/RegistroPersonalPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
 import ToastHost from './ui/ToastHost'
 
@@ -32,6 +33,7 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
+                <Route path="/registro-personal" element={<RegistroPersonalPage />} />
                 <Route
                   path="/usuarios"
                   element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsuariosPage /></ProtectedRoute>}

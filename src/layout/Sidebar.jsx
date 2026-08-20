@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import FactoryIcon from '@mui/icons-material/Factory'
+import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import GroupIcon from '@mui/icons-material/Group'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
@@ -23,6 +24,7 @@ export const SIDEBAR_WIDTH = 232
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
+  { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, roles: ['ADMINISTRADOR'] },
 ]
 

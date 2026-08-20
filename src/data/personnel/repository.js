@@ -74,8 +74,24 @@ export function getAssignableEmployees() {
   return getAllEmployees().filter(isEmployeeEligible)
 }
 
+/* 'PROYECTO' (sin numero real todavia) y 'PENDIENTE' (placeholder de
+   EMPLOYEE_DIRECTORY para quien BASE/SEM34 no le confirmo numero) son
+   los dos unicos valores que MUCHAS personas distintas comparten a
+   proposito — se identifican por nombre completo, no por numero. Para
+   cualquier otro numero, dos empleados con el mismo valor serian el
+   mismo empleado duplicado por error. */
+const SHARED_PLACEHOLDER_NUMBERS = new Set(['PROYECTO', 'PENDIENTE'])
+
+function isEmployeeNumberTaken(number, excludeEmployeeId = null) {
+  if (SHARED_PLACEHOLDER_NUMBERS.has(number)) return false
+  return getAllEmployees().some(e => e.employeeNumber === number && e.id !== excludeEmployeeId)
+}
+
 export function createEmployee({ employeeNumber, name }) {
   const number = String(employeeNumber).trim()
+  if (isEmployeeNumberTaken(number)) {
+    throw new Error(`El número de empleado ${number} ya está en uso por otra persona.`)
+  }
   const employees = readEmployees()
   const employee = {
     id: makeId('emp'),
@@ -163,7 +179,11 @@ export function markPresentOnly({ employeeNumber, name, shift }) {
   let employee = getEmployeeByNumber(number)
   if (!employee) {
     if (!name || !name.trim()) return { status: 'NEEDS_NAME', employeeNumber: number }
-    employee = createEmployee({ employeeNumber: number, name })
+    try {
+      employee = createEmployee({ employeeNumber: number, name })
+    } catch (e) {
+      return { status: 'ERROR', message: e.message }
+    }
   }
 
   const date = todayISO()
@@ -371,7 +391,11 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
     if (!name || !name.trim()) {
       return { status: 'NEEDS_NAME', employeeNumber: number }
     }
-    employee = createEmployee({ employeeNumber: number, name })
+    try {
+      employee = createEmployee({ employeeNumber: number, name })
+    } catch (e) {
+      return { status: 'ERROR', message: e.message }
+    }
   }
 
   const date = todayISO()
