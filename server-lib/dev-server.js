@@ -17,6 +17,8 @@ import usersIndexHandler from '../api/users/index.js'
 import userByIdHandler from '../api/users/[id].js'
 import userDeactivateHandler from '../api/users/[id]/deactivate.js'
 import userResetPasswordHandler from '../api/users/[id]/reset-password.js'
+import rolePermissionsIndexHandler from '../api/role-permissions/index.js'
+import rolePermissionByRoleHandler from '../api/role-permissions/[role].js'
 
 const app = express()
 app.use(express.json())
@@ -43,6 +45,9 @@ app.post('/api/users', wrapAsync(usersIndexHandler))
 app.patch('/api/users/:id', withDynamicParams(userByIdHandler))
 app.post('/api/users/:id/deactivate', withDynamicParams(userDeactivateHandler))
 app.post('/api/users/:id/reset-password', withDynamicParams(userResetPasswordHandler))
+
+app.get('/api/role-permissions', wrapAsync(rolePermissionsIndexHandler))
+app.patch('/api/role-permissions/:role', withDynamicParams(rolePermissionByRoleHandler))
 
 app.use((err, req, res, _next) => {
   console.error(err)

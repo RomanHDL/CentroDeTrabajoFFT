@@ -14,6 +14,7 @@ const KEYS = {
   movements: 'cp_movements_v1',
   attendance: 'cp_attendance_v1',
   skills: 'cp_skills_v1',
+  pendingMoves: 'cp_pending_moves_v1',
 }
 
 function readList(key) {
@@ -53,3 +54,11 @@ export const writeAttendance = (rows) => writeList(KEYS.attendance, rows)
    no donde esta asignado hoy. */
 export const readSkills = () => readList(KEYS.skills)
 export const writeSkills = (rows) => writeList(KEYS.skills, rows)
+
+/* Movimientos que un LIDER pide pero todavia no se aplican — quedan
+   aqui hasta que un SUPERVISOR/ADMINISTRADOR los aprueba o rechaza
+   (peticion explicita del usuario: un lider nunca reubica gente sin
+   verificacion). Separado de `movements` (que es el historial de lo
+   que YA ocurrio de verdad). */
+export const readPendingMoves = () => readList(KEYS.pendingMoves)
+export const writePendingMoves = (rows) => writeList(KEYS.pendingMoves, rows)

@@ -127,10 +127,18 @@ export default function AppLayout({ mode, setMode }) {
               <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{roleLabel} · Mi cuenta</Typography>
             </Box>
             <Divider />
-            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/cambiar-contrasena') }}>
-              <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
-              Cambiar contraseña
-            </MenuItem>
+            {/* Cambio de contraseña voluntario: solo ADMINISTRADOR (a peticion
+                explicita del usuario). SUPERVISOR/LIDER reciben su contraseña
+                nueva de un administrador (Usuarios > Restablecer contraseña);
+                el cambio FORZADO por contraseña temporal sigue aplicando a
+                cualquier rol via el redirect de ProtectedRoute, sin pasar por
+                este menu. */}
+            {user?.role === 'ADMINISTRADOR' && (
+              <MenuItem onClick={() => { setMenuAnchor(null); navigate('/cambiar-contrasena') }}>
+                <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
+                Cambiar contraseña
+              </MenuItem>
+            )}
             <MenuItem onClick={handleLogout}>
               <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
               Cerrar sesión

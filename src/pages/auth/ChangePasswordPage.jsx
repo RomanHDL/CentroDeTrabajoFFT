@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
@@ -20,6 +20,20 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState('')
 
   const requiresCurrent = user && !user.mustChangePassword
+
+  // El cambio FORZADO (contraseña temporal, mustChangePassword=true) sigue
+  // disponible para cualquier rol — es un paso de seguridad obligatorio, no
+  // una comodidad, y bloquearlo dejaria a alguien sin poder entrar nunca.
+  // El cambio VOLUNTARIO (el usuario ya tiene su contraseña definitiva y
+  // solo quiere actualizarla) queda restringido a ADMINISTRADOR (a peticion
+  // explicita del usuario) — SUPERVISOR/LIDER que necesiten una contraseña
+  // nueva la reciben de un administrador (ver "Restablecer contraseña" en
+  // Usuarios). El backend (api/auth/change-password.js) repite esta misma
+  // regla como defensa en profundidad, por si alguien llega aqui evitando
+  // la UI.
+  if (user && !user.mustChangePassword && user.role !== 'ADMINISTRADOR') {
+    return <Navigate to="/" replace />
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()

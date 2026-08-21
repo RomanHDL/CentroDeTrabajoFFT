@@ -31,6 +31,7 @@ import { ROLE_LABELS } from '../../layout/roleLabels'
 import { KpiCard } from '../../ui'
 import CreateUserDialog from './CreateUserDialog'
 import EditUserDialog from './EditUserDialog'
+import RoleModulePermissionsPanel from './RoleModulePermissionsPanel'
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState([])
@@ -158,6 +159,8 @@ export default function UsuariosPage() {
           </TableBody>
         </Table>
       </Paper>
+
+      <RoleModulePermissionsPanel />
 
       <Menu anchorEl={menuState.anchor} open={!!menuState.anchor} onClose={closeMenu}>
         <MenuItem onClick={() => { setEditUser(menuState.user); closeMenu() }}>Editar</MenuItem>

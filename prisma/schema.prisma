@@ -34,6 +34,16 @@ enum UserRole {
   LIDER
 }
 
+// Que modulos (rutas del frontend) puede ver cada rol -- configurable por un
+// ADMINISTRADOR desde Usuarios. "/usuarios" NUNCA vive aqui: gestiona cuentas y
+// contrasenas, se queda fijo en el codigo solo para ADMINISTRADOR (no debe poder
+// quedar editable por accidente). ADMINISTRADOR siempre debe tener los 3 modulos
+// completos -- se valida en el endpoint PATCH, no solo aqui.
+model RoleModuleAccess {
+  role    UserRole @id
+  modules String[]
+}
+
 model User {
   id                 String    @id @default(cuid())
   employeeNumber     String?   @unique

@@ -15,6 +15,7 @@ import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { NavLink } from 'react-router-dom'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
+import { useModulesForCurrentRole } from '../state/auth'
 
 export const SIDEBAR_WIDTH = 232
 
@@ -22,10 +23,16 @@ export const SIDEBAR_WIDTH = 232
 // Centro de Trabajo = areas/lineas/estaciones/personal/operacion) y, solo para
 // ADMINISTRADOR, Usuarios. La proteccion real esta en el backend (requireRole
 // en cada API), no en que este menu se muestre u oculte.
+//
+// "configurable" = true para los 3 modulos cuyo acceso por rol un ADMINISTRADOR
+// puede editar en vivo desde Usuarios (RoleModuleAccess, ver src/state/auth.jsx
+// useModulesForCurrentRole). "/usuarios" NUNCA es configurable -- se queda fijo
+// aqui solo para ADMINISTRADOR, es una frontera de seguridad (gestiona cuentas
+// y contrasenas), no una preferencia de navegacion.
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
-  { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
-  { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] },
+  { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
+  { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
+  { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, configurable: true },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, roles: ['ADMINISTRADOR'] },
 ]
 
@@ -81,7 +88,14 @@ function NavList({ items, onItemClick }) {
    presentacion de la misma lista de rutas de siempre. */
 export default function Sidebar({ role, open, onClose, variant, pinned, onTogglePin, onMouseEnter, onMouseLeave }) {
   const isTouch = useIsTouchDevice()
-  const byRole = NAV_ITEMS.filter((item) => item.roles.includes(role))
+  const { modules: allowedModules, loading: permsLoading } = useModulesForCurrentRole()
+  const byRole = NAV_ITEMS.filter((item) => (
+    item.configurable
+      // Mientras carga (allowedModules === null) no se oculta nada: evita el
+      // parpadeo de "sin modulos" un instante antes de que llegue la respuesta.
+      ? (permsLoading || allowedModules === null || allowedModules.includes(item.to))
+      : item.roles.includes(role)
+  ))
   const items = isTouch
     ? TOUCH_NAV_ORDER.map((to) => byRole.find((item) => item.to === to)).filter(Boolean)
     : byRole

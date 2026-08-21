@@ -14,6 +14,14 @@
    PERSONAL, no trae metas de produccion reales, y no vamos a
    inventar una meta. El dia que exista una fuente real de
    produccion, se llena desde ahi.
+
+   CAJAS se quito de aqui (2026-08-21, a peticion del usuario) —
+   SOLO del layout: no se borro a nadie del snapshot
+   (realPersonnelSnapshot.js sigue con `areaZona: "CAJAS"` intacto
+   para esa gente real). Sin un WORK_CENTER con ese id, ya no
+   aparecen agrupados en ningun bloque visual (mismo patron ya usado
+   para personal con area generica tipo CHOFER/INGENIERIA), pero
+   siguen elegibles/buscables en el modulo de Personal.
    ───────────────────────────────────────────── */
 
 export const SHIFT_OPTIONS = ['Matutino', 'Vespertino', 'Nocturno']
@@ -72,7 +80,6 @@ export const WORK_CENTERS = [
   { id: 'LINEA10', name: 'CT 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
   { id: 'PROYECTO', name: 'CT 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
   { id: 'PALETIZADO', name: 'CT Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
-  { id: 'CAJAS', name: 'CT Cajas', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
   { id: 'ACCESORIOS', name: 'CT Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
   { id: 'CONVEYOR', name: 'CT Conveyor', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado

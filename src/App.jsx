@@ -8,6 +8,7 @@ import { RoleModeProvider } from './state/roleMode'
 import { DndAssignProvider } from './state/dndAssign'
 import ProtectedRoute from './routing/ProtectedRoute'
 import RequireDesktop from './routing/RequireDesktop'
+import RequireModuleAccess from './routing/RequireModuleAccess'
 import DefaultRedirect from './routing/DefaultRedirect'
 import AppLayout from './layout/AppLayout'
 import LoginPage from './pages/auth/LoginPage'
@@ -33,9 +34,9 @@ export default function App() {
 
               <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
                 <Route index element={<DefaultRedirect />} />
-                <Route path="/dashboard" element={<RequireDesktop><DashboardPage /></RequireDesktop>} />
-                <Route path="/centro-trabajo" element={<CentroTrabajoPage />} />
-                <Route path="/registro-personal" element={<RegistroPersonalPage />} />
+                <Route path="/dashboard" element={<RequireDesktop><RequireModuleAccess><DashboardPage /></RequireModuleAccess></RequireDesktop>} />
+                <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
+                <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
                 <Route
                   path="/usuarios"
                   element={<ProtectedRoute roles={['ADMINISTRADOR']}><RequireDesktop><UsuariosPage /></RequireDesktop></ProtectedRoute>}

@@ -10,10 +10,12 @@ import Chip from '@mui/material/Chip'
 import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import { usePageStyles } from '../../ui/pageStyles'
 import { WORK_CENTERS, SHIFT_OPTIONS, CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { checkInEmployee, moveEmployee, createEmployee, getStationOccupancy, hasSkill } from '../../data/personnel/repository'
+import { checkInEmployee, moveEmployee, requestMove, createEmployee, getStationOccupancy, hasSkill } from '../../data/personnel/repository'
+import { useAuth } from '../../state/auth'
 import EmployeeSearchField from './EmployeeSearchField'
 
 const emptyForm = (fixedAreaId) => ({
@@ -44,12 +46,15 @@ const emptyForm = (fixedAreaId) => ({
  */
 export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, onDone, cancelLabel = 'Cancelar' }) {
   const ps = usePageStyles()
+  const { user } = useAuth()
+  const isLider = user?.role === 'LIDER'
   const [form, setForm] = useState(() => emptyForm(fixedAreaId))
-  const [step, setStep] = useState('FORM') // FORM | CONFLICT | SUCCESS
+  const [step, setStep] = useState('FORM') // FORM | CONFLICT | SUCCESS | PENDING
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [conflict, setConflict] = useState(null)
   const [result, setResult] = useState(null)
+  const [pendingRequest, setPendingRequest] = useState(null)
 
   useEffect(() => {
     setForm(emptyForm(fixedAreaId))
@@ -57,6 +62,7 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     setError('')
     setConflict(null)
     setResult(null)
+    setPendingRequest(null)
   }, [fixedAreaId])
 
   const areaId = fixedAreaId || form.areaId
@@ -128,6 +134,31 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
   const handleMove = () => {
     if (submitting || !conflict) return
     setSubmitting(true)
+
+    // Un LIDER nunca reubica de una vez: la solicitud queda pendiente
+    // hasta que un SUPERVISOR/ADMINISTRADOR la aprueba (peticion
+    // explicita del usuario). SUPERVISOR/ADMINISTRADOR siguen moviendo
+    // de inmediato, igual que siempre.
+    if (isLider) {
+      const res = requestMove({
+        employeeId: conflict.employee.id,
+        toAreaId: areaId,
+        toStationId: form.stationId,
+        shift: form.shift,
+        requestedByUserId: user?.id,
+        requestedByName: user?.name,
+      })
+      if (res.status === 'PENDING') {
+        setPendingRequest(res.request)
+        setStep('PENDING')
+        onDone && onDone()
+      } else {
+        setError(res.message || 'No se pudo enviar la solicitud.')
+      }
+      setSubmitting(false)
+      return
+    }
+
     const res = moveEmployee({
       employeeId: conflict.employee.id,
       toAreaId: areaId,
@@ -150,6 +181,7 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     setError('')
     setConflict(null)
     setResult(null)
+    setPendingRequest(null)
   }
 
   if (step === 'CONFLICT' && conflict) {
@@ -170,6 +202,11 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             Nueva ubicación: <b>{areaName}</b> — {form.stationId}
           </Typography>
         )}
+        {isLider && (
+          <Alert severity="info" sx={{ py: 0.5 }}>
+            Como líder, este movimiento se enviará a un supervisor o administrador para su aprobación — no se aplica de inmediato.
+          </Alert>
+        )}
         {error && <Alert severity="error">{error}</Alert>}
         <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ pt: 1 }}>
           <Button onClick={onCancel}>Mantener asignación actual</Button>
@@ -179,8 +216,33 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             disabled={submitting || conflict.assignment.areaId === areaId}
             sx={{ fontWeight: 700 }}
           >
-            Mover a {areaName}
+            {isLider ? `Enviar para aprobación — ${areaName}` : `Mover a ${areaName}`}
           </Button>
+        </Stack>
+      </Stack>
+    )
+  }
+
+  if (step === 'PENDING' && pendingRequest) {
+    return (
+      <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
+        <Box>
+          <PendingActionsIcon sx={{ fontSize: 48, color: '#F59E0B', mb: 1 }} />
+          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>Movimiento enviado para aprobación</Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
+            {pendingRequest.employeeNumber} — {pendingRequest.employeeName}
+          </Typography>
+          <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
+            <Chip size="small" label={workCenterById(pendingRequest.toAreaId)?.name || pendingRequest.toAreaId} sx={ps.metricChip('info')} />
+            <Chip size="small" label={pendingRequest.toStationId} sx={ps.metricChip('default')} />
+          </Stack>
+          <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
+            Un supervisor o administrador debe verificarlo antes de que se aplique.
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1} justifyContent="center">
+          <Button onClick={handleRegisterAnother}>Registrar otro</Button>
+          {onCancel && <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>Cerrar</Button>}
         </Stack>
       </Stack>
     )

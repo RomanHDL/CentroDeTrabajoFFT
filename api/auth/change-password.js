@@ -10,8 +10,15 @@ export default requireAuth(async (req, res) => {
     return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' })
   }
 
-  // Si viene de una contraseña temporal (mustChangePassword), no exigimos la actual.
+  // Si viene de una contraseña temporal (mustChangePassword), no exigimos la actual
+  // ni el rol — es un paso de seguridad obligatorio para cualquiera. El cambio
+  // VOLUNTARIO (ya sin contraseña temporal) queda restringido a ADMINISTRADOR;
+  // el frontend ya oculta/redirige esto, esto es defensa en profundidad por si
+  // alguien llega aqui evitando la UI.
   if (!req.user.mustChangePassword) {
+    if (req.user.role !== 'ADMINISTRADOR') {
+      return res.status(403).json({ error: 'Solo un administrador puede cambiar su contraseña libremente' })
+    }
     if (!currentPassword) {
       return res.status(400).json({ error: 'Indica tu contraseña actual' })
     }

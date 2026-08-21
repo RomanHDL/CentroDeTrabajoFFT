@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import {
   readEmployees, writeEmployees, readAssignments, writeAssignments, readMovements, writeMovements,
-  readAttendance, writeAttendance, readSkills, writeSkills,
+  readAttendance, writeAttendance, readSkills, writeSkills, readPendingMoves, writePendingMoves,
 } from './store'
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
@@ -555,4 +555,90 @@ export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
 
   notify()
   return { status: 'OK' }
+}
+
+/* ── Movimientos pendientes de aprobacion ──
+   Un LIDER puede pedir mover a alguien de area, pero esa reubicacion
+   NO se aplica de inmediato: queda aqui hasta que un SUPERVISOR o
+   ADMINISTRADOR la aprueba o la rechaza (peticion explicita del
+   usuario — un lider nunca reubica gente sin verificacion). Cuando
+   quien pide el movimiento es SUPERVISOR/ADMINISTRADOR, se sigue
+   usando moveEmployee directo (sin pasar por aqui). */
+
+export function getPendingMoves() {
+  return readPendingMoves()
+}
+
+/**
+ * Crea la solicitud pendiente — NO mueve a nadie todavia. Valida lo
+ * mismo que moveEmployee (area/estacion destino) para no guardar una
+ * solicitud invalida que despues no se pueda aprobar.
+ */
+export function requestMove({ employeeId, toAreaId, toStationId, shift, requestedByUserId, requestedByName }) {
+  if (!toAreaId) return { status: 'ERROR', message: 'Selecciona el área/línea destino.' }
+  if (!toStationId) return { status: 'ERROR', message: 'Selecciona el rol/estación destino.' }
+
+  const date = todayISO()
+  const employee = getEmployeeById(employeeId)
+  if (!employee) return { status: 'ERROR', message: 'Empleado no encontrado.' }
+
+  const current = readAssignments().find(a => a.employeeId === employeeId && a.date === date)
+
+  const pending = readPendingMoves()
+  const request = {
+    id: makeId('pmv'),
+    employeeId,
+    employeeNumber: employee.employeeNumber,
+    employeeName: employee.name,
+    date,
+    fromAreaId: current?.areaId ?? null,
+    fromStationId: current?.stationId ?? null,
+    toAreaId,
+    toStationId,
+    shift: shift || current?.shift || CURRENT_SHIFT,
+    requestedByUserId: requestedByUserId ?? null,
+    requestedByName: requestedByName ?? null,
+    requestedAt: nowISO(),
+    status: 'PENDING',
+  }
+  pending.push(request)
+  writePendingMoves(pending)
+
+  notify()
+  return { status: 'PENDING', request }
+}
+
+/**
+ * Aplica de verdad el movimiento (via moveEmployee) y retira la
+ * solicitud de la cola. Si moveEmployee falla (ej. la estacion
+ * destino ya se llenó mientras esperaba aprobación), la solicitud
+ * se queda pendiente para que el supervisor decida de nuevo.
+ */
+export function approveMove(pendingMoveId, approvedByUserId) {
+  const pending = readPendingMoves()
+  const idx = pending.findIndex(p => p.id === pendingMoveId)
+  if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
+
+  const request = pending[idx]
+  const result = moveEmployee({ employeeId: request.employeeId, toAreaId: request.toAreaId, toStationId: request.toStationId, shift: request.shift })
+  if (result.status !== 'OK') return result
+
+  pending.splice(idx, 1)
+  writePendingMoves(pending)
+
+  notify()
+  return { status: 'OK', assignment: result.assignment, approvedByUserId }
+}
+
+/** Rechaza la solicitud sin mover a nadie — se retira de la cola. */
+export function rejectMove(pendingMoveId, rejectedByUserId, reason) {
+  const pending = readPendingMoves()
+  const idx = pending.findIndex(p => p.id === pendingMoveId)
+  if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
+
+  pending.splice(idx, 1)
+  writePendingMoves(pending)
+
+  notify()
+  return { status: 'OK', rejectedByUserId, reason }
 }

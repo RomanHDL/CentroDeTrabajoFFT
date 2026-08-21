@@ -20,16 +20,20 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import SearchIcon from '@mui/icons-material/Search'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import HistoryIcon from '@mui/icons-material/History'
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
 import { usePageStyles } from '../../ui/pageStyles'
 import { KpiCard, EmptyState } from '../../ui'
 import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
 import { getEffectiveTodayRoster } from '../../data/production/personnelByArea'
 import {
-  getMovesCountForDate,
+  getMovesCountForDate, getPendingMoves, approveMove, rejectMove,
   searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useRoleMode } from '../../state/roleMode'
+import { useAuth } from '../../state/auth'
+import { showToast } from '../../ui/toast'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
@@ -43,6 +47,12 @@ export default function PersonalDeHoyTab() {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
+  // roleMode colapsa ADMINISTRADOR/SUPERVISOR/LIDER en un solo modo
+  // "SUPERVISOR" (ver src/state/roleMode.jsx) — para el panel de
+  // aprobacion necesitamos distinguir a un LIDER de verdad, asi que
+  // usamos el rol real de la sesion, no roleMode.
+  const { user } = useAuth()
+  const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
 
   const [query, setQuery] = useState('')
   const [lineFilter, setLineFilter] = useState('TODAS')
@@ -50,6 +60,20 @@ export default function PersonalDeHoyTab() {
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
   const [historyEmployee, setHistoryEmployee] = useState(null)
+
+  const pendingMoves = useMemo(() => (canApproveMoves ? getPendingMoves() : []), [version, canApproveMoves])
+
+  function handleApproveMove(id) {
+    const res = approveMove(id, user?.id)
+    if (res.status === 'OK') showToast('Movimiento aprobado.', 'success')
+    else showToast(res.message || 'No se pudo aprobar el movimiento.', 'error')
+  }
+
+  function handleRejectMove(id) {
+    const res = rejectMove(id, user?.id)
+    if (res.status === 'OK') showToast('Movimiento rechazado.', 'info')
+    else showToast(res.message || 'No se pudo rechazar el movimiento.', 'error')
+  }
 
   const roster = useMemo(() => getEffectiveTodayRoster(), [version])
   const presentToday = roster.length
@@ -148,6 +172,42 @@ export default function PersonalDeHoyTab() {
           ) : (
             <Typography sx={ps.emptyText}>No se encontró ningún empleado para "{query}".</Typography>
           )}
+        </Paper>
+      )}
+
+      {/* Movimientos pendientes de aprobacion — solo SUPERVISOR/ADMINISTRADOR
+          (nunca LIDER: es justo lo que un lider pide y espera a que se
+          verifique aqui, peticion explicita del usuario). */}
+      {canApproveMoves && pendingMoves.length > 0 && (
+        <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+          <Box sx={ps.cardHeader}>
+            <Typography sx={ps.cardHeaderTitle}>Movimientos pendientes de aprobación ({pendingMoves.length})</Typography>
+            <Typography sx={ps.cardHeaderSubtitle}>Pedidos por líderes — verifica antes de aplicarlos</Typography>
+          </Box>
+          <Stack spacing={1} sx={{ p: 2 }}>
+            {pendingMoves.map((m) => (
+              <Stack
+                key={m.id} direction={{ xs: 'column', sm: 'row' }} spacing={1.5}
+                alignItems={{ sm: 'center' }} justifyContent="space-between"
+                sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+              >
+                <Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{m.employeeNumber} — {m.employeeName}</Typography>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                    {areaLabel(m.fromAreaId)} → {areaLabel(m.toAreaId)} · {m.toStationId} · pedido por {m.requestedByName || 'un líder'}
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" color="error" startIcon={<CloseIcon fontSize="small" />} onClick={() => handleRejectMove(m.id)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                    Rechazar
+                  </Button>
+                  <Button size="small" variant="contained" startIcon={<CheckIcon fontSize="small" />} onClick={() => handleApproveMove(m.id)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                    Aprobar
+                  </Button>
+                </Stack>
+              </Stack>
+            ))}
+          </Stack>
         </Paper>
       )}
 
