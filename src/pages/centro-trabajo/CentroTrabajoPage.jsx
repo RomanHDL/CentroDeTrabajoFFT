@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
 import { usePageStyles } from '../../ui/pageStyles'
+import RotateDeviceHint from '../../ui/RotateDeviceHint'
 import AreasLayoutView from './AreasLayoutView'
 import LineasTab from './LineasTab'
 import EstacionesTab from './EstacionesTab'
@@ -54,7 +55,16 @@ export default function CentroTrabajoPage() {
         </Box>
       </Paper>
 
-      {tab === 'areas' && <AreasLayoutView onOpenLine={setSelectedLine} />}
+      {tab === 'areas' && (
+        <>
+          {/* Solo aqui: el mapa de areas (WorkAreaMap) esta pensado para
+              pantallas anchas (10 lineas + zonas lado a lado); las demas
+              tabs (Lineas/Estaciones/Personal) son listas/tablas que
+              funcionan bien en portrait, no necesitan el aviso. */}
+          <RotateDeviceHint />
+          <AreasLayoutView onOpenLine={setSelectedLine} />
+        </>
+      )}
       {tab === 'lineas' && <LineasTab onOpenLine={setSelectedLine} />}
       {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} />}
       {tab === 'personal' && <PersonalDeHoyTab />}
