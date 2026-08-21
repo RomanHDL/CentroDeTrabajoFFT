@@ -1,7 +1,7 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
 import { WORK_CENTERS, workCenterById, hasLineStations } from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
-import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees, getAssignableEmployees, todayISO } from '../personnel/repository'
+import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees, getAssignableEmployees, getBaselineSuppressed, todayISO } from '../personnel/repository'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -63,9 +63,14 @@ export function getSnapshotPeopleByArea() {
 export function getPeopleByArea() {
   const map = {}
   const touchedToday = new Set(getMovementsForDate().map((m) => m.employeeId))
+  // Supresion permanente (sin fecha) de la ubicacion de BASE — distinta de
+  // "tocado hoy": se agrego 2026-08-21 para que el layout se vea en blanco
+  // hasta que alguien reciba una asignacion real, en vez de volver a
+  // aparecer solo porque cambio el dia (ver store.js/repository.js).
+  const baselineSuppressed = getBaselineSuppressed()
 
   REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
-    if (touchedToday.has(p.id)) return
+    if (touchedToday.has(p.id) || baselineSuppressed.has(p.id)) return
     const areaId = mapAreaZonaToId(p.areaZona)
     if (!areaId) return
     map[areaId] = map[areaId] || []

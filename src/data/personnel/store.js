@@ -15,6 +15,7 @@ const KEYS = {
   attendance: 'cp_attendance_v1',
   skills: 'cp_skills_v1',
   pendingMoves: 'cp_pending_moves_v1',
+  baselineSuppressed: 'cp_baseline_suppressed_v1',
 }
 
 function readList(key) {
@@ -62,3 +63,16 @@ export const writeSkills = (rows) => writeList(KEYS.skills, rows)
    que YA ocurrio de verdad). */
 export const readPendingMoves = () => readList(KEYS.pendingMoves)
 export const writePendingMoves = (rows) => writeList(KEYS.pendingMoves, rows)
+
+/* IDs de personal cuya ubicacion HISTORICA (snapshot BASE) se ignora
+   a proposito, SIN fecha de vencimiento — a diferencia de un
+   movimiento/liberacion normal (que solo aplica "por hoy" y al otro
+   dia la persona vuelve a aparecer en su zona de BASE), esto se
+   queda vacio indefinidamente hasta que alguien reciba una
+   asignacion real de verdad (checkInEmployee/moveEmployee ya lo
+   quita de esta lista, ver repository.js). Se agrego 2026-08-21
+   porque el usuario pidio explicitamente que el layout se vea en
+   blanco para que los lideres reubiquen a todos, y un reset "de solo
+   hoy" se revertia solo al cambiar de dia. */
+export const readBaselineSuppressed = () => readList(KEYS.baselineSuppressed)
+export const writeBaselineSuppressed = (rows) => writeList(KEYS.baselineSuppressed, rows)

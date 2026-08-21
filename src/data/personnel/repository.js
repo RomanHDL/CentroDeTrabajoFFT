@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import {
   readEmployees, writeEmployees, readAssignments, writeAssignments, readMovements, writeMovements,
   readAttendance, writeAttendance, readSkills, writeSkills, readPendingMoves, writePendingMoves,
+  readBaselineSuppressed, writeBaselineSuppressed,
 } from './store'
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
@@ -427,6 +428,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   assignments.push(assignment)
   writeAssignments(assignments)
   ensureAttendance(employee, date, shift)
+  unsuppressBaselinePlacement(employee.id)
 
   const movements = readMovements()
   movements.push({
@@ -495,6 +497,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   const updated = { ...current, areaId: toAreaId, stationId: toStationId, shift: shift || current.shift, updatedAt: nowISO() }
   assignments[idx] = updated
   writeAssignments(assignments)
+  unsuppressBaselinePlacement(employeeId)
 
   notify()
   return { status: 'OK', assignment: updated, movedAt }
@@ -555,6 +558,32 @@ export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
 
   notify()
   return { status: 'OK' }
+}
+
+/* ── Supresion permanente de ubicacion historica (BASE) ──
+   Distinto de releaseAssignment: eso libera "solo por hoy" (un
+   movimiento fechado, que deja de contar al otro dia). Esto NO
+   tiene fecha — el layout se ve vacio para esa persona hasta que
+   alguien la asigne de verdad (checkInEmployee/moveEmployee la
+   quitan de aqui automaticamente). Se agrego 2026-08-21 porque un
+   reset "de hoy" se revertia solo al cambiar de dia y el usuario
+   pidio explicitamente que se quedara en blanco para que los lideres
+   fueran ubicando a cada quien. */
+export function getBaselineSuppressed() {
+  return new Set(readBaselineSuppressed())
+}
+
+export function suppressBaselinePlacement(employeeIds) {
+  const current = new Set(readBaselineSuppressed())
+  employeeIds.forEach((id) => current.add(id))
+  writeBaselineSuppressed([...current])
+  notify()
+}
+
+function unsuppressBaselinePlacement(employeeId) {
+  const current = readBaselineSuppressed()
+  if (!current.includes(employeeId)) return
+  writeBaselineSuppressed(current.filter((id) => id !== employeeId))
 }
 
 /* ── Movimientos pendientes de aprobacion ──
