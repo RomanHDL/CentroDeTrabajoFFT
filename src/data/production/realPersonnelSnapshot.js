@@ -41,10 +41,58 @@
    la mayoria en "Produccion" generico, sin decir que linea especifica,
    por eso su areaZona queda como texto libre "PRODUCCION" en vez de
    inventar una linea — no aparecen en el layout, solo en el modulo de
-   Personal). Total resuelto con nombre/numero: 83 de 136. Quedan sin
-   este dato los casos ambiguos (nombres repetidos sin forma de
-   desambiguar, p. ej. varios "Luis"/"Juan"/"Ricardo"/"Jesus" con mas de
-   un candidato posible) — no se inventa ni se adivina cual es cual.
+   Personal).
+
+   Ronda 4 (2026-08-21, a peticion del usuario de "agregar a todos los
+   de semana 34" y revisar "LAYOUT FFT.xlsx" por si mostraba donde esta
+   cada quien mas habitualmente): se releyo LAYOUT FFT.xlsx completo,
+   las 3 hojas (LAYOUT, "BASE ", BAJAS). La hoja "LAYOUT" es un dibujo
+   visual del piso que solo REPRODUCE la misma pareja ZONA+EMPLEADO que
+   ya trae la hoja BASE (se verifico cruzando varias posiciones
+   contra los datos ya importados — coinciden exactamente, ej. los 7
+   nombres bajo "LINEA 1" son los mismos 7 que ya tienen areaZona
+   LINEA 1 aqui) — NO trae una columna ni señal nueva para saber cual
+   "Luis"/"Juan"/"Ricardo"/"Jesus" especifico es cual: sigue siendo el
+   mismo primer nombre repetido, sin apellido, en ambas hojas. Por eso
+   NO se pudo desambiguar ningun caso adicional de nombre repetido con
+   este archivo — no se inventa ni se adivina cual es cual.
+   Se releyo tambien "ASISTENCIA FFT SEM 34.xlsx" completo (las 113
+   filas de la hoja "Asistencia FFT SEM 34", con TODAS sus columnas de
+   dia 17-21/08, no solo el 18/08) y se comparo cada fila (por numero
+   y por nombre exacto) contra este snapshot: de las 113, 105 ya
+   estaban capturadas de rondas anteriores; las 8 que faltaban eran
+   exactamente las mismas 7 personas "baja" de mas abajo (con
+   evidencia fuerte otra vez, sin tocarlas, mismo motivo que antes) +
+   1 caso nuevo real: "Sandra" (base-56, ACCESORIOS) se resolvio a
+   Sandra Iveth Barrón Marinez (#2446, Accesorios, unico candidato sin
+   ambiguedad). Con esto, TODAS las filas de SEM 34 semana 34 quedan
+   reflejadas en este snapshot (via numero, nombre, o la excepcion de
+   baja) — no quedo ninguna persona de esa hoja sin capturar.
+   Total resuelto con nombre/numero: 84 de 136 (el total de personas
+   no cambio esta ronda, solo se completo a Sandra). Quedan sin este dato
+   los ~24 casos de BASE cuyo nombre corto es ambiguo (varios
+   "Luis"/"Juan"/"Ricardo"/"Jesus"/"Alfredo"/etc. con mas de un
+   candidato posible en SEM 34): en TODOS esos casos, el/los
+   candidato(s) de SEM 34 con ese nombre YA se agregaron como personas
+   nuevas separadas (ids "sem34-N", rondas 3-4, ver el bloque de mas
+   abajo) porque no habia forma segura de saber a cual "base-N"
+   especifico correspondia cada uno — reabrir esa asignacion ahora
+   seria adivinar, no se hace. Es decir, esas personas de SEM 34 SI
+   estan en el sistema, solo que como registro nuevo aparte en vez de
+   completar el nombre corto de BASE.
+
+   Hallazgo informativo de la hoja BAJAS de LAYOUT FFT.xlsx (13
+   nombres sueltos marcados "BAJA" con fecha, sin apellido ni numero,
+   por lo que NO se pudo cruzar con certeza contra nadie de este
+   snapshot): coincide en primer nombre con varios casos ya conocidos
+   o sospechados — "JOSE" (refuerza la anomalia ya detectada en Ronda
+   1/2 de que Jose Sanchez/base-74/#3981 aparecia con "Baja" el 19/08
+   en SEM 34), y ademas "ANTONIO", "ALEXIS", "JESUS" (x2), "BRAYAN" —
+   pero como la hoja BAJAS no trae apellido ni numero, esto es solo
+   una señal debil, no una confirmacion: NO se desactivo ni se toco a
+   nadie por esto (base-17 Antonio Rocha Ipiña, base-116 Alexis,
+   base-18/base-20 Jesus, base-71/base-109 Brayan siguen exactamente
+   igual). Queda anotado para que el usuario lo revise si quiere.
 
    Excepcion deliberada: 8 personas ("baja") se dejan SIN TOCAR a
    peticion explicita del usuario (2026-08-19, reconfirmado 2026-08-20
@@ -577,11 +625,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-56",
-    "name": "Sandra",
+    "employeeNumber": "2446",
+    "name": "Sandra Iveth Barrón Marinez",
     "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "LIDER",
-    "asistencia": "A"
+    "asistencia": "A",
+    "fechaIngreso": "17/02/2025"
   },
   {
     "id": "base-57",

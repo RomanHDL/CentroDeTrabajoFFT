@@ -14,6 +14,8 @@ import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody'
 import TableContainer from '@mui/material/TableContainer'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
@@ -25,11 +27,12 @@ import CloseIcon from '@mui/icons-material/Close'
 import { usePageStyles } from '../../ui/pageStyles'
 import { KpiCard, EmptyState } from '../../ui'
 import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
-import { getEffectiveTodayRoster } from '../../data/production/personnelByArea'
+import { getEffectiveTodayRoster, getEffectiveAreaForEmployee } from '../../data/production/personnelByArea'
 import {
-  getMovesCountForDate, getPendingMoves, approveMove, rejectMove,
+  getMovesCountForDate, getPendingMoves, approveMove, rejectMove, getAllEmployees,
   searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
 } from '../../data/personnel/repository'
+import { isEmployeeEligible } from '../../data/personnel/directory'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useRoleMode } from '../../state/roleMode'
 import { useAuth } from '../../state/auth'
@@ -38,6 +41,14 @@ import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import EmployeeAvatar from './EmployeeAvatar'
+
+// 'PENDIENTE' (BASE/SEM34 no confirmo numero real) y 'PROYECTO' (se
+// registro sin numero desde Registro de Personal) son los dos valores
+// que NO cuentan como numero de empleado real -- todo lo demas si.
+const NO_REAL_NUMBER = new Set(['PENDIENTE', 'PROYECTO'])
+function hasRealNumber(employeeNumber) {
+  return !NO_REAL_NUMBER.has(employeeNumber)
+}
 
 function areaLabel(id) {
   return workCenterById(id)?.name || id || '—'
@@ -60,6 +71,8 @@ export default function PersonalDeHoyTab() {
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
   const [historyEmployee, setHistoryEmployee] = useState(null)
+  const [directoryTab, setDirectoryTab] = useState('CON_NUMERO')
+  const [directoryQuery, setDirectoryQuery] = useState('')
 
   const pendingMoves = useMemo(() => (canApproveMoves ? getPendingMoves() : []), [version, canApproveMoves])
 
@@ -103,6 +116,36 @@ export default function PersonalDeHoyTab() {
       return true
     })
   }, [roster, lineFilter, shiftFilter])
+
+  // Directorio completo (2026-08-21, a peticion explicita del usuario):
+  // TODO el personal que existe, no solo quien tiene ubicacion hoy --
+  // separado en "con numero de empleado" vs "Proyectos" (sin numero
+  // real, ya sea 'PENDIENTE' de BASE/SEM34 o 'PROYECTO' registrado
+  // desde Registro de Personal). Los 8 marcados como baja (eligible
+  // false, decision explicita del usuario) no se muestran aqui, igual
+  // que en busqueda/asignacion en el resto de la app.
+  const directoryAll = useMemo(
+    () => getAllEmployees().filter(isEmployeeEligible),
+    [version]
+  )
+  const directoryWithNumber = useMemo(
+    () => directoryAll.filter((e) => hasRealNumber(e.employeeNumber)).sort((a, b) => a.employeeNumber.localeCompare(b.employeeNumber, 'es', { numeric: true })),
+    [directoryAll]
+  )
+  const directoryProyectos = useMemo(
+    () => directoryAll.filter((e) => !hasRealNumber(e.employeeNumber)).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [directoryAll]
+  )
+  const directoryQueryNorm = directoryQuery.trim().toLowerCase()
+  const filterDirectory = (list) => {
+    if (!directoryQueryNorm) return list
+    return list.filter((e) =>
+      e.name.toLowerCase().includes(directoryQueryNorm) || e.employeeNumber.toLowerCase().includes(directoryQueryNorm)
+    )
+  }
+  const directoryList = directoryTab === 'CON_NUMERO'
+    ? filterDirectory(directoryWithNumber)
+    : filterDirectory(directoryProyectos)
 
   return (
     <Box>
@@ -282,6 +325,77 @@ export default function PersonalDeHoyTab() {
                 <TableRow>
                   <TableCell colSpan={7}>
                     <EmptyState compact title="Nadie registrado todavía" description="Usa 'Registrar personal' para el pase de lista de hoy." />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* Directorio completo de personal (2026-08-21, a peticion del
+          usuario) -- TODO el personal que existe, persona por persona,
+          separado por si tiene numero de empleado real o no. Distinto
+          del "pase de lista" de arriba (ese es solo quien tiene
+          ubicacion efectiva hoy); esto es el directorio completo,
+          independiente de si esta ubicado en un area o no. */}
+      <Paper elevation={0} sx={{ ...ps.card, mt: 3 }}>
+        <Box sx={ps.cardHeader}>
+          <Typography sx={ps.cardHeaderTitle}>Directorio completo de personal</Typography>
+          <Typography sx={ps.cardHeaderSubtitle}>Todo el personal, persona por persona — con número de empleado o como Proyecto</Typography>
+        </Box>
+        <Box sx={{ px: 2.5, pt: 2 }}>
+          <Tabs value={directoryTab} onChange={(_, v) => setDirectoryTab(v)} sx={{ minHeight: 36 }}>
+            <Tab value="CON_NUMERO" label={`Con número de empleado (${directoryWithNumber.length})`} sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
+            <Tab value="PROYECTOS" label={`Proyectos (${directoryProyectos.length})`} sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
+          </Tabs>
+        </Box>
+        <Box sx={{ px: 2.5, pt: 2 }}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Buscar por nombre o número..."
+            value={directoryQuery}
+            onChange={(e) => setDirectoryQuery(e.target.value)}
+            InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
+            sx={ps.inputSx}
+          />
+        </Box>
+        <TableContainer sx={{ maxHeight: 520, mt: 1 }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow sx={ps.tableHeaderRow}>
+                <TableCell>Empleado</TableCell>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Área actual</TableCell>
+                <TableCell>Fecha de ingreso</TableCell>
+                {directoryTab === 'PROYECTOS' && <TableCell>Tipo</TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {directoryList.map((e, idx) => (
+                <TableRow key={e.id} sx={ps.tableRow(idx)} hover onClick={() => setHistoryEmployee(e)} style={{ cursor: 'pointer' }}>
+                  <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
+                    {hasRealNumber(e.employeeNumber) ? e.employeeNumber : '—'}
+                  </TableCell>
+                  <TableCell sx={ps.cellText}>{e.name}</TableCell>
+                  <TableCell sx={ps.cellTextSecondary}>{areaLabel(getEffectiveAreaForEmployee(e.id)) || '—'}</TableCell>
+                  <TableCell sx={ps.cellTextSecondary}>{e.fechaIngreso || '—'}</TableCell>
+                  {directoryTab === 'PROYECTOS' && (
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={e.employeeNumber === 'PROYECTO' ? 'Registrado como Proyecto' : 'Sin número confirmado'}
+                        sx={ps.statusChip('PENDIENTE')}
+                      />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+              {directoryList.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={directoryTab === 'PROYECTOS' ? 5 : 4}>
+                    <EmptyState compact title="Sin resultados" description="Nadie coincide con esta búsqueda." />
                   </TableCell>
                 </TableRow>
               )}
