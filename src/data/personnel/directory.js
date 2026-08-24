@@ -12,15 +12,15 @@
    Quien no tenga `employeeNumber` confirmado todavia -> 'PENDIENTE'.
    Quien no tenga `fechaIngreso` -> null (no se inventa).
 
-   `eligible` — HOY el sistema NO tiene ninguna hoja BAJAS
-   importada (ni en JS ni en Prisma/Neon: ese modelo existe pero
-   no tiene ninguna fila real ni API conectada). El unico dato
-   real disponible es `areaZona`: quien no trae zona (ausente/sin
-   ubicacion, o marcado explicitamente como baja por el usuario) no
-   es elegible. Por eso `eligible` se calcula desde ese campo
-   EXISTENTE (nunca una lista de nombres escrita a mano): si el dia
-   de manana se importa la hoja BAJAS real, este campo debe pasar a
-   leerse de ahi en vez de inferirse de areaZona. Los empleados
+   `eligible` — Actualizado 2026-08-24: ya existe una señal real de baja
+   (`status: "BAJA"` en realPersonnelSnapshot.js, 8 personas marcadas
+   formalmente a peticion explicita del usuario, ver el header de ese
+   archivo). `eligible` ahora es false para cualquiera con
+   `status === 'BAJA'`, sin importar `areaZona` (defensivo: hoy esos 8
+   siempre tienen `areaZona` null de todos modos, pero la señal
+   explicita es la fuente de verdad, no una inferencia). Para todos los
+   demas sigue igual que antes: quien no trae zona (ausente/sin
+   ubicacion) no es elegible, inferido de `areaZona`. Los empleados
    creados dinamicamente (no vienen del snapshot) no tienen esta
    propiedad — se tratan como elegibles por defecto (ver
    isEmployeeEligible). Personal que solo existe en SEM 34 (ids
@@ -35,9 +35,10 @@ export const EMPLOYEE_DIRECTORY = REAL_PERSONNEL_SNAPSHOT.map((p) => ({
   employeeNumber: p.employeeNumber || 'PENDIENTE',
   name: p.name,
   fechaIngreso: p.fechaIngreso || null,
-  status: 'Activo',
+  status: p.status === 'BAJA' ? 'BAJA' : 'Activo',
   createdAt: null,
-  eligible: p.areaZona != null,
+  eligible: p.status === 'BAJA' ? false : p.areaZona != null,
+  areaHistorica: p.rawZona || p.areaZona || null,
 }))
 
 /* Unica regla de elegibilidad (para busqueda/sugerencias/disponibles):

@@ -10,6 +10,7 @@ import AreasLayoutView from './AreasLayoutView'
 import LineasTab from './LineasTab'
 import EstacionesTab from './EstacionesTab'
 import PersonalDeHoyTab from './PersonalDeHoyTab'
+import BajasTab from './BajasTab'
 import LineDetailDrawer from './LineDetailDrawer'
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { key: 'lineas', label: 'Líneas' },
   { key: 'estaciones', label: 'Estaciones' },
   { key: 'personal', label: 'Personal' },
+  { key: 'bajas', label: 'Bajas' },
 ]
 
 /* Centro de Trabajo = OPERACION. Sin KPIs ejecutivos, sin produccion,
@@ -68,6 +70,7 @@ export default function CentroTrabajoPage() {
       {tab === 'lineas' && <LineasTab onOpenLine={setSelectedLine} />}
       {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} />}
       {tab === 'personal' && <PersonalDeHoyTab />}
+      {tab === 'bajas' && <BajasTab />}
 
       <LineDetailDrawer workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={() => setSelectedLine(null)} />
     </Box>

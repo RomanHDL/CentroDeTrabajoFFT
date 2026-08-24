@@ -77,6 +77,15 @@ export function getAssignableEmployees() {
   return getAllEmployees().filter(isEmployeeEligible)
 }
 
+/* Personal marcado formalmente como BAJA (realPersonnelSnapshot.js,
+   2026-08-24, a peticion explicita del usuario) -- lo opuesto de
+   getAssignableEmployees(): nunca aparecen ahi, pero necesitan una
+   pantalla propia de solo lectura (BajasTab.jsx) en vez de estar
+   simplemente ausentes de todo. */
+export function getBajaEmployees() {
+  return getAllEmployees().filter(e => e.status === 'BAJA')
+}
+
 /* 'PROYECTO' (sin numero real todavia) y 'PENDIENTE' (placeholder de
    EMPLOYEE_DIRECTORY para quien BASE/SEM34 no le confirmo numero) son
    los dos unicos valores que MUCHAS personas distintas comparten a

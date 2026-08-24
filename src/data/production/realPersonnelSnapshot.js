@@ -102,6 +102,38 @@
    Janeth/base-87, Jonhatan/base-107. No se debe reabrir esto sin que
    el usuario lo confirme.
 
+   Resolucion 2026-08-24: el usuario reabrio esto explicitamente y pidio
+   marcar formalmente estos 8 como BAJA (campo `status: "BAJA"`) en vez
+   de dejarlos ambiguos/invisibles. El usuario paso una lista de roster
+   nueva que traia numero de empleado + fecha de ingreso + area/puesto
+   historico para 6 de los 8 (Miguel/base-11, Reynaldo/base-12,
+   Socorro/base-32, Marco/base-65, Olga/base-66, Janeth/base-87,
+   Jonhatan/base-107) — se completaron esos campos con esa info nueva.
+   Daniela/base-31 se queda exactamente igual que antes (sin numero ni
+   fecha) porque la unica "Daniela" de esa lista nueva (#3914, Daniela
+   Ivonee Aguilar Sanchez) resulto ser una persona real DISTINTA, ya
+   resuelta como base-92 en CALIDAD — no se le atribuyo esa info a la
+   Daniela de baja por error. Ninguno de los 8 tiene `areaZona` real
+   (sigue null o texto libre que no mapea a ningun catalog.js), nunca
+   son asignables/colocables — ahora tienen una pestaña dedicada de solo
+   lectura en Centro de Trabajo ("Bajas") en vez de estar simplemente
+   ausentes de todo. Ver tambien: al revisar esta misma lista nueva se
+   llenaron datos que faltaban (sin ser "baja") para Ramiro Aguilar
+   Rubio/base-16, Antonio Rocha Ipiña/base-17 (la señal debil de baja
+   de mas arriba se descarto explicitamente por el usuario: esta
+   persona SI esta disponible), Rosa Maria Rodriguez Cruz/base-3,
+   Valentin Cruz Martinez/base-34, Juan Eduardo Cuellar Ruiz/base-48,
+   Kevin Alejandro Cira Ramirez/base-54, Wiliams de la Cruz/base-72,
+   Jose Sanchez/base-74 (misma decision explicita: disponible, no baja,
+   pese a la señal debil de la hoja BAJAS anotada arriba) y Angel
+   Ricardo Flores Vargas/base-108 — todos con `areaZona` generico
+   PRODUCCION o PALETIZADO segun lo que decia esa lista, nunca una linea
+   especifica que esa lista no traia. No se tocaron Francisca Elizabeth
+   Delgado Perez/base-8 (SOPORTE), Angel Jovani Cruz Biviano/base-96
+   (DMT), Daniela Ivonee Aguilar Sanchez/base-92 (CALIDAD) ni Estime
+   Blaise/base-104 (SOPORTE): ya tenian un area real mas especifica que
+   la etiqueta generica de la lista nueva, se dejaron intactos.
+
    Areas nuevas "Chofer" e "Ingenieria" (SEM 34): por decision del
    usuario (2026-08-20) NO tienen bloque de layout — el personal ahi
    es elegible y buscable en el modulo de Personal, pero no aparece en
@@ -138,8 +170,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-3",
     "employeeNumber": "3591",
     "name": "Rosa Maria Rodriguez Cruz",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "LC",
     "asistencia": "F",
     "fechaIngreso": "09/03/2026"
@@ -214,19 +246,25 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-11",
-    "name": "Miguel",
+    "employeeNumber": "3276",
+    "name": "Miguel Angel Ortega Martinez",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "PRODUCCION",
     "actividad": "EM",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "13/10/2025",
+    "status": "BAJA"
   },
   {
     "id": "base-12",
-    "name": "Reynaldo",
+    "employeeNumber": "3754",
+    "name": "Reynaldo Hernández Luciano",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "PRODUCCION",
     "actividad": "EM",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "03/02/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-13",
@@ -259,8 +297,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-16",
     "name": "Ramiro Aguilar Rubio",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "EM",
     "asistencia": "F",
     "fechaIngreso": "08/06/2026"
@@ -268,8 +306,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-17",
     "name": "Antonio Rocha Ipiña",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "EM",
     "asistencia": "F"
   },
@@ -404,15 +442,19 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "areaZona": null,
     "rawZona": null,
     "actividad": "L",
-    "asistencia": "F"
+    "asistencia": "F",
+    "status": "BAJA"
   },
   {
     "id": "base-32",
-    "name": "Socorro",
+    "employeeNumber": "2962",
+    "name": "Maria del Socorro Juarez Moreno",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "ACCESORIOS",
     "actividad": "L",
-    "asistencia": "I"
+    "asistencia": "I",
+    "fechaIngreso": "02/06/2025",
+    "status": "BAJA"
   },
   {
     "id": "base-33",
@@ -427,8 +469,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-34",
     "name": "Valentin Cruz Martinez",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "L",
     "asistencia": "F"
   },
@@ -557,8 +599,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-48",
     "employeeNumber": "3924",
     "name": "Juan Eduardo Cuellar Ruiz",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "M",
     "asistencia": "F",
     "fechaIngreso": "23/07/2026"
@@ -608,8 +650,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-54",
     "name": "Kevin Alejandro Cira Ramirez",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "M",
     "asistencia": "F",
     "fechaIngreso": "08/11/2026"
@@ -713,19 +755,25 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-65",
-    "name": "Marco",
+    "employeeNumber": "3048",
+    "name": "Marco Antonio Andrade García",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "PRODUCCION",
     "actividad": "LIDER",
-    "asistencia": "V"
+    "asistencia": "V",
+    "fechaIngreso": "25/08/2025",
+    "status": "BAJA"
   },
   {
     "id": "base-66",
-    "name": "Olga",
+    "employeeNumber": "3625",
+    "name": "Olga Lidia Lara Davila",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "PRODUCCION",
     "actividad": "LIDER",
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "20/01/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-67",
@@ -778,8 +826,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-72",
     "employeeNumber": "3982",
     "name": "Wiliams de la Cruz",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PALETIZADO",
+    "rawZona": "PALETIZADO",
     "actividad": "TC",
     "asistencia": "F",
     "fechaIngreso": "13/8/2028"
@@ -798,8 +846,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-74",
     "employeeNumber": "3981",
     "name": "Jose Sanchez",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PALETIZADO",
+    "rawZona": "PALETIZADO",
     "actividad": "TG",
     "asistencia": "F",
     "fechaIngreso": "13/8/2027"
@@ -922,11 +970,14 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-87",
-    "name": "Janeth",
+    "employeeNumber": "2877",
+    "name": "Janeth Alejandra Rodriguez Mendoza",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "CAJAS",
     "actividad": null,
-    "asistencia": "F"
+    "asistencia": "F",
+    "fechaIngreso": "12/05/2025",
+    "status": "BAJA"
   },
   {
     "id": "base-88",
@@ -1103,18 +1154,21 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     "id": "base-107",
-    "name": "Jonhatan",
+    "employeeNumber": "3402",
+    "name": "Jonhatan Alfredo Gomez Trujillo",
     "areaZona": null,
-    "rawZona": null,
+    "rawZona": "LIDER",
     "actividad": null,
-    "asistencia": null
+    "asistencia": null,
+    "fechaIngreso": "20/10/2025",
+    "status": "BAJA"
   },
   {
     "id": "base-108",
     "employeeNumber": "3977",
     "name": "Angel Ricardo Flores Vargas",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": null,
     "asistencia": "F",
     "fechaIngreso": "05/08/2026"
