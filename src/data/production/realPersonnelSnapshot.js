@@ -269,7 +269,20 @@
    pero el Excel lo pone en PRODUCCION generico. Calidad no aparece en
    este Excel (fuera de su alcance) — se confirmo que ningun CALIDAD
    real se toco en esta ronda.
-   ──────────────────────────────────────────── */
+
+   Correccion 2026-08-24 (mismo dia, encontrada por el coordinador
+   antes de sincronizar la base de datos real): la "Limpieza de
+   entradas fantasma" de mas arriba SI habia borrado 5 personas reales
+   de CALIDAD por error — base-88 (Alondra), base-89 (Beckham), base-90
+   (Patricia), base-91 (Gabriela), base-93 (Jeser). La logica de esa
+   ronda ("sin fila en la lista de RH = fantasma") es INVALIDA para
+   Calidad especificamente, porque ese Excel de RH nunca cubre Calidad
+   sea real o no la persona — no es evidencia de nada para esa area.
+   Se restauran las 5 con sus datos originales exactos, en su posicion
+   original entre base-87 y base-94. Las otras 17 entradas eliminadas
+   en esa misma ronda (todas de Produccion/Cajas/sin area — categorias
+   que SI cubre el Excel de RH) siguen borradas, esa logica si aplica
+   para ellas. Total final: 119 personas (114 + 5 restauradas). */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
 
@@ -1003,6 +1016,38 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "12/05/2025"
   },
   {
+    "id": "base-88",
+    "name": "Alondra",
+    "areaZona": "CALIDAD",
+    "rawZona": "CALIDAD1",
+    "actividad": null,
+    "asistencia": "A"
+  },
+  {
+    "id": "base-89",
+    "name": "Beckham",
+    "areaZona": "CALIDAD",
+    "rawZona": "CALIDAD11",
+    "actividad": null,
+    "asistencia": "A"
+  },
+  {
+    "id": "base-90",
+    "name": "Patricia",
+    "areaZona": "CALIDAD",
+    "rawZona": "CALIDAD12",
+    "actividad": null,
+    "asistencia": "A"
+  },
+  {
+    "id": "base-91",
+    "name": "Gabriela",
+    "areaZona": "CALIDAD",
+    "rawZona": "CALIDAD2",
+    "actividad": null,
+    "asistencia": "A"
+  },
+  {
     "id": "base-92",
     "employeeNumber": "3914",
     "name": "Daniela Ivonee Aguilar Sanchez",
@@ -1011,6 +1056,14 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": null,
     "asistencia": "A",
     "fechaIngreso": "19/07/2026"
+  },
+  {
+    "id": "base-93",
+    "name": "Jeser",
+    "areaZona": "CALIDAD",
+    "rawZona": "CALIDAD4",
+    "actividad": null,
+    "asistencia": "A"
   },
   {
     "id": "base-94",
