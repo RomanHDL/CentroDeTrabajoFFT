@@ -143,6 +143,47 @@
    usuario administrador de la app, no personal de piso — se excluye
    siempre de cualquier cruce (nunca se le asigna a "base-101 Roman",
    que es una persona real distinta de Paletizado).
+
+   Investigacion 2026-08-24 (a peticion del usuario, que reporto un
+   conteo real esperado de ~113 personas contra las 136 de este
+   snapshot): se revisaron TODOS los casos de nombre corto ambiguo en
+   BASE (Juan/Luis/Ricardo/Jesus/Gustavo/Alfredo/Alexis/Jhony/Carlos +
+   los 6 nombres sueltos de CALIDAD: Alondra/Beckham/Patricia/
+   Gabriela/Jeser/Jonathan) contra cada candidato "sem34-N" con el
+   mismo primer nombre, buscando una fusion segura. Resultado: NINGUNA
+   fusion cumplio la misma barra de confianza ya usada en las rondas
+   1-4 de este archivo (candidato UNICO en ambos lados + area
+   compatible o codigo de asistencia coincidente) —
+   - Juan: 4 candidatos ambiguos en BASE (base-13/45/62/111) vs 3 en
+     sem34 (sem34-8/17/18). Multiples-a-multiples, sin forma de saber
+     cual es cual.
+   - Luis: 3 en BASE (base-47/51/95) vs 3 en sem34 (sem34-14/15/16).
+     Mismo problema.
+   - Ricardo: 2 en BASE (base-40 LINEA0/base-44 LINEA7) vs 2 en sem34
+     (sem34-9/19), ambos sem34 con area generica PRODUCCION que no
+     distingue cual linea es cual.
+   - Jesus: 2 en BASE (base-18 LINEA0/base-20 LINEA1) vs 1 en sem34
+     (sem34-20/Jesus Perez Cruz/#3251) — un solo candidato sem34 no
+     resuelve CUAL de los 2 de BASE es, si acaso alguno.
+   - Gustavo: base-49 (LINEA4) es candidato plausible de sem34-5 (Jose
+     Gustavo Aguilar Corpus, PRODUCCION generico) por apodo, pero sin
+     numero/codigo que lo confirme y el area generica no corrobora
+     especificamente LINEA4 — confianza media, no se fusiona.
+   - Alexis: base-116 (CAJAS) es el UNICO candidato de BASE y sem34-7
+     (Alexis Garcia Garcia, PRODUCCION) el UNICO de sem34 para ese
+     nombre, pero sus areas se CONTRADICEN (CAJAS vs PRODUCCION) en vez
+     de corroborarse — evidencia en contra de fusionar, no a favor.
+     (Ver tambien la señal debil de la hoja BAJAS ya anotada arriba
+     para este mismo base-116.)
+   - Alfredo/Jhony/Carlos y los 6 nombres sueltos de CALIDAD: cero
+     candidatos sem34 con ese nombre — no hay nada con que fusionar.
+   Conclusion: la brecha de ~23 personas entre este snapshot (136) y
+   el conteo real que espera el usuario (~113) NO se explica de forma
+   segura por duplicados entre BASE y SEM 34 con la informacion ya
+   importada — de existir duplicados reales aqui, desambiguarlos
+   necesitaria un dato nuevo (numero de empleado real o apellido) que
+   ninguna de las dos hojas ya leidas aporta. No se fusiono ni se borro
+   ningun registro en esta ronda.
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'

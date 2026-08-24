@@ -6,6 +6,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
+import { alpha } from '@mui/material/styles'
 import WbSunnyIcon from '@mui/icons-material/WbSunny'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
@@ -68,13 +69,47 @@ export default function DashboardPage() {
           a peticion del usuario (no hay fuente real de produccion). */}
       <Grid container spacing={1.5} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={4}>
-          <KpiCard
-            title="Personal presente hoy"
-            value={`${kpis.personalActivo} / ${kpis.personalIdeal}`}
-            subtitle={`${kpis.personalActivo} personas de una plantilla de ${kpis.personalIdeal}`}
-            icon={<PeopleAltIcon />}
-            accent="blue"
-          />
+          {/* Card propia (no KpiCard) -- el usuario confundio "personal
+              ideal" (meta por area, suma de idealHeadcount de catalog.js)
+              con "cuanta gente hay registrada", porque el formato viejo
+              "81 / 137" mezclaba ambos numeros en un solo valor. Aqui van
+              apilados y etiquetados por separado a proposito (2026-08-24). */}
+          <Paper elevation={0} sx={{
+            p: 2.5, height: '100%', borderRadius: 3,
+            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.04 : 0.02),
+            border: '1px solid', borderColor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.12),
+            borderLeft: '3px solid #3B82F6',
+          }}>
+            <Box sx={{
+              width: 38, height: 38, borderRadius: 2, mb: 1.25,
+              bgcolor: alpha('#3B82F6', 0.10), display: 'grid', placeItems: 'center', color: '#3B82F6',
+              border: '1px solid', borderColor: alpha('#3B82F6', 0.15),
+            }}>
+              <PeopleAltIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.6, mb: 1 }}>
+              Personal
+            </Typography>
+
+            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary' }}>
+              Personal que hay actualmente
+            </Typography>
+            <Typography sx={{ fontSize: 28, fontWeight: 800, color: 'text.primary', lineHeight: 1, mb: 1, letterSpacing: -0.5 }}>
+              {kpis.personalActivo}
+            </Typography>
+
+            <Box sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary' }}>
+                Personal ideal
+              </Typography>
+              <Typography sx={{ fontSize: 18, fontWeight: 700, color: 'text.secondary', lineHeight: 1.2 }}>
+                {kpis.personalIdeal}
+              </Typography>
+              <Typography sx={{ fontSize: 10, color: 'text.disabled', mt: 0.25 }}>
+                Meta de personal por área — no es el total de empleados del sistema.
+              </Typography>
+            </Box>
+          </Paper>
         </Grid>
         <Grid item xs={12} sm={4}>
           <KpiCard title="Personal faltante" value={`${kpis.personalFaltante}`} subtitle="personas" icon={<PersonOffIcon />} accent={kpis.personalFaltante > 0 ? 'red' : 'green'} />
