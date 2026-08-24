@@ -69,6 +69,7 @@ for (const p of REAL_PERSONNEL_SNAPSHOT) {
     actividad: p.actividad ?? null,
     baseAsistencia: p.asistencia ?? null,
     fechaIngreso: p.fechaIngreso ?? null,
+    active: p.status === 'BAJA' ? false : true,
   }
 
   if (data.employeeNumber) {
