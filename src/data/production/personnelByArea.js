@@ -16,7 +16,14 @@ export { BASE_SNAPSHOT_DATE }
    fija) — ver uso de AUTO_ACTIVE_AREAS en PersonalDeHoyTab.jsx. */
 export const FIXED_SUPPORT_AREAS = ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR']
 export const AUTO_ACTIVE_AREAS = FIXED_SUPPORT_AREAS.filter((id) => id !== 'CALIDAD')
-export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = [...FIXED_SUPPORT_AREAS, 'ACCESORIOS', 'PALETIZADO']
+
+/* BUG REAL detectado en produccion 2026-08-24: esta lista antes se mantenia a mano (los 7 fijos +
+   Accesorios + Paletizado) y se le olvido incluir CT Midea/High Value, CT Conveyor, CT Insumos y
+   CT Suministro de material -- "Vaciar layout" tambien las habria vaciado si alguien quedaba ahi
+   por snapshot. Ahora se DERIVA del catalogo: todo WORK_CENTER que no sea una linea numerada ni
+   CT LINEA 0/Proyecto queda protegido automaticamente, sin mantenimiento manual, para que nunca
+   se vuelva a quedar una area nueva sin proteger por accidente. */
+export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = WORK_CENTERS.filter((w) => w.kind !== 'linea' && w.id !== 'PROYECTO').map((w) => w.id)
 
 /* Convierte la ZONA normalizada del snapshot ("LINEA 3") al id del
    catalogo ("LINEA3"). El resto de las zonas ya coinciden 1:1 con
