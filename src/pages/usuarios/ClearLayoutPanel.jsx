@@ -9,7 +9,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Alert from '@mui/material/Alert'
 import LayersClearIcon from '@mui/icons-material/LayersClear'
-import { getPeopleByArea } from '../../data/production/personnelByArea'
+import { getBaselineOnlyPeopleIds } from '../../data/production/personnelByArea'
 import { suppressBaselinePlacement } from '../../data/personnel/repository'
 import { showToast } from '../../ui/toast'
 
@@ -30,8 +30,12 @@ export default function ClearLayoutPanel() {
 
   function handleConfirm() {
     setConfirmOpen(false)
-    const byArea = getPeopleByArea()
-    const ids = Object.values(byArea).flat().map((p) => p.id)
+    // Solo la ubicacion HISTORICA (snapshot BASE) -- nunca a quien ya
+    // tiene una asignacion real de hoy (checkInEmployee/moveEmployee),
+    // eso seria borrar un movimiento real que un lider/supervisor
+    // acaba de hacer, no "vaciar el snapshot" (bug real detectado en
+    // produccion 2026-08-21, ver getBaselineOnlyPeopleIds).
+    const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
       showToast('No hay nadie ubicado en el layout actualmente.', 'info')
       return

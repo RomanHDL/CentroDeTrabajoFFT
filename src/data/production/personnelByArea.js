@@ -89,6 +89,29 @@ export function getPeopleByArea() {
   return map
 }
 
+/* IDs de personal ubicado HOY unicamente por el snapshot historico
+   (BASE), sin incluir a quien ya tiene una asignacion/movimiento REAL
+   de hoy (checkInEmployee/moveEmployee). Existe para "Vaciar layout"
+   (ClearLayoutPanel.jsx): ese boton promete suprimir la ubicacion
+   HISTORICA, no borrar una asignacion real que un lider/supervisor
+   acaba de hacer de verdad — bug real encontrado 2026-08-21 (produccion:
+   se uso el boton y se suprimieron tambien asignaciones reales de ese
+   dia, no solo el snapshot). getPeopleByArea() ya excluye estos mismos
+   ids del snapshot (touchedToday/baselineSuppressed) por las mismas
+   razones; esta funcion aisla SOLO esa parte para poder suprimirla sin
+   tocar lo que ya es una asignacion real de hoy. */
+export function getBaselineOnlyPeopleIds() {
+  const touchedToday = new Set(getMovementsForDate().map((m) => m.employeeId))
+  const baselineSuppressed = getBaselineSuppressed()
+  const ids = []
+  REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
+    if (touchedToday.has(p.id) || baselineSuppressed.has(p.id)) return
+    if (!mapAreaZonaToId(p.areaZona)) return
+    ids.push(p.id)
+  })
+  return ids
+}
+
 /* Pase de lista "efectivo" de HOY — para la pestaña Personal del
    Centro de Trabajo. A peticion del usuario (2026-08-20), esta
    tabla ya NO exige que alguien registre manualmente a cada

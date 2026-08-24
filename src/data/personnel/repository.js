@@ -43,6 +43,26 @@ export function subscribe(fn) {
   return () => listeners.delete(fn)
 }
 
+/* notify() de arriba solo cubre cambios hechos DESDE esta misma pestaña
+   (llamada directa despues de escribir). El navegador SI dispara un
+   evento 'storage' nativo en las OTRAS pestañas/ventanas del MISMO
+   origen cuando localStorage cambia (nunca en la pestaña que escribio)
+   — hoy nadie lo escuchaba, asi que dos pestañas del mismo navegador
+   NO se enteraban solas de un cambio hecho en la otra hasta recargar
+   (bug real detectado 2026-08-21: una lider registro a alguien y no se
+   reflejaba en otra pestaña ya abierta). Esto NO resuelve dispositivos
+   distintos (una tablet y una computadora tienen localStorage
+   completamente separado, sin ningun canal entre ellos — eso requiere
+   la migracion a base de datos real, ya aprobada, aparte de esto) pero
+   si arregla el caso real y mas comun de "dos pestañas/ventanas
+   abiertas en la misma compu". Filtra por prefijo 'cp_' para no
+   reaccionar a cambios de localStorage ajenos a este modulo. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('cp_')) notify()
+  })
+}
+
 /* ── Employee ── */
 
 export function getAllEmployees() {
