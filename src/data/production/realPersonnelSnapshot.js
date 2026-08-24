@@ -217,6 +217,58 @@
    CALIDAD): es muy probablemente una persona real distinta que esa
    lista de RH simplemente no incluyo, no un duplicado. Total final:
    114 personas (136 − 22).
+
+   Correccion 2026-08-24 (mismo dia, con el archivo real de RH
+   "ASISTENCIA FFT SEM 34_PRO_AREAS.xlsx", hoja "SEM 34 POR AREA"):
+   el "113" de la ronda anterior NO era el total real de la empresa —
+   ese Excel solo cubre 12 categorias (Accesorios/Cajas/Paletizado/
+   Produccion/Chofer/Limpieza/Lider/Team Leader/Practicante/
+   Capacitacion/Supervision/Ingenieria) y NUNCA incluye Calidad,
+   Soporte ni Gerente. Comparar 136 contra 113 fue peras con manzanas;
+   la coincidencia numerica exacta de la ronda anterior fue casualidad.
+
+   Con la asistencia real dia por dia (17-21/08) de ese Excel se
+   corrigen los estados BAJA que se habian asignado sin esta evidencia:
+
+   - Se QUITA el status BAJA (tenian asistencia real "OK" o permiso
+     documentado, no un patron de baja) y se completa su areaZona con
+     la que trae el Excel: base-65 Marco Antonio Andrade Garcia (2 OK +
+     Vacaciones -> PRODUCCION), base-12 Reynaldo Hernandez Luciano (2 OK
+     + Permiso -> PRODUCCION), base-87 Janeth Alejandra Rodriguez
+     Mendoza (2 OK + Permiso -> CAJAS), base-32 Maria del Socorro Juarez
+     Moreno (Incapacidad x3, permiso medico, no baja -> ACCESORIOS).
+   - Se MANTIENEN sin cambio (el Excel confirma baja real): base-11
+     Miguel Angel Ortega Martinez y base-107 Jonhatan Alfredo Gomez
+     Trujillo (0 dias OK, codigo "Cambio" los 3 dias), base-66 Olga
+     Lidia Lara Davila (codigo literal "Baja" el 19/08), base-31
+     Daniela (no aparece en este Excel, sin evidencia nueva).
+   - Se REVIERTE una decision de esta misma sesion (se habian marcado
+     "disponibles" con areaZona PRODUCCION generico antes de tener este
+     Excel; su fila real muestra el mismo patron de baja que Miguel/
+     Jonhatan — 0 dias OK, codigo "Baja"/"Cambio" los 3 dias): base-48
+     Juan Eduardo Cuellar Ruiz, base-3 Rosa Maria Rodriguez Cruz,
+     base-16 Ramiro Aguilar Rubio, base-34 Valentin Cruz Martinez,
+     base-54 Kevin Alejandro Cira Ramirez. Vuelven a `areaZona: null` +
+     `status: "BAJA"`, igual que los demas de baja (nunca se borran,
+     solo se marcan). Mismo patron confirmado por primera vez en
+     sem34-6 Javier Aguilar De Dios (nunca se le habia puesto status
+     antes) -> tambien BAJA.
+   - Hueco real llenado (no tenia areaZona ni rawZona, sin relacion con
+     baja, 2 dias OK reales en el Excel): base-69 Jesus David Hernandez
+     Zuniga -> PRODUCCION.
+
+   Verificado el resto de las 113 filas del Excel contra las 114 del
+   snapshot: solo 4 mismatches, y los 4 ya estaban explicados y dejados
+   intactos a proposito en la ronda anterior (el snapshot ya tenia un
+   area mas especifica que el generico "Produccion" de este Excel):
+   base-8 Francisca Elizabeth Delgado Perez (SOPORTE), base-92 Daniela
+   Ivonee Aguilar Sanchez (CALIDAD), base-96 Angel Jovani Cruz Biviano
+   (DMT), base-104 Estime Blaise (SOPORTE). Nuevo mismatch encontrado,
+   NO resuelto (queda para que el usuario decida, no se adivina):
+   base-103 Rodrigo Martinez Montes tiene areaZona SOPORTE ya asignado,
+   pero el Excel lo pone en PRODUCCION generico. Calidad no aparece en
+   este Excel (fuera de su alcance) — se confirmo que ningun CALIDAD
+   real se toco en esta ronda.
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
@@ -244,11 +296,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-3",
     "employeeNumber": "3591",
     "name": "Rosa Maria Rodriguez Cruz",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "PRODUCCION",
     "actividad": "LC",
     "asistencia": "F",
-    "fechaIngreso": "09/03/2026"
+    "fechaIngreso": "09/03/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-4",
@@ -333,12 +386,11 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-12",
     "employeeNumber": "3754",
     "name": "Reynaldo Hernández Luciano",
-    "areaZona": null,
+    "areaZona": "PRODUCCION",
     "rawZona": "PRODUCCION",
     "actividad": "EM",
     "asistencia": "F",
-    "fechaIngreso": "03/02/2026",
-    "status": "BAJA"
+    "fechaIngreso": "03/02/2026"
   },
   {
     "id": "base-14",
@@ -363,11 +415,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-16",
     "name": "Ramiro Aguilar Rubio",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "PRODUCCION",
     "actividad": "EM",
     "asistencia": "F",
-    "fechaIngreso": "08/06/2026"
+    "fechaIngreso": "08/06/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-17",
@@ -499,12 +552,11 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-32",
     "employeeNumber": "2962",
     "name": "Maria del Socorro Juarez Moreno",
-    "areaZona": null,
+    "areaZona": "ACCESORIOS",
     "rawZona": "ACCESORIOS",
     "actividad": "L",
     "asistencia": "I",
-    "fechaIngreso": "02/06/2025",
-    "status": "BAJA"
+    "fechaIngreso": "02/06/2025"
   },
   {
     "id": "base-33",
@@ -519,10 +571,11 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-34",
     "name": "Valentin Cruz Martinez",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "PRODUCCION",
     "actividad": "L",
-    "asistencia": "F"
+    "asistencia": "F",
+    "status": "BAJA"
   },
   {
     "id": "base-35",
@@ -617,11 +670,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-48",
     "employeeNumber": "3924",
     "name": "Juan Eduardo Cuellar Ruiz",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "PRODUCCION",
     "actividad": "M",
     "asistencia": "F",
-    "fechaIngreso": "23/07/2026"
+    "fechaIngreso": "23/07/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-50",
@@ -636,11 +690,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "base-54",
     "name": "Kevin Alejandro Cira Ramirez",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "PRODUCCION",
     "actividad": "M",
     "asistencia": "F",
-    "fechaIngreso": "08/11/2026"
+    "fechaIngreso": "08/11/2026",
+    "status": "BAJA"
   },
   {
     "id": "base-55",
@@ -735,12 +790,11 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-65",
     "employeeNumber": "3048",
     "name": "Marco Antonio Andrade García",
-    "areaZona": null,
+    "areaZona": "PRODUCCION",
     "rawZona": "PRODUCCION",
     "actividad": "LIDER",
     "asistencia": "V",
-    "fechaIngreso": "25/08/2025",
-    "status": "BAJA"
+    "fechaIngreso": "25/08/2025"
   },
   {
     "id": "base-66",
@@ -767,8 +821,8 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-69",
     "employeeNumber": "3942",
     "name": "Jesus David Hernandez Zuniga",
-    "areaZona": null,
-    "rawZona": null,
+    "areaZona": "PRODUCCION",
+    "rawZona": "PRODUCCION",
     "actividad": "TC",
     "asistencia": "F",
     "fechaIngreso": "28/07/2026"
@@ -942,12 +996,11 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "id": "base-87",
     "employeeNumber": "2877",
     "name": "Janeth Alejandra Rodriguez Mendoza",
-    "areaZona": null,
+    "areaZona": "CAJAS",
     "rawZona": "CAJAS",
     "actividad": null,
     "asistencia": "F",
-    "fechaIngreso": "12/05/2025",
-    "status": "BAJA"
+    "fechaIngreso": "12/05/2025"
   },
   {
     "id": "base-92",
@@ -1182,9 +1235,10 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   {
     "id": "sem34-6",
     "name": "Javier Aguilar De Dios",
-    "areaZona": "PRODUCCION",
+    "areaZona": null,
     "rawZona": "Produccion",
-    "fechaIngreso": "08/12/2026"
+    "fechaIngreso": "08/12/2026",
+    "status": "BAJA"
   },
   {
     "id": "sem34-7",
