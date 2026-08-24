@@ -47,7 +47,7 @@ export default function ClearLayoutPanel() {
     // Supervisor, Accesorios, Paletizado -- ver getBaselineOnlyPeopleIds).
     const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
-      showToast('No hay nadie ubicado en las líneas por snapshot actualmente.', 'info')
+      showToast('No hay nadie por snapshot en las CT LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.', 'info')
       return
     }
     suppressBaselinePlacement(ids)

@@ -250,9 +250,14 @@ export function getAreaStaffing(areaId) {
    IDEAL/REAL/DIFERENCIA proporcionada, sin mezclar areas sin
    plantilla como Calidad). */
 export function getStaffingTotals() {
+  // BUG REAL detectado en produccion 2026-08-24: realTotal solo sumaba areas CON idealHeadcount
+  // definido, asi que Calidad/Insumos/Suministro de material (idealHeadcount null -- nunca tuvieron
+  // meta numerica en el Excel origen) quedaban fuera del "personal presente hoy" del Dashboard aunque
+  // tuvieran gente real. idealTotal SI debe restringirse a areas con meta (no tiene sentido sumar
+  // null), pero realTotal debe contar a TODOS, tengan meta o no.
   const withIdeal = WORK_CENTERS.filter((w) => w.idealHeadcount != null)
   const idealTotal = withIdeal.reduce((sum, w) => sum + w.idealHeadcount, 0)
-  const realTotal = withIdeal.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
+  const realTotal = WORK_CENTERS.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
   return {
     idealTotal,
     realTotal,
