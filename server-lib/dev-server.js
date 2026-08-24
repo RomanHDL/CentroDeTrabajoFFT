@@ -19,6 +19,15 @@ import userDeactivateHandler from '../api/users/[id]/deactivate.js'
 import userResetPasswordHandler from '../api/users/[id]/reset-password.js'
 import rolePermissionsIndexHandler from '../api/role-permissions/index.js'
 import rolePermissionByRoleHandler from '../api/role-permissions/[role].js'
+import personnelEmployeesHandler from '../api/personnel/employees.js'
+import personnelRosterHandler from '../api/personnel/roster.js'
+import personnelCheckinHandler from '../api/personnel/checkin.js'
+import personnelMoveHandler from '../api/personnel/move.js'
+import personnelReleaseHandler from '../api/personnel/release.js'
+import personnelRequestMoveHandler from '../api/personnel/request-move.js'
+import personnelApproveMoveHandler from '../api/personnel/approve-move.js'
+import personnelRejectMoveHandler from '../api/personnel/reject-move.js'
+import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline.js'
 
 const app = express()
 app.use(express.json())
@@ -48,6 +57,16 @@ app.post('/api/users/:id/reset-password', withDynamicParams(userResetPasswordHan
 
 app.get('/api/role-permissions', wrapAsync(rolePermissionsIndexHandler))
 app.patch('/api/role-permissions/:role', withDynamicParams(rolePermissionByRoleHandler))
+
+app.get('/api/personnel/employees', wrapAsync(personnelEmployeesHandler))
+app.get('/api/personnel/roster', wrapAsync(personnelRosterHandler))
+app.post('/api/personnel/checkin', wrapAsync(personnelCheckinHandler))
+app.post('/api/personnel/move', wrapAsync(personnelMoveHandler))
+app.post('/api/personnel/release', wrapAsync(personnelReleaseHandler))
+app.post('/api/personnel/request-move', wrapAsync(personnelRequestMoveHandler))
+app.post('/api/personnel/approve-move', wrapAsync(personnelApproveMoveHandler))
+app.post('/api/personnel/reject-move', wrapAsync(personnelRejectMoveHandler))
+app.post('/api/personnel/suppress-baseline', wrapAsync(personnelSuppressBaselineHandler))
 
 app.use((err, req, res, _next) => {
   console.error(err)

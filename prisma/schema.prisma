@@ -65,6 +65,8 @@ model User {
   assignedDailyAssignments DailyAssignment[]                 @relation("DailyAssignmentAssignedBy")
   endedDailyAssignments    DailyAssignment[]                 @relation("DailyAssignmentEndedBy")
   movementsPerformed       EmployeeMovement[]                @relation("MovementMovedBy")
+  pendingMovesRequested    PendingMove[]                     @relation("PendingMoveRequestedBy")
+  pendingMovesResolved     PendingMove[]                     @relation("PendingMoveResolvedBy")
   attendanceRegistered     Attendance[]                      @relation("AttendanceRegisteredBy")
   importBatchesTriggered   ImportBatch[]                     @relation("ImportBatchTriggeredBy")
   bajaConflictsResolved    BajaConflict[]                    @relation("BajaConflictResolvedBy")
@@ -88,6 +90,23 @@ model Employee {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // Ubicacion HABITUAL historica (snapshot BASE/SEM 34, LAYOUT FFT.xlsx) — copiada tal cual del
+  // snapshot del frontend (src/data/production/realPersonnelSnapshot.js), NUNCA normalizada al
+  // guardarla (ver mapAreaZonaToId en personnelByArea.js: la normalizacion se aplica en tiempo de
+  // consulta, no aqui, para no perder el dato crudo). null cuando el snapshot no trae zona.
+  areaZona        String?
+  rawZona         String?
+  actividad       String?
+  // Codigo crudo de ASISTENCIA del snapshot BASE (18/08/2026) — SIN interpretar, y sin relacion
+  // con el pase de lista real (modelo Attendance, generado dia a dia por la app).
+  baseAsistencia  String?
+  // Tal como viene en SEM 34 ("DD/MM/AAAA"), sin interpretar. null si SEM 34 no la trae.
+  fechaIngreso    String?
+  // Equivalente exacto de suppressBaselinePlacement/getBaselineSuppressed (repository.js): cuando
+  // es true, esta persona NUNCA debe aparecer ubicada por areaZona (sin importar el dia) hasta que
+  // reciba una asignacion real (checkInEmployee/moveEmployee la vuelven a poner en false).
+  baselineSuppressed Boolean @default(false)
+
   importSources                      EmployeeImportSource[]
   skills                             EmployeeSkill[]
   attendanceImportRefs               ImportedAttendanceReference[]
@@ -96,6 +115,7 @@ model Employee {
   movements                          EmployeeMovement[]
   bajaConflicts                      BajaConflict[]
   linkedUser                         User?
+  pendingMoves                       PendingMove[]
   reconciliationCandidatesAsExisting EmployeeReconciliationCandidate[] @relation("ReconciliationExistingEmployee")
 
   @@index([fullName])
@@ -348,6 +368,8 @@ model Workstation {
   dailyAssignments DailyAssignment[]
   movementsFrom    EmployeeMovement[] @relation("MovementFromWorkstation")
   movementsTo      EmployeeMovement[] @relation("MovementToWorkstation")
+  pendingMovesFrom PendingMove[]      @relation("PendingMoveFromWorkstation")
+  pendingMovesTo   PendingMove[]      @relation("PendingMoveToWorkstation")
 
   @@unique([workAreaId, name])
 }
@@ -412,4 +434,41 @@ model EmployeeMovement {
   // Append-only: la API nunca debe exponer UPDATE ni DELETE sobre esta tabla.
   @@index([employeeId, date])
   @@index([toWorkstationId, date])
+}
+
+// =====================================================================
+// SOLICITUDES DE MOVIMIENTO PENDIENTES DE APROBACION
+// =====================================================================
+
+// Equivalente real de cp_pending_moves_v1 (localStorage, repository.js requestMove/approveMove/
+// rejectMove): un LIDER puede pedir mover a alguien de area, pero esa reubicacion NO se aplica de
+// inmediato -- queda aqui hasta que un SUPERVISOR o ADMINISTRADOR la aprueba o la rechaza. Cuando
+// quien pide el movimiento ya es SUPERVISOR/ADMINISTRADOR, se sigue usando el endpoint /move
+// directo (sin pasar por aqui), igual que moveEmployee() en el modelo actual de localStorage.
+enum PendingMoveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model PendingMove {
+  id                  String            @id @default(cuid())
+  employeeId          String
+  employee            Employee          @relation(fields: [employeeId], references: [id])
+  date                DateTime          @db.Date
+  fromWorkstationId   String?
+  fromWorkstation     Workstation?      @relation("PendingMoveFromWorkstation", fields: [fromWorkstationId], references: [id])
+  toWorkstationId     String
+  toWorkstation       Workstation       @relation("PendingMoveToWorkstation", fields: [toWorkstationId], references: [id])
+  shift               String            @default("GENERAL")
+  requestedByUserId   String
+  requestedBy         User              @relation("PendingMoveRequestedBy", fields: [requestedByUserId], references: [id])
+  requestedAt         DateTime          @default(now())
+  status              PendingMoveStatus @default(PENDING)
+  resolvedByUserId    String?
+  resolvedBy          User?             @relation("PendingMoveResolvedBy", fields: [resolvedByUserId], references: [id])
+  resolvedAt          DateTime?
+
+  @@index([employeeId, date])
+  @@index([status, date])
 }

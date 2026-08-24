@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "create-admin": "node --env-file=.env.local scripts/create-initial-admin.mjs",
-    "reset-password": "node --env-file=.env.local scripts/reset-user-password.mjs"
+    "reset-password": "node --env-file=.env.local scripts/reset-user-password.mjs",
+    "seed-personnel": "node --env-file=.env.local --import ./scripts/_esm-extensionless-loader.mjs scripts/seed-personnel.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
