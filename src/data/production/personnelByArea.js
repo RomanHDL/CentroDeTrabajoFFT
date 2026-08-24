@@ -5,6 +5,19 @@ import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmpl
 
 export { BASE_SNAPSHOT_DATE }
 
+/* Areas de soporte/administrativas "fijas" (2026-08-24, a peticion
+   explicita del usuario): rotan mucho menos que una linea de
+   produccion, asi que "Vaciar layout" (ClearLayoutPanel.jsx) nunca
+   debe dejarlas en blanco. Accesorios y Paletizado se protegen igual
+   pero NO entran en AUTO_ACTIVE_AREAS (el usuario pidio dejarlos tal
+   cual estan hoy, sin forzar hora de entrada). Calidad se protege de
+   igual forma pero tampoco entra en AUTO_ACTIVE_AREAS (el usuario
+   pidio explicitamente que a Calidad no se le ponga hora de entrada
+   fija) — ver uso de AUTO_ACTIVE_AREAS en PersonalDeHoyTab.jsx. */
+export const FIXED_SUPPORT_AREAS = ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR']
+export const AUTO_ACTIVE_AREAS = FIXED_SUPPORT_AREAS.filter((id) => id !== 'CALIDAD')
+export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = [...FIXED_SUPPORT_AREAS, 'ACCESORIOS', 'PALETIZADO']
+
 /* Convierte la ZONA normalizada del snapshot ("LINEA 3") al id del
    catalogo ("LINEA3"). El resto de las zonas ya coinciden 1:1 con
    los ids de catalog.js (PALETIZADO, CAJAS, ACCESORIOS, etc).
@@ -103,10 +116,12 @@ export function getPeopleByArea() {
 export function getBaselineOnlyPeopleIds() {
   const touchedToday = new Set(getMovementsForDate().map((m) => m.employeeId))
   const baselineSuppressed = getBaselineSuppressed()
+  const protectedAreas = new Set(PROTECTED_FROM_LAYOUT_CLEAR_AREAS)
   const ids = []
   REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
     if (touchedToday.has(p.id) || baselineSuppressed.has(p.id)) return
-    if (!mapAreaZonaToId(p.areaZona)) return
+    const areaId = mapAreaZonaToId(p.areaZona)
+    if (!areaId || protectedAreas.has(areaId)) return
     ids.push(p.id)
   })
   return ids

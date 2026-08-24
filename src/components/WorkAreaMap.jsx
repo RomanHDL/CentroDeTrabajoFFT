@@ -67,6 +67,12 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
    EmployeeAssignSearchBar) — no dependen del drag para funcionar en
    tablet.
 
+   `readOnly` (2026-08-24, a peticion del usuario): el Dashboard debe
+   ser solo de consulta, nunca un punto de manipulacion del layout —
+   con readOnly=true se desactiva todo click/drag/drop, dejando el
+   mapa puramente visual (mismos datos, cero mutacion). Centro de
+   Trabajo nunca lo pasa, sigue interactivo como siempre.
+
    NO es una copia al pixel del CAD real, es una aproximacion de
    posicion/proporcion pensada para pantalla. Nunca se inventan
    lineas/areas que no esten en el catalogo. Los tags de nombres
@@ -154,7 +160,7 @@ function dropHighlightSx(isOver) {
    soltar: arrastrar a alguien aqui NUNCA elige estacion por si
    sola, solo marca la linea — el picker de estacion se abre despues
    (DndAssignProvider). */
-function LineBar({ lineId, selected, onClick }) {
+function LineBar({ lineId, selected, onClick, readOnly }) {
   const count = getAreaHeadcount(lineId)
   const line = workCenterById(lineId)
   const label = line?.name || lineId
@@ -164,12 +170,12 @@ function LineBar({ lineId, selected, onClick }) {
   const { isOver, dropProps } = useEmployeeDropTarget(lineId)
   return (
     <Box
-      {...dropProps}
-      onClick={(e) => { e.stopPropagation(); onClick(lineId) }}
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); onClick(lineId) }}
       sx={{
         flex: '1 1 0', minWidth: 58, height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', py: 1, px: 0.25,
+        borderRadius: 1.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', py: 1, px: 0.25,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
@@ -196,7 +202,7 @@ function LineBar({ lineId, selected, onClick }) {
    datos/drop que LineBar, solo cambia la orientacion visual; el
    drop target ya sabe por si solo si `areaId` es una linea
    (abre el picker de estacion) o no. */
-function HorizontalAreaBar({ areaId, selected, onClick, sx }) {
+function HorizontalAreaBar({ areaId, selected, onClick, sx, readOnly }) {
   const count = getAreaHeadcount(areaId)
   const area = workCenterById(areaId)
   const color = ZONE_COLORS.FFT
@@ -205,11 +211,11 @@ function HorizontalAreaBar({ areaId, selected, onClick, sx }) {
   const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
     <Box
-      {...dropProps}
-      onClick={(e) => { e.stopPropagation(); onClick(areaId) }}
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); onClick(areaId) }}
       sx={{
         display: 'flex', alignItems: 'center', gap: 1, width: '100%', minHeight: 52,
-        borderRadius: 1.5, cursor: 'pointer', userSelect: 'none', px: 1.25, py: 1,
+        borderRadius: 1.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', px: 1.25, py: 1,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
@@ -235,7 +241,7 @@ function HorizontalAreaBar({ areaId, selected, onClick, sx }) {
    Palletizing/Accessories/Proyecto, igual al lenguaje visual del
    mockup aprobado (icono + nombre). Nunca lleva numero de empleado
    inventado. Tambien es origen de arrastre (mover a otra area). */
-function PersonTag({ id, name }) {
+function PersonTag({ id, name, readOnly }) {
   const chip = (
     <Chip
       size="small"
@@ -244,7 +250,7 @@ function PersonTag({ id, name }) {
       sx={{ height: 22, fontSize: 10.5, fontWeight: 700, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
     />
   )
-  if (!id) return chip
+  if (!id || readOnly) return chip
   return <DraggablePersonChip employeeId={id}>{chip}</DraggablePersonChip>
 }
 
@@ -265,17 +271,17 @@ function MiniGridDecoration({ color, rows = 2, cols = 5 }) {
    Accessories y Proyecto para que la zona se sienta "viva" en vez de
    una caja vacia, sin inventar a nadie ni mostrar mas de lo que
    realmente hay (TAG_SAMPLE_LIMIT). */
-function PersonTagSample({ areaId }) {
+function PersonTagSample({ areaId, readOnly }) {
   const people = getPeopleByArea()[areaId] || []
   if (people.length === 0) return null
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignContent: 'flex-start', width: '100%' }}>
-      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} />)}
+      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} readOnly={readOnly} />)}
     </Box>
   )
 }
 
-function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
+function ZoneBox({ zone, selected, onClick, minHeight, sx, children, readOnly }) {
   const color = ZONE_COLORS[zone.id] || '#64748B'
   const hasData = zone.areaIds.length > 0
   const count = headcountForZone(zone)
@@ -285,11 +291,11 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
   const { isOver, dropProps } = useEmployeeDropTarget(dropAreaId)
   return (
     <Box
-      {...dropProps}
-      onClick={() => onClick(zone)}
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : () => onClick(zone)}
       sx={{
         position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.5,
-        borderRadius: 2.5, cursor: 'pointer', userSelect: 'none', p: 1.5, minHeight,
+        borderRadius: 2.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', p: 1.5, minHeight,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
         boxShadow: selected ? `0 0 0 3px ${alpha(color, 0.2)}` : 'none',
@@ -324,7 +330,7 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children }) {
 
 /* Franja horizontal del Conveyor — junto a Sellado, en la parte
    inferior del layout (igual que en el pizarron real del piso). */
-function ConveyorBanner({ selected, onClick }) {
+function ConveyorBanner({ selected, onClick, readOnly }) {
   const zone = PHYSICAL_ZONES.CONVEYOR
   const color = ZONE_COLORS.CONVEYOR
   const staffing = getAreaStaffing('CONVEYOR')
@@ -333,11 +339,11 @@ function ConveyorBanner({ selected, onClick }) {
   const { isOver, dropProps } = useEmployeeDropTarget('CONVEYOR')
   return (
     <Box
-      {...dropProps}
-      onClick={() => onClick(zone)}
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : () => onClick(zone)}
       sx={{
         display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap', height: '100%',
-        borderRadius: 2, cursor: 'pointer', userSelect: 'none', px: 1.75, py: 1,
+        borderRadius: 2, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', px: 1.75, py: 1,
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
         transition: 'all .15s ease',
@@ -357,7 +363,7 @@ function ConveyorBanner({ selected, onClick }) {
         <Chip size="small" label={`${staffing.real} persona${staffing.real === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700 }} />
       )}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flex: 1 }}>
-        {people.slice(0, 2).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} />)}
+        {people.slice(0, 2).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} readOnly={readOnly} />)}
       </Box>
     </Box>
   )
@@ -365,16 +371,18 @@ function ConveyorBanner({ selected, onClick }) {
 
 const GRID_COLUMNS = '1.3fr 1fr 2.4fr 1fr'
 
-export default function WorkAreaMap({ selection, onSelect }) {
+export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
   const [zoom, setZoom] = useState(1)
   usePersonnelVersion()
   const operating = hasAnyPersonnelToday()
 
   function handleZoneClick(zoneKey) {
+    if (readOnly) return
     onSelect(describeZoneSelection(PHYSICAL_ZONES[zoneKey]))
   }
 
   function handleAreaClick(areaId) {
+    if (readOnly) return
     onSelect({ type: 'area', id: areaId })
   }
 
@@ -435,8 +443,9 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.ACCESSORIES, selection)}
                 onClick={() => handleZoneClick('ACCESSORIES')}
                 minHeight={64}
+                readOnly={readOnly}
               >
-                <PersonTagSample areaId="ACCESORIOS" />
+                <PersonTagSample areaId="ACCESORIOS" readOnly={readOnly} />
               </ZoneBox>
             </Box>
 
@@ -447,6 +456,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 onClick={() => handleZoneClick('INSUMOS')}
                 minHeight={160}
                 sx={{ height: '100%' }}
+                readOnly={readOnly}
               />
             </Box>
 
@@ -457,6 +467,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 onClick={() => handleZoneClick('SUMINISTRO')}
                 minHeight={160}
                 sx={{ height: '100%' }}
+                readOnly={readOnly}
               />
             </Box>
 
@@ -466,6 +477,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.PALLETIZING, selection)}
                 onClick={() => handleZoneClick('PALLETIZING')}
                 sx={{ height: '100%' }}
+                readOnly={readOnly}
               >
                 <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
                   <Box sx={{
@@ -474,7 +486,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                     border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
                   }} />
                   <Box sx={{ flex: 1 }}>
-                    <PersonTagSample areaId="PALETIZADO" />
+                    <PersonTagSample areaId="PALETIZADO" readOnly={readOnly} />
                   </Box>
                 </Stack>
               </ZoneBox>
@@ -486,6 +498,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.HIGHVALUE, selection)}
                 onClick={() => handleZoneClick('HIGHVALUE')}
                 sx={{ height: '100%' }}
+                readOnly={readOnly}
               >
                 <MiniGridDecoration color={ZONE_COLORS.HIGHVALUE} rows={2} cols={4} />
               </ZoneBox>
@@ -497,6 +510,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.FFT, selection)}
                 onClick={() => handleZoneClick('FFT')}
                 sx={{ height: '100%' }}
+                readOnly={readOnly}
               >
                 <Box sx={{ display: 'flex', gap: 0.75, width: '100%', height: '100%' }}>
                   {VERTICAL_LINE_IDS.map((lineId) => (
@@ -505,6 +519,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                       lineId={lineId}
                       selected={selection?.type === 'area' && selection.id === lineId}
                       onClick={handleAreaClick}
+                      readOnly={readOnly}
                     />
                   ))}
                 </Box>
@@ -517,12 +532,14 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={selection?.type === 'area' && selection.id === 'PROYECTO'}
                 onClick={handleAreaClick}
                 sx={{ flex: 1 }}
+                readOnly={readOnly}
               />
               <HorizontalAreaBar
                 areaId="LINEA1"
                 selected={selection?.type === 'area' && selection.id === 'LINEA1'}
                 onClick={handleAreaClick}
                 sx={{ flex: 1 }}
+                readOnly={readOnly}
               />
             </Box>
 
@@ -532,6 +549,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.SELLADO, selection)}
                 onClick={() => handleZoneClick('SELLADO')}
                 minHeight={64}
+                readOnly={readOnly}
               />
             </Box>
 
@@ -539,6 +557,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
               <ConveyorBanner
                 selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
                 onClick={() => handleZoneClick('CONVEYOR')}
+                readOnly={readOnly}
               />
             </Box>
           </Box>
@@ -550,6 +569,7 @@ export default function WorkAreaMap({ selection, onSelect }) {
                 area={area}
                 selected={selection?.type === 'area' && selection.id === area.id}
                 onClick={handleAreaClick}
+                readOnly={readOnly}
               />
             ))}
           </Box>
@@ -578,7 +598,7 @@ const NAME_INLINE_LIMIT = 5
    conteo, para no saturar el layout — el detalle completo sigue
    estando a un click de distancia en el panel. Tambien es destino
    de soltar. */
-function AuxAreaBox({ area, selected, onClick }) {
+function AuxAreaBox({ area, selected, onClick, readOnly }) {
   const color = colorForArea(area.id)
   const people = getPeopleByArea()[area.id] || []
   const showNames = people.length > 0 && people.length <= NAME_INLINE_LIMIT
@@ -586,10 +606,10 @@ function AuxAreaBox({ area, selected, onClick }) {
   const { isOver, dropProps } = useEmployeeDropTarget(area.id)
   return (
     <Box
-      {...dropProps}
-      onClick={() => onClick(area.id)}
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : () => onClick(area.id)}
       sx={{
-        flex: '1 1 150px', minWidth: 150, maxWidth: 210, borderRadius: 2, cursor: 'pointer', userSelect: 'none',
+        flex: '1 1 150px', minWidth: 150, maxWidth: 210, borderRadius: 2, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none',
         border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32), p: 1.25,
         bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
         boxShadow: selected ? `0 0 0 3px ${alpha(color, 0.2)}` : 'none',
@@ -613,14 +633,17 @@ function AuxAreaBox({ area, selected, onClick }) {
       )}
       {showNames && (
         <Stack spacing={0.5}>
-          {people.map((p) => (
-            <DraggablePersonChip key={p.id} employeeId={p.id}>
+          {people.map((p) => {
+            const row = (
               <Stack direction="row" spacing={0.6} alignItems="center">
                 <EmployeeAvatar employee={{ name: p.name }} size={18} />
                 <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.primary' }}>{p.name}</Typography>
               </Stack>
-            </DraggablePersonChip>
-          ))}
+            )
+            return readOnly
+              ? <Box key={p.id}>{row}</Box>
+              : <DraggablePersonChip key={p.id} employeeId={p.id}>{row}</DraggablePersonChip>
+          })}
         </Stack>
       )}
     </Box>

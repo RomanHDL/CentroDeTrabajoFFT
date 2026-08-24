@@ -23,21 +23,31 @@ import { showToast } from '../../ui/toast'
    toca el snapshot historico (realPersonnelSnapshot.js) ni el modulo de
    Personal/buscadores -- eso sigue mostrando a todos igual, solo cambia
    donde aparecen en el layout visual. Solo ADMINISTRADOR (ver
-   UsuariosPage), es una accion de mantenimiento, no del dia a dia. */
+   UsuariosPage), es una accion de mantenimiento, no del dia a dia.
+
+   Alcance reducido 2026-08-24 (a peticion explicita del usuario): ya NO
+   afecta a Calidad, Capacitacion, Team Leader, Soporte, Limpieza,
+   Gerente, Supervisor, Accesorios ni Paletizado (son areas fijas que
+   casi no rotan) -- getBaselineOnlyPeopleIds() ya excluye esas areas
+   (ver PROTECTED_FROM_LAYOUT_CLEAR_AREAS en personnelByArea.js). Solo
+   sigue vaciando las CT LINEA (LINEA1-10 + CT LINEA 0/Proyecto), que son
+   las que de verdad cambian de personal dia a dia. */
 export default function ClearLayoutPanel() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [result, setResult] = useState(null)
 
   function handleConfirm() {
     setConfirmOpen(false)
-    // Solo la ubicacion HISTORICA (snapshot BASE) -- nunca a quien ya
-    // tiene una asignacion real de hoy (checkInEmployee/moveEmployee),
-    // eso seria borrar un movimiento real que un lider/supervisor
-    // acaba de hacer, no "vaciar el snapshot" (bug real detectado en
-    // produccion 2026-08-21, ver getBaselineOnlyPeopleIds).
+    // Solo la ubicacion HISTORICA (snapshot BASE) de las CT LINEA --
+    // nunca a quien ya tiene una asignacion real de hoy
+    // (checkInEmployee/moveEmployee), eso seria borrar un movimiento
+    // real que un lider/supervisor acaba de hacer (bug real detectado
+    // en produccion 2026-08-21), ni a las areas fijas protegidas
+    // (Calidad, Capacitacion, Team Leader, Soporte, Limpieza, Gerente,
+    // Supervisor, Accesorios, Paletizado -- ver getBaselineOnlyPeopleIds).
     const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
-      showToast('No hay nadie ubicado en el layout actualmente.', 'info')
+      showToast('No hay nadie ubicado en las líneas por snapshot actualmente.', 'info')
       return
     }
     suppressBaselinePlacement(ids)
@@ -47,11 +57,13 @@ export default function ClearLayoutPanel() {
 
   return (
     <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Vaciar layout de áreas de trabajo</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Vaciar layout de las CT LINEA</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-        Deja a todo el personal sin área asignada en el mapa visual (para que los líderes los vayan ubicando desde
-        Registro de personal). No borra a nadie ni los quita de Personal/buscadores — solo del layout. A diferencia de
-        liberar por hoy, esto no se revierte al cambiar de día.
+        Deja sin área asignada, en el mapa visual, solo al personal de las CT LINEA (líneas de producción + CT LINEA 0)
+        para que los líderes los vayan ubicando desde Registro de personal. Calidad, Capacitación, Team Leader,
+        Soporte, Limpieza, Gerente, Supervisor, Accesorios y Paletizado nunca se ven afectados por este botón. No
+        borra a nadie ni los quita de Personal/buscadores — solo del layout. A diferencia de liberar por hoy, esto no
+        se revierte al cambiar de día.
       </Typography>
       {result != null && (
         <Alert severity="success" sx={{ mb: 2 }}>{result} personas quedaron sin ubicación en el layout.</Alert>
@@ -67,11 +79,13 @@ export default function ClearLayoutPanel() {
       </Button>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Vaciar layout de áreas de trabajo</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>Vaciar layout de las CT LINEA</DialogTitle>
         <DialogContent>
           <Typography>
-            Todo el personal ubicado hoy por el snapshot histórico quedará sin área en el mapa visual, de forma
-            permanente hasta que alguien lo reasigne. Esto no afecta el módulo de Personal ni la búsqueda. ¿Confirmas?
+            Todo el personal ubicado hoy por el snapshot histórico en una CT LINEA quedará sin área en el mapa visual,
+            de forma permanente hasta que alguien lo reasigne. Calidad, Capacitación, Team Leader, Soporte, Limpieza,
+            Gerente, Supervisor, Accesorios y Paletizado no se tocan. Esto no afecta el módulo de Personal ni la
+            búsqueda. ¿Confirmas?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

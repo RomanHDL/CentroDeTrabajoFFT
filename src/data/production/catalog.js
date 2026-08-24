@@ -63,22 +63,27 @@ export const AREA_TYPES = {
 
 /* Todos los nombres empiezan con "CT " (Centro de Trabajo), tal como
    en el plano fisico real del piso (pizarron, confirmado por el
-   usuario 2026-08-19) — nunca "Línea 5", siempre "CT 5". El `id`
-   interno NO cambia (LINEA1, PROYECTO, etc.): eso evitaria tocar
-   mapAreaZonaToId, hasLineStations, workstations.js y el snapshot de
-   BASE sin necesidad — solo cambia el texto que se muestra. */
+   usuario 2026-08-19). Actualizacion 2026-08-24 (a peticion explicita
+   del usuario): las lineas de produccion (y el CT 0/Proyecto, que se
+   dibuja igual que una linea mas) ahora llevan la palabra "LINEA" —
+   "CT LINEA 5", ya no "CT 5" — para distinguirlas del resto de areas
+   (Calidad, Accesorios, Paletizado, etc.) que conservan su nombre tal
+   cual. El `id` interno NO cambia (LINEA1, PROYECTO, etc.): eso
+   evitaria tocar mapAreaZonaToId, hasLineStations, workstations.js y
+   el snapshot de BASE sin necesidad — solo cambia el texto que se
+   muestra. */
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'CT 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA2', name: 'CT 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA3', name: 'CT 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA4', name: 'CT 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA5', name: 'CT 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA6', name: 'CT 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA7', name: 'CT 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA8', name: 'CT 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA9', name: 'CT 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA10', name: 'CT 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'PROYECTO', name: 'CT 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
+  { id: 'LINEA1', name: 'CT LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA2', name: 'CT LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA3', name: 'CT LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA4', name: 'CT LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA5', name: 'CT LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA6', name: 'CT LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA7', name: 'CT LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA8', name: 'CT LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA9', name: 'CT LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA10', name: 'CT LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'PROYECTO', name: 'CT LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
   { id: 'PALETIZADO', name: 'CT Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
   { id: 'ACCESORIOS', name: 'CT Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
   { id: 'CONVEYOR', name: 'CT Conveyor', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },

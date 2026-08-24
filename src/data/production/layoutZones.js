@@ -30,7 +30,7 @@ import { WORK_CENTERS, LINES_ONLY } from './catalog'
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
-  PROYECTO: { id: 'PROYECTO', label: 'CT 0', areaIds: ['PROYECTO'] },
+  PROYECTO: { id: 'PROYECTO', label: 'CT LINEA 0', areaIds: ['PROYECTO'] },
   CONVEYOR: { id: 'CONVEYOR', label: 'CT Conveyor', areaIds: ['CONVEYOR'] },
   FFT: { id: 'FFT', label: 'CT Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
   HIGHVALUE: { id: 'HIGHVALUE', label: 'CT Midea / High Value', areaIds: ['HIGH_VALUE'] },

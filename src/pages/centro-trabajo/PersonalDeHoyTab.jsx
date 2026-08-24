@@ -27,7 +27,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import { usePageStyles } from '../../ui/pageStyles'
 import { KpiCard, EmptyState } from '../../ui'
 import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
-import { getEffectiveTodayRoster, getEffectiveAreaForEmployee } from '../../data/production/personnelByArea'
+import { getEffectiveTodayRoster, getEffectiveAreaForEmployee, AUTO_ACTIVE_AREAS } from '../../data/production/personnelByArea'
 import {
   getMovesCountForDate, getPendingMoves, approveMove, rejectMove, getAllEmployees,
   searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
@@ -304,23 +304,34 @@ export default function PersonalDeHoyTab() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRoster.map((r, idx) => (
-                <TableRow key={r.id} sx={ps.tableRow(idx)} hover onClick={() => setHistoryEmployee(r.employee)} style={{ cursor: 'pointer' }}>
-                  <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{r.employeeNumber}</TableCell>
-                  <TableCell sx={ps.cellText}>{r.employee?.name || '—'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{areaLabel(r.areaId)}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.stationId || 'Sin estación'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.checkInAt || '—'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.shift || '—'}</TableCell>
-                  <TableCell>
-                    {r.source === 'SNAPSHOT' ? (
-                      <Chip size="small" label="Por snapshot" sx={ps.statusChip('PENDIENTE')} />
-                    ) : (
-                      <Chip size="small" label="Registrado hoy" sx={ps.statusChip('COMPLETADA')} />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredRoster.map((r, idx) => {
+                // Areas fijas de soporte (Capacitacion, Team Leader, Soporte,
+                // Limpieza, Gerente, Supervisor -- NUNCA Calidad, a peticion
+                // explicita del usuario 2026-08-24): se muestran ya activas a
+                // las 7am aunque nadie las haya registrado hoy a mano. Es
+                // puramente visual -- no crea ningun checkin/asignacion real,
+                // asi que una asignacion real posterior (r.source !== 'SNAPSHOT')
+                // siempre gana, igual que ya pasaba antes de este cambio.
+                const showAsAutoActive = r.source === 'SNAPSHOT' && AUTO_ACTIVE_AREAS.includes(r.areaId)
+                const displayCheckIn = showAsAutoActive ? '07:00' : (r.checkInAt || '—')
+                return (
+                  <TableRow key={r.id} sx={ps.tableRow(idx)} hover onClick={() => setHistoryEmployee(r.employee)} style={{ cursor: 'pointer' }}>
+                    <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{r.employeeNumber}</TableCell>
+                    <TableCell sx={ps.cellText}>{r.employee?.name || '—'}</TableCell>
+                    <TableCell sx={ps.cellTextSecondary}>{areaLabel(r.areaId)}</TableCell>
+                    <TableCell sx={ps.cellTextSecondary}>{r.stationId || 'Sin estación'}</TableCell>
+                    <TableCell sx={ps.cellTextSecondary}>{displayCheckIn}</TableCell>
+                    <TableCell sx={ps.cellTextSecondary}>{r.shift || '—'}</TableCell>
+                    <TableCell>
+                      {r.source === 'SNAPSHOT' && !showAsAutoActive ? (
+                        <Chip size="small" label="Por snapshot" sx={ps.statusChip('PENDIENTE')} />
+                      ) : (
+                        <Chip size="small" label="Registrado hoy" sx={ps.statusChip('COMPLETADA')} />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
               {filteredRoster.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7}>
