@@ -177,13 +177,46 @@
      para este mismo base-116.)
    - Alfredo/Jhony/Carlos y los 6 nombres sueltos de CALIDAD: cero
      candidatos sem34 con ese nombre — no hay nada con que fusionar.
-   Conclusion: la brecha de ~23 personas entre este snapshot (136) y
-   el conteo real que espera el usuario (~113) NO se explica de forma
-   segura por duplicados entre BASE y SEM 34 con la informacion ya
-   importada — de existir duplicados reales aqui, desambiguarlos
-   necesitaria un dato nuevo (numero de empleado real o apellido) que
-   ninguna de las dos hojas ya leidas aporta. No se fusiono ni se borro
-   ningun registro en esta ronda.
+   Conclusion original (superada por la limpieza de abajo, se deja el
+   razonamiento intacto por historial): la brecha de ~23 personas entre
+   este snapshot (136) y el conteo real que espera el usuario (~113) NO
+   se explica de forma segura por duplicados entre BASE y SEM 34 con la
+   informacion ya importada — de existir duplicados reales aqui,
+   desambiguarlos necesitaria un dato nuevo (numero de empleado real o
+   apellido) que ninguna de las dos hojas ya leidas aporta. No se
+   fusiono ni se borro ningun registro en esa ronda.
+
+   Limpieza de entradas fantasma 2026-08-24 (a peticion explicita del
+   usuario, "si porfa"): el paso anterior solo cruzo los nombres cortos
+   ambiguos entre si (BASE vs SEM 34); esta vez se uso la lista de RH
+   completa que dio el usuario (113 filas / 112 personas unicas — "Luis
+   Hernandez Hernandez #2663" viene repetido dos veces en esa lista, un
+   duplicado inofensivo del propio documento) como fuente de verdad
+   contra las 136 entradas de este snapshot: 111 confirmadas por esa
+   lista, 25 sin ninguna fila correspondiente. De esas 25, 2 ya estaban
+   explicadas (Daniela/base-31, de baja, sin fila en la lista nueva
+   porque el "#3914" de esa lista es una persona real distinta ya
+   resuelta como base-92; y "Roman"/base-101, una persona real de
+   Paletizado, no el administrador). Las otras 23 SI se confirmaron
+   como ruido: exactamente 136 − 23 = 113, el numero que esperaba el
+   usuario. Se eliminaron por completo (sin fila en la lista de RH Y
+   ya documentadas como nombre corto ambiguo sin forma de desambiguar,
+   rondas 1-4 y la investigacion de arriba): base-13 ("Juan Dd"),
+   base-18/base-20 ("Jesus" x2), base-40/base-44 ("Ricardo" x2),
+   base-45/base-62 ("Juan" x2 de esa pareja), base-47/base-51/base-95
+   ("Luis" x3), base-49 ("Gustavo"), base-52 ("Alfredo"), base-53
+   ("Jhony"), base-67 ("Carlos"), base-88 ("Alondra"), base-89
+   ("Beckham"), base-90 ("Patricia" de CALIDAD — no confundir con la
+   Patricia real de Accesorios, base-25, que sigue intacta), base-91
+   ("Gabriela"), base-93 ("Jeser"), base-113 ("Kelly"), base-116
+   ("Alexis"). Ademas, hallazgo nuevo de esta ronda: base-111 ("Juan
+   B", sin area ni numero) se fusiono dentro de base-73 (Juan
+   Bohorquez, #3818, Paletizado, ya confirmado real por la lista de
+   RH) y se elimino como duplicado — nadie mas referenciaba ese id en
+   el codigo (verificado con grep). NO se toco base-112 ("Jonathan",
+   CALIDAD): es muy probablemente una persona real distinta que esa
+   lista de RH simplemente no incluyo, no un duplicado. Total final:
+   114 personas (136 − 22).
    ──────────────────────────────────────────── */
 
 export const BASE_SNAPSHOT_DATE = '2026-08-18'
@@ -308,14 +341,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "status": "BAJA"
   },
   {
-    "id": "base-13",
-    "name": "Juan Dd",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": "EM",
-    "asistencia": "F"
-  },
-  {
     "id": "base-14",
     "employeeNumber": "2898",
     "name": "Saúl Santiago Hernandez",
@@ -353,14 +378,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "asistencia": "F"
   },
   {
-    "id": "base-18",
-    "name": "Jesus",
-    "areaZona": "LINEA 0",
-    "rawZona": "LINEA 0",
-    "actividad": "EM",
-    "asistencia": "A"
-  },
-  {
     "id": "base-19",
     "employeeNumber": "3499",
     "name": "Pedro Alejandrez Quintero",
@@ -369,14 +386,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": "EM",
     "asistencia": "A",
     "fechaIngreso": "04/12/2025"
-  },
-  {
-    "id": "base-20",
-    "name": "Jesus",
-    "areaZona": "LINEA 1",
-    "rawZona": "LINEA 1",
-    "actividad": "EM",
-    "asistencia": "A"
   },
   {
     "id": "base-21",
@@ -566,14 +575,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "12/01/2026"
   },
   {
-    "id": "base-40",
-    "name": "Ricardo",
-    "areaZona": "LINEA 0",
-    "rawZona": "LINEA 0",
-    "actividad": "PE",
-    "asistencia": "A"
-  },
-  {
     "id": "base-41",
     "name": "Edgar Solis Cruz",
     "areaZona": "LINEA 5",
@@ -603,22 +604,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "27/05/2025"
   },
   {
-    "id": "base-44",
-    "name": "Ricardo",
-    "areaZona": "LINEA 7",
-    "rawZona": "LINEA 7",
-    "actividad": "PE",
-    "asistencia": "A"
-  },
-  {
-    "id": "base-45",
-    "name": "Juan",
-    "areaZona": "LINEA 5",
-    "rawZona": "LINEA 5",
-    "actividad": "PE",
-    "asistencia": "A"
-  },
-  {
     "id": "base-46",
     "employeeNumber": "3963",
     "name": "Bryan Uriel Hernandez Hernandez",
@@ -627,14 +612,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": "M",
     "asistencia": "A",
     "fechaIngreso": "09/08/2026"
-  },
-  {
-    "id": "base-47",
-    "name": "Luis",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": "M",
-    "asistencia": "F"
   },
   {
     "id": "base-48",
@@ -647,14 +624,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "23/07/2026"
   },
   {
-    "id": "base-49",
-    "name": "Gustavo",
-    "areaZona": "LINEA 4",
-    "rawZona": "LINEA 4",
-    "actividad": "M",
-    "asistencia": "A"
-  },
-  {
     "id": "base-50",
     "employeeNumber": "3938",
     "name": "Hector Manuel Cisneros Sanchez",
@@ -663,30 +632,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": "M",
     "asistencia": "A",
     "fechaIngreso": "28/07/2026"
-  },
-  {
-    "id": "base-51",
-    "name": "Luis",
-    "areaZona": "LINEA 0",
-    "rawZona": "LINEA 0",
-    "actividad": "M",
-    "asistencia": "A"
-  },
-  {
-    "id": "base-52",
-    "name": "Alfredo",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": "M",
-    "asistencia": "F"
-  },
-  {
-    "id": "base-53",
-    "name": "Jhony",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": "M",
-    "asistencia": "F"
   },
   {
     "id": "base-54",
@@ -767,14 +712,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "16/10/2025"
   },
   {
-    "id": "base-62",
-    "name": "Juan",
-    "areaZona": "LINEA 4",
-    "rawZona": "LINEA 4",
-    "actividad": "LIDER",
-    "asistencia": "A"
-  },
-  {
     "id": "base-63",
     "employeeNumber": "3085",
     "name": "Sandra Cecilia Perez Cruz",
@@ -815,14 +752,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "asistencia": "F",
     "fechaIngreso": "20/01/2026",
     "status": "BAJA"
-  },
-  {
-    "id": "base-67",
-    "name": "Carlos",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": "LIDER",
-    "asistencia": null
   },
   {
     "id": "base-68",
@@ -1021,38 +950,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "status": "BAJA"
   },
   {
-    "id": "base-88",
-    "name": "Alondra",
-    "areaZona": "CALIDAD",
-    "rawZona": "CALIDAD1",
-    "actividad": null,
-    "asistencia": "A"
-  },
-  {
-    "id": "base-89",
-    "name": "Beckham",
-    "areaZona": "CALIDAD",
-    "rawZona": "CALIDAD11",
-    "actividad": null,
-    "asistencia": "A"
-  },
-  {
-    "id": "base-90",
-    "name": "Patricia",
-    "areaZona": "CALIDAD",
-    "rawZona": "CALIDAD12",
-    "actividad": null,
-    "asistencia": "A"
-  },
-  {
-    "id": "base-91",
-    "name": "Gabriela",
-    "areaZona": "CALIDAD",
-    "rawZona": "CALIDAD2",
-    "actividad": null,
-    "asistencia": "A"
-  },
-  {
     "id": "base-92",
     "employeeNumber": "3914",
     "name": "Daniela Ivonee Aguilar Sanchez",
@@ -1063,14 +960,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "19/07/2026"
   },
   {
-    "id": "base-93",
-    "name": "Jeser",
-    "areaZona": "CALIDAD",
-    "rawZona": "CALIDAD4",
-    "actividad": null,
-    "asistencia": "A"
-  },
-  {
     "id": "base-94",
     "employeeNumber": "2738",
     "name": "Arturo Badillo Santillán",
@@ -1079,14 +968,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": null,
     "asistencia": "A",
     "fechaIngreso": "25/03/2026"
-  },
-  {
-    "id": "base-95",
-    "name": "Luis",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": null,
-    "asistencia": "F"
   },
   {
     "id": "base-96",
@@ -1235,28 +1116,12 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "fechaIngreso": "17/06/2026"
   },
   {
-    "id": "base-111",
-    "name": "Juan B",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": null,
-    "asistencia": "I"
-  },
-  {
     "id": "base-112",
     "name": "Jonathan",
     "areaZona": "CALIDAD",
     "rawZona": "CALIDAD6",
     "actividad": null,
     "asistencia": "A"
-  },
-  {
-    "id": "base-113",
-    "name": "Kelly",
-    "areaZona": null,
-    "rawZona": null,
-    "actividad": null,
-    "asistencia": "V"
   },
   {
     "id": "base-114",
@@ -1275,14 +1140,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     "actividad": null,
     "asistencia": "A",
     "fechaIngreso": "13/08/2026"
-  },
-  {
-    "id": "base-116",
-    "name": "Alexis",
-    "areaZona": "CAJAS",
-    "rawZona": "CAJAS",
-    "actividad": null,
-    "asistencia": "A"
   },
   {
     "id": "sem34-1",
