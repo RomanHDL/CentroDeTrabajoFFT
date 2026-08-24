@@ -76,3 +76,29 @@ export const writePendingMoves = (rows) => writeList(KEYS.pendingMoves, rows)
    hoy" se revertia solo al cambiar de dia. */
 export const readBaselineSuppressed = () => readList(KEYS.baselineSuppressed)
 export const writeBaselineSuppressed = (rows) => writeList(KEYS.baselineSuppressed, rows)
+
+/* ── Suscripcion simple para que la UI se refresque cuando cambian
+   datos de personal — sea por una escritura local (checkInEmployee,
+   etc.) o por la fusion periodica del backend real (ver apiSync.js,
+   Fase 2 de la migracion). Vive aqui (no en repository.js) para que
+   apiSync.js pueda llamar notify() sin crear un import circular con
+   repository.js. ── */
+const listeners = new Set()
+export function notify() { listeners.forEach(fn => fn()) }
+export function subscribe(fn) {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+
+/* notify() de arriba solo cubre cambios hechos DESDE esta misma pestaña.
+   El navegador SI dispara un evento 'storage' nativo en las OTRAS
+   pestañas/ventanas del MISMO origen cuando localStorage cambia (nunca
+   en la pestaña que escribio) — esto cubre "dos pestañas del mismo
+   navegador"; dispositivos distintos se cubren aparte via apiSync.js
+   (sondeo del backend real). Filtra por prefijo 'cp_' para no
+   reaccionar a cambios de localStorage ajenos a este modulo. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('cp_')) notify()
+  })
+}

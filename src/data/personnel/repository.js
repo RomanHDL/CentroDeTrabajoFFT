@@ -2,12 +2,16 @@ import dayjs from 'dayjs'
 import {
   readEmployees, writeEmployees, readAssignments, writeAssignments, readMovements, writeMovements,
   readAttendance, writeAttendance, readSkills, writeSkills, readPendingMoves, writePendingMoves,
-  readBaselineSuppressed, writeBaselineSuppressed,
+  readBaselineSuppressed, writeBaselineSuppressed, subscribe, notify,
 } from './store'
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
 import { CURRENT_SHIFT } from '../production/catalog'
+import {
+  startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline,
+  syncRequestMove, syncApproveMove, syncRejectMove,
+} from './apiSync'
 
 /* ─────────────────────────────────────────────
    Modelo conceptual:
@@ -33,35 +37,13 @@ function makeId(prefix) {
   return `${prefix}-${Date.now()}-${seq}`
 }
 
-/* ── Suscripcion simple para que la UI se refresque cuando
-   cambian datos guardados fuera de su propio render (p. ej.
-   un registro hecho desde otro componente/dialogo). ── */
-const listeners = new Set()
-function notify() { listeners.forEach(fn => fn()) }
-export function subscribe(fn) {
-  listeners.add(fn)
-  return () => listeners.delete(fn)
-}
-
-/* notify() de arriba solo cubre cambios hechos DESDE esta misma pestaña
-   (llamada directa despues de escribir). El navegador SI dispara un
-   evento 'storage' nativo en las OTRAS pestañas/ventanas del MISMO
-   origen cuando localStorage cambia (nunca en la pestaña que escribio)
-   — hoy nadie lo escuchaba, asi que dos pestañas del mismo navegador
-   NO se enteraban solas de un cambio hecho en la otra hasta recargar
-   (bug real detectado 2026-08-21: una lider registro a alguien y no se
-   reflejaba en otra pestaña ya abierta). Esto NO resuelve dispositivos
-   distintos (una tablet y una computadora tienen localStorage
-   completamente separado, sin ningun canal entre ellos — eso requiere
-   la migracion a base de datos real, ya aprobada, aparte de esto) pero
-   si arregla el caso real y mas comun de "dos pestañas/ventanas
-   abiertas en la misma compu". Filtra por prefijo 'cp_' para no
-   reaccionar a cambios de localStorage ajenos a este modulo. */
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key && e.key.startsWith('cp_')) notify()
-  })
-}
+/* subscribe()/notify() ahora viven en store.js (para que apiSync.js
+   pueda notificar sin import circular); se re-exporta aqui porque
+   toda la UI ya importa `subscribe` desde este archivo. El sondeo del
+   backend real (dispositivos distintos, no solo pestañas) arranca una
+   sola vez al cargar este modulo. */
+export { subscribe }
+startPersonnelSync()
 
 /* ── Employee ── */
 
@@ -467,6 +449,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   })
   writeMovements(movements)
 
+  syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId, shift })
   notify()
   return { status: 'OK', employee, assignment }
 }
@@ -519,6 +502,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   writeAssignments(assignments)
   unsuppressBaselinePlacement(employeeId)
 
+  syncMove({ employeeId, toAreaId, toStationId, shift: updated.shift })
   notify()
   return { status: 'OK', assignment: updated, movedAt }
 }
@@ -576,6 +560,7 @@ export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
   })
   writeMovements(movements)
 
+  syncRelease({ employeeId })
   notify()
   return { status: 'OK' }
 }
@@ -597,6 +582,7 @@ export function suppressBaselinePlacement(employeeIds) {
   const current = new Set(readBaselineSuppressed())
   employeeIds.forEach((id) => current.add(id))
   writeBaselineSuppressed([...current])
+  syncSuppressBaseline()
   notify()
 }
 
@@ -653,6 +639,7 @@ export function requestMove({ employeeId, toAreaId, toStationId, shift, requeste
   pending.push(request)
   writePendingMoves(pending)
 
+  syncRequestMove({ localRequestId: request.id, employeeId, toAreaId, toStationId, shift: request.shift })
   notify()
   return { status: 'PENDING', request }
 }
@@ -675,6 +662,7 @@ export function approveMove(pendingMoveId, approvedByUserId) {
   pending.splice(idx, 1)
   writePendingMoves(pending)
 
+  syncApproveMove({ localRequestId: pendingMoveId, employeeId: request.employeeId })
   notify()
   return { status: 'OK', assignment: result.assignment, approvedByUserId }
 }
@@ -688,6 +676,7 @@ export function rejectMove(pendingMoveId, rejectedByUserId, reason) {
   pending.splice(idx, 1)
   writePendingMoves(pending)
 
+  syncRejectMove({ localRequestId: pendingMoveId, reason })
   notify()
   return { status: 'OK', rejectedByUserId, reason }
 }
