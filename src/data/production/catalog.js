@@ -86,7 +86,23 @@ export const WORK_CENTERS = [
   { id: 'PROYECTO', name: 'CT LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
   { id: 'PALETIZADO', name: 'CT Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
   { id: 'ACCESORIOS', name: 'CT Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
-  { id: 'CONVEYOR', name: 'CT Conveyor', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  /* CONVEYOR se dividio en dos areas reales independientes (2026-08-25,
+     a peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
+     dibuja "CONVEYOR PRINCIPAL"/"CONVEYOR SECUNDARIO" como dos barras
+     separadas desde antes, pero solo existia UN area real 'CONVEYOR'
+     en el catalogo -- no se podia asignar personal a cada una por
+     separado. Ahora cada una es su propio WORK_CENTER (idealHeadcount
+     1 cada una, igual que el 'CONVEYOR' original combinado en 1, pero
+     ahora reflejando que son dos bandas fisicas reales). El id viejo
+     'CONVEYOR' se quito del catalogo -- nadie tenia personal real ahi
+     al momento del cambio (real=0), asi que no hubo que migrar ninguna
+     asignacion existente. El banner "CT Conveyor" (singular) que sigue
+     viviendo en WorkAreaMap.jsx/"Areas de trabajo" (vista distinta,
+     fuera del alcance de este cambio) queda inerte/en 0 para siempre
+     con el id viejo -- no se tocó esa vista, ver nota en el reporte al
+     usuario. */
+  { id: 'CONVEYOR_PRINCIPAL', name: 'CT Conveyor Principal', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'CONVEYOR_SECUNDARIO', name: 'CT Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
      dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal

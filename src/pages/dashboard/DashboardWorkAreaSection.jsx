@@ -7,14 +7,17 @@ import OperatingFloorPlan from '../../components/OperatingFloorPlan'
    FFT, Midea/High Value+Productos Mixtos fusionado, Insumos+
    Suministro fusionado, Paletizado, fila de apoyo) -- antes usaba
    WorkAreaMap (el mockup anterior), que ya no se usa aqui. Solo de
-   consulta: OperatingFloorPlan no tiene drag&drop, solo click para
-   ver detalle (igual que ya era en Layout2DPage), asi que el Dashboard
-   sigue sin ser un punto de manipulacion del layout -- eso sigue
-   viviendo unicamente en Centro de Trabajo (AreasLayoutView). */
+   consulta: la prop readOnly desactiva el click/drag&drop que
+   OperatingFloorPlan SI habilita en Layout2DPage.jsx para las barras
+   de Conveyor Principal/Secundario (2026-08-25) -- el resto del plano
+   sigue siendo de solo lectura en ambos lugares, igual que siempre.
+   El Dashboard sigue sin ser un punto de manipulacion del layout --
+   eso sigue viviendo en Centro de Trabajo (AreasLayoutView) y ahora
+   tambien en Layout 2D, solo para los conveyors. */
 export default function DashboardWorkAreaSection() {
   return (
     <Box>
-      <OperatingFloorPlan />
+      <OperatingFloorPlan readOnly />
     </Box>
   )
 }

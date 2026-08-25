@@ -28,6 +28,8 @@ import {
   getStaffingTotals, getFftPeopleWithLine,
 } from '../data/production/personnelByArea'
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../data/production/floorPlanZones'
+import { useEmployeeDropTarget } from '../ui/dnd'
+import LineDetailDrawer from '../pages/centro-trabajo/LineDetailDrawer'
 
 /* ─────────────────────────────────────────────
    "Área operando" -- plano 2D completo (rediseño 2026-08-24 a partir
@@ -82,10 +84,19 @@ function statusText(status, staffing) {
   return `${STATUS_META[status].label} · Faltan ${staffing.ideal - staffing.real}`
 }
 
-const SHOWN_AREA_IDS = WORK_CENTERS.filter((w) => w.id !== 'CONVEYOR' && w.id !== 'SELLADO').map((w) => w.id)
+const SHOWN_AREA_IDS = WORK_CENTERS.filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO').map((w) => w.id)
 
-export default function OperatingFloorPlan() {
+/* readOnly (2026-08-25, a peticion explicita del usuario): habilita
+   click + drag&drop de personal SOLO en las barras de Conveyor
+   Principal/Secundario -- el resto del plano sigue exactamente igual
+   que antes (su propio DetailDialog de solo lectura). Se agrega aqui
+   (no como prop nueva de cada zona) para que Dashboard siga siendo
+   "solo de consulta" (mismo criterio ya usado en WorkAreaMap.jsx):
+   Layout2DPage.jsx no pasa readOnly (interactivo, solo ADMINISTRADOR),
+   DashboardWorkAreaSection.jsx SI pasa readOnly (nunca manipula). */
+export default function OperatingFloorPlan({ readOnly = false }) {
   usePersonnelVersion()
+  const [assignAreaId, setAssignAreaId] = useState(null)
   const [zoom, setZoom] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showLegend, setShowLegend] = useState(true)
@@ -169,7 +180,7 @@ export default function OperatingFloorPlan() {
         }}
       >
         <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <FloorPlan onOpen={setDetailId} />
+          <FloorPlan onOpen={setDetailId} onOpenConveyorAssign={readOnly ? undefined : setAssignAreaId} readOnly={readOnly} />
 
           {showLegend && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
@@ -183,7 +194,9 @@ export default function OperatingFloorPlan() {
                     </Stack>
                   ))}
                   <Typography sx={{ fontSize: 9.5, color: 'text.secondary', mt: 0.5 }}>
-                    Conveyor Principal/Secundario: solo referencia visual, sin personal asociado.
+                    {readOnly
+                      ? 'Conveyor Principal/Secundario: solo referencia visual aquí, sin personal asociado.'
+                      : 'Conveyor Principal/Secundario: haz click para ver y administrar su personal.'}
                   </Typography>
                 </Stack>
               </Paper>
@@ -193,6 +206,9 @@ export default function OperatingFloorPlan() {
       </Box>
 
       <DetailDialog areaId={detailId} onClose={() => setDetailId(null)} />
+      {!readOnly && (
+        <LineDetailDrawer workCenterId={assignAreaId} open={!!assignAreaId} onClose={() => setAssignAreaId(null)} />
+      )}
     </Box>
   )
 }
@@ -209,12 +225,12 @@ function LegendChip({ status }) {
   )
 }
 
-function FloorPlan({ onOpen }) {
+function FloorPlan({ onOpen, onOpenConveyorAssign, readOnly }) {
   return (
     <Box sx={{ minWidth: 1180 }}>
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-        <ConveyorBar label="CONVEYOR PRINCIPAL" />
-        <ConveyorBar label="CONVEYOR SECUNDARIO" />
+        <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpenConveyorAssign} readOnly={readOnly} />
+        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_SECUNDARIO" onOpenAssign={onOpenConveyorAssign} readOnly={readOnly} />
       </Stack>
 
       <Box
@@ -275,13 +291,30 @@ function FloorPlan({ onOpen }) {
   )
 }
 
-function ConveyorBar({ label }) {
+/* Diseño visual SIN CAMBIOS (a peticion explicita del usuario,
+   2026-08-25): misma forma/tamaño/color/texto/posicion que siempre.
+   Lo unico nuevo es la capacidad de administrar personal -- click abre
+   el mismo LineDetailDrawer que ya usa el resto de Centro de Trabajo
+   (reutilizado, no se creo una logica de asignacion paralela) y
+   arrastrar-y-soltar ya funciona con useEmployeeDropTarget (mismo hook
+   que toda la app), con un resaltado suave SOLO mientras se arrastra
+   algo encima (isOver) -- nunca cambia el aspecto en reposo. */
+function ConveyorBar({ label, areaId, onOpenAssign, readOnly }) {
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
   return (
-    <Box sx={{
-      flex: 1, height: 40, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: 'text.secondary' }}>{label}</Typography>
+    <Box
+      {...(readOnly ? {} : dropProps)}
+      onClick={readOnly ? undefined : () => onOpenAssign?.(areaId)}
+      sx={{
+        flex: 1, height: 40, borderRadius: 1, border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'action.hover',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: readOnly ? 'default' : 'pointer', transition: 'all .15s ease',
+      }}
+    >
+      <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: isOver ? '#3B82F6' : 'text.secondary' }}>
+        {isOver ? 'Soltar aquí' : label}
+      </Typography>
     </Box>
   )
 }
