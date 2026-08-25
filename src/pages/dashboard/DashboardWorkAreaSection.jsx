@@ -1,19 +1,20 @@
 import Box from '@mui/material/Box'
-import WorkAreaMap from '../../components/WorkAreaMap'
+import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 
-/* ─────────────────────────────────────────────
-   Vista rapida del layout para el Dashboard: el mismo plano que
-   Centro de Trabajo (WorkAreaMap), pero SOLO de consulta (2026-08-24,
-   a peticion del usuario) — el Dashboard responde "como esta el
-   centro", nunca es un punto de manipulacion (eso vive unicamente en
-   Centro de Trabajo, vía AreasLayoutView, que sigue interactivo).
-   readOnly desactiva click/drag/drop en WorkAreaMap, asi que ya no
-   hay panel/Drawer que abrir aqui.
-   ───────────────────────────────────────────── */
+/* Vista rapida del layout para el Dashboard: a peticion explicita del
+   usuario (2026-08-24), ahora es EXACTAMENTE el mismo plano 2D
+   completo de Layout 2D (conveyors, CT LINEA 1/0 acostadas, bloque
+   FFT, Midea/High Value+Productos Mixtos fusionado, Insumos+
+   Suministro fusionado, Paletizado, fila de apoyo) -- antes usaba
+   WorkAreaMap (el mockup anterior), que ya no se usa aqui. Solo de
+   consulta: OperatingFloorPlan no tiene drag&drop, solo click para
+   ver detalle (igual que ya era en Layout2DPage), asi que el Dashboard
+   sigue sin ser un punto de manipulacion del layout -- eso sigue
+   viviendo unicamente en Centro de Trabajo (AreasLayoutView). */
 export default function DashboardWorkAreaSection() {
   return (
     <Box>
-      <WorkAreaMap selection={null} onSelect={() => {}} readOnly />
+      <OperatingFloorPlan />
     </Box>
   )
 }

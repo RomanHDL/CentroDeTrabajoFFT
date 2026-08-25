@@ -41,17 +41,20 @@ import { LINES_ONLY } from './catalog'
      una sola ("CT Midea / High Value" con la decoración de Productos
      Mixtos adentro, a la derecha del conteo real).
 
-   Intercambio de posición 2026-08-24 (a petición explícita del
-   usuario): "CT Insumos" y "CT Suministro de material" (dos áreas
-   reales sin plantilla oficial) se fusionaron en una sola caja "CT
-   Insumos y Suministro de material" -- ver InsumosSuministroZone en
-   Layout2DPage.jsx, siguen siendo dos WORK_CENTER separados en el
-   catálogo, solo se dibujan juntos. Esa caja fusionada ahora ocupa el
-   lugar (mismo tamaño de esa celda del grid) donde antes estaba "CT
-   Accesorios", y Accesorios se movió al lugar (mismo tamaño de esa
-   celda) donde antes estaban Insumos+Suministro -- un intercambio de
-   posición puro, ninguna de las dos áreas cambió de tamaño ni de
-   forma de mostrarse.
+   Intercambio de posición y tamaño 2026-08-24 (a petición explícita
+   del usuario, en dos pasos): "CT Insumos" y "CT Suministro de
+   material" (dos áreas reales sin plantilla oficial) se fusionaron en
+   una sola caja "CT Insumos y Suministro de material" -- ver
+   InsumosSuministroZone en Layout2DPage.jsx, siguen siendo dos
+   WORK_CENTER separados en el catálogo, solo se dibujan juntos. Esa
+   caja fusionada se movió al lado donde antes estaba "CT Accesorios"
+   (izquierda de esa fila) y Accesorios al lado donde estaban
+   Insumos+Suministro (derecha) -- pero a diferencia del primer intento,
+   el usuario pidió explícitamente que cada una se quedara con el
+   TAMAÑO angosto/ancho que tenía la otra, no con su propio tamaño
+   original: Insumos+Suministro (poca gente, sin plantilla) queda
+   angosta, Accesorios (20 de plantilla) queda ancha, en el orden
+   izquierda-angosta / derecha-ancha.
 
    IMPORTANTE sobre las 10 líneas: no hay forma confirmada de mapear
    bahía física → número de línea desde la imagen (aviso visible en
