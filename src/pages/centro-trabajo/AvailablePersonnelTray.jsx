@@ -24,7 +24,7 @@ import EmployeeAvatar from './EmployeeAvatar'
    Scroll horizontal LOCAL de esta lista unicamente; la pagina nunca
    scrollea horizontal por esto.
    ───────────────────────────────────────────── */
-export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal disponible para asignar' }) {
+export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal disponible para asignar', hideTitle = false }) {
   const version = usePersonnelVersion()
   const dnd = useDndAssign()
   const people = getAvailablePersonnelToday()
@@ -39,9 +39,11 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
         transition: 'all .15s ease',
       }}
     >
-      <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>
-        {title} ({people.length})
-      </Typography>
+      {!hideTitle && (
+        <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>
+          {title} ({people.length})
+        </Typography>
+      )}
       {isOver && (
         <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', mb: 1 }}>Soltar aquí para quitar la asignación</Typography>
       )}

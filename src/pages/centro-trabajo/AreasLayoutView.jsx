@@ -2,9 +2,6 @@ import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import Button from '@mui/material/Button'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
 import useMediaQuery from '@mui/material/useMediaQuery'
@@ -16,8 +13,7 @@ import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { PHYSICAL_ZONES } from '../../data/production/layoutZones'
 import WorkAreaMap, { describeZoneSelection } from '../../components/WorkAreaMap'
 import AreaDetailPanel from './AreaDetailPanel'
-import AreaSummaryStrip from './AreaSummaryStrip'
-import AvailablePersonnelTray from './AvailablePersonnelTray'
+import WorkAreaBottomSummary from './WorkAreaBottomSummary'
 
 /* ─────────────────────────────────────────────
    "Areas de trabajo" — antes era una cuadricula de cajas con
@@ -33,7 +29,6 @@ export default function AreasLayoutView({ onOpenLine }) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   usePersonnelVersion()
   const [selection, setSelection] = useState(null)
-  const [showSinZona, setShowSinZona] = useState(false)
   const sinZona = getPeopleWithoutArea()
 
   function handleSelectArea(id) {
@@ -92,37 +87,11 @@ export default function AreasLayoutView({ onOpenLine }) {
         {panel}
       </Drawer>
 
-      <Paper elevation={0} sx={{ ...ps.card, mt: 2.5, p: 2 }}>
-        <AvailablePersonnelTray />
-      </Paper>
-
-      <AreaSummaryStrip onSelectArea={handleSelectArea} />
-
-      {sinZona.length > 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            mt: 2.5, p: 1.75, borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
-            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(148,163,184,.06)' : 'rgba(148,163,184,.08)'),
-          }}
-        >
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>
-              Personal sin área asignada ({sinZona.length})
-            </Typography>
-            <Button size="small" onClick={() => setShowSinZona((v) => !v)} sx={{ textTransform: 'none', fontWeight: 700 }}>
-              {showSinZona ? 'Ocultar' : 'Ver lista'}
-            </Button>
-          </Stack>
-          {showSinZona && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.25 }}>
-              {sinZona.map((p) => (
-                <Chip key={p.id} size="small" label={p.asistencia ? `${p.name} (${p.asistencia})` : p.name} />
-              ))}
-            </Box>
-          )}
-        </Paper>
-      )}
+      {/* A partir de aqui: rediseño 2026-08-25 (a peticion explicita del
+          usuario) -- ver WorkAreaBottomSummary.jsx. Todo lo de ARRIBA
+          (titulo, subtitulo, card "Layout operativo del área" con
+          WorkAreaMap, y el Drawer de detalle) queda 100% intacto. */}
+      <WorkAreaBottomSummary onSelectArea={handleSelectArea} sinZona={sinZona} />
     </Box>
   )
 }
