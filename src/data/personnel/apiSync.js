@@ -27,7 +27,15 @@ import { EMPLOYEE_DIRECTORY } from './directory'
 import { showToast } from '../../ui/toast'
 import { workCenterById } from '../production/catalog'
 
-const POLL_MS = 7000
+/* Intervalo bajado de 7000 a 2000ms (2026-08-25, a peticion explicita del
+   usuario: laptop <-> tablet deben verse actualizados "rapido, sin F5") --
+   ademas ahora el sondeo se PAUSA mientras la pestaña esta oculta
+   (document.visibilityState !== 'visible', ver startPersonnelSync) para no
+   gastar red/bateria en una tablet bloqueada o en segundo plano, y se
+   dispara un poll INMEDIATO (fuera del intervalo normal) al recuperar
+   visibilidad/foco/conexion -- asi una tablet que estuvo dormida no se
+   queda mostrando datos viejos hasta el siguiente tick de 2s. */
+const POLL_MS = 2000
 const RECENT_WRITE_GRACE_MS = 15000
 const PLACEHOLDER_NUMBERS = new Set(['PROYECTO', 'PENDIENTE'])
 
@@ -330,10 +338,24 @@ async function pollOnce() {
 }
 
 let started = false
+let polling = false
 export function startPersonnelSync() {
   if (started || typeof window === 'undefined') return
   started = true
-  const tick = () => { pollOnce().catch((e) => console.error('[personnel-sync] poll', e)) }
+
+  const tick = () => {
+    if (document.visibilityState !== 'visible' || polling) return
+    polling = true
+    pollOnce().catch((e) => console.error('[personnel-sync] poll', e)).finally(() => { polling = false })
+  }
+
   tick()
   setInterval(tick, POLL_MS)
+
+  // Refetch inmediato (fuera del intervalo normal) al recuperar
+  // visibilidad/foco/conexion -- cubre el caso real de una tablet que se
+  // bloqueo o cambio de app y vuelve mostrando datos de hace rato.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick() })
+  window.addEventListener('focus', tick)
+  window.addEventListener('online', tick)
 }

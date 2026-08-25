@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
@@ -39,6 +39,13 @@ const HOTSPOT_WIDTH = 14
 export default function AppLayout({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // El plano 2D (Layout 2D / Dashboard) es el unico contenido que de verdad
+  // necesita aprovechar casi todo el ancho de la pantalla (2026-08-25, a
+  // peticion explicita del usuario) -- el resto de paginas (tablas,
+  // formularios) se queda exactamente en el maxWidth de siempre, no se
+  // toca nada fuera de estas dos rutas.
+  const isWideLayoutRoute = location.pathname === '/layout-2d' || location.pathname === '/dashboard'
   // Puntero real del dispositivo, no ancho de pantalla: un mouse/trackpad
   // real habilita el auto-hide por hover; touch (tablet/movil) usa el
   // drawer clasico con hamburguesa, sin depender de hover.
@@ -180,8 +187,8 @@ export default function AppLayout({ mode, setMode }) {
       />
 
       <Box sx={{
-        px: { xs: 1.5, sm: 2, md: 3 }, py: { xs: 2, md: 2.5 },
-        maxWidth: 1600, mx: 'auto', width: '100%',
+        px: { xs: 1.5, sm: 2, md: isWideLayoutRoute ? 2 : 3 }, py: { xs: 2, md: 2.5 },
+        maxWidth: isWideLayoutRoute ? 1920 : 1600, mx: 'auto', width: '100%',
       }}>
         <Outlet />
       </Box>

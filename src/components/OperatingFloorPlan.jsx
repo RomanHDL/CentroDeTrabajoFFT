@@ -10,13 +10,13 @@ import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
-import Alert from '@mui/material/Alert'
 import RemoveIcon from '@mui/icons-material/Remove'
 import AddIcon from '@mui/icons-material/Add'
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong'
 import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit'
 import PersonIcon from '@mui/icons-material/Person'
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import CloseIcon from '@mui/icons-material/Close'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -59,10 +59,10 @@ import LineDetailDrawer from '../pages/centro-trabajo/LineDetailDrawer'
    extra. */
 
 const STATUS_META = {
-  COMPLETA: { color: '#10B981', label: 'Completa' },
-  PARCIAL: { color: '#3B82F6', label: 'Parcial' },
-  FALTA: { color: '#EF4444', label: 'Falta personal' },
-  SIN_PERSONAL: { color: '#94A3B8', label: 'Sin personal' },
+  COMPLETA: { color: '#10B981', label: 'Completa', description: 'Cobertura completa' },
+  FALTA: { color: '#EF4444', label: 'Falta personal', description: 'Faltan asignaciones' },
+  PARCIAL: { color: '#3B82F6', label: 'Parcial', description: 'Asignación parcial' },
+  SIN_PERSONAL: { color: '#94A3B8', label: 'Sin personal', description: 'Sin personal asignado' },
 }
 
 /* 4 estados a partir de real/ideal (2026-08-24, a peticion del
@@ -99,10 +99,11 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   usePersonnelVersion()
   const [assignAreaId, setAssignAreaId] = useState(null)
   const [zoom, setZoom] = useState(1)
+  const [autoZoom, setAutoZoom] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showLegend, setShowLegend] = useState(true)
   const [detailId, setDetailId] = useState(null)
   const planRef = useRef(null)
+  const floorRef = useRef(null)
 
   useEffect(() => {
     function onFsChange() { setIsFullscreen(!!document.fullscreenElement) }
@@ -114,6 +115,44 @@ export default function OperatingFloorPlan({ readOnly = false }) {
     if (document.fullscreenElement) document.exitFullscreen()
     else planRef.current?.requestFullscreen?.()
   }
+
+  /* "Ajustar vista" real (2026-08-25, a peticion explicita del usuario):
+     calcula la escala a partir del ancho disponible del contenedor y el
+     ancho natural del plano (floorRef, sin transform -- transform no
+     afecta el layout box, solo el pintado, asi que scrollWidth siempre
+     da el tamaño real sin escalar). Nunca oculta contenido: solo ajusta
+     escala; si el contenedor es mas angosto que el plano, la escala baja
+     pero el usuario siempre puede hacer scroll interno para ver el resto.
+     Se recalcula solo, mientras el usuario no haya tocado +/- a mano
+     (autoZoom), para reaccionar a resize/rotacion de tablet sin pisar un
+     zoom manual. */
+  function computeFit() {
+    const container = planRef.current
+    const floor = floorRef.current
+    if (!container || !floor || !floor.scrollWidth) return 1
+    const availableWidth = container.clientWidth - 4
+    return Math.max(0.5, Math.min(1.4, +(availableWidth / floor.scrollWidth).toFixed(2)))
+  }
+
+  function fitToScreen() {
+    setAutoZoom(true)
+    setZoom(computeFit())
+  }
+
+  useEffect(() => {
+    const container = planRef.current
+    if (!container || typeof ResizeObserver === 'undefined') return
+    let frame = null
+    const observer = new ResizeObserver(() => {
+      if (!autoZoom) return
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => setZoom(computeFit()))
+    })
+    observer.observe(container)
+    setZoom(computeFit())
+    return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoZoom])
 
   // Click en cualquier zona con area real (2026-08-25, a peticion explicita
   // del usuario: arrastrar Y asignar debe funcionar en TODAS las zonas de
@@ -131,48 +170,50 @@ export default function OperatingFloorPlan({ readOnly = false }) {
 
   return (
     <Box sx={{ p: 2.5 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={1.5} sx={{ mb: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: operating ? '#10B981' : '#94A3B8' }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 20 }}>Área operando</Typography>
-        </Stack>
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
-          <LegendChip status="COMPLETA" />
-          <LegendChip status="FALTA" />
-          <LegendChip status="PARCIAL" />
-          <LegendChip status="SIN_PERSONAL" />
-          <Chip
-            size="small" icon={<InfoOutlinedIcon fontSize="small" />} label="Referencias"
-            onClick={() => setShowLegend((v) => !v)}
-            sx={{ fontWeight: 700, fontSize: 11.5, cursor: 'pointer' }}
-          />
-          <Chip size="small" label={`${totalPeople} personas`} sx={{ fontWeight: 700, fontSize: 11.5 }} />
-          <Tooltip title="Ocupación (actual / requerida)">
-            <Chip size="small" label={`${totals.realTotal} / ${totals.idealTotal}`} color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: 11.5 }} />
-          </Tooltip>
-        </Stack>
-      </Stack>
+      {/* Leyenda superior (2026-08-25, correccion definitiva a peticion
+          explicita del usuario): UNICA leyenda del plano -- reemplaza el
+          aviso azul de "mapeo no confirmado" que vivia aqui antes (se
+          quito por completo, no aporta nada operativo al dia a dia) y a
+          la vieja leyenda flotante de abajo (eliminada, ver mas abajo:
+          ya no existe showLegend/Paper de "Referencias" al fondo). Los
+          totales (personas/cobertura) son los mismos que ya se
+          calculaban arriba -- ninguna fuente de datos nueva. */}
+      <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={2} rowGap={1.25}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: operating ? '#10B981' : '#94A3B8' }} />
+            <Typography sx={{ fontWeight: 800, fontSize: 17 }}>Área operando</Typography>
+          </Stack>
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        No hay forma confirmada de mapear cada bahía física a un número de línea desde la imagen de referencia — las
-        10 líneas se muestran en el orden del catálogo (Línea 1..10), no en una correspondencia física verificada.
-      </Alert>
+          <Stack direction="row" spacing={2.5} flexWrap="wrap" useFlexGap sx={{ flex: 1, justifyContent: 'center' }}>
+            {Object.values(STATUS_META).map((meta) => (
+              <LegendItem key={meta.label} color={meta.color} label={meta.label} description={meta.description} />
+            ))}
+            <LegendItem icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />} label="Referencias" description="Áreas de referencia" />
+          </Stack>
+
+          <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
+            <InfoStat icon={<PeopleAltIcon sx={{ fontSize: 16 }} />} value={`${totalPeople} personas`} label="Total asignadas" />
+            <InfoStat value={`${totals.realTotal} / ${totals.idealTotal}`} label="Cobertura del catálogo" />
+          </Stack>
+        </Stack>
+      </Paper>
 
       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1.5 }}>
         <Button
-          size="small" startIcon={<CenterFocusStrongIcon fontSize="small" />} onClick={() => setZoom(1)}
+          size="small" startIcon={<CenterFocusStrongIcon fontSize="small" />} onClick={fitToScreen}
           sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary', minHeight: 36 }}
         >
           Ajustar vista
         </Button>
         <Tooltip title="Alejar">
-          <IconButton sx={{ width: 36, height: 36 }} onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)))}>
+          <IconButton sx={{ width: 36, height: 36 }} onClick={() => { setAutoZoom(false); setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2))) }}>
             <RemoveIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Typography sx={{ fontSize: 12, fontWeight: 700, minWidth: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</Typography>
         <Tooltip title="Acercar">
-          <IconButton sx={{ width: 36, height: 36 }} onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}>
+          <IconButton sx={{ width: 36, height: 36 }} onClick={() => { setAutoZoom(false); setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2))) }}>
             <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -186,33 +227,12 @@ export default function OperatingFloorPlan({ readOnly = false }) {
       <Box
         ref={planRef}
         sx={{
-          bgcolor: 'background.paper', overflow: 'auto',
+          bgcolor: 'background.paper', overflow: 'auto', overscrollBehaviorX: 'contain',
           ...(isFullscreen ? { p: 2.5, height: '100vh' } : {}),
         }}
       >
         <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <FloorPlan onOpen={handleZoneOpen} onOpenSummary={setDetailId} readOnly={readOnly} />
-
-          {showLegend && (
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-              <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', minWidth: 200 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: 11, mb: 0.75 }}>LEYENDA</Typography>
-                <Stack spacing={0.4}>
-                  {Object.entries(STATUS_META).map(([key, meta]) => (
-                    <Stack key={key} direction="row" spacing={0.75} alignItems="center">
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: meta.color }} />
-                      <Typography sx={{ fontSize: 10.5 }}>{meta.label}</Typography>
-                    </Stack>
-                  ))}
-                  <Typography sx={{ fontSize: 9.5, color: 'text.secondary', mt: 0.5 }}>
-                    {readOnly
-                      ? 'Conveyor Principal/Secundario: solo referencia visual aquí, sin personal asociado.'
-                      : 'Haz click o arrastra personal para asignarlo a cualquier área.'}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Box>
-          )}
+          <FloorPlan floorRef={floorRef} onOpen={handleZoneOpen} onOpenSummary={setDetailId} readOnly={readOnly} />
         </Box>
       </Box>
 
@@ -224,21 +244,39 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   )
 }
 
-function LegendChip({ status }) {
-  const meta = STATUS_META[status]
+/* Item de leyenda de dos lineas (etiqueta + descripcion), a partir del
+   mockup que el usuario compartio 2026-08-25 -- reemplaza los Chips de
+   una sola linea que habia antes. */
+function LegendItem({ color, icon, label, description }) {
   return (
-    <Chip
-      size="small"
-      icon={<Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: meta.color, ml: '8px !important' }} />}
-      label={meta.label}
-      sx={{ fontWeight: 700, fontSize: 11.5, bgcolor: alpha(meta.color, 0.1) }}
-    />
+    <Stack direction="row" spacing={0.75} alignItems="flex-start">
+      {icon || <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, mt: 0.4, flexShrink: 0 }} />}
+      <Stack spacing={0}>
+        <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{label}</Typography>
+        <Typography sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1.2 }}>{description}</Typography>
+      </Stack>
+    </Stack>
   )
 }
 
-function FloorPlan({ onOpen, onOpenSummary, readOnly }) {
+/* Bloque de totales (personas asignadas / cobertura del catalogo) --
+   mismos valores ya calculados arriba (totalPeople, totals), solo
+   presentacion nueva a dos lineas junto a la leyenda. */
+function InfoStat({ icon, value, label }) {
   return (
-    <Box sx={{ minWidth: 1180 }}>
+    <Stack alignItems="flex-end" spacing={0}>
+      <Stack direction="row" spacing={0.5} alignItems="center">
+        {icon}
+        <Typography sx={{ fontSize: 13.5, fontWeight: 800 }}>{value}</Typography>
+      </Stack>
+      <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>{label}</Typography>
+    </Stack>
+  )
+}
+
+function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
+  return (
+    <Box ref={floorRef} sx={{ minWidth: 1180 }}>
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
         <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
         <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_SECUNDARIO" onOpenAssign={onOpen} readOnly={readOnly} />
@@ -248,7 +286,13 @@ function FloorPlan({ onOpen, onOpenSummary, readOnly }) {
         sx={{
           display: 'grid', gap: 1,
           gridTemplateColumns: 'minmax(90px,0.7fr) minmax(90px,0.7fr) repeat(10, minmax(56px,1fr)) minmax(150px,1.1fr) minmax(108px,0.8fr) minmax(190px,1.3fr)',
-          gridTemplateRows: '250px 160px',
+          /* minmax(_, auto) en vez de px fijo (2026-08-25, correccion
+             definitiva a peticion explicita del usuario): esa altura sigue
+             siendo el piso normal de siempre, pero ya nunca es un techo que
+             recorte personal en silencio si una caja necesita mas espacio --
+             cada lista interna ya tiene su propio scroll (PersonList,
+             overflow:auto), esto es solo una red de seguridad adicional. */
+          gridTemplateRows: 'minmax(250px, auto) minmax(160px, auto)',
           gridTemplateAreas: `
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "pnp boxprep stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
@@ -418,7 +462,12 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : label}</Typography>
       </Stack>
       {status && <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>
+      {/* minHeight:0 (2026-08-25, correccion definitiva): sin esto, este
+          hijo flex nunca se encoge por debajo de su contenido -- el
+          overflow:auto de arriba quedaba sin efecto y el personal que no
+          cabia se recortaba en silencio (visible en desktop grande, pero
+          mucho mas facil de disparar en tablet con menos alto disponible). */}
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</Box>
     </Box>
   )
 }
@@ -445,7 +494,11 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
         <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>CT Líneas de producción (FFT)</Typography>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{totalReal} / {totalIdeal}</Typography>
       </Stack>
-      <Box sx={{ display: 'flex', gap: 0.6, flex: 1 }}>
+      {/* minHeight:0 (2026-08-25, correccion definitiva, mismo motivo que
+          BigZone): sin esto la fila nunca se encogia por debajo de sus
+          columnas y FftBlock (overflow:hidden) recortaba el personal
+          sobrante en silencio. */}
+      <Box sx={{ display: 'flex', gap: 0.6, flex: 1, minHeight: 0 }}>
         {FFT_COLUMN_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />)}
       </Box>
     </Box>
@@ -599,7 +652,7 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
         <Typography sx={{ fontWeight: 800, fontSize: 13 }}>CT Insumos y Suministro de material</Typography>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : `${real} persona${real === 1 ? '' : 's'}`}</Typography>
       </Stack>
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         <PersonList people={[...peopleInsumos, ...peopleSuministro]} columns={2} readOnly={readOnly} />
       </Box>
     </Box>
@@ -620,10 +673,12 @@ function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
     <Box sx={columns > 1 ? { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 0.4 } : { display: 'flex', flexDirection: 'column', gap: 0.4 }}>
       {people.map((p) => {
         const row = (
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-            <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>{p.name}</Typography>
-          </Stack>
+          <Tooltip title={p.name} enterTouchDelay={0} leaveTouchDelay={2500} disableInteractive>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>{p.name}</Typography>
+            </Stack>
+          </Tooltip>
         )
         if (readOnly) return <Box key={p.id}>{row}</Box>
         return (
