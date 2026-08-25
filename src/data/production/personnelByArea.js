@@ -47,6 +47,13 @@ function mapAreaZonaToId(areaZona) {
   if (areaZona === 'LINEA 0') return 'PROYECTO'
   if (areaZona.startsWith('LINEA ')) return 'LINEA' + areaZona.split(' ')[1]
   if (areaZona === 'DMT') return 'HIGH_VALUE'
+  // INGENIERIA/CAJAS (2026-08-25, a peticion explicita del usuario): esa
+  // gente real se cuenta como SUPERVISOR/BOX_PREP respectivamente, no como
+  // area propia -- CAJAS SI tiene su propio WORK_CENTER real (BOX_PREP, ver
+  // catalog.js), INGENIERIA no. PRODUCCION/CHOFER no necesitan caso especial
+  // aqui: ya tienen WORK_CENTER con exactamente ese mismo id (ver catalog.js).
+  if (areaZona === 'INGENIERIA') return 'SUPERVISOR'
+  if (areaZona === 'CAJAS') return 'BOX_PREP'
   return areaZona
 }
 

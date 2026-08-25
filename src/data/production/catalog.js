@@ -2,9 +2,12 @@
    Catalogo central de Areas de Trabajo para el modulo
    Control de Produccion.
 
-   Estas 23 areas vienen directamente de la hoja LAYOUT del
+   La mayoria de estas areas vienen directamente de la hoja LAYOUT del
    archivo real LAYOUT FFT.xlsx (tabla resumen AREA/IDEAL/REAL,
-   columnas AV:AY) — no son inventadas. `isProduction` distingue
+   columnas AV:AY) — no son inventadas. BOX_PREP/PRODUCCION/CHOFER (ver
+   nota mas abajo) vienen de otra fuente real distinta: el campo
+   `areaZona` a nivel empleado en realPersonnelSnapshot.js, para 26
+   personas reales que esa tabla LAYOUT no cubria. `isProduction` distingue
    las lineas/areas que producen piezas de las areas de soporte,
    liderazgo y capacitacion que tambien aparecen ahi (el Excel
    mezcla ambos tipos en la misma tabla, sin marcarlos, asi que
@@ -15,13 +18,14 @@
    inventar una meta. El dia que exista una fuente real de
    produccion, se llena desde ahi.
 
-   CAJAS se quito de aqui (2026-08-21, a peticion del usuario) —
-   SOLO del layout: no se borro a nadie del snapshot
-   (realPersonnelSnapshot.js sigue con `areaZona: "CAJAS"` intacto
-   para esa gente real). Sin un WORK_CENTER con ese id, ya no
-   aparecen agrupados en ningun bloque visual (mismo patron ya usado
-   para personal con area generica tipo CHOFER/INGENIERIA), pero
-   siguen elegibles/buscables en el modulo de Personal.
+   CAJAS se quito de aqui el 2026-08-21 y quedo asi hasta el 2026-08-25,
+   cuando el usuario aclaro que esa zona es realmente "Box Prep" -- ver
+   WORK_CENTER 'BOX_PREP' mas abajo y mapAreaZonaToId (personnelByArea.js)
+   para el mapeo real. INGENIERIA se cuenta como SUPERVISOR (sin
+   WORK_CENTER propio). CHOFER/PRODUCCION son gente real de las lineas sin
+   linea especifica conocida, ahora con su propia area real (ver nota junto
+   a esos WORK_CENTER). Ninguna de estas migraciones borro a nadie del
+   snapshot real, solo cambio si aparecen agrupados en un bloque visual.
    ───────────────────────────────────────────── */
 
 export const SHIFT_OPTIONS = ['Matutino', 'Vespertino', 'Nocturno']
@@ -96,11 +100,11 @@ export const WORK_CENTERS = [
      ahora reflejando que son dos bandas fisicas reales). El id viejo
      'CONVEYOR' se quito del catalogo -- nadie tenia personal real ahi
      al momento del cambio (real=0), asi que no hubo que migrar ninguna
-     asignacion existente. El banner "CT Conveyor" (singular) que sigue
-     viviendo en WorkAreaMap.jsx/"Areas de trabajo" (vista distinta,
-     fuera del alcance de este cambio) queda inerte/en 0 para siempre
-     con el id viejo -- no se tocó esa vista, ver nota en el reporte al
-     usuario. */
+     asignacion existente. La zona fantasma "CT Conveyor" (singular) que
+     seguia viviendo en layoutZones.js/WorkAreaMap.jsx apuntando al id viejo
+     'CONVEYOR' se eliminó el 2026-08-25 (bug real reportado por el usuario:
+     esa caja nunca podia recibir personal porque el area ya no existia) --
+     ver layoutZones.js, PHYSICAL_ZONES ya no la incluye. */
   { id: 'CONVEYOR_PRINCIPAL', name: 'CT Conveyor Principal', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
   { id: 'CONVEYOR_SECUNDARIO', name: 'CT Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
@@ -120,6 +124,23 @@ export const WORK_CENTERS = [
   { id: 'SELLADO', name: 'CT Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'INSUMOS', name: 'CT Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'SUMINISTRO_MATERIAL', name: 'CT Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  /* BOX_PREP / PRODUCCION / CHOFER (2026-08-25, a peticion explicita del
+     usuario): antes CAJAS/CHOFER/INGENIERIA/PRODUCCION no tenian WORK_CENTER
+     (mismo patron documentado arriba para CAJAS) y esas 26 personas reales
+     del snapshot nunca aparecian en ningun bloque visual. El usuario aclaro
+     que CAJAS es en realidad "Box Prep" (se promueve de zona decorativa a
+     area real, ver floorPlanZones.js) y que la gente con zona INGENIERIA se
+     cuenta como SUPERVISOR (ver mapAreaZonaToId en personnelByArea.js, sin
+     WORK_CENTER propio). CHOFER/PRODUCCION son gente real de las lineas de
+     produccion pero el Excel no dice a cual linea especifica pertenece cada
+     uno -- en vez de inventar una linea, se les da su propia area real
+     (mismo id que su areaZona cruda, sin necesidad de tocar mapAreaZonaToId)
+     para que sean visibles con su nombre real sin fingir precision que no
+     existe. idealHeadcount null: no hay plantilla oficial para ninguna de
+     las 3 (mismo criterio que CALIDAD/SELLADO/INSUMOS). */
+  { id: 'BOX_PREP', name: 'CT Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
+  { id: 'PRODUCCION', name: 'CT Producción (línea sin especificar)', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'CHOFER', name: 'CT Chofer', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
   { id: 'CAPACITACION', name: 'CT Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'TEAM_LEADER', name: 'CT Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'SOPORTE', name: 'CT Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },

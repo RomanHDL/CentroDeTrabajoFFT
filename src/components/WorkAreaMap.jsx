@@ -84,7 +84,6 @@ import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 
 const ZONE_COLORS = {
   PROYECTO: '#3B82F6',
-  CONVEYOR: '#3B82F6',
   FFT: '#3B82F6',
   HIGHVALUE: '#F43F5E',
   SELLADO: '#F59E0B',
@@ -328,47 +327,6 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children, readOnly })
   )
 }
 
-/* Franja horizontal del Conveyor — junto a Sellado, en la parte
-   inferior del layout (igual que en el pizarron real del piso). */
-function ConveyorBanner({ selected, onClick, readOnly }) {
-  const zone = PHYSICAL_ZONES.CONVEYOR
-  const color = ZONE_COLORS.CONVEYOR
-  const staffing = getAreaStaffing('CONVEYOR')
-  const tone = staffingTone(staffing.real, staffing.ideal)
-  const people = getPeopleByArea()['CONVEYOR'] || []
-  const { isOver, dropProps } = useEmployeeDropTarget('CONVEYOR')
-  return (
-    <Box
-      {...(readOnly ? {} : dropProps)}
-      onClick={readOnly ? undefined : () => onClick(zone)}
-      sx={{
-        display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap', height: '100%',
-        borderRadius: 2, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', px: 1.75, py: 1,
-        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
-        transition: 'all .15s ease',
-        '&:hover': { borderColor: color },
-        ...dropHighlightSx(isOver),
-      }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 13.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-        {zone.label}
-      </Typography>
-      {tone ? (
-        <>
-          <Chip size="small" label={tone.chipLabel} sx={{ height: 20, fontSize: 10.5, fontWeight: 800, bgcolor: tone.chipBg, color: tone.chipColor }} />
-          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: tone.statusColor }}>{tone.statusLabel}</Typography>
-        </>
-      ) : (
-        <Chip size="small" label={`${staffing.real} persona${staffing.real === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700 }} />
-      )}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flex: 1 }}>
-        {people.slice(0, 2).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} readOnly={readOnly} />)}
-      </Box>
-    </Box>
-  )
-}
-
 const GRID_COLUMNS = '1.3fr 1fr 2.4fr 1fr'
 
 export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
@@ -434,7 +392,7 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
             gridTemplateAreas: `
               "palletizing acc        insumos    suministro"
               "palletizing midea      fft        side"
-              "sellado     sellado    conveyor   conveyor"
+              "sellado     sellado    sellado    sellado"
             `,
           }}>
             <Box sx={{ gridArea: 'acc' }}>
@@ -549,14 +507,6 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
                 selected={isZoneSelected(PHYSICAL_ZONES.SELLADO, selection)}
                 onClick={() => handleZoneClick('SELLADO')}
                 minHeight={64}
-                readOnly={readOnly}
-              />
-            </Box>
-
-            <Box sx={{ gridArea: 'conveyor' }}>
-              <ConveyorBanner
-                selected={isZoneSelected(PHYSICAL_ZONES.CONVEYOR, selection)}
-                onClick={() => handleZoneClick('CONVEYOR')}
                 readOnly={readOnly}
               />
             </Box>

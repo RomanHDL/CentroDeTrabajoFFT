@@ -29,6 +29,7 @@ import {
 } from '../data/production/personnelByArea'
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../data/production/floorPlanZones'
 import { useEmployeeDropTarget } from '../ui/dnd'
+import DraggablePersonChip from '../ui/DraggablePersonChip'
 import LineDetailDrawer from '../pages/centro-trabajo/LineDetailDrawer'
 
 /* ─────────────────────────────────────────────
@@ -114,6 +115,16 @@ export default function OperatingFloorPlan({ readOnly = false }) {
     else planRef.current?.requestFullscreen?.()
   }
 
+  // Click en cualquier zona con area real (2026-08-25, a peticion explicita
+  // del usuario: arrastrar Y asignar debe funcionar en TODAS las zonas de
+  // Layout 2D, igual que en Centro de Trabajo -- antes solo Conveyor
+  // Principal/Secundario lo permitian). En readOnly (Dashboard) se comporta
+  // EXACTAMENTE igual que siempre: solo abre el detalle de solo lectura.
+  function handleZoneOpen(areaId) {
+    if (readOnly) { setDetailId(areaId); return }
+    setAssignAreaId(areaId)
+  }
+
   const operating = hasAnyPersonnelToday()
   const totals = getStaffingTotals()
   const totalPeople = SHOWN_AREA_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
@@ -180,7 +191,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
         }}
       >
         <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <FloorPlan onOpen={setDetailId} onOpenConveyorAssign={readOnly ? undefined : setAssignAreaId} readOnly={readOnly} />
+          <FloorPlan onOpen={handleZoneOpen} onOpenSummary={setDetailId} readOnly={readOnly} />
 
           {showLegend && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
@@ -196,7 +207,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
                   <Typography sx={{ fontSize: 9.5, color: 'text.secondary', mt: 0.5 }}>
                     {readOnly
                       ? 'Conveyor Principal/Secundario: solo referencia visual aquí, sin personal asociado.'
-                      : 'Conveyor Principal/Secundario: haz click para ver y administrar su personal.'}
+                      : 'Haz click o arrastra personal para asignarlo a cualquier área.'}
                   </Typography>
                 </Stack>
               </Paper>
@@ -225,12 +236,12 @@ function LegendChip({ status }) {
   )
 }
 
-function FloorPlan({ onOpen, onOpenConveyorAssign, readOnly }) {
+function FloorPlan({ onOpen, onOpenSummary, readOnly }) {
   return (
     <Box sx={{ minWidth: 1180 }}>
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-        <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpenConveyorAssign} readOnly={readOnly} />
-        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_SECUNDARIO" onOpenAssign={onOpenConveyorAssign} readOnly={readOnly} />
+        <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
+        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_SECUNDARIO" onOpenAssign={onOpen} readOnly={readOnly} />
       </Stack>
 
       <Box
@@ -240,18 +251,18 @@ function FloorPlan({ onOpen, onOpenConveyorAssign, readOnly }) {
           gridTemplateRows: '250px 160px',
           gridTemplateAreas: `
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
-            "pnp boxprep stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
+            "pnp pnp stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
         <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} />
-          <HorizontalLineBar lineId="PROYECTO" title="CT LINEA 0" onOpen={onOpen} />
+          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
+          <HorizontalLineBar lineId="PROYECTO" title="CT LINEA 0" onOpen={onOpen} readOnly={readOnly} />
         </Box>
 
-        <FftBlock onOpen={onOpen} />
+        <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
-        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="CT Midea / High Value" onOpen={onOpen}>
+        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="CT Midea / High Value" onOpen={onOpen} readOnly={readOnly}>
           <Stack direction="row" spacing={1} sx={{ height: '100%' }}>
             <Box sx={{ flex: 1.4, minWidth: 0 }}>
               <HighValueGrid areaId="HIGH_VALUE" />
@@ -263,7 +274,7 @@ function FloorPlan({ onOpen, onOpenConveyorAssign, readOnly }) {
           </Stack>
         </BigZone>
 
-        <BigZone areaId="PALETIZADO" gridArea="palletizing" title="CT Paletizado (Palletizing)" onOpen={onOpen}>
+        <BigZone areaId="PALETIZADO" gridArea="palletizing" title="CT Paletizado (Palletizing)" onOpen={onOpen} readOnly={readOnly}>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 1.5, m: 0.5 }}>
             <Typography sx={{ fontSize: 11, color: 'text.secondary', textAlign: 'center', px: 1 }}>
               Zona de paletizado — mismo dato que "CT Paletizado", espacio físico grande
@@ -275,16 +286,16 @@ function FloorPlan({ onOpen, onOpenConveyorAssign, readOnly }) {
           <ReferenceZone key={z.key} gridArea={z.key} label={z.label} icon={z.key === 'boxprep' ? <Inventory2Icon sx={{ fontSize: 18 }} /> : undefined} />
         ))}
 
-        <InsumosSuministroZone gridArea="stock" onOpen={onOpen} />
+        <InsumosSuministroZone gridArea="stock" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
-        <BigZone areaId="ACCESORIOS" gridArea="accessories" title="CT Accesorios" onOpen={onOpen}>
-          <PersonList areaId="ACCESORIOS" columns={2} />
+        <BigZone areaId="ACCESORIOS" gridArea="accessories" title="CT Accesorios" onOpen={onOpen} readOnly={readOnly}>
+          <PersonList areaId="ACCESORIOS" columns={2} readOnly={readOnly} />
         </BigZone>
       </Box>
 
       <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {SUPPORT_CARD_AREA_IDS.map((id) => <SupportCard key={id} areaId={id} onOpen={onOpen} />)}
+          {SUPPORT_CARD_AREA_IDS.map((id) => <SupportCard key={id} areaId={id} onOpen={onOpen} readOnly={readOnly} />)}
         </Stack>
       </Box>
     </Box>
@@ -332,7 +343,7 @@ function ReferenceZone({ gridArea, label, icon }) {
   )
 }
 
-function BigZone({ areaId, gridArea, title, onOpen, children }) {
+function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
@@ -340,22 +351,24 @@ function BigZone({ areaId, gridArea, title, onOpen, children }) {
   const label = staffing.ideal != null
     ? `${staffing.real} / ${staffing.ideal}`
     : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
     <Box
+      {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       sx={{
         gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
-        transition: 'box-shadow .15s ease',
+        transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
         <Typography sx={{ fontWeight: 800, fontSize: 13 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : label}</Typography>
       </Stack>
       {status && <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
       <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>
@@ -369,7 +382,7 @@ function BigZone({ areaId, gridArea, title, onOpen, children }) {
    cambia donde se dibuja su columna. */
 const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
 
-function FftBlock({ onOpen }) {
+function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
   const totalIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
   return (
@@ -380,13 +393,13 @@ function FftBlock({ onOpen }) {
     }}>
       <Stack
         direction="row" alignItems="baseline" justifyContent="space-between"
-        onClick={() => onOpen('FFT_ALL')} sx={{ cursor: 'pointer' }}
+        onClick={() => onOpenSummary('FFT_ALL')} sx={{ cursor: 'pointer' }}
       >
         <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>CT Líneas de producción (FFT)</Typography>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{totalReal} / {totalIdeal}</Typography>
       </Stack>
       <Box sx={{ display: 'flex', gap: 0.6, flex: 1 }}>
-        {FFT_COLUMN_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} />)}
+        {FFT_COLUMN_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />)}
       </Box>
     </Box>
   )
@@ -396,7 +409,7 @@ function FftBlock({ onOpen }) {
    (PROYECTO), apiladas en el espacio que dejó libre la caja de
    Paletizado de arriba a la izquierda (a petición del usuario
    2026-08-24). Mismo lenguaje visual que BigZone, solo horizontal. */
-function HorizontalLineBar({ lineId, title, onOpen }) {
+function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
@@ -405,21 +418,23 @@ function HorizontalLineBar({ lineId, title, onOpen }) {
     ? `${staffing.real} / ${staffing.ideal}`
     : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
     <Box
+      {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(lineId)}
       sx={{
         flex: 1, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0.5, minHeight: 0,
-        transition: 'box-shadow .15s ease',
+        transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between">
         <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{isOver ? 'Soltar aquí' : label}</Typography>
       </Stack>
       {status && <Typography sx={{ fontSize: 9.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
       <Box sx={{ width: '100%', height: 6, borderRadius: 999, bgcolor: alpha(color, 0.18), overflow: 'hidden' }}>
@@ -429,25 +444,27 @@ function HorizontalLineBar({ lineId, title, onOpen }) {
   )
 }
 
-function LineColumn({ lineId, onOpen }) {
+function LineColumn({ lineId, onOpen, readOnly }) {
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
   const color = STATUS_META[status].color
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
     <Box
+      {...(readOnly ? {} : dropProps)}
       onClick={(e) => { e.stopPropagation(); onOpen(lineId) }}
       sx={{
         flex: '1 1 0', minWidth: 46, display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', py: 0.75, borderRadius: 1.5,
-        border: '1px solid', borderColor: alpha(color, 0.3),
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.3),
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Typography sx={{ fontSize: 9.5, fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-        {(wc?.name || lineId).replace('CT ', '')}
+        {isOver ? 'Soltar' : (wc?.name || lineId).replace('CT ', '')}
       </Typography>
       <Box sx={{ width: 8, height: 64, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
         <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />
@@ -492,52 +509,75 @@ function MixtosDecoration() {
    (a petición explícita del usuario 2026-08-24) -- siguen siendo dos áreas
    reales separadas en el catálogo (INSUMOS/SUMINISTRO_MATERIAL, ninguna
    tiene plantilla oficial), esto solo combina cómo se dibujan aquí. */
-function InsumosSuministroZone({ gridArea, onOpen }) {
+/* Caja fusionada de INSUMOS+SUMINISTRO_MATERIAL (dos areas reales
+   distintas dibujadas juntas, ver floorPlanZones.js). En modo asignable
+   (!readOnly) no hay una sola "area" a la que caiga un arrastre/click sobre
+   la caja fusionada -- se eligio INSUMOS por default (2026-08-25, decision
+   documentada: es la primera de las dos, ninguna tiene plantilla oficial,
+   no hay criterio real para preferir una sobre otra). En readOnly
+   (Dashboard) el click sigue abriendo el resumen combinado de siempre,
+   sin cambios. */
+function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
   const peopleInsumos = getPeopleByArea()['INSUMOS'] || []
   const peopleSuministro = getPeopleByArea()['SUMINISTRO_MATERIAL'] || []
   const real = peopleInsumos.length + peopleSuministro.length
-  const color = real > 0 ? '#3B82F6' : '#94A3B8'
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'INSUMOS')
+  const color = isOver ? '#3B82F6' : (real > 0 ? '#3B82F6' : '#94A3B8')
   return (
     <Box
-      onClick={() => onOpen('INSUMOS_SUMINISTRO_ALL')}
+      {...(readOnly ? {} : dropProps)}
+      onClick={() => (readOnly ? onOpenSummary('INSUMOS_SUMINISTRO_ALL') : onOpen('INSUMOS'))}
       sx={{
         gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
         border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
-        transition: 'box-shadow .15s ease',
+        transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
         <Typography sx={{ fontWeight: 800, fontSize: 13 }}>CT Insumos y Suministro de material</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{real} persona{real === 1 ? '' : 's'}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : `${real} persona${real === 1 ? '' : 's'}`}</Typography>
       </Stack>
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <PersonList people={[...peopleInsumos, ...peopleSuministro]} columns={2} />
+        <PersonList people={[...peopleInsumos, ...peopleSuministro]} columns={2} readOnly={readOnly} />
       </Box>
     </Box>
   )
 }
 
-function PersonList({ areaId, columns = 1, people: peopleProp }) {
+/* readOnly=false (Layout 2D, 2026-08-25): cada persona listada se vuelve
+   arrastrable (DraggablePersonChip, mismo componente generico ya usado por
+   WorkAreaMap/AvailablePersonnelTray) -- sin esto no habia ninguna fuente
+   real de donde arrastrar dentro de este plano, solo destinos. En readOnly
+   (Dashboard) sigue exactamente igual que siempre, texto plano sin arrastre. */
+function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
   const people = peopleProp || getPeopleByArea()[areaId] || []
   if (people.length === 0) {
     return <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>Sin personal asignado</Typography>
   }
   return (
     <Box sx={columns > 1 ? { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 0.4 } : { display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-      {people.map((p) => (
-        <Stack key={p.id} direction="row" spacing={0.5} alignItems="center">
-          <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-          <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>{p.name}</Typography>
-        </Stack>
-      ))}
+      {people.map((p) => {
+        const row = (
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>{p.name}</Typography>
+          </Stack>
+        )
+        if (readOnly) return <Box key={p.id}>{row}</Box>
+        return (
+          <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ display: 'block' }}>
+            {row}
+          </DraggablePersonChip>
+        )
+      })}
     </Box>
   )
 }
 
-function SupportCard({ areaId, onOpen }) {
+function SupportCard({ areaId, onOpen, readOnly }) {
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
@@ -545,24 +585,27 @@ function SupportCard({ areaId, onOpen }) {
   const label = staffing.ideal != null
     ? `${staffing.real}/${staffing.ideal}`
     : `${staffing.real} pers.`
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
     <Box
+      {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       sx={{
         minWidth: 168, flex: '1 1 168px', maxWidth: 230, p: 1.25, borderRadius: 2, cursor: 'pointer',
-        border: '1px solid', borderColor: alpha(color, 0.35), borderLeft: `3px solid ${color}`,
-        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderLeft: `3px solid ${color}`,
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.2)}` },
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="baseline">
         <Typography sx={{ fontWeight: 800, fontSize: 12 }}>{wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{isOver ? 'Soltar aquí' : label}</Typography>
       </Stack>
       {status && <Typography sx={{ fontSize: 9.5, fontWeight: 700, color, mt: 0.25 }}>{STATUS_META[status].label}</Typography>}
       <Box sx={{ mt: 0.5, maxHeight: 90, overflow: 'auto' }}>
-        <PersonList areaId={areaId} />
+        <PersonList areaId={areaId} readOnly={readOnly} />
       </Box>
     </Box>
   )
