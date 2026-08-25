@@ -6,14 +6,13 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
-import { alpha } from '@mui/material/styles'
 import WbSunnyIcon from '@mui/icons-material/WbSunny'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import { usePageStyles } from '../../ui/pageStyles'
-import { KpiCard, EmptyState } from '../../ui'
+import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT } from '../../data/production/catalog'
 import { allLineSummaries, generalKpis, buildAlerts } from '../../data/production/selectors'
 import { hourlyTrendTotal, HAS_PRODUCTION_SOURCE } from '../../data/production/production'
@@ -23,6 +22,7 @@ import ComparisonChart from './ComparisonChart'
 import HourlyTrendChart from './HourlyTrendChart'
 import AlertsPanel from './AlertsPanel'
 import DashboardWorkAreaSection from './DashboardWorkAreaSection'
+import DashboardKpiCard from './DashboardKpiCard'
 
 export default function DashboardPage() {
   const ps = usePageStyles()
@@ -66,56 +66,43 @@ export default function DashboardPage() {
 
       {/* KPIs generales — simplificado a 3 (personal, faltante, lineas
           operando); produccion/meta/avance/mayor produccion se retiraron
-          a peticion del usuario (no hay fuente real de produccion). */}
-      <Grid container spacing={1.5} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          {/* Card propia (no KpiCard) -- el usuario confundio "personal
-              ideal" (meta por area, suma de idealHeadcount de catalog.js)
-              con "cuanta gente hay registrada", porque el formato viejo
-              "81 / 137" mezclaba ambos numeros en un solo valor. Aqui van
-              apilados y etiquetados por separado a proposito (2026-08-24). */}
-          <Paper elevation={0} sx={{
-            p: 2.5, height: '100%', borderRadius: 3,
-            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.04 : 0.02),
-            border: '1px solid', borderColor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.12),
-            borderLeft: '3px solid #3B82F6',
-          }}>
-            <Box sx={{
-              width: 38, height: 38, borderRadius: 2, mb: 1.25,
-              bgcolor: alpha('#3B82F6', 0.10), display: 'grid', placeItems: 'center', color: '#3B82F6',
-              border: '1px solid', borderColor: alpha('#3B82F6', 0.15),
-            }}>
-              <PeopleAltIcon sx={{ fontSize: 18 }} />
-            </Box>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.6, mb: 1 }}>
-              Personal
-            </Typography>
-
-            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary' }}>
-              Personal que hay actualmente
-            </Typography>
-            <Typography sx={{ fontSize: 28, fontWeight: 800, color: 'text.primary', lineHeight: 1, mb: 1, letterSpacing: -0.5 }}>
-              {kpis.personalActivo}
-            </Typography>
-
-            <Box sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-              <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary' }}>
-                Personal ideal
-              </Typography>
-              <Typography sx={{ fontSize: 18, fontWeight: 700, color: 'text.secondary', lineHeight: 1.2 }}>
-                {kpis.personalIdeal}
-              </Typography>
-              <Typography sx={{ fontSize: 10, color: 'text.disabled', mt: 0.25 }}>
-                Meta de personal por área — no es el total de empleados del sistema.
-              </Typography>
-            </Box>
-          </Paper>
+          a peticion del usuario (no hay fuente real de produccion).
+          Rediseño 2026-08-24 (a peticion explicita del usuario): cards
+          compactas y horizontales (antes eran altas/verticales) via
+          DashboardKpiCard, exclusivo de este bloque -- KpiCard de
+          src/ui sigue igual para PersonalDeHoyTab.jsx/UsuariosPage.jsx. */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <DashboardKpiCard
+            icon={<PeopleAltIcon />}
+            accent="#3B82F6"
+            title="Personal"
+            subtitle="Personal que hay actualmente"
+            value={kpis.personalActivo}
+            secondaryLabel="Ideal"
+            secondaryValue={kpis.personalIdeal}
+            secondaryNote="Meta por área"
+            tooltipNote="Meta de personal por área — no es el total de empleados del sistema."
+          />
         </Grid>
-        <Grid item xs={12} sm={4}>
-          <KpiCard title="Personal faltante" value={`${kpis.personalFaltante}`} subtitle="personas" icon={<PersonOffIcon />} accent={kpis.personalFaltante > 0 ? 'red' : 'green'} />
+        <Grid item xs={12} sm={6} md={4}>
+          <DashboardKpiCard
+            icon={<PersonOffIcon />}
+            accent="#EF4444"
+            title="Personal faltante"
+            subtitle="Personas faltantes"
+            value={kpis.personalFaltante}
+            unit="personas"
+          />
         </Grid>
-        <Grid item xs={12} sm={4}>
-          <KpiCard title="Líneas operando" value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`} icon={<PrecisionManufacturingIcon />} accent="cyan" />
+        <Grid item xs={12} sm={12} md={4}>
+          <DashboardKpiCard
+            icon={<PrecisionManufacturingIcon />}
+            accent="#06B6D4"
+            title="Líneas operando"
+            subtitle="Líneas en operación"
+            value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`}
+          />
         </Grid>
       </Grid>
 
