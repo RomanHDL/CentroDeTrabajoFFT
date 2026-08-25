@@ -67,18 +67,15 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
    representan una línea física principal). */
 export const SUPPORT_CARD_AREA_IDS = [
   'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
-  // BOX_PREP/PRODUCCION/CHOFER (2026-08-25, a peticion explicita del usuario):
-  // BOX_PREP era el placeholder decorativo "BOX PREP" de REFERENCE_ONLY_ZONES,
-  // promovido a area real (ver catalog.js) -- ya no vive ahi. PRODUCCION/CHOFER
-  // son gente real de las lineas sin linea especifica conocida, visibles aqui
-  // con su nombre real en vez de invisibles en ningun lado.
-  'BOX_PREP', 'PRODUCCION', 'CHOFER',
 ]
 
 /* Zonas visibles en la imagen sin área de catálogo mapeada con
    confianza -- se dibujan como referencia (sin conteo) en vez de
-   forzar un mapeo incierto. BOX PREP se quitó de aquí el 2026-08-25
-   (ver SUPPORT_CARD_AREA_IDS arriba); PNP/POC/PEN sigue sin info real. */
+   forzar un mapeo incierto. "BOX PREP" ya NO va aqui (correccion explicita
+   del usuario 2026-08-25: es la MISMA caja de siempre, junto a PNP/POC/PEN
+   -- solo que ahora es real, ver 'boxprep' con datos reales directo en
+   OperatingFloorPlan.jsx, misma posicion de grid de siempre). PNP/POC/PEN
+   sigue sin info real. */
 export const REFERENCE_ONLY_ZONES = [
   { key: 'pnp', label: 'PNP / POC / PEN' },
 ]

@@ -4,14 +4,12 @@
 
    La mayoria de estas areas vienen directamente de la hoja LAYOUT del
    archivo real LAYOUT FFT.xlsx (tabla resumen AREA/IDEAL/REAL,
-   columnas AV:AY) — no son inventadas. BOX_PREP/PRODUCCION/CHOFER (ver
-   nota mas abajo) vienen de otra fuente real distinta: el campo
-   `areaZona` a nivel empleado en realPersonnelSnapshot.js, para 26
-   personas reales que esa tabla LAYOUT no cubria. `isProduction` distingue
-   las lineas/areas que producen piezas de las areas de soporte,
-   liderazgo y capacitacion que tambien aparecen ahi (el Excel
-   mezcla ambos tipos en la misma tabla, sin marcarlos, asi que
-   la clasificacion aqui es nuestra lectura de esa tabla).
+   columnas AV:AY) — no son inventadas. BOX_PREP (ver nota mas abajo) viene
+   de otra fuente real distinta: el campo `areaZona` a nivel empleado en
+   realPersonnelSnapshot.js. `isProduction` distingue las lineas/areas que
+   producen piezas de las areas de soporte, liderazgo y capacitacion que
+   tambien aparecen ahi (el Excel mezcla ambos tipos en la misma tabla, sin
+   marcarlos, asi que la clasificacion aqui es nuestra lectura de esa tabla).
 
    `dailyTarget` se deja en null a proposito: este Excel es de
    PERSONAL, no trae metas de produccion reales, y no vamos a
@@ -21,11 +19,16 @@
    CAJAS se quito de aqui el 2026-08-21 y quedo asi hasta el 2026-08-25,
    cuando el usuario aclaro que esa zona es realmente "Box Prep" -- ver
    WORK_CENTER 'BOX_PREP' mas abajo y mapAreaZonaToId (personnelByArea.js)
-   para el mapeo real. INGENIERIA se cuenta como SUPERVISOR (sin
-   WORK_CENTER propio). CHOFER/PRODUCCION son gente real de las lineas sin
-   linea especifica conocida, ahora con su propia area real (ver nota junto
-   a esos WORK_CENTER). Ninguna de estas migraciones borro a nadie del
-   snapshot real, solo cambio si aparecen agrupados en un bloque visual.
+   para el mapeo real (y que "Box Prep" es la MISMA caja que ya existia
+   junto a "PNP/POC/PEN" en el plano 2D -- no una segunda). INGENIERIA se
+   cuenta como SUPERVISOR (sin WORK_CENTER propio). CHOFER/PRODUCCION
+   (2026-08-25, correccion explicita del usuario: NO merecen su propia area
+   -- son gente real de linea sin linea especifica conocida) NO tienen
+   WORK_CENTER propio; se muestran en "Personal sin area asignada"
+   (getPeopleWithoutArea, personnelByArea.js) con su zona cruda como
+   etiqueta para poder identificarlos, en vez de un bloque nuevo. Ninguna de
+   estas migraciones borro a nadie del snapshot real, solo cambio si
+   aparecen agrupados en un bloque visual.
    ───────────────────────────────────────────── */
 
 export const SHIFT_OPTIONS = ['Matutino', 'Vespertino', 'Nocturno']
@@ -124,23 +127,20 @@ export const WORK_CENTERS = [
   { id: 'SELLADO', name: 'CT Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'INSUMOS', name: 'CT Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'SUMINISTRO_MATERIAL', name: 'CT Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  /* BOX_PREP / PRODUCCION / CHOFER (2026-08-25, a peticion explicita del
-     usuario): antes CAJAS/CHOFER/INGENIERIA/PRODUCCION no tenian WORK_CENTER
-     (mismo patron documentado arriba para CAJAS) y esas 26 personas reales
-     del snapshot nunca aparecian en ningun bloque visual. El usuario aclaro
-     que CAJAS es en realidad "Box Prep" (se promueve de zona decorativa a
-     area real, ver floorPlanZones.js) y que la gente con zona INGENIERIA se
-     cuenta como SUPERVISOR (ver mapAreaZonaToId en personnelByArea.js, sin
-     WORK_CENTER propio). CHOFER/PRODUCCION son gente real de las lineas de
-     produccion pero el Excel no dice a cual linea especifica pertenece cada
-     uno -- en vez de inventar una linea, se les da su propia area real
-     (mismo id que su areaZona cruda, sin necesidad de tocar mapAreaZonaToId)
-     para que sean visibles con su nombre real sin fingir precision que no
-     existe. idealHeadcount null: no hay plantilla oficial para ninguna de
-     las 3 (mismo criterio que CALIDAD/SELLADO/INSUMOS). */
+  /* BOX_PREP (2026-08-25, a peticion explicita del usuario): antes CAJAS no
+     tenia WORK_CENTER (mismo patron documentado arriba) y esas 4 personas
+     reales del snapshot nunca aparecian en ningun bloque visual. El usuario
+     aclaro que CAJAS es en realidad "Box Prep" -- pero es la MISMA caja
+     "BOX PREP" que ya existia como decoracion junto a "PNP/POC/PEN" en el
+     plano 2D (OperatingFloorPlan.jsx), no una segunda: esa caja se volvio
+     real (cuenta/personas) en vez de agregarse una nueva en otro lugar.
+     idealHeadcount null: no hay plantilla oficial (mismo criterio que
+     CALIDAD/SELLADO/INSUMOS). CHOFER/PRODUCCION NO tienen WORK_CENTER --
+     correccion explicita del usuario 2026-08-25: esa gente es real de linea
+     pero no se sabe cual linea especifica, asi que NO se les inventa una
+     area propia; aparecen en "Personal sin area asignada" (getPeopleWithoutArea,
+     personnelByArea.js) con su zona cruda como etiqueta identificadora. */
   { id: 'BOX_PREP', name: 'CT Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
-  { id: 'PRODUCCION', name: 'CT Producción (línea sin especificar)', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'CHOFER', name: 'CT Chofer', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
   { id: 'CAPACITACION', name: 'CT Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'TEAM_LEADER', name: 'CT Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'SOPORTE', name: 'CT Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },

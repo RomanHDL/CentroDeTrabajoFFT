@@ -15,6 +15,17 @@ import EmployeeAvatar from './EmployeeAvatar'
 
 const PREVIEW_LIMIT = 5
 
+/* Etiqueta identificadora para gente real cuya zona cruda no corresponde a
+   ningun WORK_CENTER del catalogo (2026-08-25, a peticion explicita del
+   usuario: CHOFER/PRODUCCION son gente de linea sin linea especifica
+   conocida -- se quedan "sin area asignada" pero identificados, en vez de
+   inventarles una area propia). */
+const ZONA_TAG_LABELS = { PRODUCCION: 'Producción', CHOFER: 'Chofer' }
+
+function personTag(p) {
+  return p.asistencia || ZONA_TAG_LABELS[p.areaZona] || null
+}
+
 function shortName(name) {
   if (!name) return ''
   const parts = name.trim().split(/\s+/)
@@ -53,14 +64,22 @@ export default function UnassignedPersonnelCard({ people }) {
         </Typography>
       ) : (
         <Stack direction="row" spacing={1.25} flexWrap="wrap" rowGap={1}>
-          {preview.map((p) => (
-            <Stack key={p.id} alignItems="center" spacing={0.4} sx={{ width: 56 }}>
-              <EmployeeAvatar employee={p} size={40} />
-              <Typography sx={{ fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }} noWrap>
-                {shortName(p.name)}
-              </Typography>
-            </Stack>
-          ))}
+          {preview.map((p) => {
+            const tag = personTag(p)
+            return (
+              <Stack key={p.id} alignItems="center" spacing={0.4} sx={{ width: 56 }}>
+                <EmployeeAvatar employee={p} size={40} />
+                <Typography sx={{ fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }} noWrap>
+                  {shortName(p.name)}
+                </Typography>
+                {tag && (
+                  <Typography sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1 }} noWrap>
+                    {tag}
+                  </Typography>
+                )}
+              </Stack>
+            )
+          })}
           {extra > 0 && (
             <Stack alignItems="center" justifyContent="center" spacing={0.4} sx={{ width: 56 }}>
               <Box sx={{
@@ -82,9 +101,10 @@ export default function UnassignedPersonnelCard({ people }) {
         </DialogTitle>
         <DialogContent>
           <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ pb: 1 }}>
-            {people.map((p) => (
-              <Chip key={p.id} size="small" label={p.asistencia ? `${p.name} (${p.asistencia})` : p.name} />
-            ))}
+            {people.map((p) => {
+              const tag = personTag(p)
+              return <Chip key={p.id} size="small" label={tag ? `${p.name} (${tag})` : p.name} />
+            })}
           </Stack>
         </DialogContent>
       </Dialog>

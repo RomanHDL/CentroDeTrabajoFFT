@@ -50,8 +50,11 @@ function mapAreaZonaToId(areaZona) {
   // INGENIERIA/CAJAS (2026-08-25, a peticion explicita del usuario): esa
   // gente real se cuenta como SUPERVISOR/BOX_PREP respectivamente, no como
   // area propia -- CAJAS SI tiene su propio WORK_CENTER real (BOX_PREP, ver
-  // catalog.js), INGENIERIA no. PRODUCCION/CHOFER no necesitan caso especial
-  // aqui: ya tienen WORK_CENTER con exactamente ese mismo id (ver catalog.js).
+  // catalog.js), INGENIERIA no. CHOFER/PRODUCCION NO tienen WORK_CENTER (a
+  // peticion explicita del usuario, 2026-08-25: no inventar a que linea
+  // pertenecen) -- se quedan devueltos tal cual abajo, y getPeopleWithoutArea
+  // los recoge como "sin area asignada" porque no hay WORK_CENTER activo
+  // con ese id (ver esa funcion mas abajo).
   if (areaZona === 'INGENIERIA') return 'SUPERVISOR'
   if (areaZona === 'CAJAS') return 'BOX_PREP'
   return areaZona
@@ -215,8 +218,17 @@ export function getEffectiveTodayRoster() {
   return [...real, ...synthetic].sort((a, b) => ((a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1))
 }
 
+/* "Sin area asignada" = sin zona cruda en absoluto, O con una zona cruda que
+   no corresponde a ningun WORK_CENTER activo del catalogo (2026-08-25, a
+   peticion explicita del usuario: CHOFER/PRODUCCION son gente real de linea
+   sin linea especifica conocida -- en vez de inventarles una area, caen
+   aqui). p.areaZona se conserva en el objeto devuelto para poder mostrar de
+   quien se trata (ej. "Chofer") sin fingir una ubicacion que no existe. */
 export function getPeopleWithoutArea() {
-  return REAL_PERSONNEL_SNAPSHOT.filter((p) => !p.areaZona)
+  return REAL_PERSONNEL_SNAPSHOT.filter((p) => {
+    if (!p.areaZona) return true
+    return !workCenterById(mapAreaZonaToId(p.areaZona))
+  })
 }
 
 /* Donde aparece HOY una persona (efectivo: snapshot o vivo, lo

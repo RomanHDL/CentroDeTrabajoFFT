@@ -251,7 +251,7 @@ function FloorPlan({ onOpen, onOpenSummary, readOnly }) {
           gridTemplateRows: '250px 160px',
           gridTemplateAreas: `
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
-            "pnp pnp stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
+            "pnp boxprep stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
@@ -263,28 +263,39 @@ function FloorPlan({ onOpen, onOpenSummary, readOnly }) {
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
         <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="CT Midea / High Value" onOpen={onOpen} readOnly={readOnly}>
-          <Stack direction="row" spacing={1} sx={{ height: '100%' }}>
-            <Box sx={{ flex: 1.4, minWidth: 0 }}>
-              <HighValueGrid areaId="HIGH_VALUE" />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5, borderLeft: '1px dashed', borderColor: 'divider', pl: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 9.5, textAlign: 'center', color: 'text.secondary' }}>Productos Mixtos</Typography>
-              <MixtosDecoration />
+          <Stack sx={{ height: '100%', minHeight: 0 }}>
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+              <Box sx={{ flex: 1.4, minWidth: 0 }}>
+                <HighValueGrid areaId="HIGH_VALUE" />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5, borderLeft: '1px dashed', borderColor: 'divider', pl: 1 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 9.5, textAlign: 'center', color: 'text.secondary' }}>Productos Mixtos</Typography>
+                <MixtosDecoration />
+              </Box>
+            </Stack>
+            {/* Nombres reales debajo de la cuadricula decorativa (2026-08-25, a
+                peticion explicita del usuario: si hay personal en cualquier
+                area, debe verse su nombre igual que en CT Accesorios, no solo
+                un indicador visual abstracto). */}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', mt: 0.75, pt: 0.75, borderTop: '1px dashed', borderColor: 'divider' }}>
+              <PersonList areaId="HIGH_VALUE" columns={2} readOnly={readOnly} />
             </Box>
           </Stack>
         </BigZone>
 
         <BigZone areaId="PALETIZADO" gridArea="palletizing" title="CT Paletizado (Palletizing)" onOpen={onOpen} readOnly={readOnly}>
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 1.5, m: 0.5 }}>
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', textAlign: 'center', px: 1 }}>
-              Zona de paletizado — mismo dato que "CT Paletizado", espacio físico grande
-            </Typography>
-          </Box>
+          <PersonList areaId="PALETIZADO" columns={2} readOnly={readOnly} />
         </BigZone>
 
         {REFERENCE_ONLY_ZONES.map((z) => (
-          <ReferenceZone key={z.key} gridArea={z.key} label={z.label} icon={z.key === 'boxprep' ? <Inventory2Icon sx={{ fontSize: 18 }} /> : undefined} />
+          <ReferenceZone key={z.key} gridArea={z.key} label={z.label} />
         ))}
+
+        {/* "BOX PREP" (2026-08-25, correccion explicita del usuario): es la
+            MISMA caja de siempre junto a PNP/POC/PEN, ahora con datos reales
+            (antes CAJAS no tenia WORK_CENTER y esas 4 personas nunca
+            aparecian en ningun lado) -- NO es una caja nueva ni duplicada. */}
+        <SmallRealZone areaId="BOX_PREP" gridArea="boxprep" icon={<Inventory2Icon sx={{ fontSize: 16 }} />} onOpen={onOpen} readOnly={readOnly} />
 
         <InsumosSuministroZone gridArea="stock" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
@@ -339,6 +350,42 @@ function ReferenceZone({ gridArea, label, icon }) {
     }}>
       {icon}
       <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{label}</Typography>
+    </Box>
+  )
+}
+
+/* Misma forma/tamano que ReferenceZone (celda pequeña de grid junto a
+   PNP/POC/PEN) pero con datos reales -- usada solo para "BOX PREP"
+   (2026-08-25, correccion explicita del usuario: reusar esta caja de
+   siempre, no crear una nueva en otro lado). Drop target + click para
+   administrar, igual que el resto de zonas reales. */
+function SmallRealZone({ areaId, gridArea, icon, onOpen, readOnly }) {
+  const wc = workCenterById(areaId)
+  const staffing = getAreaStaffing(areaId)
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
+  const label = staffing.ideal != null
+    ? `${staffing.real} / ${staffing.ideal}`
+    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  return (
+    <Box
+      {...(readOnly ? {} : dropProps)}
+      onClick={() => onOpen(areaId)}
+      sx={{
+        gridArea, borderRadius: 1.5, p: 0.75, cursor: 'pointer', userSelect: 'none',
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent',
+        display: 'flex', flexDirection: 'column', gap: 0.4, overflow: 'hidden', minHeight: 0,
+        transition: 'background-color .15s ease',
+      }}
+    >
+      <Stack direction="row" spacing={0.4} alignItems="center" justifyContent="center">
+        {icon}
+        <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{wc?.name?.replace('CT ', '') || areaId}</Typography>
+      </Stack>
+      <Typography sx={{ fontSize: 9.5, fontWeight: 700, textAlign: 'center', color: 'text.secondary' }}>{isOver ? 'Soltar aquí' : label}</Typography>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        <PersonList areaId={areaId} readOnly={readOnly} />
+      </Box>
     </Box>
   )
 }
@@ -440,6 +487,12 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
       <Box sx={{ width: '100%', height: 6, borderRadius: 999, bgcolor: alpha(color, 0.18), overflow: 'hidden' }}>
         <Box sx={{ width: `${pct * 100}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
       </Box>
+      {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
+          personal, debe verse su nombre igual que en CT Accesorios, no solo la
+          barra de avance. */}
+      <Box sx={{ mt: 0.5, maxHeight: 70, overflow: 'auto' }}>
+        <PersonList areaId={lineId} columns={2} readOnly={readOnly} />
+      </Box>
     </Box>
   )
 }
@@ -457,7 +510,7 @@ function LineColumn({ lineId, onOpen, readOnly }) {
       onClick={(e) => { e.stopPropagation(); onOpen(lineId) }}
       sx={{
         flex: '1 1 0', minWidth: 46, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', py: 0.75, borderRadius: 1.5,
+        cursor: 'pointer', userSelect: 'none', py: 0.75, px: 0.4, borderRadius: 1.5, minHeight: 0, height: '100%',
         border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.3),
         bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
@@ -466,10 +519,16 @@ function LineColumn({ lineId, onOpen, readOnly }) {
       <Typography sx={{ fontSize: 9.5, fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
         {isOver ? 'Soltar' : (wc?.name || lineId).replace('CT ', '')}
       </Typography>
-      <Box sx={{ width: 8, height: 64, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
+      <Box sx={{ width: 8, height: 36, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden', my: 0.5 }}>
         <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />
       </Box>
       <Typography sx={{ fontSize: 11.5, fontWeight: 700 }}>{staffing.real}/{staffing.ideal}</Typography>
+      {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
+          personal, debe verse su nombre igual que en CT Accesorios, no solo la
+          barra de avance. */}
+      <Box sx={{ width: '100%', flex: 1, minHeight: 0, overflow: 'auto', mt: 0.4 }}>
+        <PersonList areaId={lineId} readOnly={readOnly} />
+      </Box>
     </Box>
   )
 }
