@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
-import { useModulesForCurrentRole } from '../state/auth'
+import { useEffectiveModules } from '../state/auth'
 
 /* Destino de "/" — en desktop preferimos Dashboard (resumen); en touch
    (tablet/celular de piso) preferimos Registro de personal, que es el modulo
@@ -11,7 +11,7 @@ import { useModulesForCurrentRole } from '../state/auth'
    rebotar. */
 export default function DefaultRedirect() {
   const isTouch = useIsTouchDevice()
-  const { modules, loading } = useModulesForCurrentRole()
+  const { modules, loading } = useEffectiveModules()
 
   if (loading) return null
 

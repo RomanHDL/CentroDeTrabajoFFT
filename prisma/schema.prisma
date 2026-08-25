@@ -44,6 +44,49 @@ model RoleModuleAccess {
   modules String[]
 }
 
+// =====================================================================
+// PERMISOS DE MODULOS (dinamico, 2026-08-25) -- reemplaza en la practica a
+// RoleModuleAccess (que se deja intacta, sin usar, como respaldo historico).
+// Ausencia de fila = sin permiso (allowed=false / sin override) por
+// convencion -- ver server-lib/permissionService.js.
+// =====================================================================
+
+enum UserPermissionEffect {
+  ALLOW
+  DENY
+}
+
+// Permiso de un ROL sobre un modulo (moduleKey = MODULE_REGISTRY[].key, ver
+// shared/moduleRegistry.js). ADMINISTRADOR siempre debe quedar allowed=true
+// para modulos permissionProtected no reservados -- se valida en
+// permissionService.js, no solo aqui.
+model RoleModulePermission {
+  id              String   @id @default(cuid())
+  role            UserRole
+  moduleKey       String
+  allowed         Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?
+
+  @@unique([role, moduleKey])
+}
+
+// Override INDIVIDUAL de un usuario sobre un modulo -- ALLOW gana sobre un
+// rol que lo niega, DENY gana sobre un rol que lo permite. Ausencia de fila
+// == INHERIT (cae al permiso del rol). Nunca existe para modulos
+// systemReserved (Usuarios/Layout 2D) -- se valida en permissionService.js.
+model UserModulePermission {
+  id              String               @id @default(cuid())
+  userId          String
+  moduleKey       String
+  effect          UserPermissionEffect
+  updatedAt       DateTime             @updatedAt
+  updatedByUserId String?
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleKey])
+}
+
 model User {
   id                 String    @id @default(cuid())
   employeeNumber     String?   @unique
@@ -73,6 +116,7 @@ model User {
   skillsAdded              EmployeeSkill[]                   @relation("EmployeeSkillAddedBy")
   skillsDeactivated        EmployeeSkill[]                   @relation("EmployeeSkillDeactivatedBy")
   reconciliationsResolved  EmployeeReconciliationCandidate[] @relation("EmployeeReconciliationResolvedBy")
+  userModulePermissions    UserModulePermission[]
 
   @@index([role])
 }

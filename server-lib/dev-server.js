@@ -17,8 +17,12 @@ import usersIndexHandler from '../api/users/index.js'
 import userByIdHandler from '../api/users/[id].js'
 import userDeactivateHandler from '../api/users/[id]/deactivate.js'
 import userResetPasswordHandler from '../api/users/[id]/reset-password.js'
+import userPermissionsIndexHandler from '../api/users/[id]/permissions/index.js'
+import userPermissionByModuleHandler from '../api/users/[id]/permissions/[moduleKey].js'
+import modulesIndexHandler from '../api/modules/index.js'
 import rolePermissionsIndexHandler from '../api/role-permissions/index.js'
 import rolePermissionByRoleHandler from '../api/role-permissions/[role].js'
+import moduleEffectiveUsersHandler from '../api/permissions/modules/[moduleKey]/users.js'
 import personnelEmployeesHandler from '../api/personnel/employees.js'
 import personnelRosterHandler from '../api/personnel/roster.js'
 import personnelCheckinHandler from '../api/personnel/checkin.js'
@@ -55,9 +59,13 @@ app.post('/api/users', wrapAsync(usersIndexHandler))
 app.patch('/api/users/:id', withDynamicParams(userByIdHandler))
 app.post('/api/users/:id/deactivate', withDynamicParams(userDeactivateHandler))
 app.post('/api/users/:id/reset-password', withDynamicParams(userResetPasswordHandler))
+app.get('/api/users/:id/permissions', withDynamicParams(userPermissionsIndexHandler))
+app.patch('/api/users/:id/permissions/:moduleKey', withDynamicParams(userPermissionByModuleHandler))
 
+app.get('/api/modules', wrapAsync(modulesIndexHandler))
 app.get('/api/role-permissions', wrapAsync(rolePermissionsIndexHandler))
 app.patch('/api/role-permissions/:role', withDynamicParams(rolePermissionByRoleHandler))
+app.get('/api/permissions/modules/:moduleKey/users', withDynamicParams(moduleEffectiveUsersHandler))
 
 app.get('/api/personnel/employees', wrapAsync(personnelEmployeesHandler))
 app.get('/api/personnel/roster', wrapAsync(personnelRosterHandler))

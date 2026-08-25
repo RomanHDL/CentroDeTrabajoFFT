@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { stringifySetCookie, parseCookie } from 'cookie'
 import { prisma } from './prisma.js'
+import { canUserAccessModule } from './permissionService.js'
 
 const COOKIE_NAME = 'fft_session'
 const SESSION_TTL_SECONDS = 60 * 60 * 8 // 8 horas
@@ -82,6 +83,20 @@ export function requireRole(roles, handler) {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'No autorizado para esta accion' })
     }
+    return handler(req, res)
+  })
+}
+
+// Wrapper reutilizable para proteger un endpoint por modulo (rol + override
+// individual, via canUserAccessModule/resolveEffectiveAccess) en vez de solo
+// por rol fijo. Disponible para endpoints nuevos; NO se aplico hoy a
+// api/personnel/* porque esos endpoints son compartidos entre varios modulos
+// (Centro de Trabajo Y Registro de personal) y filtrarlos por un solo
+// moduleKey queda fuera de alcance de esta tarea.
+export function requireModuleAccess(moduleKey, handler) {
+  return requireAuth(async (req, res) => {
+    const allowed = await canUserAccessModule({ userId: req.user.id, role: req.user.role, moduleKey })
+    if (!allowed) return res.status(403).json({ error: 'No autorizado para este modulo' })
     return handler(req, res)
   })
 }

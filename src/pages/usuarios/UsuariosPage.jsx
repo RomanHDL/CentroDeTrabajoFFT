@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Paper from '@mui/material/Paper'
@@ -24,6 +24,8 @@ import CircularProgress from '@mui/material/CircularProgress'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
+import VpnKeyIcon from '@mui/icons-material/VpnKey'
+import EditIcon from '@mui/icons-material/Edit'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import dayjs from 'dayjs'
 import { apiRequest } from '../../state/auth'
@@ -31,9 +33,8 @@ import { ROLE_LABELS } from '../../layout/roleLabels'
 import { KpiCard } from '../../ui'
 import CreateUserDialog from './CreateUserDialog'
 import EditUserDialog from './EditUserDialog'
-import RoleModulePermissionsPanel from './RoleModulePermissionsPanel'
-import ClearLayoutPanel from './ClearLayoutPanel'
-import RestoreLayoutPanel from './RestoreLayoutPanel'
+import PermissionsManagementCard from './permissions/PermissionsManagementCard'
+import AdminToolsCard from './AdminToolsCard'
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState([])
@@ -45,6 +46,13 @@ export default function UsuariosPage() {
   const [menuState, setMenuState] = useState({ anchor: null, user: null })
   const [resetResult, setResetResult] = useState(null)
   const [confirmDeactivate, setConfirmDeactivate] = useState(null)
+  const [focusUserId, setFocusUserId] = useState(null)
+  const permissionsCardRef = useRef(null)
+
+  function openPermissionsFor(user) {
+    setFocusUserId(user.id)
+    permissionsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -154,6 +162,8 @@ export default function UsuariosPage() {
                 </TableCell>
                 <TableCell>{u.lastLoginAt ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm') : 'Nunca'}</TableCell>
                 <TableCell align="right">
+                  <IconButton size="small" title="Permisos" onClick={() => openPermissionsFor(u)}><VpnKeyIcon fontSize="small" /></IconButton>
+                  <IconButton size="small" title="Editar" onClick={() => setEditUser(u)}><EditIcon fontSize="small" /></IconButton>
                   <IconButton size="small" onClick={(e) => openMenu(e, u)}><MoreVertIcon fontSize="small" /></IconButton>
                 </TableCell>
               </TableRow>
@@ -162,9 +172,13 @@ export default function UsuariosPage() {
         </Table>
       </Paper>
 
-      <RoleModulePermissionsPanel />
-      <ClearLayoutPanel />
-      <RestoreLayoutPanel />
+      <PermissionsManagementCard
+        ref={permissionsCardRef}
+        users={users}
+        focusUserId={focusUserId}
+        onFocusUserHandled={() => setFocusUserId(null)}
+      />
+      <AdminToolsCard />
 
       <Menu anchorEl={menuState.anchor} open={!!menuState.anchor} onClose={closeMenu}>
         <MenuItem onClick={() => { setEditUser(menuState.user); closeMenu() }}>Editar</MenuItem>

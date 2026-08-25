@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../server-lib/prisma.js'
 import { signSessionToken, buildSessionCookie, publicUser } from '../../server-lib/auth.js'
+import { getEffectiveModulesForUser } from '../../server-lib/permissionService.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -26,5 +27,6 @@ export default async function handler(req, res) {
 
   const token = signSessionToken(user.id)
   res.setHeader('Set-Cookie', buildSessionCookie(token))
-  return res.status(200).json({ user: publicUser(updated) })
+  const effectiveModules = await getEffectiveModulesForUser({ userId: updated.id, role: updated.role })
+  return res.status(200).json({ user: publicUser(updated), effectiveModules })
 }

@@ -1,32 +1,29 @@
-import { prisma } from '../../server-lib/prisma.js'
 import { requireRole } from '../../server-lib/auth.js'
+import { setRoleModulePermission, getRoleModulePermissionsMap } from '../../server-lib/permissionService.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
-// "/usuarios" nunca es configurable aqui -- gestiona cuentas/contrasenas, se
-// queda fijo en el codigo (Sidebar.jsx) solo para ADMINISTRADOR.
-const VALID_MODULES = ['/dashboard', '/centro-trabajo', '/registro-personal']
 
+// PATCH { moduleKey, allowed } -- toggle atomico de UN permiso (ya no
+// reemplaza el array completo como el contrato viejo). Las reglas
+// "ADMINISTRADOR siempre completo" y "modulo reservado no se gestiona aqui"
+// viven en permissionService.setRoleModulePermission, no duplicadas aqui.
 export default requireRole(['ADMINISTRADOR'], async (req, res) => {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
 
   const role = req.query.role ?? req.params?.role
   if (!VALID_ROLES.includes(role)) return res.status(400).json({ error: 'Rol invalido' })
 
-  const { modules } = req.body || {}
-  if (!Array.isArray(modules) || modules.some((m) => !VALID_MODULES.includes(m))) {
-    return res.status(400).json({ error: 'Modulos invalidos' })
+  const { moduleKey, allowed } = req.body || {}
+  if (typeof moduleKey !== 'string' || typeof allowed !== 'boolean') {
+    return res.status(400).json({ error: 'moduleKey (string) y allowed (boolean) son requeridos' })
   }
 
-  // Un admin nunca puede quitarse (ni quitarle a ningun ADMINISTRADOR) acceso
-  // a un modulo -- evita que el propio admin se bloquee por accidente.
-  if (role === 'ADMINISTRADOR' && VALID_MODULES.some((m) => !modules.includes(m))) {
-    return res.status(400).json({ error: 'ADMINISTRADOR siempre debe tener los 3 modulos' })
+  try {
+    await setRoleModulePermission(role, moduleKey, allowed, req.user.id)
+  } catch (e) {
+    return res.status(400).json({ error: e.message })
   }
 
-  const updated = await prisma.roleModuleAccess.upsert({
-    where: { role },
-    create: { role, modules },
-    update: { modules },
-  })
-  return res.status(200).json({ role: updated.role, modules: updated.modules })
+  const map = await getRoleModulePermissionsMap()
+  return res.status(200).json({ role, modules: map[role] })
 })

@@ -16,7 +16,7 @@ import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { NavLink } from 'react-router-dom'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
-import { useModulesForCurrentRole } from '../state/auth'
+import { useEffectiveModules } from '../state/auth'
 
 export const SIDEBAR_WIDTH = 232
 
@@ -25,11 +25,12 @@ export const SIDEBAR_WIDTH = 232
 // ADMINISTRADOR, Usuarios. La proteccion real esta en el backend (requireRole
 // en cada API), no en que este menu se muestre u oculte.
 //
-// "configurable" = true para los 3 modulos cuyo acceso por rol un ADMINISTRADOR
-// puede editar en vivo desde Usuarios (RoleModuleAccess, ver src/state/auth.jsx
-// useModulesForCurrentRole). "/usuarios" NUNCA es configurable -- se queda fijo
-// aqui solo para ADMINISTRADOR, es una frontera de seguridad (gestiona cuentas
-// y contrasenas), no una preferencia de navegacion.
+// "configurable" = true para los 3 modulos cuyo acceso (por rol + override
+// individual) un ADMINISTRADOR puede editar en vivo desde Usuarios ->
+// Gestion de permisos (ver src/state/auth.jsx useEffectiveModules). "/usuarios"
+// NUNCA es configurable -- se queda fijo aqui solo para ADMINISTRADOR, es una
+// frontera de seguridad (gestiona cuentas y contrasenas), no una preferencia
+// de navegacion.
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
@@ -90,7 +91,7 @@ function NavList({ items, onItemClick }) {
    presentacion de la misma lista de rutas de siempre. */
 export default function Sidebar({ role, open, onClose, variant, pinned, onTogglePin, onMouseEnter, onMouseLeave }) {
   const isTouch = useIsTouchDevice()
-  const { modules: allowedModules, loading: permsLoading } = useModulesForCurrentRole()
+  const { modules: allowedModules, loading: permsLoading } = useEffectiveModules()
   const byRole = NAV_ITEMS.filter((item) => (
     item.configurable
       // Mientras carga (allowedModules === null) no se oculta nada: evita el
