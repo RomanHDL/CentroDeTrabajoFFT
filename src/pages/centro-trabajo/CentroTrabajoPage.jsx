@@ -80,7 +80,7 @@ export default function CentroTrabajoPage() {
         </>
       )}
       {tab === 'lineas' && <LineasTab onOpenLine={setSelectedLine} />}
-      {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} />}
+      {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} onGoToLineas={() => setTab('lineas')} />}
       {tab === 'personal' && <PersonalDeHoyTab />}
       {tab === 'bajas' && <BajasTab />}
 
