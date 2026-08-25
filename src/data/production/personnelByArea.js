@@ -134,6 +134,25 @@ export function getBaselineOnlyPeopleIds() {
   return ids
 }
 
+/* Inverso exacto de getBaselineOnlyPeopleIds — quien HOY esta suprimido
+   (por "Vaciar layout") pero su zona historica de BASE es una CT LINEA (o
+   "PRODUCCION" generico, mismo alcance que suppressBaselinePlacement/
+   suppress-baseline.js). Para "Restaurar layout de las CT LINEA"
+   (RestoreLayoutPanel.jsx): estos son exactamente a quienes hay que
+   quitarles la supresion para que vuelvan a aparecer por snapshot. */
+export function getSuppressedLinePeopleIds() {
+  const baselineSuppressed = getBaselineSuppressed()
+  const protectedAreas = new Set(PROTECTED_FROM_LAYOUT_CLEAR_AREAS)
+  const ids = []
+  REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
+    if (!baselineSuppressed.has(p.id)) return
+    const areaId = mapAreaZonaToId(p.areaZona)
+    if (!areaId || protectedAreas.has(areaId)) return
+    ids.push(p.id)
+  })
+  return ids
+}
+
 /* Pase de lista "efectivo" de HOY — para la pestaña Personal del
    Centro de Trabajo. A peticion del usuario (2026-08-20), esta
    tabla ya NO exige que alguien registre manualmente a cada

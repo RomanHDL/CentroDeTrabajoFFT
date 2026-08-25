@@ -90,8 +90,20 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       setStep('SUCCESS')
       onDone && onDone()
     } else if (res.status === 'CONFLICT') {
-      setConflict(res)
-      setStep('CONFLICT')
+      // Mismo empleado, misma área y misma forma de trabajo (estación) que ya tenía hoy: no es
+      // una reasignación, solo se cuenta su asistencia de hoy (ya registrada desde su primer
+      // check-in) — sin diálogo de confirmación, a peticion explicita del usuario. Cualquier otro
+      // caso (otra área, o misma área con otra estación/forma de trabajo) SI es un cambio real y
+      // pasa al panel de confirmación (step CONFLICT) para que quede claro que va a moverse.
+      const sameSpot = res.assignment.areaId === areaId && res.assignment.stationId === form.stationId
+      if (sameSpot) {
+        setResult({ employee: res.employee, assignment: res.assignment, eventLabel: 'Asistencia', eventTime: res.assignment.checkInAt, alreadyThere: true })
+        setStep('SUCCESS')
+        onDone && onDone()
+      } else {
+        setConflict(res)
+        setStep('CONFLICT')
+      }
     } else if (res.status === 'STATION_FULL') {
       setError(res.message)
     } else if (res.status === 'NEEDS_NAME') {
@@ -185,23 +197,28 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
   }
 
   if (step === 'CONFLICT' && conflict) {
+    const sameArea = conflict.assignment.areaId === areaId
     return (
       <Stack spacing={1.5}>
         <Typography sx={{ fontWeight: 800, fontSize: 17 }}>
           {conflict.employee.employeeNumber} — {conflict.employee.name}
         </Typography>
+        <Alert severity="warning" sx={{ py: 0.5 }}>
+          {sameArea
+            ? 'Ya está registrado hoy en esta misma área, pero con otra forma de trabajo. Esto lo va a cambiar de estación/rol dentro de la misma área, no solo a contar su asistencia.'
+            : 'Ya está registrado hoy en otra área. Esto lo va a mover de área, no solo a contar su asistencia.'}
+        </Alert>
         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Actualmente</Typography>
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Actualmente hace</Typography>
           <Typography sx={{ fontWeight: 700 }}>
             {workCenterById(conflict.assignment.areaId)?.name || conflict.assignment.areaId} — {conflict.assignment.stationId}
           </Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Entrada: {conflict.assignment.checkInAt}</Typography>
         </Box>
-        {conflict.assignment.areaId !== areaId && (
-          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-            Nueva ubicación: <b>{areaName}</b> — {form.stationId}
-          </Typography>
-        )}
+        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Va a pasar a hacer</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{areaName} — {form.stationId || '—'}</Typography>
+        </Box>
         {isLider && (
           <Alert severity="info" sx={{ py: 0.5 }}>
             Como líder, este movimiento se enviará a un supervisor o administrador para su aprobación — no se aplica de inmediato.
@@ -213,10 +230,10 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
           <Button
             variant="contained"
             onClick={handleMove}
-            disabled={submitting || conflict.assignment.areaId === areaId}
+            disabled={submitting}
             sx={{ fontWeight: 700 }}
           >
-            {isLider ? `Enviar para aprobación — ${areaName}` : `Mover a ${areaName}`}
+            {isLider ? `Enviar para aprobación — ${areaName}` : `Confirmar cambio — ${areaName}`}
           </Button>
         </Stack>
       </Stack>
@@ -253,7 +270,9 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
         <Box>
           <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>Registro realizado</Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
+            {result.alreadyThere ? 'Ya estaba aquí — asistencia de hoy contada' : 'Registro realizado'}
+          </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
             {result.employee.employeeNumber} — {result.employee.name}
           </Typography>

@@ -28,6 +28,7 @@ import personnelRequestMoveHandler from '../api/personnel/request-move.js'
 import personnelApproveMoveHandler from '../api/personnel/approve-move.js'
 import personnelRejectMoveHandler from '../api/personnel/reject-move.js'
 import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline.js'
+import personnelRestoreBaselineHandler from '../api/personnel/restore-baseline.js'
 
 const app = express()
 app.use(express.json())
@@ -67,6 +68,7 @@ app.post('/api/personnel/request-move', wrapAsync(personnelRequestMoveHandler))
 app.post('/api/personnel/approve-move', wrapAsync(personnelApproveMoveHandler))
 app.post('/api/personnel/reject-move', wrapAsync(personnelRejectMoveHandler))
 app.post('/api/personnel/suppress-baseline', wrapAsync(personnelSuppressBaselineHandler))
+app.post('/api/personnel/restore-baseline', wrapAsync(personnelRestoreBaselineHandler))
 
 app.use((err, req, res, _next) => {
   console.error(err)

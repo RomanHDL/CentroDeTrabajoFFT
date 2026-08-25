@@ -33,6 +33,7 @@ import CreateUserDialog from './CreateUserDialog'
 import EditUserDialog from './EditUserDialog'
 import RoleModulePermissionsPanel from './RoleModulePermissionsPanel'
 import ClearLayoutPanel from './ClearLayoutPanel'
+import RestoreLayoutPanel from './RestoreLayoutPanel'
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState([])
@@ -163,6 +164,7 @@ export default function UsuariosPage() {
 
       <RoleModulePermissionsPanel />
       <ClearLayoutPanel />
+      <RestoreLayoutPanel />
 
       <Menu anchorEl={menuState.anchor} open={!!menuState.anchor} onClose={closeMenu}>
         <MenuItem onClick={() => { setEditUser(menuState.user); closeMenu() }}>Editar</MenuItem>

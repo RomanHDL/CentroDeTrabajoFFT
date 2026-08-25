@@ -107,6 +107,11 @@ export function syncSuppressBaseline() {
     .catch((e) => console.error('[personnel-sync] suppress-baseline', e))
 }
 
+export function syncRestoreBaseline() {
+  apiFetch('/api/personnel/restore-baseline', { method: 'POST' })
+    .catch((e) => console.error('[personnel-sync] restore-baseline', e))
+}
+
 export function syncRequestMove({ localRequestId, employeeId, toAreaId, toStationId, shift }) {
   const serverId = serverIdByLocalId.get(employeeId)
   if (!serverId) { console.warn('[personnel-sync] request-move: sin serverId todavia, se omite'); return }

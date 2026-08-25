@@ -9,7 +9,7 @@ import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
 import { CURRENT_SHIFT } from '../production/catalog'
 import {
-  startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline,
+  startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline, syncRestoreBaseline,
   syncRequestMove, syncApproveMove, syncRejectMove,
 } from './apiSync'
 
@@ -592,6 +592,20 @@ export function suppressBaselinePlacement(employeeIds) {
   employeeIds.forEach((id) => current.add(id))
   writeBaselineSuppressed([...current])
   syncSuppressBaseline()
+  notify()
+}
+
+/* Inverso exacto de suppressBaselinePlacement — usado por "Restaurar
+   layout de las CT LINEA" (RestoreLayoutPanel.jsx). Vuelve a habilitar
+   el fallback al snapshot historico (BASE) para estos ids, tanto local
+   como en el servidor (syncRestoreBaseline — necesario para que el
+   siguiente poll de apiSync.js no vuelva a marcar suppressed=true desde
+   el lado del servidor, ver pollOnce()). */
+export function restoreBaselinePlacement(employeeIds) {
+  const current = new Set(readBaselineSuppressed())
+  employeeIds.forEach((id) => current.delete(id))
+  writeBaselineSuppressed([...current])
+  syncRestoreBaseline()
   notify()
 }
 
