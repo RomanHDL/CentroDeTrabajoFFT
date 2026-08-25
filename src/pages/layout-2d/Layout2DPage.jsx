@@ -230,8 +230,8 @@ function FloorPlan({ onOpen }) {
           gridTemplateColumns: 'minmax(90px,0.7fr) minmax(90px,0.7fr) repeat(10, minmax(56px,1fr)) minmax(150px,1.1fr) minmax(108px,0.8fr) minmax(190px,1.3fr)',
           gridTemplateRows: '250px 160px',
           gridTemplateAreas: `
-            "paletizado paletizado fft fft fft fft fft fft fft fft fft fft midea mixtos palletizing"
-            "pnp boxprep accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories insumos suministro palletizing"
+            "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
+            "pnp boxprep stock stock stock stock stock stock stock stock stock stock accessories accessories palletizing"
           `,
         }}
       >
@@ -242,14 +242,17 @@ function FloorPlan({ onOpen }) {
 
         <FftBlock onOpen={onOpen} />
 
-        <BigZone areaId="HIGH_VALUE" gridArea="midea" title="CT Midea / High Value" onOpen={onOpen}>
-          <HighValueGrid areaId="HIGH_VALUE" />
+        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="CT Midea / High Value" onOpen={onOpen}>
+          <Stack direction="row" spacing={1} sx={{ height: '100%' }}>
+            <Box sx={{ flex: 1.4, minWidth: 0 }}>
+              <HighValueGrid areaId="HIGH_VALUE" />
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5, borderLeft: '1px dashed', borderColor: 'divider', pl: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 9.5, textAlign: 'center', color: 'text.secondary' }}>Productos Mixtos</Typography>
+              <MixtosDecoration />
+            </Box>
+          </Stack>
         </BigZone>
-
-        <Box sx={{ gridArea: 'mixtos', borderRadius: 2, p: 1, border: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 10.5, textAlign: 'center', color: 'text.secondary' }}>Midea y Productos Mixtos</Typography>
-          <MixtosDecoration />
-        </Box>
 
         <BigZone areaId="PALETIZADO" gridArea="palletizing" title="CT Paletizado (Palletizing)" onOpen={onOpen}>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 1.5, m: 0.5 }}>
@@ -263,16 +266,10 @@ function FloorPlan({ onOpen }) {
           <ReferenceZone key={z.key} gridArea={z.key} label={z.label} icon={z.key === 'boxprep' ? <Inventory2Icon sx={{ fontSize: 18 }} /> : undefined} />
         ))}
 
+        <InsumosSuministroZone gridArea="stock" onOpen={onOpen} />
+
         <BigZone areaId="ACCESORIOS" gridArea="accessories" title="CT Accesorios" onOpen={onOpen}>
           <PersonList areaId="ACCESORIOS" columns={2} />
-        </BigZone>
-
-        <BigZone areaId="INSUMOS" gridArea="insumos" title="CT Insumos" onOpen={onOpen}>
-          <PersonList areaId="INSUMOS" />
-        </BigZone>
-
-        <BigZone areaId="SUMINISTRO_MATERIAL" gridArea="suministro" title="CT Suministro de material" onOpen={onOpen}>
-          <PersonList areaId="SUMINISTRO_MATERIAL" />
         </BigZone>
       </Box>
 
@@ -465,8 +462,40 @@ function MixtosDecoration() {
   )
 }
 
-function PersonList({ areaId, columns = 1 }) {
-  const people = getPeopleByArea()[areaId] || []
+/* CT Insumos + CT Suministro de material fusionados en una sola caja visual
+   (a petición explícita del usuario 2026-08-24) -- siguen siendo dos áreas
+   reales separadas en el catálogo (INSUMOS/SUMINISTRO_MATERIAL, ninguna
+   tiene plantilla oficial), esto solo combina cómo se dibujan aquí. */
+function InsumosSuministroZone({ gridArea, onOpen }) {
+  const peopleInsumos = getPeopleByArea()['INSUMOS'] || []
+  const peopleSuministro = getPeopleByArea()['SUMINISTRO_MATERIAL'] || []
+  const real = peopleInsumos.length + peopleSuministro.length
+  const color = real > 0 ? '#3B82F6' : '#94A3B8'
+  return (
+    <Box
+      onClick={() => onOpen('INSUMOS_SUMINISTRO_ALL')}
+      sx={{
+        gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
+        border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
+        transition: 'box-shadow .15s ease',
+        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
+      }}
+    >
+      <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
+        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>CT Insumos y Suministro de material</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{real} persona{real === 1 ? '' : 's'}</Typography>
+      </Stack>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <PersonList people={[...peopleInsumos, ...peopleSuministro]} columns={2} />
+      </Box>
+    </Box>
+  )
+}
+
+function PersonList({ areaId, columns = 1, people: peopleProp }) {
+  const people = peopleProp || getPeopleByArea()[areaId] || []
   if (people.length === 0) {
     return <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>Sin personal asignado</Typography>
   }
@@ -525,6 +554,10 @@ function DetailDialog({ areaId, onClose }) {
     const ideal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
     staffing = { real, ideal }
     people = getFftPeopleWithLine()
+  } else if (areaId === 'INSUMOS_SUMINISTRO_ALL') {
+    title = 'CT Insumos y Suministro de material'
+    staffing = { real: getAreaHeadcount('INSUMOS') + getAreaHeadcount('SUMINISTRO_MATERIAL'), ideal: null }
+    people = [...(getPeopleByArea()['INSUMOS'] || []), ...(getPeopleByArea()['SUMINISTRO_MATERIAL'] || [])]
   } else if (areaId) {
     title = workCenterById(areaId)?.name || areaId
     staffing = getAreaStaffing(areaId)

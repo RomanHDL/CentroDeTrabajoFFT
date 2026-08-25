@@ -36,7 +36,22 @@ import { LINES_ONLY } from './catalog'
      distinto a "CT Midea / High Value", pero el catálogo real solo
      tiene UN área HIGH_VALUE (Midea y High Value ya están fusionados
      ahí, ver catalog.js) -- se dibuja como decoración pura sin
-     conteo propio, nunca como una segunda fuente de datos.
+     conteo propio, nunca como una segunda fuente de datos. A petición
+     explícita del usuario (2026-08-24) las dos cajas se fusionaron en
+     una sola ("CT Midea / High Value" con la decoración de Productos
+     Mixtos adentro, a la derecha del conteo real).
+
+   Intercambio de posición 2026-08-24 (a petición explícita del
+   usuario): "CT Insumos" y "CT Suministro de material" (dos áreas
+   reales sin plantilla oficial) se fusionaron en una sola caja "CT
+   Insumos y Suministro de material" -- ver InsumosSuministroZone en
+   Layout2DPage.jsx, siguen siendo dos WORK_CENTER separados en el
+   catálogo, solo se dibujan juntos. Esa caja fusionada ahora ocupa el
+   lugar (mismo tamaño de esa celda del grid) donde antes estaba "CT
+   Accesorios", y Accesorios se movió al lugar (mismo tamaño de esa
+   celda) donde antes estaban Insumos+Suministro -- un intercambio de
+   posición puro, ninguna de las dos áreas cambió de tamaño ni de
+   forma de mostrarse.
 
    IMPORTANTE sobre las 10 líneas: no hay forma confirmada de mapear
    bahía física → número de línea desde la imagen (aviso visible en
