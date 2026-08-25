@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../server-lib/prisma.js'
-import { requireRole, publicUser } from '../../server-lib/auth.js'
+import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method === 'GET') {
     const users = await prisma.user.findMany({ orderBy: { createdAt: 'asc' } })
     return res.status(200).json({ users: users.map(publicUser) })

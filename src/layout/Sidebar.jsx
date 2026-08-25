@@ -20,22 +20,21 @@ import { useEffectiveModules } from '../state/auth'
 
 export const SIDEBAR_WIDTH = 232
 
-// El sidebar es solo UX: dos modulos separados (Dashboard = metricas/resumen,
-// Centro de Trabajo = areas/lineas/estaciones/personal/operacion) y, solo para
-// ADMINISTRADOR, Usuarios. La proteccion real esta en el backend (requireRole
-// en cada API), no en que este menu se muestre u oculte.
+// El sidebar es solo UX -- la proteccion real esta en el backend
+// (requireModuleAccess en cada API), no en que este menu se muestre u oculte.
 //
-// "configurable" = true para los 3 modulos cuyo acceso (por rol + override
+// "configurable" = true para los 5 modulos cuyo acceso (por rol + override
 // individual) un ADMINISTRADOR puede editar en vivo desde Usuarios ->
-// Gestion de permisos (ver src/state/auth.jsx useEffectiveModules). "/usuarios"
-// NUNCA es configurable -- se queda fijo aqui solo para ADMINISTRADOR, es una
-// frontera de seguridad (gestiona cuentas y contrasenas), no una preferencia
-// de navegacion.
+// Gestion de permisos (ver src/state/auth.jsx useEffectiveModules). Desde
+// 2026-08-25 Usuarios y Layout 2D tambien son configurables -- decision
+// explicita del usuario (un rol con el modulo "Usuarios" tiene control total
+// de gestion de usuarios/permisos, incluido reset de contraseñas). Un
+// ADMINISTRADOR siempre tiene acceso total sin excepcion (resolveEffectiveAccess).
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
-  { to: '/layout-2d', label: 'Layout 2D', icon: MapIcon, roles: ['ADMINISTRADOR'] },
-  { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, roles: ['ADMINISTRADOR'] },
+  { to: '/layout-2d', label: 'Layout 2D', icon: MapIcon, configurable: true },
+  { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, configurable: true },
   { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, configurable: true },
 ]
 

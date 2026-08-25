@@ -1,9 +1,9 @@
 import { prisma } from '../../server-lib/prisma.js'
-import { requireRole, publicUser } from '../../server-lib/auth.js'
+import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
 
   const id = req.query.id ?? req.params?.id

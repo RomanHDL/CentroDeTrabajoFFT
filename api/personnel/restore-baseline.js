@@ -5,9 +5,9 @@
 // "vaciar", nunca mas ni menos. No toca a nadie con una asignacion real de hoy (esas personas ya
 // no dependen del snapshot historico, restaurar el flag no les afecta en nada).
 import { prisma } from '../../server-lib/prisma.js'
-import { requireRole } from '../../server-lib/auth.js'
+import { requireModuleAccess } from '../../server-lib/auth.js'
 
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const candidates = await prisma.employee.findMany({

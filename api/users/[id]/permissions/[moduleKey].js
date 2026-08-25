@@ -1,5 +1,5 @@
 import { prisma } from '../../../../server-lib/prisma.js'
-import { requireRole } from '../../../../server-lib/auth.js'
+import { requireModuleAccess } from '../../../../server-lib/auth.js'
 import { getModule } from '../../../../shared/moduleRegistry.js'
 import { resolveEffectiveAccess } from '../../../../shared/permissions.js'
 import { setUserOverride, getRoleModulePermissionsMap } from '../../../../server-lib/permissionService.js'
@@ -7,7 +7,7 @@ import { setUserOverride, getRoleModulePermissionsMap } from '../../../../server
 // moduleKey viaja URL-encoded (ej. "/dashboard" -> "%2Fdashboard") porque
 // contiene una barra -- un solo segmento de ruta dinamica, decodificado
 // automaticamente por Express/Vercel antes de llegar a req.query/req.params.
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
 
   const id = req.query.id ?? req.params?.id

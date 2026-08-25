@@ -30,8 +30,7 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
     <Paper ref={ref} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
       <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Gestión de permisos</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 1.5 }}>
-        Qué módulos puede ver cada rol, y ajustes individuales por usuario. "Usuarios" y "Layout 2D" son módulos
-        reservados de Administrador y no aparecen aquí.
+        Qué módulos puede ver cada rol, y ajustes individuales por usuario.
       </Typography>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, minHeight: 36 }}>

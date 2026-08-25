@@ -11,6 +11,12 @@
 // NO se agregaron modulos ficticios (el mockup mostraba "Reportes"/
 // "Configuracion" solo como ejemplo -- no existen paginas reales para ellos,
 // asi que no se inventan aqui).
+//
+// 2026-08-25: Usuarios y Layout 2D dejaron de ser systemReserved -- decision
+// explicita del usuario (advertido del riesgo: un rol con el modulo
+// "Usuarios" tiene control total de gestion de usuarios/permisos, incluido
+// reset de contraseñas). Los 5 modulos son configurables por igual desde
+// Gestion de permisos.
 export const ADMIN_ROLE = 'ADMINISTRADOR'
 
 export const MODULE_REGISTRY = [
@@ -48,7 +54,7 @@ export const MODULE_REGISTRY = [
     icon: 'Group',
     active: true,
     permissionProtected: true,
-    systemReserved: true,
+    systemReserved: false,
   },
   {
     key: '/layout-2d',
@@ -57,7 +63,7 @@ export const MODULE_REGISTRY = [
     icon: 'Map',
     active: true,
     permissionProtected: true,
-    systemReserved: true,
+    systemReserved: false,
   },
 ]
 
@@ -65,8 +71,9 @@ export function listAllModules() {
   return MODULE_REGISTRY.filter((m) => m.active)
 }
 
-// Modulos configurables desde "Gestion de permisos" (excluye los reservados
-// como Usuarios/Layout 2D, que nunca se administran por rol/usuario ahi).
+// Modulos configurables desde "Gestion de permisos" (excluye los que no son
+// permissionProtected o estan inactivos -- systemReserved ya no excluye a
+// ninguno, ver nota 2026-08-25 arriba).
 export function listPermissionProtectedModules() {
   return listAllModules().filter((m) => m.permissionProtected && !m.systemReserved)
 }

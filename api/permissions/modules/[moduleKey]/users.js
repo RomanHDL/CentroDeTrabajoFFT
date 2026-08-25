@@ -1,4 +1,4 @@
-import { requireRole, publicUser } from '../../../../server-lib/auth.js'
+import { requireModuleAccess, publicUser } from '../../../../server-lib/auth.js'
 import { getModule } from '../../../../shared/moduleRegistry.js'
 import { getUsersWithEffectiveAccess } from '../../../../server-lib/permissionService.js'
 
@@ -7,7 +7,7 @@ import { getUsersWithEffectiveAccess } from '../../../../server-lib/permissionSe
 // DENY aunque su rol lo permita). Usado por el boton "Ver N usuarios" de la
 // columna Acciones en la matriz Por Rol (una fila = un modulo, sin distinguir
 // por columna de rol).
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const moduleKey = req.query.moduleKey ?? req.params?.moduleKey

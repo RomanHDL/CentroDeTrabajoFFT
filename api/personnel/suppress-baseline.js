@@ -15,10 +15,10 @@
 // tenga areaZona "LINEA N" (cualquier numero) o "PRODUCCION" (generico, sin linea especifica
 // confirmada) -- exactamente el mismo alcance que el cliente.
 import { prisma } from '../../server-lib/prisma.js'
-import { requireRole } from '../../server-lib/auth.js'
+import { requireModuleAccess } from '../../server-lib/auth.js'
 import { todayDateOnly } from '../../server-lib/personnel.js'
 
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const today = todayDateOnly()

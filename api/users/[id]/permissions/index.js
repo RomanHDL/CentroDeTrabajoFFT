@@ -1,10 +1,10 @@
 import { prisma } from '../../../../server-lib/prisma.js'
-import { requireRole } from '../../../../server-lib/auth.js'
+import { requireModuleAccess } from '../../../../server-lib/auth.js'
 import { listPermissionProtectedModules } from '../../../../shared/moduleRegistry.js'
 import { resolveEffectiveAccess } from '../../../../shared/permissions.js'
 import { getRoleModulePermissionsMap, getUserOverrides } from '../../../../server-lib/permissionService.js'
 
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const id = req.query.id ?? req.params?.id

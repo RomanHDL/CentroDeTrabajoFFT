@@ -29,6 +29,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import dayjs from 'dayjs'
 import { apiRequest } from '../../state/auth'
+import { showToast } from '../../ui/toast'
 import { ROLE_LABELS } from '../../layout/roleLabels'
 import { KpiCard } from '../../ui'
 import CreateUserDialog from './CreateUserDialog'
@@ -45,6 +46,9 @@ export default function UsuariosPage() {
   const [editUser, setEditUser] = useState(null)
   const [menuState, setMenuState] = useState({ anchor: null, user: null })
   const [resetResult, setResetResult] = useState(null)
+  const [resetChoiceUser, setResetChoiceUser] = useState(null)
+  const [manualPassword, setManualPassword] = useState('')
+  const [resetSaving, setResetSaving] = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState(null)
   const [focusUserId, setFocusUserId] = useState(null)
   const permissionsCardRef = useRef(null)
@@ -96,11 +100,34 @@ export default function UsuariosPage() {
     setUsers((prev) => prev.map((u) => (u.id === user.id ? data.user : u)))
   }
 
-  async function handleResetPassword(user) {
-    closeMenu()
+  function closeResetChoice() {
+    setResetChoiceUser(null)
+    setManualPassword('')
+  }
+
+  async function handleResetRandom(user) {
     const data = await apiRequest(`/api/users/${user.id}/reset-password`, { method: 'POST' })
     setResetResult({ user, temporaryPassword: data.temporaryPassword })
     setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, mustChangePassword: true } : u)))
+    closeResetChoice()
+  }
+
+  async function handleResetManual(user) {
+    if (manualPassword.length < 8) {
+      showToast('La contraseña debe tener al menos 8 caracteres', 'error')
+      return
+    }
+    setResetSaving(true)
+    try {
+      await apiRequest(`/api/users/${user.id}/reset-password`, { method: 'POST', body: { password: manualPassword } })
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, mustChangePassword: false } : u)))
+      showToast('Contraseña actualizada', 'success')
+      closeResetChoice()
+    } catch (err) {
+      showToast(err.message || 'No se pudo actualizar la contraseña', 'error')
+    } finally {
+      setResetSaving(false)
+    }
   }
 
   return (
@@ -186,7 +213,7 @@ export default function UsuariosPage() {
         <MenuItem onClick={() => { setConfirmDeactivate(menuState.user); closeMenu() }} disabled={!menuState.user?.active}>
           Desactivar
         </MenuItem>
-        <MenuItem onClick={() => handleResetPassword(menuState.user)}>Restablecer contraseña</MenuItem>
+        <MenuItem onClick={() => { setResetChoiceUser(menuState.user); closeMenu() }}>Restablecer contraseña</MenuItem>
       </Menu>
 
       <CreateUserDialog
@@ -212,6 +239,45 @@ export default function UsuariosPage() {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setConfirmDeactivate(null)}>Cancelar</Button>
           <Button color="error" variant="contained" onClick={handleDeactivate}>Desactivar</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!resetChoiceUser} onClose={closeResetChoice} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>Restablecer contraseña de {resetChoiceUser?.name}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mb: 2 }}>
+            Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.
+          </Typography>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => handleResetRandom(resetChoiceUser)}
+            sx={{ mb: 2.5, textTransform: 'none' }}
+          >
+            Generar aleatoria
+          </Button>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', mb: 1 }}>
+            O define la contraseña manualmente
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Mínimo 8 caracteres"
+            value={manualPassword}
+            onChange={(e) => setManualPassword(e.target.value)}
+            helperText={manualPassword && manualPassword.length < 8 ? 'Mínimo 8 caracteres' : ' '}
+            error={!!manualPassword && manualPassword.length < 8}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeResetChoice}>Cancelar</Button>
+          <Button
+            variant="contained"
+            disabled={resetSaving || manualPassword.length < 8}
+            onClick={() => handleResetManual(resetChoiceUser)}
+          >
+            {resetSaving ? <CircularProgress size={16} /> : 'Guardar contraseña'}
+          </Button>
         </DialogActions>
       </Dialog>
 

@@ -1,4 +1,4 @@
-import { requireRole } from '../../server-lib/auth.js'
+import { requireModuleAccess } from '../../server-lib/auth.js'
 import { setRoleModulePermission, getRoleModulePermissionsMap } from '../../server-lib/permissionService.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
@@ -7,7 +7,7 @@ const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 // reemplaza el array completo como el contrato viejo). Las reglas
 // "ADMINISTRADOR siempre completo" y "modulo reservado no se gestiona aqui"
 // viven en permissionService.setRoleModulePermission, no duplicadas aqui.
-export default requireRole(['ADMINISTRADOR'], async (req, res) => {
+export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
 
   const role = req.query.role ?? req.params?.role

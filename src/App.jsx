@@ -40,11 +40,11 @@ export default function App() {
                 <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
                 <Route
                   path="/usuarios"
-                  element={<ProtectedRoute roles={['ADMINISTRADOR']}><RequireDesktop><UsuariosPage /></RequireDesktop></ProtectedRoute>}
+                  element={<RequireDesktop><RequireModuleAccess><UsuariosPage /></RequireModuleAccess></RequireDesktop>}
                 />
                 <Route
                   path="/layout-2d"
-                  element={<ProtectedRoute roles={['ADMINISTRADOR']}><RequireDesktop><Layout2DPage /></RequireDesktop></ProtectedRoute>}
+                  element={<RequireDesktop><RequireModuleAccess><Layout2DPage /></RequireModuleAccess></RequireDesktop>}
                 />
               </Route>
 
