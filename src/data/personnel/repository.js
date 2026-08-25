@@ -414,7 +414,8 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   const assignments = readAssignments()
   const existing = assignments.find(a => a.employeeId === employee.id && a.date === date)
   if (existing) {
-    return { status: 'CONFLICT', employee, assignment: existing }
+    const attendance = readAttendance().find(a => a.employeeId === employee.id && a.date === date) || null
+    return { status: 'CONFLICT', employee, assignment: existing, attendance }
   }
 
   const occupancy = getStationOccupancy(areaId, stationId, date)

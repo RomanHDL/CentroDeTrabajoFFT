@@ -20,9 +20,12 @@ import dayjs from 'dayjs'
 import {
   readAssignments, writeAssignments, readEmployees, writeEmployees,
   readMovements, writeMovements, readBaselineSuppressed, writeBaselineSuppressed,
+  readPendingMoves, writePendingMoves,
   notify,
 } from './store'
 import { EMPLOYEE_DIRECTORY } from './directory'
+import { showToast } from '../../ui/toast'
+import { workCenterById } from '../production/catalog'
 
 const POLL_MS = 7000
 const RECENT_WRITE_GRACE_MS = 15000
@@ -41,6 +44,15 @@ async function apiFetch(path, options = {}) {
 
 const serverIdByLocalId = new Map()
 const serverPendingIdByLocalId = new Map()
+/* Id real (cuid de Prisma User) del usuario logueado en ESTE dispositivo -- lo fija AppLayout.jsx
+   via setCurrentUserId cuando cambia la sesion. Se usa solo para decidir a quien mostrarle el
+   toast "tu solicitud fue aprobada/rechazada" en pollOnce() (requestedByUserId ya es ese mismo id
+   real, tal como lo guarda request-move.js server-side -- no requiere traduccion). */
+let currentUserId = null
+export function setCurrentUserId(id) { currentUserId = id }
+/* Evita repetir el toast de resolucion en cada poll de 7s mientras la fila siga dentro de la
+   ventana de 3 minutos que devuelve /api/personnel/roster (resolvedMoves). */
+const notifiedResolutions = new Set()
 /* Escrituras optimistas muy recientes de ESTE dispositivo — el poll
    las ignora un rato para no revertir el cambio local mientras el
    POST en segundo plano todavia no le llega al servidor (si no, un
@@ -157,8 +169,13 @@ function buildLocalIndex() {
   return { byNumber, byName }
 }
 
+function resolveWorkAreaLabel(workstation) {
+  if (!workstation) return { areaId: null, stationId: null }
+  return { areaId: workstation.workArea.code, stationId: workstation.name }
+}
+
 async function pollOnce() {
-  const { roster } = await apiFetch('/api/personnel/roster')
+  const { roster, pendingMoves = [], resolvedMoves = [] } = await apiFetch('/api/personnel/roster')
   const { byNumber, byName } = buildLocalIndex()
 
   const dynamicEmployees = readEmployees()
@@ -236,7 +253,75 @@ async function pollOnce() {
     writeEmployees([...dynamicEmployees, ...newDynamicEmployees])
     changed = true
   }
-  if (changed) {
+
+  // ── Solicitudes de movimiento (PendingMove) -- fusion cross-device del mismo tipo que el
+  // roster de arriba: agrega al store local cualquier solicitud PENDING que el servidor ya
+  // conoce y este dispositivo todavia no (creada por un LIDER en OTRO dispositivo), y resuelve
+  // (quita de la cola + notifica) las que ya fueron aprobadas/rechazadas -- sin esto, una
+  // solicitud creada en la tablet de un lider nunca le aparecia al supervisor en otra tablet sin
+  // recargar (Cambio 4, 2026-08-25). ──
+  const localIdByServerPendingId = new Map()
+  serverPendingIdByLocalId.forEach((serverId, localId) => localIdByServerPendingId.set(serverId, localId))
+
+  let pending = readPendingMoves()
+  let pendingChanged = false
+
+  pendingMoves.forEach((row) => {
+    if (localIdByServerPendingId.has(row.id)) return // ya lo tenemos local (lo creamos aqui o un poll anterior ya lo agrego)
+    const placeholder = isPlaceholderNumber(row.employee.employeeNumber)
+    const employeeLocalId = placeholder ? byName.get(row.employee.fullName) : byNumber.get(row.employee.employeeNumber)
+    if (!employeeLocalId) return // empleado que este dispositivo todavia no conoce; el siguiente poll lo resuelve
+
+    const to = resolveWorkAreaLabel(row.toWorkstation)
+    const from = resolveWorkAreaLabel(row.fromWorkstation)
+    const localRequestId = `sync-pmv-${row.id}`
+    pending.push({
+      id: localRequestId,
+      employeeId: employeeLocalId,
+      employeeNumber: row.employee.employeeNumber || 'PROYECTO',
+      employeeName: row.employee.fullName,
+      date: today,
+      fromAreaId: from.areaId,
+      fromStationId: from.stationId,
+      toAreaId: to.areaId,
+      toStationId: to.stationId,
+      shift: row.shift,
+      requestedByUserId: row.requestedByUserId,
+      requestedByName: row.requestedBy?.name || null,
+      requestedAt: row.requestedAt,
+      status: 'PENDING',
+    })
+    serverPendingIdByLocalId.set(localRequestId, row.id)
+    localIdByServerPendingId.set(row.id, localRequestId)
+    pendingChanged = true
+  })
+
+  resolvedMoves.forEach((row) => {
+    const localRequestId = localIdByServerPendingId.get(row.id)
+    if (localRequestId) {
+      const idx = pending.findIndex((p) => p.id === localRequestId)
+      if (idx !== -1) {
+        pending.splice(idx, 1)
+        pendingChanged = true
+      }
+    }
+    // Avisar solo a quien la pidio, y solo una vez por solicitud resuelta (la ventana de
+    // resolvedMoves dura 3 minutos -- sin este Set el toast se repetiria en cada poll de 7s).
+    if (currentUserId && row.requestedByUserId === currentUserId && !notifiedResolutions.has(row.id)) {
+      notifiedResolutions.add(row.id)
+      const toAreaId = row.toWorkstation ? resolveWorkAreaLabel(row.toWorkstation).areaId : null
+      const toName = toAreaId ? (workCenterById(toAreaId)?.name || toAreaId) : null
+      if (row.status === 'APPROVED') {
+        showToast(`Movimiento aprobado${toName ? ` — ${row.employee.fullName} ahora en ${toName}` : ''}.`, 'success')
+      } else if (row.status === 'REJECTED') {
+        showToast(`Movimiento de ${row.employee.fullName} rechazado.`, 'error')
+      }
+    }
+  })
+
+  if (pendingChanged) writePendingMoves(pending)
+
+  if (changed || pendingChanged) {
     writeAssignments(assignments)
     writeMovements(movements)
     writeBaselineSuppressed([...baselineSuppressed])

@@ -23,6 +23,9 @@ export default requireAuth(async (req, res) => {
     employeeId, workstationId: workstation.id, shift, actingUserId: req.user.id, mode: 'MOVE',
   })
 
+  if (result.status === 'INACTIVE_EMPLOYEE') {
+    return res.status(400).json({ error: 'Este empleado está marcado como baja y no puede moverse.' })
+  }
   if (result.status === 'NO_CURRENT_ASSIGNMENT') {
     return res.status(400).json({ error: 'El empleado no tiene una asignación activa hoy.' })
   }

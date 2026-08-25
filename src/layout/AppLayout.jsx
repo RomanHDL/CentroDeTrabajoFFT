@@ -20,7 +20,9 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../state/auth'
 import { ROLE_LABELS } from './roleLabels'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
+import { setCurrentUserId } from '../data/personnel/apiSync'
 import Sidebar from './Sidebar'
+import NotificationBell from './NotificationBell'
 
 function initialsOf(name) {
   return (name || '')
@@ -79,6 +81,11 @@ export default function AppLayout({ mode, setMode }) {
   }
 
   const roleLabel = useMemo(() => ROLE_LABELS[user?.role] || user?.role, [user])
+  const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
+
+  // apiSync.js necesita saber a quien avisarle cuando SU solicitud se resuelve (ver Cambio 4,
+  // pollOnce) -- se fija aqui porque este es el componente que ya consume la sesion real.
+  useEffect(() => { setCurrentUserId(user?.id || null) }, [user?.id])
 
   async function handleLogout() {
     setMenuAnchor(null)
@@ -102,6 +109,7 @@ export default function AppLayout({ mode, setMode }) {
             Centro de Trabajo FFT
           </Typography>
           <Box sx={{ flex: 1 }} />
+          {canApproveMoves && <NotificationBell userId={user?.id} />}
           <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
             <IconButton size="small" onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}>
               {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}

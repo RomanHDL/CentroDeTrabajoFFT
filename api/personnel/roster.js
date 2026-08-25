@@ -15,6 +15,10 @@
 //               frontend en personnelByArea.js).
 //   NONE     -> tambien cuando no aplica ninguno de los anteriores (nunca tuvo zona, o esta
 //               baselineSuppressed).
+//
+// Ademas devuelve pendingMoves (PENDING de la fecha) y resolvedMoves (APPROVED/REJECTED resueltas
+// en los ultimos 3 minutos) -- src/data/personnel/apiSync.js los fusiona en cada poll de 7s para
+// que una solicitud de un LIDER y su resolucion lleguen a otros dispositivos sin recargar.
 import { prisma } from '../../server-lib/prisma.js'
 import { requireAuth } from '../../server-lib/auth.js'
 import { parseDateOnly } from '../../server-lib/personnel.js'
@@ -25,7 +29,7 @@ export default requireAuth(async (req, res) => {
   const date = parseDateOnly(req.query.date)
   if (!date) return res.status(400).json({ error: 'Fecha invalida, usa YYYY-MM-DD.' })
 
-  const [employees, assignmentsForDate, pendingMoves] = await Promise.all([
+  const [employees, assignmentsForDate, pendingMoves, resolvedMoves] = await Promise.all([
     prisma.employee.findMany({
       select: { id: true, employeeNumber: true, fullName: true, areaZona: true, baselineSuppressed: true },
     }),
@@ -37,6 +41,19 @@ export default requireAuth(async (req, res) => {
       where: { date, status: 'PENDING' },
       include: {
         employee: { select: { id: true, employeeNumber: true, fullName: true } },
+        requestedBy: { select: { name: true } },
+        toWorkstation: { include: { workArea: true } },
+        fromWorkstation: { include: { workArea: true } },
+      },
+    }),
+    // Resueltas (APPROVED/REJECTED) recientemente -- ventana corta de 3 minutos, suficiente para
+    // que el poll de 7s (apiSync.js) de OTRO dispositivo alcance a notificar a quien la pidio
+    // antes de que salga de la ventana. No es un endpoint nuevo, es parte del mismo roster.
+    prisma.pendingMove.findMany({
+      where: { date, status: { in: ['APPROVED', 'REJECTED'] }, resolvedAt: { gte: new Date(Date.now() - 3 * 60 * 1000) } },
+      include: {
+        employee: { select: { id: true, employeeNumber: true, fullName: true } },
+        requestedBy: { select: { name: true } },
         toWorkstation: { include: { workArea: true } },
         fromWorkstation: { include: { workArea: true } },
       },
@@ -89,5 +106,6 @@ export default requireAuth(async (req, res) => {
     date: date.toISOString().slice(0, 10),
     roster,
     pendingMoves,
+    resolvedMoves,
   })
 })

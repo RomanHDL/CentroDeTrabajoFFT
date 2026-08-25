@@ -45,17 +45,31 @@ export async function resolveWorkstation(workAreaIdOrCode, stationName) {
  * EmployeeMovement redundante). Limpia baselineSuppressed=true si estaba activo (equivalente de
  * unsuppressBaselinePlacement): recibir una asignacion real siempre gana sobre la supresion
  * historica.
+ *
+ * Empleado con active=false (BAJA real) -> status INACTIVE_EMPLOYEE, en cualquier modo, antes de
+ * tocar nada. Un CHECKIN exitoso ademas registra Attendance (pase de lista real, atomico con la
+ * asignacion); un CHECKIN en CONFLICT devuelve la Attendance existente de hoy si ya hay una.
  */
 export async function placeEmployee({ employeeId, workstationId, shift, actingUserId, mode }) {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Workstation" WHERE id = ${workstationId} FOR UPDATE`
+
+    // BAJA real (Employee.active=false) nunca puede registrarse/asignarse/moverse, sin importar
+    // el modo -- cubre checkin/move/approve-move desde un solo lugar (los 3 pasan por aqui).
+    const employee = await tx.employee.findUnique({ where: { id: employeeId }, select: { active: true } })
+    if (!employee || !employee.active) return { status: 'INACTIVE_EMPLOYEE' }
 
     const today = todayDateOnly()
     const current = await tx.dailyAssignment.findFirst({
       where: { employeeId, date: today, status: 'ACTIVE' },
     })
 
-    if (mode === 'CHECKIN' && current) return { status: 'CONFLICT', assignment: current }
+    if (mode === 'CHECKIN' && current) {
+      const existingAttendance = await tx.attendance.findUnique({
+        where: { employeeId_date_shift: { employeeId, date: today, shift: shift || 'GENERAL' } },
+      })
+      return { status: 'CONFLICT', assignment: current, existingAttendance: existingAttendance || null }
+    }
     if (mode === 'MOVE' && !current) return { status: 'NO_CURRENT_ASSIGNMENT' }
     if (current && current.workstationId === workstationId) return { status: 'OK', assignment: current }
 
@@ -99,6 +113,21 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
       where: { id: employeeId, baselineSuppressed: true },
       data: { baselineSuppressed: false },
     })
+
+    // Un CHECKIN exitoso siempre es la primera asignacion del dia para este empleado (si ya
+    // tuviera una, la rama de arriba habria devuelto CONFLICT antes de llegar aqui) -- por eso
+    // el pase de lista real (Attendance) se registra aqui, atomico con la asignacion. upsert por
+    // seguridad (no debería existir ya, pero evita un 500 si alguna vez lo hay).
+    if (mode === 'CHECKIN') {
+      await tx.attendance.upsert({
+        where: { employeeId_date_shift: { employeeId, date: today, shift: shift || 'GENERAL' } },
+        create: {
+          employeeId, date: today, shift: shift || 'GENERAL',
+          checkInAt: new Date(), status: 'PRESENTE', registeredByUserId: actingUserId,
+        },
+        update: {},
+      })
+    }
 
     return { status: 'OK', assignment }
   })

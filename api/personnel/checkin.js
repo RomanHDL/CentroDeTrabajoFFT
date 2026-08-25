@@ -53,8 +53,15 @@ export default requireAuth(async (req, res) => {
     mode: 'CHECKIN',
   })
 
+  if (result.status === 'INACTIVE_EMPLOYEE') {
+    return res.status(400).json({ error: 'Este empleado está marcado como baja y no puede registrarse.' })
+  }
   if (result.status === 'CONFLICT') {
-    return res.status(409).json({ error: 'El empleado ya tiene una asignación activa hoy.', assignment: result.assignment })
+    return res.status(409).json({
+      error: 'El empleado ya tiene una asignación activa hoy.',
+      assignment: result.assignment,
+      existingAttendance: result.existingAttendance,
+    })
   }
   if (result.status === 'STATION_FULL') {
     return res.status(409).json({ error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).` })

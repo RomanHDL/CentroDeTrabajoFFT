@@ -14,7 +14,8 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import { usePageStyles } from '../../ui/pageStyles'
 import { WORK_CENTERS, SHIFT_OPTIONS, CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { checkInEmployee, moveEmployee, requestMove, createEmployee, getStationOccupancy, hasSkill } from '../../data/personnel/repository'
+import { checkInEmployee, moveEmployee, requestMove, createEmployee, getStationOccupancy, hasSkill, getPendingMoves, getCurrentAssignment } from '../../data/personnel/repository'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useAuth } from '../../state/auth'
 import EmployeeSearchField from './EmployeeSearchField'
 
@@ -55,6 +56,23 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
   const [conflict, setConflict] = useState(null)
   const [result, setResult] = useState(null)
   const [pendingRequest, setPendingRequest] = useState(null)
+  const [resolvedOutcome, setResolvedOutcome] = useState(null) // 'APPROVED' | 'REJECTED' | null
+  const version = usePersonnelVersion()
+
+  // Si la solicitud de ESTE modal se resuelve (aprobada/rechazada por otro usuario, via el
+  // polling de apiSync.js) mientras el paso PENDING sigue abierto, mostrar el resultado en vez de
+  // quedarse esperando indefinidamente (Cambio 7, 2026-08-25). Heuristica simple: si ya no esta
+  // en getPendingMoves(), se resolvio; si la asignacion actual del empleado ya coincide con el
+  // destino solicitado, fue aprobada, si no, fue rechazada.
+  useEffect(() => {
+    if (step !== 'PENDING' || !pendingRequest) return
+    const stillPending = getPendingMoves().some((p) => p.id === pendingRequest.id)
+    if (stillPending) return
+    const current = getCurrentAssignment(pendingRequest.employeeId)
+    const approved = current && current.areaId === pendingRequest.toAreaId && current.stationId === pendingRequest.toStationId
+    setResolvedOutcome(approved ? 'APPROVED' : 'REJECTED')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, step, pendingRequest])
 
   useEffect(() => {
     setForm(emptyForm(fixedAreaId))
@@ -63,6 +81,7 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     setConflict(null)
     setResult(null)
     setPendingRequest(null)
+    setResolvedOutcome(null)
   }, [fixedAreaId])
 
   const areaId = fixedAreaId || form.areaId
@@ -97,7 +116,8 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       // pasa al panel de confirmación (step CONFLICT) para que quede claro que va a moverse.
       const sameSpot = res.assignment.areaId === areaId && res.assignment.stationId === form.stationId
       if (sameSpot) {
-        setResult({ employee: res.employee, assignment: res.assignment, eventLabel: 'Asistencia', eventTime: res.assignment.checkInAt, alreadyThere: true })
+        const attendanceTime = res.attendance?.checkedInAt || res.assignment.checkInAt
+        setResult({ employee: res.employee, assignment: res.assignment, eventLabel: 'Asistencia', eventTime: attendanceTime, alreadyThere: true })
         setStep('SUCCESS')
         onDone && onDone()
       } else {
@@ -194,6 +214,7 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     setConflict(null)
     setResult(null)
     setPendingRequest(null)
+    setResolvedOutcome(null)
   }
 
   if (step === 'CONFLICT' && conflict) {
@@ -241,11 +262,21 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
   }
 
   if (step === 'PENDING' && pendingRequest) {
+    const resolved = resolvedOutcome != null
+    const approved = resolvedOutcome === 'APPROVED'
     return (
       <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
         <Box>
-          <PendingActionsIcon sx={{ fontSize: 48, color: '#F59E0B', mb: 1 }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>Movimiento enviado para aprobación</Typography>
+          {resolved ? (
+            approved
+              ? <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
+              : <PendingActionsIcon sx={{ fontSize: 48, color: '#EF4444', mb: 1 }} />
+          ) : (
+            <PendingActionsIcon sx={{ fontSize: 48, color: '#F59E0B', mb: 1 }} />
+          )}
+          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
+            {resolved ? (approved ? '✓ Movimiento aprobado' : '✕ Movimiento rechazado') : 'Movimiento enviado para aprobación'}
+          </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
             {pendingRequest.employeeNumber} — {pendingRequest.employeeName}
           </Typography>
@@ -254,7 +285,9 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             <Chip size="small" label={pendingRequest.toStationId} sx={ps.metricChip('default')} />
           </Stack>
           <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
-            Un supervisor o administrador debe verificarlo antes de que se aplique.
+            {resolved
+              ? (approved ? 'El cambio ya se aplicó.' : 'Se mantiene en su ubicación anterior.')
+              : 'Un supervisor o administrador debe verificarlo antes de que se aplique.'}
           </Typography>
         </Box>
         <Stack direction="row" spacing={1} justifyContent="center">
@@ -271,7 +304,7 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
         <Box>
           <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
           <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
-            {result.alreadyThere ? 'Ya estaba aquí — asistencia de hoy contada' : 'Registro realizado'}
+            {result.alreadyThere ? 'Ya registrada hoy' : 'Registro realizado'}
           </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
             {result.employee.employeeNumber} — {result.employee.name}

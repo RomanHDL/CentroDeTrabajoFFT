@@ -197,11 +197,15 @@ export function DndAssignProvider({ children }) {
           employee={moveTarget.employee}
           currentAssignment={moveTarget.currentAssignment}
           presetTo={moveTarget.presetTo}
-          onDone={() => {
-            const fromName = workCenterById(moveTarget.currentAssignment.areaId)?.name || moveTarget.currentAssignment.areaId
+          onDone={(res) => {
             const toName = workCenterById(moveTarget.presetTo.areaId)?.name || moveTarget.presetTo.areaId
-            showToast(`${moveTarget.employee.name} movido de ${fromName} a ${toName}.`)
-            warnIfOverIdeal(moveTarget.presetTo.areaId)
+            if (res?.pending) {
+              showToast(`Solicitud de movimiento de ${moveTarget.employee.name} enviada para aprobación.`, 'info')
+            } else {
+              const fromName = workCenterById(moveTarget.currentAssignment.areaId)?.name || moveTarget.currentAssignment.areaId
+              showToast(`${moveTarget.employee.name} movido de ${fromName} a ${toName}.`)
+              warnIfOverIdeal(moveTarget.presetTo.areaId)
+            }
             setMoveTarget(null)
           }}
         />

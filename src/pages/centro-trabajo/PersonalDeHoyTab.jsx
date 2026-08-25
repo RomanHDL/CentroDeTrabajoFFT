@@ -40,14 +40,14 @@ import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/producti
 import { getEffectiveTodayRoster, getEffectiveAreaForEmployee, AUTO_ACTIVE_AREAS } from '../../data/production/personnelByArea'
 import { exportPersonalExcel } from '../../data/production/excelExport'
 import {
-  getMovesCountForDate, getPendingMoves, approveMove, rejectMove, getAllEmployees,
+  getMovesCountForDate, getPendingMoves, getAllEmployees,
   searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
 } from '../../data/personnel/repository'
+import { approvePendingMoveWithToast, rejectPendingMoveWithToast } from '../../data/personnel/moveApprovalActions'
 import { isEmployeeEligible } from '../../data/personnel/directory'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useRoleMode } from '../../state/roleMode'
 import { useAuth } from '../../state/auth'
-import { showToast } from '../../ui/toast'
 // Reutiliza la card KPI compacta y horizontal ya aprobada para el Dashboard
 // (2026-08-24) -- mismo lenguaje visual pedido para Personal en este rediseño
 // (2026-08-25), en vez de duplicar el componente.
@@ -141,15 +141,11 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const pendingMoves = useMemo(() => (canApproveMoves ? getPendingMoves() : []), [version, canApproveMoves])
 
   function handleApproveMove(id) {
-    const res = approveMove(id, user?.id)
-    if (res.status === 'OK') showToast('Movimiento aprobado.', 'success')
-    else showToast(res.message || 'No se pudo aprobar el movimiento.', 'error')
+    approvePendingMoveWithToast(id, user?.id)
   }
 
   function handleRejectMove(id) {
-    const res = rejectMove(id, user?.id)
-    if (res.status === 'OK') showToast('Movimiento rechazado.', 'info')
-    else showToast(res.message || 'No se pudo rechazar el movimiento.', 'error')
+    rejectPendingMoveWithToast(id, user?.id)
   }
 
   const roster = useMemo(() => getEffectiveTodayRoster(), [version])

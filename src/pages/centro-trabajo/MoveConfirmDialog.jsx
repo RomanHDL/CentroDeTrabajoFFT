@@ -13,7 +13,8 @@ import Alert from '@mui/material/Alert'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { getStationOccupancy, moveEmployee } from '../../data/personnel/repository'
+import { getStationOccupancy, moveEmployee, requestMove } from '../../data/personnel/repository'
+import { useAuth } from '../../state/auth'
 
 function areaLabel(id) {
   return workCenterById(id)?.name || id || '—'
@@ -27,6 +28,8 @@ function areaLabel(id) {
  * linea+estacion (respetando capacidad).
  */
 export default function MoveConfirmDialog({ open, onClose, employee, currentAssignment, presetTo, onDone }) {
+  const { user } = useAuth()
+  const isLider = user?.role === 'LIDER'
   const [toAreaId, setToAreaId] = useState(presetTo?.areaId || currentAssignment?.areaId || WORK_CENTERS[0].id)
   const [toStationId, setToStationId] = useState(presetTo?.stationId || '')
   const [error, setError] = useState('')
@@ -36,10 +39,30 @@ export default function MoveConfirmDialog({ open, onClose, employee, currentAssi
 
   if (!employee || !currentAssignment) return null
 
+  // Un LIDER nunca mueve directo entre areas (peticion explicita del usuario, igual que
+  // RegisterPersonnelForm.jsx): la solicitud queda pendiente hasta que un SUPERVISOR/
+  // ADMINISTRADOR la aprueba. Drag&drop y el formulario de registro comparten esta misma regla
+  // para no dejar un segundo camino que la evada.
   const handleConfirm = () => {
     if (submitting) return
     setSubmitting(true)
     setError('')
+
+    if (isLider) {
+      const res = requestMove({
+        employeeId: employee.id, toAreaId, toStationId, shift: currentAssignment.shift,
+        requestedByUserId: user?.id, requestedByName: user?.name,
+      })
+      setSubmitting(false)
+      if (res.status === 'PENDING') {
+        onDone && onDone({ pending: true, request: res.request })
+        onClose()
+      } else {
+        setError(res.message || 'No se pudo enviar la solicitud.')
+      }
+      return
+    }
+
     const res = moveEmployee({ employeeId: employee.id, toAreaId, toStationId, shift: currentAssignment.shift })
     setSubmitting(false)
     if (res.status === 'OK') {
@@ -89,13 +112,18 @@ export default function MoveConfirmDialog({ open, onClose, employee, currentAssi
             </>
           )}
 
+          {isLider && (
+            <Alert severity="info" sx={{ py: 0.5 }}>
+              Como líder, este movimiento se enviará a un supervisor o administrador para su aprobación — no se aplica de inmediato.
+            </Alert>
+          )}
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button onClick={onClose}>Cancelar</Button>
         <Button variant="contained" onClick={handleConfirm} disabled={!toStationId || submitting} sx={{ fontWeight: 700 }}>
-          Confirmar movimiento
+          {isLider ? 'Solicitar cambio' : 'Confirmar movimiento'}
         </Button>
       </DialogActions>
     </Dialog>
