@@ -42,9 +42,14 @@ import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../..
    - Los dos conveyors (Principal/Secundario) son SOLO decoración,
      sin conteo -- prohibido crear cualquier card "CT Conveyor".
    - "CT Sellado" no aparece en este módulo bajo ninguna forma.
-   Ver floorPlanZones.js para el detalle completo de estas exclusiones
-   y los dos criterios propios (Proyecto/CT LINEA 0 en la fila de
-   apoyo, Paletizado con dos cajas para el mismo id real).
+   Ver floorPlanZones.js para el detalle completo de estas exclusiones.
+
+   Ajuste 2026-08-24 (a petición explícita del usuario): se quitó la
+   caja "CT Paletizado" de arriba a la izquierda (quedaba duplicada
+   con "CT Paletizado (Palletizing)"); en su lugar van LINEA1 y CT
+   LINEA 0 (PROYECTO) como barras horizontales apiladas -- ver
+   HorizontalLineBar más abajo. PROYECTO ya no vive en la fila de
+   apoyo (SUPPORT_CARD_AREA_IDS).
 
    Los conteos en vivo salen de las mismas funciones que ya usan
    AreaSummaryStrip/WorkAreaMap (personnelByArea.js) -- ninguna fuente
@@ -230,9 +235,10 @@ function FloorPlan({ onOpen }) {
           `,
         }}
       >
-        <BigZone areaId="PALETIZADO" gridArea="paletizado" title="CT Paletizado" onOpen={onOpen}>
-          <PersonList areaId="PALETIZADO" />
-        </BigZone>
+        <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} />
+          <HorizontalLineBar lineId="PROYECTO" title="CT LINEA 0" onOpen={onOpen} />
+        </Box>
 
         <FftBlock onOpen={onOpen} />
 
@@ -334,6 +340,12 @@ function BigZone({ areaId, gridArea, title, onOpen, children }) {
   )
 }
 
+/* LINEA1 se dibuja aparte (HorizontalLineBar, acostada junto a CT LINEA 0 --
+   a peticion del usuario 2026-08-24) pero sigue sumando en el total de este
+   bloque: sigue siendo parte real de "CT Líneas de producción (FFT)", solo
+   cambia donde se dibuja su columna. */
+const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
+
 function FftBlock({ onOpen }) {
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
   const totalIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
@@ -351,7 +363,44 @@ function FftBlock({ onOpen }) {
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{totalReal} / {totalIdeal}</Typography>
       </Stack>
       <Box sx={{ display: 'flex', gap: 0.6, flex: 1 }}>
-        {FFT_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} />)}
+        {FFT_COLUMN_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} />)}
+      </Box>
+    </Box>
+  )
+}
+
+/* Barra horizontal ("acostada") -- usada para LINEA1 y CT LINEA 0
+   (PROYECTO), apiladas en el espacio que dejó libre la caja de
+   Paletizado de arriba a la izquierda (a petición del usuario
+   2026-08-24). Mismo lenguaje visual que BigZone, solo horizontal. */
+function HorizontalLineBar({ lineId, title, onOpen }) {
+  const wc = workCenterById(lineId)
+  const staffing = getAreaStaffing(lineId)
+  const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
+  const color = STATUS_META[status].color
+  const label = staffing.ideal != null
+    ? `${staffing.real} / ${staffing.ideal}`
+    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
+  return (
+    <Box
+      onClick={() => onOpen(lineId)}
+      sx={{
+        flex: 1, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
+        border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0.5, minHeight: 0,
+        transition: 'box-shadow .15s ease',
+        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
+      }}
+    >
+      <Stack direction="row" alignItems="baseline" justifyContent="space-between">
+        <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>{title || wc?.name}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{label}</Typography>
+      </Stack>
+      {status && <Typography sx={{ fontSize: 9.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
+      <Box sx={{ width: '100%', height: 6, borderRadius: 999, bgcolor: alpha(color, 0.18), overflow: 'hidden' }}>
+        <Box sx={{ width: `${pct * 100}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
       </Box>
     </Box>
   )

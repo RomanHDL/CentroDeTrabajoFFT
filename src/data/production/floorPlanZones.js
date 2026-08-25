@@ -22,19 +22,16 @@ import { LINES_ONLY } from './catalog'
      Centro de Trabajo.
 
    JUICIO PROPIO (marcado explícitamente en el reporte al usuario):
-   - PROYECTO / "CT LINEA 0" no aparece en la imagen de referencia ni
-     en el pedido, pero es un área real con gente todos los días --
-     se agrega como una card más en SUPPORT_CARD_AREA_IDS (fila
-     inferior de apoyo), no como zona física grande, para no perder
-     visibilidad de esas personas en una vista donde el admin espera
-     ver a todo mundo.
-   - "CT Paletizado" aparece DOS veces en la imagen (columna
-     izquierda con lista de personas, zona grande "Palletizing" a la
-     derecha). Solo existe UN área real PALETIZADO en el catálogo --
-     Layout2DPage.jsx liga ambas cajas al mismo id real: la izquierda
-     lista personas, la derecha es deliberadamente una zona grande
-     sin lista (representa el espacio físico que ocupa), igual idea
-     que "Midea y Productos Mixtos" abajo.
+   - "CT Paletizado" aparecía DOS veces (columna izquierda con lista
+     de personas, zona grande "Palletizing" a la derecha) -- a
+     petición explícita del usuario (2026-08-24) se quitó la caja de
+     arriba a la izquierda, dejando solo "CT Paletizado (Palletizing)"
+     como única representación real de esa área en este módulo.
+   - PROYECTO / "CT LINEA 0" ya NO va en SUPPORT_CARD_AREA_IDS: a
+     petición explícita del usuario (2026-08-24) se dibuja como barra
+     horizontal, apilada debajo de LINEA1 (también horizontal ahora),
+     en el espacio que dejó libre la caja de Paletizado que se quitó
+     -- ver Layout2DPage.jsx (grid area "paletizado").
    - "Midea y Productos Mixtos" en la imagen es un bloque visual
      distinto a "CT Midea / High Value", pero el catálogo real solo
      tiene UN área HIGH_VALUE (Midea y High Value ya están fusionados
@@ -51,7 +48,7 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
    sistema visual que las zonas grandes, solo más compactas (no
    representan una línea física principal). */
 export const SUPPORT_CARD_AREA_IDS = [
-  'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR', 'PROYECTO',
+  'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ]
 
 /* Zonas visibles en la imagen sin área de catálogo mapeada con
