@@ -5,7 +5,10 @@ import { hourlySeriesFor, weeklyProductionFor, weeklyTotals } from './production
 import { allLineSummaries, generalKpis } from './selectors'
 import {
   getTodayRoster, getMovementsForEmployee, getMovementsForDate, getAverageHeadcountForArea, todayISO,
+  getAllEmployees,
 } from '../personnel/repository'
+import { isEmployeeEligible } from '../personnel/directory'
+import { getEffectiveAreaForEmployee } from './personnelByArea'
 
 /* Genera archivos .xlsx reales (SheetJS/xlsx) con encabezados,
    anchos de columna y formato numerico/porcentaje real — nunca
@@ -248,7 +251,47 @@ function sheetPersonalSemanal() {
   ])
 }
 
+// 'PENDIENTE' (BASE/SEM34 no confirmo numero real) y 'PROYECTO' (registrado sin numero desde
+// Registro de Personal) no son numero de empleado real -- mismo criterio que PersonalDeHoyTab.jsx,
+// no se duplica la logica, solo se repite la misma constante minima para no crear un import cruzado
+// innecesario entre un modulo de UI y este archivo de exportacion.
+const NO_REAL_NUMBER = new Set(['PENDIENTE', 'PROYECTO'])
+
+/* Hoja "Directorio" — TODO el personal activo (elegible, sin bajas),
+   persona por persona, igual fuente que el Directorio completo de la
+   pestaña Personal (getAllEmployees + isEmployeeEligible). */
+function sheetDirectorio() {
+  const rows = getAllEmployees().filter(isEmployeeEligible).map((e) => ({
+    numero: NO_REAL_NUMBER.has(e.employeeNumber) ? '' : e.employeeNumber,
+    nombre: e.name,
+    areaActual: workCenterById(getEffectiveAreaForEmployee(e.id))?.name || '',
+    fechaIngreso: e.fechaIngreso || '',
+    tipo: NO_REAL_NUMBER.has(e.employeeNumber) ? 'Proyecto / sin número confirmado' : 'Con número de empleado',
+  }))
+  return buildSheet(rows, [
+    { key: 'numero', header: 'Número empleado', width: 18 },
+    { key: 'nombre', header: 'Nombre', width: 28 },
+    { key: 'areaActual', header: 'Área actual', width: 20 },
+    { key: 'fechaIngreso', header: 'Fecha de ingreso', width: 16 },
+    { key: 'tipo', header: 'Tipo', width: 26 },
+  ])
+}
+
 /* ── Exports publicos ── */
+
+/* Export dedicado del modulo "Centro de Trabajo > Personal" (2026-08-25,
+   a peticion explicita del usuario) -- reutiliza exactamente las mismas
+   hojas ya usadas en exportDailyExcel/exportCompleteExcel (sheetPersonal,
+   sheetMovimientos), sin datos de produccion (eso vive en los otros
+   exports, ExportMenuButton en Dashboard), mas una hoja nueva de
+   Directorio completo (antes no se exportaba en ningun lado). */
+export function exportPersonalExcel(dateISO = dayjs().format('YYYY-MM-DD')) {
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, sheetPersonal(dateISO), 'Personal')
+  XLSX.utils.book_append_sheet(wb, sheetMovimientos(dateISO), 'Movimientos')
+  XLSX.utils.book_append_sheet(wb, sheetDirectorio(), 'Directorio')
+  XLSX.writeFile(wb, `Personal_${dateISO}.xlsx`)
+}
 
 export function exportDailyExcel(dateISO = dayjs().format('YYYY-MM-DD')) {
   const wb = XLSX.utils.book_new()
