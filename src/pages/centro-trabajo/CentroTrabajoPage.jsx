@@ -4,6 +4,8 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
+import Button from '@mui/material/Button'
+import GridViewIcon from '@mui/icons-material/GridView'
 import { usePageStyles } from '../../ui/pageStyles'
 import RotateDeviceHint from '../../ui/RotateDeviceHint'
 import AreasLayoutView from './AreasLayoutView'
@@ -39,6 +41,16 @@ export default function CentroTrabajoPage() {
             <Typography sx={ps.pageTitle}>Centro de Trabajo</Typography>
             <Typography sx={ps.pageSubtitle}>Organización operativa por áreas, líneas, estaciones y personal</Typography>
           </Box>
+          {/* Acceso directo al layout/plano (Áreas de trabajo) desde
+              cualquier pestaña -- a peticion explicita del usuario
+              (2026-08-24, mockup de la pestaña Lineas). */}
+          <Button
+            variant="outlined" size="small" startIcon={<GridViewIcon sx={{ fontSize: 17 }} />}
+            onClick={() => setTab('areas')}
+            sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+          >
+            Ver layout general
+          </Button>
         </Box>
 
         <Box sx={{ px: { xs: 1, md: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
