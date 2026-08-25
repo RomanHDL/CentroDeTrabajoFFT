@@ -7,7 +7,6 @@ import { AuthProvider } from './state/auth'
 import { RoleModeProvider } from './state/roleMode'
 import { DndAssignProvider } from './state/dndAssign'
 import ProtectedRoute from './routing/ProtectedRoute'
-import RequireDesktop from './routing/RequireDesktop'
 import RequireModuleAccess from './routing/RequireModuleAccess'
 import DefaultRedirect from './routing/DefaultRedirect'
 import AppLayout from './layout/AppLayout'
@@ -35,17 +34,11 @@ export default function App() {
 
               <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
                 <Route index element={<DefaultRedirect />} />
-                <Route path="/dashboard" element={<RequireDesktop><RequireModuleAccess><DashboardPage /></RequireModuleAccess></RequireDesktop>} />
+                <Route path="/dashboard" element={<RequireModuleAccess><DashboardPage /></RequireModuleAccess>} />
                 <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
                 <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
-                <Route
-                  path="/usuarios"
-                  element={<RequireDesktop><RequireModuleAccess><UsuariosPage /></RequireModuleAccess></RequireDesktop>}
-                />
-                <Route
-                  path="/layout-2d"
-                  element={<RequireDesktop><RequireModuleAccess><Layout2DPage /></RequireModuleAccess></RequireDesktop>}
-                />
+                <Route path="/usuarios" element={<RequireModuleAccess><UsuariosPage /></RequireModuleAccess>} />
+                <Route path="/layout-2d" element={<RequireModuleAccess><Layout2DPage /></RequireModuleAccess>} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el

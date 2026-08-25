@@ -6,8 +6,9 @@ import { useEffectiveModules } from '../state/auth'
    modulo permitido (un ADMINISTRADOR lo quito por rol o le puso DENY
    individual desde Usuarios) y entra por URL directa o por un link viejo, se
    manda al primer modulo que SI tenga permitido en vez de mostrar la pagina.
-   Se combina con RequireDesktop (touch) sin pisarlo -- ambos guards son
-   independientes y ambos deben pasar. */
+   Es el UNICO guard de acceso por modulo -- deliberadamente independiente del
+   dispositivo (2026-08-25: se elimino RequireDesktop, que bloqueaba por touch
+   sin mirar permisos y rompia tablet incluso para ADMINISTRADOR). */
 export default function RequireModuleAccess({ children }) {
   const location = useLocation()
   const { modules, loading } = useEffectiveModules()
