@@ -102,7 +102,21 @@ export function getPeopleByArea() {
   REAL_PERSONNEL_SNAPSHOT.forEach((p) => {
     if (touchedToday.has(p.id) || baselineSuppressed.has(p.id)) return
     const areaId = mapAreaZonaToId(p.areaZona)
-    if (!areaId) return
+    // BUG REAL encontrado 2026-08-28 (a peticion explicita del usuario, al
+    // preguntar que eran los 31 de "Personal sin area asignada"): antes
+    // esto solo revisaba `!areaId` (null/vacio) -- una zona cruda real pero
+    // SIN WORK_CENTER propio (PRODUCCION/CHOFER, ver mapAreaZonaToId arriba
+    // y la nota de catalog.js: "no se les inventa una area") igual se
+    // "colocaba" aqui bajo una clave fantasma que ningun WORK_CENTER real
+    // usa jamas. Esa gente real y activa (21 personas, confirmado) quedaba
+    // marcada como "ya ubicada" para getAvailablePersonnelToday/
+    // getPeopleWithoutArea sin estar en ninguna area real -- invisibles
+    // tanto en su area (no existe) como en disponibles (se creian ya
+    // colocados). Ahora solo se bucketiza bajo un id que SI es un
+    // WORK_CENTER real; sin area real conocida, cuentan como sin ubicacion
+    // (igual que si areaZona fuera null), consistente con la regla ya
+    // documentada de que CHOFER/PRODUCCION nunca tienen area propia. */
+    if (!areaId || !workCenterById(areaId)) return
     map[areaId] = map[areaId] || []
     map[areaId].push(p)
   })
