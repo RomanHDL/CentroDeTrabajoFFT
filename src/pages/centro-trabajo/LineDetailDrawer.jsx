@@ -27,7 +27,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, OFFICIAL_SHIFTS, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
+import { CURRENT_SHIFT, getCurrentShift, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
 import { getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster } from '../../data/production/personnelByArea'
 import {
   getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
@@ -124,7 +124,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
-  const currentOfficialShift = OFFICIAL_SHIFTS.find(s => s.label === CURRENT_SHIFT) || OFFICIAL_SHIFTS[0]
+  const currentOfficialShift = getCurrentShift()
   const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
   const people = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId, version])
 
@@ -245,7 +245,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
           )}
           {isLine && (
             <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
-              Turno {CURRENT_SHIFT} · {dayjs().format('DD/MM/YYYY')}
+              Turno {currentOfficialShift.label} · {dayjs().format('DD/MM/YYYY')}
             </Typography>
           )}
         </Box>

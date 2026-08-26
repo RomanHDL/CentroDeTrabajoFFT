@@ -10,6 +10,9 @@ import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
+import TextField from '@mui/material/TextField'
+import InputAdornment from '@mui/material/InputAdornment'
+import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
@@ -25,7 +28,7 @@ import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer } from 'r
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, SHIFT_HOURS, workCenterById, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
+import { getCurrentShift, formatShiftSchedule, workCenterById, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
 import {
   getAvailablePersonnelToday, getGroupAreaStaffing, getGroupPeople,
   AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee,
@@ -90,7 +93,7 @@ function DropZone({ areaId, label }) {
       elevation={0}
       {...dropProps}
       sx={{
-        height: '100%', minHeight: 180, borderRadius: '16px', border: '2px dashed',
+        minHeight: 180, borderRadius: '16px', border: '2px dashed',
         borderColor: isOver ? '#3B82F6' : alpha('#3B82F6', 0.4),
         bgcolor: (t) => alpha('#3B82F6', isOver ? (t.palette.mode === 'dark' ? 0.16 : 0.08) : (t.palette.mode === 'dark' ? 0.04 : 0.02)),
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, p: 2,
@@ -154,7 +157,7 @@ function RoleDistributionCard({ people }) {
 
   if (withData < 2 || counts.size < 2) {
     return (
-      <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+      <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
         <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Distribución por tipo de puesto</Typography>
         <EmptyState
           compact
@@ -168,7 +171,7 @@ function RoleDistributionCard({ people }) {
   const data = [...counts.entries()].map(([codigo, value], i) => ({ codigo, value, color: PIE_PALETTE[i % PIE_PALETTE.length] }))
 
   return (
-    <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+    <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
       <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 0.25 }}>Distribución por tipo de puesto</Typography>
       <Typography sx={{ fontSize: 10.5, color: 'text.secondary', mb: 1 }}>Código de actividad real, sin interpretar (BASE)</Typography>
       <Stack direction="row" spacing={2} sx={{ minHeight: 160 }}>
@@ -221,6 +224,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
   const availableRef = useRef(null)
   const [highlightAvailable, setHighlightAvailable] = useState(false)
+  const [availableQuery, setAvailableQuery] = useState('')
 
   const [history, setHistory] = useState({ loading: true, error: null, items: [] })
 
@@ -232,6 +236,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
     setRegisterOpen(false)
     setSelfAssignOpen(false)
     setHighlightAvailable(false)
+    setAvailableQuery('')
   }, [workCenterId])
 
   // Id canonico (2026-08-25, ver catalog.js/AREA_DETAIL_GROUPS): CT Sellado
@@ -248,6 +253,11 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
   const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
+  const filteredAvailable = useMemo(() => {
+    const q = availableQuery.trim().toLowerCase()
+    if (!q) return available
+    return available.filter((p) => p.name?.toLowerCase().includes(q) || String(p.employeeNumber || '').toLowerCase().includes(q))
+  }, [available, availableQuery])
 
   useEffect(() => {
     if (!open || !memberIds.length) return
@@ -276,7 +286,8 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const coverageBarPct = coveragePct != null ? Math.min(100, coveragePct) : 0
   const missing = staffing.ideal != null ? Math.max(0, staffing.ideal - staffing.real) : 0
   const tip = classifyForTip(staffing.real, staffing.ideal)
-  const shiftRange = SHIFT_HOURS.length ? `${SHIFT_HOURS[0]} - ${SHIFT_HOURS[SHIFT_HOURS.length - 1]}` : ''
+  const currentShift = getCurrentShift()
+  const shiftRange = formatShiftSchedule(currentShift)
 
   function scrollToAvailable() {
     availableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -373,7 +384,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             <MetricBlock label="Turno actual" borderLeft>
               <Stack direction="row" spacing={0.6} alignItems="center">
                 <WbSunnyIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{CURRENT_SHIFT}</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{currentShift.label}</Typography>
               </Stack>
               <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>{shiftRange}</Typography>
             </MetricBlock>
@@ -381,14 +392,14 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
         </Paper>
 
         {/* Personal asignado + Distribucion por tipo de puesto */}
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
+        <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
           <Grid item xs={12} lg={8}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
               <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Personal asignado ({people.length})</Typography>
               {people.length === 0 ? (
                 <EmptyState compact title="Nadie asignado todavía" description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'." />
               ) : (
-                <Grid container spacing={1.25}>
+                <Grid container spacing={1.25} sx={{ maxHeight: 420, overflowY: 'auto', pr: 0.5 }}>
                   {people.map((p) => (
                     <Grid item xs={12} sm={6} md={4} key={p.id}>
                       <AssignedPersonChip employeeId={p.id} name={p.name} />
@@ -403,25 +414,59 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
           </Grid>
         </Grid>
 
-        {/* Disponibles / Drop zone / Resumen rapido / Historial */}
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
+        {/* Disponibles / Drop zone / Resumen rapido / Historial -- 2026-08-26,
+            reparacion del contrato aprobado (WC Accesorios sigue siendo la
+            referencia visual): alignItems="flex-start" es la correccion
+            central. El Grid (MUI v1, flexbox) estira por defecto TODOS los
+            hermanos de una fila a la altura del mas alto (align-items:
+            stretch implicito) -- con Disponibles renderizando su lista
+            completa sin limite, eso forzaba Drop zone/Resumen/Historial a
+            crecer igual de gigantes. Con flex-start cada bloque toma su
+            propia altura natural; el limite del propio Disponibles (abajo,
+            maxHeight + overflowY local) es lo que evita que ESE bloque
+            crezca sin fin, no que los demas lo imiten. */}
+        <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
           <Grid item xs={12} md={6} lg={3}>
             <Paper
               ref={availableRef}
               elevation={0}
               sx={{
                 borderRadius: '16px', border: '1px solid', borderColor: highlightAvailable ? '#3B82F6' : 'divider',
-                p: 2, height: '100%', transition: 'border-color .3s ease',
+                p: 2, transition: 'border-color .3s ease',
                 boxShadow: highlightAvailable ? (t) => `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}` : 'none',
               }}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Disponibles para asignar ({available.length})</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1 }}>
+                Disponibles para asignar ({available.length})
+                {availableQuery.trim() && (
+                  <Typography component="span" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}>
+                    · {filteredAvailable.length} resultado{filteredAvailable.length === 1 ? '' : 's'}
+                  </Typography>
+                )}
+              </Typography>
               {available.length === 0 ? (
                 <EmptyState compact title="Sin personal disponible" description="Todo el personal activo ya tiene ubicación asignada hoy." />
               ) : (
-                <Stack spacing={1}>
-                  {available.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
-                </Stack>
+                <>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={availableQuery}
+                    onChange={(e) => setAvailableQuery(e.target.value)}
+                    placeholder="Buscar por nombre o número..."
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} /></InputAdornment>,
+                    }}
+                    sx={{ mb: 1, '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                  {filteredAvailable.length === 0 ? (
+                    <EmptyState compact title="Sin coincidencias" description="Nadie disponible coincide con la búsqueda." />
+                  ) : (
+                    <Stack spacing={1} sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}>
+                      {filteredAvailable.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
+                    </Stack>
+                  )}
+                </>
               )}
             </Paper>
           </Grid>
@@ -429,7 +474,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             <DropZone areaId={canonicalId} label={area.name} />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
               <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Resumen rápido</Typography>
               <Stack spacing={1}>
                 {[
@@ -448,7 +493,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             </Paper>
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
                 <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>Historial reciente</Typography>
               </Stack>
@@ -459,7 +504,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
               ) : history.items.length === 0 ? (
                 <EmptyState compact title="Sin movimientos recientes" description="Todavía no hay asignaciones o movimientos registrados para esta área." />
               ) : (
-                <Stack spacing={1.25}>
+                <Stack spacing={1.25} sx={{ maxHeight: 280, overflowY: 'auto', pr: 0.5 }}>
                   {history.items.map((h) => (
                     <Stack key={h.id} direction="row" spacing={1} alignItems="flex-start">
                       <Box sx={{

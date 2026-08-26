@@ -8,7 +8,10 @@
 // Uso: node --import ./scripts/_esm-extensionless-loader.mjs scripts/verify-line-logic.mjs
 import assert from 'node:assert/strict'
 import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine } from '../src/data/personnel/workstations.js'
-import { OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext } from '../src/data/production/catalog.js'
+import {
+  OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext,
+  getCurrentShift, getShiftSchedule, formatShiftSchedule,
+} from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 
 let passed = 0
@@ -150,6 +153,47 @@ check('placeholder "PENDIENTE" -> PROYECTO (nunca se muestra PENDIENTE)', () => 
 })
 check('placeholder "PROYECTO" ya literal -> PROYECTO', () => {
   assert.equal(formatEmployeeNumber('PROYECTO'), 'PROYECTO')
+})
+
+// getCurrentShift -- limites exactos de los 3 turnos oficiales, 2026-08-26
+// (correccion "Turnos oficiales"). Noche cruza medianoche: NUNCA implementada
+// como "hora >= 22:01 && hora <= 07:00" (eso nunca es true) -- se prueban
+// explicitamente los 8 casos limite que dio el usuario.
+function atTime(hh, mm) { const d = new Date(2026, 7, 26, hh, mm); return d }
+check('06:59 -> Noche (un minuto antes de Matutino)', () => {
+  assert.equal(getCurrentShift(atTime(6, 59)).id, 'NOCHE')
+})
+check('07:00 -> Matutino (inicio exacto)', () => {
+  assert.equal(getCurrentShift(atTime(7, 0)).id, 'MATUTINO')
+})
+check('17:10 -> Matutino (fin exacto)', () => {
+  assert.equal(getCurrentShift(atTime(17, 10)).id, 'MATUTINO')
+})
+check('17:11 -> Tiempo extra (inicio exacto)', () => {
+  assert.equal(getCurrentShift(atTime(17, 11)).id, 'TIEMPO_EXTRA')
+})
+check('22:00 -> Tiempo extra (fin exacto)', () => {
+  assert.equal(getCurrentShift(atTime(22, 0)).id, 'TIEMPO_EXTRA')
+})
+check('22:01 -> Noche (inicio exacto, cruza medianoche)', () => {
+  assert.equal(getCurrentShift(atTime(22, 1)).id, 'NOCHE')
+})
+check('23:59 -> Noche', () => {
+  assert.equal(getCurrentShift(atTime(23, 59)).id, 'NOCHE')
+})
+check('00:00 -> Noche (ya del otro lado de la medianoche)', () => {
+  assert.equal(getCurrentShift(atTime(0, 0)).id, 'NOCHE')
+})
+check('getShiftSchedule encuentra por id y por label, nunca inventa un horario', () => {
+  assert.equal(getShiftSchedule('MATUTINO').start, '07:00')
+  assert.equal(getShiftSchedule('Matutino').end, '17:10')
+  assert.equal(getShiftSchedule('NO_EXISTE'), null)
+})
+check('formatShiftSchedule -- Matutino se muestra "07:00 AM – 05:10 PM" (nunca 07:00-14:00)', () => {
+  assert.equal(formatShiftSchedule(getShiftSchedule('MATUTINO')), '07:00 AM – 05:10 PM')
+})
+check('formatShiftSchedule -- Noche cruza medianoche en el texto (10:01 PM – 07:00 AM)', () => {
+  assert.equal(formatShiftSchedule(getShiftSchedule('NOCHE')), '10:01 PM – 07:00 AM')
 })
 
 console.log(`\n${passed}/${passed} checks OK`)

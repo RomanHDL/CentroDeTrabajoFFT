@@ -13,7 +13,7 @@ import ShieldIcon from '@mui/icons-material/Shield'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import dayjs from 'dayjs'
 import { usePageStyles } from '../../ui/pageStyles'
-import { CURRENT_SHIFT } from '../../data/production/catalog'
+import { getCurrentShift } from '../../data/production/catalog'
 import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
 import DashboardExecKpiCard from './DashboardExecKpiCard'
 import DashboardExportButton from './DashboardExportButton'
@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const ps = usePageStyles()
   const metrics = useDashboardMetrics()
   const today = dayjs()
+  const currentShift = getCurrentShift()
 
   return (
     <Box sx={ps.page}>
@@ -59,7 +60,7 @@ export default function DashboardPage() {
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Chip
               icon={<WbSunnyIcon sx={{ fontSize: 16 }} />}
-              label={`Turno: ${CURRENT_SHIFT}`}
+              label={`Turno: ${currentShift.label}`}
               sx={{ ...ps.metricChip('info'), fontWeight: 700 }}
             />
             <Chip label={`Hoy: ${today.format('DD MMMM YYYY')}`} sx={ps.metricChip('default')} />

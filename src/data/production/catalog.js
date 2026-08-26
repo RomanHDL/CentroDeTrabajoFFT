@@ -54,6 +54,70 @@ export const OFFICIAL_SHIFTS = [
   { id: 'NOCHE', label: 'Noche', start: '22:01', end: '07:00' },
 ]
 
+/* Logica central reutilizable de "que turno es ahora" (2026-08-26, a
+   peticion explicita del usuario -- antes cada vista improvisaba su
+   propio calculo, y OperationalAreaDetail.jsx llego a mostrar el
+   horario mezclando por error SHIFT_HOURS, el eje de una grafica, como
+   si fuera el horario real de un turno: "07:00 - 14:00" en vez de
+   "07:00 AM - 05:10 PM"). Limites exactos sobre OFFICIAL_SHIFTS,
+   verificados con casos explicitos (ver scripts/verify-line-logic.mjs):
+     06:59->Noche  07:00->Matutino  17:10->Matutino  17:11->Tiempo extra
+     22:00->Tiempo extra  22:01->Noche  23:59->Noche  00:00->Noche
+   Noche cruza medianoche, por eso NUNCA se implementa como
+   "hora >= 22:01 && hora <= 07:00" (eso nunca es true) -- aqui es
+   simplemente "todo lo que no cae en Matutino ni Tiempo extra".
+   Nunca toca Attendance/checkInAt reales: esto solo decide que turno
+   MOSTRAR ahora mismo, igual que ya hacia CT LINEA a mano. */
+function minutesOfDay(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
+export function getShiftSchedule(shiftIdOrLabel) {
+  return OFFICIAL_SHIFTS.find((s) => s.id === shiftIdOrLabel || s.label === shiftIdOrLabel) || null
+}
+
+export function getCurrentShift(date = new Date()) {
+  const minutes = date.getHours() * 60 + date.getMinutes()
+  const [matutino, tiempoExtra, noche] = OFFICIAL_SHIFTS
+  if (minutes >= minutesOfDay(matutino.start) && minutes <= minutesOfDay(matutino.end)) return matutino
+  if (minutes >= minutesOfDay(tiempoExtra.start) && minutes <= minutesOfDay(tiempoExtra.end)) return tiempoExtra
+  return noche
+}
+
+export function formatShiftSchedule(shift) {
+  if (!shift) return ''
+  const to12 = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const h12 = h % 12 === 0 ? 12 : h % 12
+    return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`
+  }
+  return `${to12(shift.start)} – ${to12(shift.end)}`
+}
+
+/* Fecha operativa -- el turno Noche cruza medianoche, asi que entre
+   00:00 y 06:59 la jornada que sigue activa empezo AYER (22:01 del dia
+   anterior). NOTA (2026-08-26): no existe hoy ningun concepto de
+   "fecha operativa" en la capa de datos -- todo el sistema usa el dia
+   calendario simple (repository.js/todayISO -> dayjs().format('YYYY-MM-DD'))
+   sin ajuste por turno. Esta funcion se agrega como utilidad adicional
+   a peticion explicita del usuario, pero NO se conecta a todayISO() ni
+   a ninguna logica existente de particionado por dia -- hacerlo seria
+   rediseñar como se agrupan las asignaciones por fecha, fuera de
+   alcance de esta correccion (solo pedida para mostrar turno/horario). */
+export function getOperationalDate(date = new Date()) {
+  const shift = getCurrentShift(date)
+  const d = new Date(date)
+  if (shift.id === 'NOCHE' && d.getHours() < 12) {
+    d.setDate(d.getDate() - 1)
+  }
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /* Entrada por defecto cuando se coloca automaticamente en una
    estacion a alguien que ya esta en una CT LINEA por snapshot/estado
    actual pero sin hora real de entrada (ver repository.js/
