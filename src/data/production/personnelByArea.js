@@ -218,16 +218,27 @@ export function getEffectiveTodayRoster() {
   return [...real, ...synthetic].sort((a, b) => ((a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1))
 }
 
-/* "Sin area asignada" = sin zona cruda en absoluto, O con una zona cruda que
-   no corresponde a ningun WORK_CENTER activo del catalogo (2026-08-25, a
-   peticion explicita del usuario: CHOFER/PRODUCCION son gente real de linea
-   sin linea especifica conocida -- en vez de inventarles una area, caen
-   aqui). p.areaZona se conserva en el objeto devuelto para poder mostrar de
-   quien se trata (ej. "Chofer") sin fingir una ubicacion que no existe. */
+/* "Personal sin area asignada" (Centro de Trabajo) y "Personal disponible"
+   (WC LINEA/areas operativas) son -- 2026-08-28, BUG REAL encontrado y
+   corregido a peticion explicita del usuario -- EXACTAMENTE el mismo
+   conjunto: misma fuente (getAvailablePersonnelToday, mas abajo), activo +
+   no baja + elegible + sin ubicacion real hoy en ninguna area. Antes esta
+   funcion calculaba algo completamente distinto por su cuenta -- solo el
+   snapshot HISTORICO de BASE (sin zona, o con una zona que no mapea a
+   ningun WORK_CENTER real), sin mirar NUNCA las asignaciones reales de hoy
+   ni el estado BAJA -- eso producia numeros desincronizados entre las dos
+   vistas (31 vs 1, reportado por el usuario) porque eran dos preguntas de
+   negocio distintas disfrazadas de la misma card. Ahora es un simple
+   envoltorio: llama a getAvailablePersonnelToday() (unica fuente de
+   verdad) y le pega encima `areaZona`/`rawZona`/`asistencia` del snapshot
+   SOLO para el tag "Chofer"/"Producción" que ya mostraba
+   UnassignedPersonnelCard.jsx -- eso nunca decide quien entra o no en la
+   lista, solo como se etiqueta visualmente a quien ya calificó. */
 export function getPeopleWithoutArea() {
-  return REAL_PERSONNEL_SNAPSHOT.filter((p) => {
-    if (!p.areaZona) return true
-    return !workCenterById(mapAreaZonaToId(p.areaZona))
+  const snapshotById = new Map(REAL_PERSONNEL_SNAPSHOT.map((p) => [p.id, p]))
+  return getAvailablePersonnelToday().map((e) => {
+    const snap = snapshotById.get(e.id)
+    return { ...e, areaZona: snap?.areaZona ?? null, rawZona: snap?.rawZona ?? null, asistencia: snap?.asistencia ?? null }
   })
 }
 
