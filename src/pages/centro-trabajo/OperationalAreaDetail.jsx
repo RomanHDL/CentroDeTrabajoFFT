@@ -25,9 +25,9 @@ import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer } from 'r
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, SHIFT_HOURS, workCenterById } from '../../data/production/catalog'
+import { CURRENT_SHIFT, SHIFT_HOURS, workCenterById, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
 import {
-  getPeopleByArea, getAreaStaffing, getAvailablePersonnelToday,
+  getAvailablePersonnelToday, getGroupAreaStaffing, getGroupPeople,
   AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee,
 } from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -223,18 +223,35 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
 
   const [history, setHistory] = useState({ loading: true, error: null, items: [] })
 
-  const area = workCenterId ? workCenterById(workCenterId) : null
-  const staffing = useMemo(() => (workCenterId ? getAreaStaffing(workCenterId) : null), [workCenterId, version])
-  const people = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId, version])
+  // Id canonico (2026-08-25, ver catalog.js/AREA_DETAIL_GROUPS): CT Sellado
+  // no tiene detalle propio, "va junto con Conveyor Principal" a peticion
+  // explicita del usuario -- si workCenterId es SELLADO, esto resuelve a
+  // CONVEYOR_PRINCIPAL para titulo/asignaciones nuevas, y memberIds suma el
+  // personal/plantilla de AMBAS areas reales en el mismo detalle. Para
+  // cualquier area que no pertenezca a ningun grupo, canonicalId === workCenterId
+  // y memberIds === [workCenterId] (sin cambio de comportamiento).
+  const canonicalId = workCenterId ? canonicalOperationalAreaId(workCenterId) : null
+  const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
+
+  const area = canonicalId ? workCenterById(canonicalId) : null
+  const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
+  const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
 
   useEffect(() => {
-    if (!open || !workCenterId) return
+    if (!open || !memberIds.length) return
     let cancelled = false
     setHistory((s) => ({ ...s, loading: true, error: null }))
-    fetch(`/api/personnel/area-history?areaId=${encodeURIComponent(workCenterId)}&limit=8`, { credentials: 'include' })
-      .then((r) => { if (!r.ok) throw new Error(`area-history -> ${r.status}`); return r.json() })
-      .then((data) => { if (!cancelled) setHistory({ loading: false, error: null, items: data.history }) })
+    Promise.all(memberIds.map((id) =>
+      fetch(`/api/personnel/area-history?areaId=${encodeURIComponent(id)}&limit=8`, { credentials: 'include' })
+        .then((r) => { if (!r.ok) throw new Error(`area-history -> ${r.status}`); return r.json() })
+        .then((data) => data.history)
+    ))
+      .then((lists) => {
+        if (cancelled) return
+        const merged = lists.flat().sort((a, b) => (a.movedAt < b.movedAt ? 1 : -1)).slice(0, 8)
+        setHistory({ loading: false, error: null, items: merged })
+      })
       .catch((e) => { if (!cancelled) setHistory({ loading: false, error: e.message, items: [] }) })
     return () => { cancelled = true }
   }, [workCenterId, open, version])
@@ -391,13 +408,13 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
                 <EmptyState compact title="Sin personal disponible" description="Todo el personal activo ya tiene ubicación asignada hoy." />
               ) : (
                 <Stack spacing={1}>
-                  {available.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={workCenterId} />)}
+                  {available.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
                 </Stack>
               )}
             </Paper>
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
-            <DropZone areaId={workCenterId} label={area.name} />
+            <DropZone areaId={canonicalId} label={area.name} />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
             <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
@@ -540,8 +557,8 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
         </Grid>
       </Box>
 
-      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
-      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
+      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
+      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
     </Dialog>
   )
 }

@@ -183,14 +183,50 @@ export function hasLineStations(workCenterId) {
    (verificado antes de incluirla, tal como pidio el usuario explicitamente
    "revisar clasificacion real, no asumir"). Las SUPPORT_AREA restantes
    (Capacitacion, Team Leader, Soporte, Limpieza, Gerente, Supervisor) y
-   todas las PRODUCTION_LINE quedan fuera, sin excepcion. */
+   todas las PRODUCTION_LINE quedan fuera, sin excepcion.
+
+   CT SELLADO (2026-08-25, correccion explicita del usuario): no tiene
+   entrada propia -- "va en Conveyor Principal, ponlos ahi juntos". No
+   aparece en ningun lado del plano/mapa (floorPlanZones.js/
+   OperatingFloorPlan.jsx la excluyen explicitamente desde antes, a
+   peticion tambien explicita del usuario), asi que su unica forma de
+   detalle es fusionada dentro del detalle de CONVEYOR_PRINCIPAL -- ver
+   AREA_DETAIL_GROUPS/canonicalOperationalAreaId mas abajo, mismo patron
+   ya usado para "CT Insumos y Suministro de material" en el plano 2D
+   (dos WORK_CENTER reales, una sola representacion visual). */
 export const OPERATIONAL_DETAIL_AREA_IDS = new Set([
   ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.WORK_AREA && w.id !== 'PROYECTO').map((w) => w.id),
   'BOX_PREP',
 ])
 
+/* Grupos de detalle fusionado: la clave es el id "canonico" (el que se
+   muestra/al que se asignan movimientos nuevos), el arreglo son TODOS
+   los WORK_CENTER reales cuyo personal/plantilla se suma en ese mismo
+   detalle. Hoy solo existe un grupo (Sellado dentro de Conveyor
+   Principal); si el usuario pide fusionar otro par en el futuro, se
+   agrega aqui, sin tocar OperationalAreaDetail.jsx. */
+export const AREA_DETAIL_GROUPS = {
+  CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'SELLADO'],
+}
+
+/* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO
+   siempre resuelve a CONVEYOR_PRINCIPAL, cualquier otro id se devuelve
+   tal cual (no pertenece a ningun grupo). */
+export function canonicalOperationalAreaId(workCenterId) {
+  const entry = Object.entries(AREA_DETAIL_GROUPS).find(([, members]) => members.includes(workCenterId))
+  return entry ? entry[0] : workCenterId
+}
+
+/* Todos los ids reales cuyo personal/plantilla debe sumarse para el
+   detalle de `workCenterId` -- [workCenterId] solo si no pertenece a
+   ningun grupo. */
+export function operationalGroupMembers(workCenterId) {
+  const canonical = canonicalOperationalAreaId(workCenterId)
+  return AREA_DETAIL_GROUPS[canonical] || [canonical]
+}
+
 export function usesOperationalDetail(workCenterId) {
-  return OPERATIONAL_DETAIL_AREA_IDS.has(workCenterId)
+  return OPERATIONAL_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))
 }
 
 export const STATIONS = [

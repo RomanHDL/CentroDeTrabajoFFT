@@ -341,6 +341,33 @@ export function classifyAreaStatus(real, ideal) {
   return 'FALTA'
 }
 
+/* Real/ideal/personal COMBINADOS de varias areas reales que comparten un
+   mismo detalle visual (2026-08-25, ver catalog.js/AREA_DETAIL_GROUPS --
+   hoy: CT Sellado dentro de CT Conveyor Principal, a peticion explicita
+   del usuario). Mismo patron que ya usaba InsumosSuministroZone en
+   OperatingFloorPlan.jsx, generalizado para reutilizarse tambien en
+   OperationalAreaDetail.jsx. ideal se suma solo entre las areas que SI
+   tienen plantilla oficial; si ninguna la tiene, ideal queda null (nunca
+   se inventa una meta). */
+export function getGroupAreaStaffing(memberIds) {
+  let real = 0
+  let idealSum = 0
+  let hasIdeal = false
+  memberIds.forEach((id) => {
+    const s = getAreaStaffing(id)
+    real += s.real
+    if (s.ideal != null) { idealSum += s.ideal; hasIdeal = true }
+  })
+  const ideal = hasIdeal ? idealSum : null
+  if (ideal == null) return { ideal: null, real, diff: null, status: 'SIN_PLANTILLA' }
+  return { ideal, real, diff: real - ideal, status: real >= ideal ? 'COMPLETA' : 'FALTAN' }
+}
+
+export function getGroupPeople(memberIds) {
+  const byArea = getPeopleByArea()
+  return memberIds.flatMap((id) => byArea[id] || [])
+}
+
 /* Codigo crudo de ACTIVIDAD (columna real de LAYOUT FFT.xlsx, hoja BASE)
    para un empleado especifico -- unica fuente real de "tipo de puesto"
    que existe hoy (SEED_SKILLS esta vacio, ver skills.js: "las
