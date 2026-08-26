@@ -9,6 +9,7 @@ import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import SearchIcon from '@mui/icons-material/Search'
 import { searchEmployees, getCurrentAssignment } from '../../data/personnel/repository'
+import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getEffectiveAreaForEmployee } from '../../data/production/personnelByArea'
 import { workCenterById } from '../../data/production/catalog'
@@ -60,7 +61,8 @@ export default function EmployeeAssignSearchBar({ areaId }) {
                 const current = getCurrentAssignment(employee.id)
                 const effectiveAreaId = current?.areaId ?? getEffectiveAreaForEmployee(employee.id)
                 const sameArea = effectiveAreaId === areaId
-                const numberLabel = employee.employeeNumber === 'PENDIENTE' ? 'Núm. pendiente' : `#${employee.employeeNumber}`
+                const formattedNumber = formatEmployeeNumber(employee.employeeNumber)
+                const numberLabel = formattedNumber === 'PROYECTO' ? 'PROYECTO' : `#${formattedNumber}`
                 return (
                   <Stack key={employee.id} direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5 }}>
                     <EmployeeAvatar employee={employee} size={38} />

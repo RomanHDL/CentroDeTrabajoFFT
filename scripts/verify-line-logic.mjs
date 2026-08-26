@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict'
 import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine } from '../src/data/personnel/workstations.js'
 import { OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext } from '../src/data/production/catalog.js'
+import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 
 let passed = 0
 function check(name, fn) {
@@ -133,6 +134,22 @@ check('recorrido inverso desde el ultimo Work Center llega exactamente hasta WC 
   }
   assert.equal(id, 'PROYECTO')
   assert.equal(visited.length, WORK_CENTER_NAVIGATION_ORDER.length)
+})
+
+// formatEmployeeNumber -- "PROYECTO" para cualquier forma de "sin numero real".
+check('numero real se muestra tal cual', () => {
+  assert.equal(formatEmployeeNumber('3844'), '3844')
+})
+check('null/undefined/vacio -> PROYECTO', () => {
+  assert.equal(formatEmployeeNumber(null), 'PROYECTO')
+  assert.equal(formatEmployeeNumber(undefined), 'PROYECTO')
+  assert.equal(formatEmployeeNumber(''), 'PROYECTO')
+})
+check('placeholder "PENDIENTE" -> PROYECTO (nunca se muestra PENDIENTE)', () => {
+  assert.equal(formatEmployeeNumber('PENDIENTE'), 'PROYECTO')
+})
+check('placeholder "PROYECTO" ya literal -> PROYECTO', () => {
+  assert.equal(formatEmployeeNumber('PROYECTO'), 'PROYECTO')
 })
 
 console.log(`\n${passed}/${passed} checks OK`)

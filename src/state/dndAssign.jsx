@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography'
 import { CURRENT_SHIFT, hasLineStations, workCenterById } from '../data/production/catalog'
 import { getWorkstationsForLine } from '../data/personnel/workstations'
 import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
+import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
 import { showToast } from '../ui/toast'
@@ -150,9 +151,12 @@ export function DndAssignProvider({ children }) {
               Elige una estación — {workCenterById(stationPicker.targetAreaId)?.name}
             </DialogTitle>
             <DialogContent>
-              <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-                Asignando a <b>{stationPicker.employee.name}</b>. Soltar sobre la línea no elige estación
-                automáticamente — selecciona una disponible:
+              <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+                Asignando a <b>{stationPicker.employee.name}</b>
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 2 }}>
+                No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b> · Soltar sobre la línea
+                no elige estación automáticamente — selecciona una disponible:
               </Typography>
               <Stack spacing={1}>
                 {pickerStations.map((s) => (

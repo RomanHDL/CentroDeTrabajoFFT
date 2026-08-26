@@ -32,6 +32,7 @@ import { getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META,
 import {
   getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
 } from '../../data/personnel/repository'
+import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
@@ -358,7 +359,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                         const isReal = r.source === 'REGISTRO'
                         return (
                           <TableRow key={r.id} sx={ps.tableRow(idx)} hover>
-                            <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{r.employeeNumber}</TableCell>
+                            <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{formatEmployeeNumber(r.employeeNumber)}</TableCell>
                             <TableCell sx={ps.cellText}>
                               <DraggablePersonChip employeeId={r.employeeId}>{r.employee?.name || '—'}</DraggablePersonChip>
                             </TableCell>
