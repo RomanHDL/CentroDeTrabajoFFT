@@ -11,17 +11,28 @@ import { usePageStyles } from '../../ui/pageStyles'
 import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { PHYSICAL_ZONES } from '../../data/production/layoutZones'
-import WorkAreaMap, { describeZoneSelection } from '../../components/WorkAreaMap'
+import { describeZoneSelection } from '../../components/WorkAreaMap'
+import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 import AreaDetailPanel from './AreaDetailPanel'
 import WorkAreaBottomSummary from './WorkAreaBottomSummary'
 
 /* ─────────────────────────────────────────────
-   "Areas de trabajo" — antes era una cuadricula de cajas con
-   listas de nombres; ahora su elemento principal es el layout
-   operativo del piso (WorkAreaMap), con un panel de detalle a la
-   derecha (desktop/tablet) o en un Drawer inferior (movil). Reusa
-   los mismos datos reales que ya alimentaban la vista anterior
-   (personnelByArea.js) — nada nuevo se inventa aqui.
+   "Areas de trabajo" (2026-08-25, a peticion explicita del usuario):
+   el layout ya NO es WorkAreaMap (el mockup anterior) sino el MISMO
+   plano grande que ya se usaba en /layout-2d -- OperatingFloorPlan,
+   el componente compartido -- para que Centro de Trabajo, Layout 2D
+   y (antes) Dashboard nunca muestren dos disenos distintos del mismo
+   piso. No-readOnly: click/drag&drop/asignar siguen funcionando
+   exactamente igual que antes con WorkAreaMap. WorkAreaMap.jsx sigue
+   existiendo solo por su helper describeZoneSelection (usado abajo
+   para el caso especial "FFT" que dispara AreaCoverageSummaryCard),
+   ya no se renderiza en ningun lado.
+
+   El panel de detalle (AreaDetailPanel + Drawer lateral/inferior)
+   sigue existiendo tal cual, pero ahora solo lo abre un click en
+   "Resumen por área" (WorkAreaBottomSummary) -- un click directo
+   sobre el plano abre el propio drawer/dialog de OperatingFloorPlan
+   (igual que en Layout 2D), no este panel.
    ───────────────────────────────────────────── */
 export default function AreasLayoutView({ onOpenLine }) {
   const ps = usePageStyles()
@@ -49,18 +60,11 @@ export default function AreasLayoutView({ onOpenLine }) {
         pendientes: BASE no trae esa columna todavía.
       </Typography>
 
-      <Paper elevation={0} sx={ps.card}>
-        <Box sx={ps.cardHeader}>
-          <Box>
-            <Typography sx={ps.cardHeaderTitle}>Layout operativo del área</Typography>
-            <Typography sx={ps.cardHeaderSubtitle}>
-              Vista del centro de trabajo basada en el layout real — haz click en una zona para ver detalles
-            </Typography>
-          </Box>
-        </Box>
-        <Box sx={{ p: { xs: 2, md: 2.5 } }}>
-          <WorkAreaMap selection={selection} onSelect={setSelection} />
-        </Box>
+      {/* Sin cardHeader propio (2026-08-25): OperatingFloorPlan ya trae su
+          propio titulo "Área operando" + leyenda arriba, tener los dos
+          duplicaria el encabezado. */}
+      <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+        <OperatingFloorPlan />
       </Paper>
 
       {/* Ventana flotante con el detalle — mismo patron en desktop/tablet
@@ -87,10 +91,8 @@ export default function AreasLayoutView({ onOpenLine }) {
         {panel}
       </Drawer>
 
-      {/* A partir de aqui: rediseño 2026-08-25 (a peticion explicita del
-          usuario) -- ver WorkAreaBottomSummary.jsx. Todo lo de ARRIBA
-          (titulo, subtitulo, card "Layout operativo del área" con
-          WorkAreaMap, y el Drawer de detalle) queda 100% intacto. */}
+      {/* Rediseño 2026-08-25 (a peticion explicita del usuario) -- ver
+          WorkAreaBottomSummary.jsx. */}
       <WorkAreaBottomSummary onSelectArea={handleSelectArea} sinZona={sinZona} />
     </Box>
   )

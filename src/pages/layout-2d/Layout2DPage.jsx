@@ -4,11 +4,11 @@ import { usePageStyles } from '../../ui/pageStyles'
 import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 
 /* Pagina delgada -- toda la logica/visual del plano 2D vive en
-   OperatingFloorPlan.jsx (compartido con el Dashboard, ver
-   DashboardWorkAreaSection.jsx), para que nunca existan dos versiones
-   del mismo plano que se puedan desincronizar. Esta pagina solo le
-   pone su propio Paper de pagina completa (Layout 2D es su propio
-   modulo, ruta /layout-2d, solo ADMINISTRADOR -- ver Sidebar.jsx). */
+   OperatingFloorPlan.jsx (compartido con Centro de Trabajo > Áreas de
+   trabajo, ver AreasLayoutView.jsx), para que nunca existan dos
+   versiones del mismo plano que se puedan desincronizar. Esta pagina
+   solo le pone su propio Paper de pagina completa (Layout 2D es su
+   propio modulo, ruta /layout-2d -- ver Sidebar.jsx). */
 export default function Layout2DPage() {
   const ps = usePageStyles()
   return (

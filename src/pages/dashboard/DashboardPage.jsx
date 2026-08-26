@@ -21,7 +21,6 @@ import ExportMenuButton from '../centro-trabajo/ExportMenuButton'
 import ComparisonChart from './ComparisonChart'
 import HourlyTrendChart from './HourlyTrendChart'
 import AlertsPanel from './AlertsPanel'
-import DashboardWorkAreaSection from './DashboardWorkAreaSection'
 import DashboardKpiCard from './DashboardKpiCard'
 
 export default function DashboardPage() {
@@ -106,19 +105,10 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
-      {/* Layout del area de trabajo — inmediatamente despues de los KPIs,
-          es uno de los elementos principales del Dashboard. */}
-      <Paper elevation={0} sx={{ ...ps.card, mb: 3 }}>
-        <Box sx={ps.cardHeader}>
-          <Typography sx={ps.cardHeaderTitle}>Layout del área de trabajo</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
-            Interpretación web del plano real — haz click en una zona para ver su personal
-          </Typography>
-        </Box>
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          <DashboardWorkAreaSection />
-        </Box>
-      </Paper>
+      {/* Layout del área de trabajo (2026-08-25, a peticion explicita del
+          usuario): se quito del Dashboard -- ahora vive solo en Centro de
+          Trabajo > Áreas de trabajo (mismo componente OperatingFloorPlan,
+          ver AreasLayoutView.jsx) y en Layout 2D. */}
 
       {/* Comparativa por linea */}
       <Paper elevation={0} sx={{ ...ps.card, mb: 3 }}>

@@ -34,15 +34,16 @@ import LineDetailDrawer from '../pages/centro-trabajo/LineDetailDrawer'
 
 /* ─────────────────────────────────────────────
    "Área operando" -- plano 2D completo (rediseño 2026-08-24 a partir
-   del mockup que el usuario compartió). Vivía solo en Layout2DPage
-   (ruta /layout-2d, solo ADMINISTRADOR); a petición explícita del
-   usuario (2026-08-24) se extrajo aquí como componente compartido
-   para poder mostrar EXACTAMENTE el mismo diseño también en el
-   Dashboard (DashboardWorkAreaSection) -- una sola fuente de verdad
-   visual, nunca dos planos que puedan desincronizarse. Ambas paginas
-   solo montan <OperatingFloorPlan /> dentro de su propio contenedor
-   (Layout2DPage le pone su Paper de pagina completa; Dashboard ya
-   trae su propio Paper "Layout del área de trabajo" por fuera).
+   del mockup que el usuario compartió). Componente compartido: vive en
+   Layout2DPage (ruta /layout-2d) y en Centro de Trabajo > Áreas de
+   trabajo (AreasLayoutView.jsx, reemplazo de WorkAreaMap, 2026-08-25) --
+   una sola fuente de verdad visual, nunca dos planos que puedan
+   desincronizarse. Cada pagina solo monta <OperatingFloorPlan /> dentro
+   de su propio contenedor (cada una le pone su propio Paper de tarjeta
+   por fuera). Ya NO vive en el Dashboard (se quito de ahi a peticion
+   explicita del usuario, 2026-08-25) -- readOnly sigue existiendo como
+   capacidad del componente por si algun consumidor futuro lo necesita
+   de solo lectura, pero hoy ningun caller real lo usa.
 
    Decisiones explícitas del usuario (2026-08-24):
    - Los dos conveyors (Principal/Secundario) son SOLO decoración,
@@ -87,14 +88,11 @@ function statusText(status, staffing) {
 
 const SHOWN_AREA_IDS = WORK_CENTERS.filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO').map((w) => w.id)
 
-/* readOnly (2026-08-25, a peticion explicita del usuario): habilita
-   click + drag&drop de personal SOLO en las barras de Conveyor
-   Principal/Secundario -- el resto del plano sigue exactamente igual
-   que antes (su propio DetailDialog de solo lectura). Se agrega aqui
-   (no como prop nueva de cada zona) para que Dashboard siga siendo
-   "solo de consulta" (mismo criterio ya usado en WorkAreaMap.jsx):
-   Layout2DPage.jsx no pasa readOnly (interactivo, solo ADMINISTRADOR),
-   DashboardWorkAreaSection.jsx SI pasa readOnly (nunca manipula). */
+/* readOnly: por defecto false (interactivo) -- ni Layout2DPage.jsx ni
+   AreasLayoutView.jsx (Centro de Trabajo) lo pasan, ambos quieren
+   click/drag&drop/asignar. Se conserva la capacidad de solo lectura por
+   si algun consumidor futuro la necesita (era la usada por el Dashboard
+   hasta que se le quito el layout, 2026-08-25). */
 export default function OperatingFloorPlan({ readOnly = false }) {
   usePersonnelVersion()
   const [assignAreaId, setAssignAreaId] = useState(null)
