@@ -7,7 +7,7 @@ import {
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
-import { CURRENT_SHIFT } from '../production/catalog'
+import { CURRENT_SHIFT, DEFAULT_LINE_ENTRY_TIME } from '../production/catalog'
 import {
   startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline, syncRestoreBaseline,
   syncRequestMove, syncApproveMove, syncRejectMove,
@@ -161,7 +161,7 @@ export function isPresentToday(employeeId, date = todayISO()) {
   return getAttendanceForDate(date).some(a => a.employeeId === employeeId)
 }
 
-function ensureAttendance(employee, date, shift) {
+function ensureAttendance(employee, date, shift, checkedInAt = nowTime()) {
   const attendance = readAttendance()
   const existing = attendance.find(a => a.employeeId === employee.id && a.date === date)
   if (existing) return existing
@@ -171,7 +171,7 @@ function ensureAttendance(employee, date, shift) {
     employeeNumber: employee.employeeNumber,
     date,
     shift,
-    checkedInAt: nowTime(),
+    checkedInAt,
   }
   attendance.push(record)
   writeAttendance(attendance)
@@ -462,6 +462,97 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId, shift })
   notify()
   return { status: 'OK', employee, assignment }
+}
+
+/**
+ * Coloca automaticamente en una estacion REAL a quien ya esta
+ * "efectivamente" en una CT LINEA (snapshot de BASE o estado actual)
+ * pero todavia no tiene una fila de DailyAssignment de hoy en
+ * ninguna area -- 2026-08-26, a peticion explicita del usuario: antes
+ * esa gente se veia en la linea pero con las estaciones vacias y la
+ * tabla incompleta (sin estacion/rol/entrada), porque BASE nunca dijo
+ * en que estacion especifica esta cada quien.
+ *
+ * `employeeIds` lo decide quien llama (LineDetailDrawer.jsx, via
+ * getPeopleByArea) en un orden YA estable (por nombre) -- esta
+ * funcion NUNCA decide sola quien "esta en la linea", solo turna a
+ * cada id de la lista, en orden, contra las estaciones REALES de esa
+ * linea (getWorkstationsForLine, ya en el orden Montaje/Montaje 2/
+ * Prueba electrica/... de workstations.js) que sigan libres --
+ * exactamente la regla "orden sugerido de asignacion" pedida. Idempotente:
+ * a quien ya tenga una asignacion real HOY (en esta u otra area) nunca
+ * se le toca ni se le duplica. Si sobran personas y ya no quedan
+ * estaciones libres (linea sobre plantilla), esas personas se quedan
+ * sin estacion -- nunca se inventa una estacion extra ni se sobrescribe
+ * a quien ya esta en una.
+ */
+export function autoFillLineStations(areaId, employeeIds, { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {}) {
+  if (!areaId || !Array.isArray(employeeIds) || !employeeIds.length) return { assignedCount: 0 }
+
+  const date = todayISO()
+  const assignments = readAssignments()
+  const alreadyAssignedTodayIds = new Set(assignments.filter(a => a.date === date).map(a => a.employeeId))
+  const occupiedStationNames = new Set(
+    assignments.filter(a => a.date === date && a.areaId === areaId).map(a => a.stationId)
+  )
+  const freeStations = getWorkstationsForLine(areaId)
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .filter(s => !occupiedStationNames.has(s.name))
+
+  const movements = readMovements()
+  let cursor = 0
+  let assignedCount = 0
+
+  for (const employeeId of employeeIds) {
+    if (alreadyAssignedTodayIds.has(employeeId)) continue
+    const station = freeStations[cursor]
+    if (!station) break // no quedan estaciones libres -- se deja a esta persona sin estacion, nunca se inventa una
+
+    const employee = getEmployeeById(employeeId)
+    if (!employee || employee.status === 'BAJA') continue
+    cursor += 1
+
+    const assignment = {
+      id: makeId('asg'),
+      employeeId: employee.id,
+      employeeNumber: employee.employeeNumber,
+      date,
+      shift,
+      areaId,
+      stationId: station.name,
+      checkInAt,
+      status: 'PRESENTE',
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    }
+    assignments.push(assignment)
+    movements.push({
+      id: makeId('mov'),
+      employeeId: employee.id,
+      employeeNumber: employee.employeeNumber,
+      date,
+      fromAreaId: null,
+      fromStationId: null,
+      toAreaId: areaId,
+      toStationId: station.name,
+      movedAt: checkInAt,
+      shift,
+      movedBy: null,
+      type: 'CHECK_IN',
+    })
+    ensureAttendance(employee, date, shift, checkInAt)
+    unsuppressBaselinePlacement(employee.id)
+    syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId: station.name, shift })
+    assignedCount += 1
+  }
+
+  if (assignedCount > 0) {
+    writeAssignments(assignments)
+    writeMovements(movements)
+    notify()
+  }
+  return { assignedCount }
 }
 
 /**

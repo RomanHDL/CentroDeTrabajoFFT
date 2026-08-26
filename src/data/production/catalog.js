@@ -39,6 +39,27 @@ export const CURRENT_SHIFT = 'Matutino'
    grafica de produccion por hora (cuando exista fuente real). */
 export const SHIFT_HOURS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00']
 
+/* Los 3 turnos oficiales reales del sistema (2026-08-26, a peticion
+   explicita del usuario), con su ventana horaria real -- DISTINTO de
+   SHIFT_HOURS de arriba (esa es solo el eje de una grafica, nunca
+   represento el horario real de un turno). Se usa hoy para mostrar
+   "Turno actual" con su horario real en CT LINEA; no reemplaza
+   SHIFT_OPTIONS (los 3 nombres que ya usan los selects de
+   Registrar/Autoasignar/Mover -- Matutino/Vespertino/Nocturno,
+   fuera de alcance de este cambio, no se tocan para no invalidar
+   turnos ya guardados). */
+export const OFFICIAL_SHIFTS = [
+  { id: 'MATUTINO', label: 'Matutino', start: '07:00', end: '17:10' },
+  { id: 'TIEMPO_EXTRA', label: 'Tiempo extra', start: '17:11', end: '22:00' },
+  { id: 'NOCHE', label: 'Noche', start: '22:01', end: '07:00' },
+]
+
+/* Entrada por defecto cuando se coloca automaticamente en una
+   estacion a alguien que ya esta en una CT LINEA por snapshot/estado
+   actual pero sin hora real de entrada (ver repository.js/
+   autoFillLineStations) -- nunca una hora inventada distinta. */
+export const DEFAULT_LINE_ENTRY_TIME = '07:00'
+
 /* AREA_TYPES — distincion conceptual explicita, para que la UI
    nunca vuelva a asumir "si es un area, entonces tiene estaciones
    de linea":

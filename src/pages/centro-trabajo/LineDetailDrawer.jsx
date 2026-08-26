@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import Dialog from '@mui/material/Dialog'
 import Box from '@mui/material/Box'
@@ -27,10 +27,10 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, SHIFT_HOURS, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
+import { CURRENT_SHIFT, OFFICIAL_SHIFTS, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
 import { getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster } from '../../data/production/personnelByArea'
 import {
-  getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee,
+  getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, autoFillLineStations,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useEmployeeDropTarget } from '../../ui/dnd'
@@ -74,6 +74,13 @@ function DropZoneBanner({ areaId, label }) {
   )
 }
 
+/* "07:00" -> "07:00 AM" -- solo para mostrar el horario real del
+   turno oficial (OFFICIAL_SHIFTS, catalog.js); el resto del sistema
+   sigue guardando/mostrando horas en 24h ("HH:mm") tal cual. */
+function formatHour12(hhmm) {
+  return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
+}
+
 export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
@@ -96,8 +103,27 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
+  const currentOfficialShift = OFFICIAL_SHIFTS.find(s => s.label === CURRENT_SHIFT) || OFFICIAL_SHIFTS[0]
   const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
   const people = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId, version])
+
+  /* Coloca automaticamente en una estacion real a quien ya esta en esta
+     CT LINEA (snapshot de BASE o estado actual) pero todavia no tiene
+     ninguna asignacion real hoy -- 2026-08-26, a peticion explicita del
+     usuario: antes esa gente se veia en la linea con las estaciones
+     vacias. Orden estable por nombre (nunca aleatorio); autoFillLineStations
+     es idempotente (a quien ya tenga una asignacion real hoy nunca lo
+     toca), asi que corre una vez por apertura de la linea sin depender
+     de `version`/`people` (evita un loop de notify() -> re-render -> notify()). */
+  useEffect(() => {
+    if (!open || !isLine || !workCenterId) return
+    const ids = (getPeopleByArea()[workCenterId] || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      .map(p => p.id)
+    autoFillLineStations(workCenterId, ids)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workCenterId, isLine, open])
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null
@@ -214,7 +240,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
               <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
               <Box>
                 <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Turno actual</Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{CURRENT_SHIFT} {SHIFT_HOURS[0]}-{SHIFT_HOURS[SHIFT_HOURS.length - 1]}</Typography>
+                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{currentOfficialShift.label} {formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)}</Typography>
               </Box>
               <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
               <Box>
