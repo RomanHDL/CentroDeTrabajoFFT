@@ -19,7 +19,7 @@ import { showToast } from '../../ui/toast'
    boton "Vaciar layout" — sin inventar un puesto/estacion especifico
    dentro de la linea (el Excel no dice quien hace que puesto), igual
    que ya se ve hoy en Paletizado/Accesorios/Midea-High Value. Mismo
-   alcance que "Vaciar layout": solo CT LINEA (LINEA1-10 + CT LINEA 0/
+   alcance que "Vaciar layout": solo WC LINEA (LINEA1-10 + WC LINEA 0/
    Proyecto) y "PRODUCCION" generico — nunca toca a quien ya tiene una
    asignacion real de hoy (esas siempre ganan sobre el snapshot). */
 export default function RestoreLayoutPanel() {
@@ -30,24 +30,24 @@ export default function RestoreLayoutPanel() {
     setConfirmOpen(false)
     const ids = getSuppressedLinePeopleIds()
     if (ids.length === 0) {
-      showToast('No hay nadie suprimido en las CT LINEA ahorita — no hace falta restaurar nada.', 'info')
+      showToast('No hay nadie suprimido en las WC LINEA ahorita — no hace falta restaurar nada.', 'info')
       return
     }
     restoreBaselinePlacement(ids)
     setResult(ids.length)
-    showToast(`Layout restaurado: ${ids.length} personas volvieron a su área de las CT LINEA.`, 'success')
+    showToast(`Layout restaurado: ${ids.length} personas volvieron a su área de las WC LINEA.`, 'success')
   }
 
   return (
     <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Restaurar layout de las CT LINEA</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Restaurar layout de las WC LINEA</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
         Regresa, en el mapa visual, a todo el personal que quedó sin área por "Vaciar layout" a su línea histórica
         de LAYOUT FFT.xlsx (sin puesto/estación inventado dentro de la línea — el Excel no dice quién hace qué
         puesto). Nunca toca a quien ya tiene una asignación real de hoy hecha desde Registro de personal.
       </Typography>
       {result != null && (
-        <Alert severity="success" sx={{ mb: 2 }}>{result} personas volvieron a aparecer en su CT LINEA.</Alert>
+        <Alert severity="success" sx={{ mb: 2 }}>{result} personas volvieron a aparecer en su WC LINEA.</Alert>
       )}
       <Button
         variant="outlined"
@@ -60,10 +60,10 @@ export default function RestoreLayoutPanel() {
       </Button>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Restaurar layout de las CT LINEA</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>Restaurar layout de las WC LINEA</DialogTitle>
         <DialogContent>
           <Typography>
-            Todo el personal suprimido de las CT LINEA volverá a ubicarse por su zona histórica de LAYOUT FFT.xlsx,
+            Todo el personal suprimido de las WC LINEA volverá a ubicarse por su zona histórica de LAYOUT FFT.xlsx,
             sin puesto específico asignado (queda como "—" hasta que un líder lo registre de verdad). No afecta a
             quien ya tiene una asignación real hecha hoy. ¿Confirmas?
           </Typography>

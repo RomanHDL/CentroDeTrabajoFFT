@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import WbSunnyIcon from '@mui/icons-material/WbSunny'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
+import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import ShieldIcon from '@mui/icons-material/Shield'
@@ -67,30 +68,41 @@ export default function DashboardPage() {
         </Box>
       </Paper>
 
-      {/* Fila 1 -- 4 KPIs ejecutivos */}
+      {/* Fila 1 -- 5 KPIs ejecutivos. "Plantilla ideal" se agrego 2026-08-27
+          (a peticion explicita del usuario: "Resumen general de plantilla",
+          antes una card aparte en Centro de Trabajo, se integra aqui en vez
+          de duplicarse -- misma fuente, metrics.kpis/metrics.totals, ambos
+          ya calculados por useDashboardMetrics()/getStaffingTotals()). */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
+          <DashboardExecKpiCard
+            icon={<TrackChangesIcon />} accent="#A855F7" title="Plantilla ideal"
+            value={metrics.kpis.personalIdeal} unit="personas"
+            footerLabel="Total ideal definida"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
             icon={<PeopleAltIcon />} accent="#3B82F6" title="Personal actual"
             value={metrics.kpis.personalActual} unit="personas en turno"
             footerLabel="Ideal" footerValue={metrics.kpis.personalIdeal}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
             icon={<PersonOffIcon />} accent="#EF4444" title="Personal faltante"
             value={metrics.kpis.personalFaltante} unit="personas faltantes"
             footerLabel={metrics.kpis.faltantePct != null ? `${metrics.kpis.faltantePct}% del ideal` : 'Sin plantilla ideal'}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
             icon={<PrecisionManufacturingIcon />} accent="#06B6D4" title="Líneas operando"
             value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`} unit="líneas operativas"
             footerLabel={metrics.kpis.lineasTotal > 0 ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas` : ''}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
             icon={<ShieldIcon />} accent="#10B981" title="Cobertura total"
             value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'} unit="de cobertura general"

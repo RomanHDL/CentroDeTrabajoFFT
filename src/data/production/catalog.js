@@ -101,19 +101,19 @@ export const AREA_TYPES = {
    el snapshot de BASE sin necesidad — solo cambia el texto que se
    muestra. */
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'CT LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA2', name: 'CT LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA3', name: 'CT LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA4', name: 'CT LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA5', name: 'CT LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA6', name: 'CT LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA7', name: 'CT LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA8', name: 'CT LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA9', name: 'CT LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA10', name: 'CT LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'PROYECTO', name: 'CT LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
-  { id: 'PALETIZADO', name: 'CT Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
-  { id: 'ACCESORIOS', name: 'CT Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
+  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
+  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
+  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
+  { id: 'PALETIZADO', name: 'WC Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
+  { id: 'ACCESORIOS', name: 'WC Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
   /* CONVEYOR se dividio en dos areas reales independientes (2026-08-25,
      a peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
      dibuja "CONVEYOR PRINCIPAL"/"CONVEYOR SECUNDARIO" como dos barras
@@ -129,25 +129,25 @@ export const WORK_CENTERS = [
      'CONVEYOR' se eliminó el 2026-08-25 (bug real reportado por el usuario:
      esa caja nunca podia recibir personal porque el area ya no existia) --
      ver layoutZones.js, PHYSICAL_ZONES ya no la incluye. */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'CT Conveyor Principal', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'CONVEYOR_SECUNDARIO', name: 'CT Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor Principal', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
      dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal
      14+2=16, el total general de plantilla no cambia). Quien tenga
      zona "DMT" en el snapshot de BASE se sigue contando aqui (ver
      personnelByArea.mapAreaZonaToId). */
-  { id: 'HIGH_VALUE', name: 'CT Midea / High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 16 },
-  { id: 'CALIDAD', name: 'CT Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'HIGH_VALUE', name: 'WC Midea / High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 16 },
+  { id: 'CALIDAD', name: 'WC Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   /* Sellado / Insumos / Suministro de material: areas nuevas del
      plano fisico real (pizarron del piso, 2026-08-19), confirmadas
      por el usuario como areas nuevas de verdad — todavia SIN
      plantilla oficial ni personal identificado, por eso
      idealHeadcount queda null (nunca se inventa) hasta que se
      confirme la tabla IDEAL/REAL correspondiente. */
-  { id: 'SELLADO', name: 'CT Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'INSUMOS', name: 'CT Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'SUMINISTRO_MATERIAL', name: 'CT Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'SELLADO', name: 'WC Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'INSUMOS', name: 'WC Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  { id: 'SUMINISTRO_MATERIAL', name: 'WC Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   /* BOX_PREP (2026-08-25, a peticion explicita del usuario): antes CAJAS no
      tenia WORK_CENTER (mismo patron documentado arriba) y esas 4 personas
      reales del snapshot nunca aparecian en ningun bloque visual. El usuario
@@ -161,13 +161,13 @@ export const WORK_CENTERS = [
      pero no se sabe cual linea especifica, asi que NO se les inventa una
      area propia; aparecen en "Personal sin area asignada" (getPeopleWithoutArea,
      personnelByArea.js) con su zona cruda como etiqueta identificadora. */
-  { id: 'BOX_PREP', name: 'CT Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
-  { id: 'CAPACITACION', name: 'CT Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'TEAM_LEADER', name: 'CT Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'SOPORTE', name: 'CT Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },
-  { id: 'LIMPIEZA', name: 'CT Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'GERENTE', name: 'CT Gerente', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'SUPERVISOR', name: 'CT Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'BOX_PREP', name: 'WC Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
+  { id: 'CAPACITACION', name: 'WC Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'TEAM_LEADER', name: 'WC Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'SOPORTE', name: 'WC Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },
+  { id: 'LIMPIEZA', name: 'WC Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  { id: 'GERENTE', name: 'WC Gerente', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'SUPERVISOR', name: 'WC Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
 ]
 
 export const LINES_ONLY = WORK_CENTERS.filter(w => w.kind === 'linea')

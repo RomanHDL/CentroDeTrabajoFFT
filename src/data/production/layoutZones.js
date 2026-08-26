@@ -30,14 +30,14 @@ import { WORK_CENTERS, LINES_ONLY } from './catalog'
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
 export const PHYSICAL_ZONES = {
-  PROYECTO: { id: 'PROYECTO', label: 'CT LINEA 0', areaIds: ['PROYECTO'] },
-  FFT: { id: 'FFT', label: 'CT Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
-  HIGHVALUE: { id: 'HIGHVALUE', label: 'CT Midea / High Value', areaIds: ['HIGH_VALUE'] },
-  SELLADO: { id: 'SELLADO', label: 'CT Sellado', areaIds: ['SELLADO'] },
-  INSUMOS: { id: 'INSUMOS', label: 'CT Insumos', areaIds: ['INSUMOS'] },
-  SUMINISTRO: { id: 'SUMINISTRO', label: 'CT Suministro de material', areaIds: ['SUMINISTRO_MATERIAL'] },
-  PALLETIZING: { id: 'PALLETIZING', label: 'CT Paletizado', areaIds: ['PALETIZADO'] },
-  ACCESSORIES: { id: 'ACCESSORIES', label: 'CT Accesorios', areaIds: ['ACCESORIOS'] },
+  PROYECTO: { id: 'PROYECTO', label: 'WC LINEA 0', areaIds: ['PROYECTO'] },
+  FFT: { id: 'FFT', label: 'WC Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
+  HIGHVALUE: { id: 'HIGHVALUE', label: 'WC Midea / High Value', areaIds: ['HIGH_VALUE'] },
+  SELLADO: { id: 'SELLADO', label: 'WC Sellado', areaIds: ['SELLADO'] },
+  INSUMOS: { id: 'INSUMOS', label: 'WC Insumos', areaIds: ['INSUMOS'] },
+  SUMINISTRO: { id: 'SUMINISTRO', label: 'WC Suministro de material', areaIds: ['SUMINISTRO_MATERIAL'] },
+  PALLETIZING: { id: 'PALLETIZING', label: 'WC Paletizado', areaIds: ['PALETIZADO'] },
+  ACCESSORIES: { id: 'ACCESSORIES', label: 'WC Accesorios', areaIds: ['ACCESORIOS'] },
 }
 
 const IDS_IN_PHYSICAL_ZONES = new Set(

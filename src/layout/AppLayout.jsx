@@ -47,7 +47,7 @@ export default function AppLayout({ mode, setMode }) {
   // toca nada fuera de estas rutas. Dashboard ya NO lo necesita (se le
   // quito el layout, ver DashboardPage.jsx), Centro de Trabajo si (Áreas
   // de trabajo ahora lo usa, ver AreasLayoutView.jsx).
-  const isWideLayoutRoute = location.pathname === '/layout-2d' || location.pathname === '/centro-trabajo'
+  const isWideLayoutRoute = location.pathname === '/centro-trabajo'
   // Puntero real del dispositivo, no ancho de pantalla: un mouse/trackpad
   // real habilita el auto-hide por hover; touch (tablet/movil) usa el
   // drawer clasico con hamburguesa, sin depender de hover.

@@ -12,11 +12,11 @@
 // "Configuracion" solo como ejemplo -- no existen paginas reales para ellos,
 // asi que no se inventan aqui).
 //
-// 2026-08-25: Usuarios y Layout 2D dejaron de ser systemReserved -- decision
-// explicita del usuario (advertido del riesgo: un rol con el modulo
-// "Usuarios" tiene control total de gestion de usuarios/permisos, incluido
-// reset de contraseñas). Los 5 modulos son configurables por igual desde
-// Gestion de permisos.
+// 2026-08-25: Usuarios (y en su momento Layout 2D, eliminado 2026-08-27)
+// dejaron de ser systemReserved -- decision explicita del usuario (advertido
+// del riesgo: un rol con el modulo "Usuarios" tiene control total de gestion
+// de usuarios/permisos, incluido reset de contraseñas). Los 4 modulos
+// restantes son configurables por igual desde Gestion de permisos.
 export const ADMIN_ROLE = 'ADMINISTRADOR'
 
 export const MODULE_REGISTRY = [
@@ -52,15 +52,6 @@ export const MODULE_REGISTRY = [
     name: 'Usuarios',
     description: 'Administración de usuarios, roles y permisos',
     icon: 'Group',
-    active: true,
-    permissionProtected: true,
-    systemReserved: false,
-  },
-  {
-    key: '/layout-2d',
-    name: 'Layout 2D',
-    description: 'Editor visual del layout de planta',
-    icon: 'Map',
     active: true,
     permissionProtected: true,
     systemReserved: false,

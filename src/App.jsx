@@ -16,7 +16,6 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import RegistroPersonalPage from './pages/registro-personal/RegistroPersonalPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
-import Layout2DPage from './pages/layout-2d/Layout2DPage'
 import ToastHost from './ui/ToastHost'
 
 export default function App() {
@@ -38,7 +37,6 @@ export default function App() {
                 <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
                 <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
                 <Route path="/usuarios" element={<RequireModuleAccess><UsuariosPage /></RequireModuleAccess>} />
-                <Route path="/layout-2d" element={<RequireModuleAccess><Layout2DPage /></RequireModuleAccess>} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el

@@ -30,7 +30,7 @@ import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT, OFFICIAL_SHIFTS, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
 import { getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster } from '../../data/production/personnelByArea'
 import {
-  getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, autoFillLineStations,
+  getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useEmployeeDropTarget } from '../../ui/dnd'
@@ -107,21 +107,24 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
   const people = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId, version])
 
-  /* Coloca automaticamente en una estacion real a quien ya esta en esta
-     CT LINEA (snapshot de BASE o estado actual) pero todavia no tiene
-     ninguna asignacion real hoy -- 2026-08-26, a peticion explicita del
-     usuario: antes esa gente se veia en la linea con las estaciones
-     vacias. Orden estable por nombre (nunca aleatorio); autoFillLineStations
-     es idempotente (a quien ya tenga una asignacion real hoy nunca lo
-     toca), asi que corre una vez por apertura de la linea sin depender
-     de `version`/`people` (evita un loop de notify() -> re-render -> notify()). */
+  /* Reconcilia estaciones reales al abrir una WC LINEA -- 2026-08-27, a
+     peticion explicita del usuario: corrige tanto a quien ya esta en la
+     linea pero sin ninguna asignacion real hoy (snapshot de BASE) COMO a
+     quien ya tiene una asignacion real pero con un stationId invalido/
+     heredado (ej. "Empaque", de antes del rediseno de estaciones
+     repetidas) -- ver reconcileLineAssignments en repository.js para la
+     regla completa. Orden estable por nombre (nunca aleatorio);
+     idempotente (correr esto de nuevo sobre un estado ya reconciliado no
+     cambia nada), asi que corre una vez por apertura de la linea sin
+     depender de `version`/`people` (evita un loop de notify() -> re-render
+     -> notify()). */
   useEffect(() => {
     if (!open || !isLine || !workCenterId) return
     const ids = (getPeopleByArea()[workCenterId] || [])
       .slice()
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map(p => p.id)
-    autoFillLineStations(workCenterId, ids)
+    reconcileLineAssignments(workCenterId, ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workCenterId, isLine, open])
 

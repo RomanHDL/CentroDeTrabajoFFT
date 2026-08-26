@@ -11,7 +11,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import FactoryIcon from '@mui/icons-material/Factory'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import GroupIcon from '@mui/icons-material/Group'
-import MapIcon from '@mui/icons-material/Map'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { NavLink } from 'react-router-dom'
@@ -32,7 +31,6 @@ export const SIDEBAR_WIDTH = 232
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
-  { to: '/layout-2d', label: 'Layout 2D', icon: MapIcon, configurable: true },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, configurable: true },
   { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, configurable: true },
 ]

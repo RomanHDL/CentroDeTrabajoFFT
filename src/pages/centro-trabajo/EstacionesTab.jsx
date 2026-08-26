@@ -105,18 +105,18 @@ function badgeFor(real, ideal) {
 /* La lista curada de tarjetas -- id sintético propio de esta vista
    (no siempre coincide 1:1 con un WORK_CENTER real, ver compute()). */
 const AREA_SLOTS = [
-  { id: 'FFT', name: 'CT Líneas de producción (FFT)', subtitle: 'líneas activas', badge: 'Líneas 1 - 10', icon: <PrecisionManufacturingIcon />, colorAreaId: 'LINEA1' },
-  { id: 'HIGH_VALUE', name: 'CT Midea / High Value / DMT', subtitle: 'Productos mixtos', icon: <DevicesOtherIcon />, colorAreaId: 'HIGH_VALUE' },
-  { id: 'PALETIZADO', name: 'CT Paletizado (Palletizing)', subtitle: 'Zona de paletizado', icon: <Inventory2Icon />, colorAreaId: 'PALETIZADO' },
-  { id: 'INSUMOS_SUMINISTRO', name: 'CT Insumos y Suministro de material', subtitle: 'Suministro', icon: <ShoppingCartIcon />, colorAreaId: 'INSUMOS' },
-  { id: 'ACCESORIOS', name: 'CT Accesorios', subtitle: 'Accesorios', icon: <LocalOfferIcon />, colorAreaId: 'ACCESORIOS' },
-  { id: 'CALIDAD', name: 'CT Calidad', subtitle: 'Control de calidad', icon: <VerifiedUserIcon />, colorAreaId: 'CALIDAD' },
-  { id: 'CAPACITACION', name: 'CT Capacitación', subtitle: 'Capacitación', icon: <SchoolIcon />, colorAreaId: 'CAPACITACION' },
-  { id: 'TEAM_LEADER', name: 'CT Team Leader', subtitle: 'Liderazgo', icon: <SupervisorAccountIcon />, colorAreaId: 'TEAM_LEADER' },
-  { id: 'SOPORTE', name: 'CT Soporte', subtitle: 'Soporte operativo', icon: <SupportAgentIcon />, colorAreaId: 'SOPORTE' },
-  { id: 'LIMPIEZA', name: 'CT Limpieza', subtitle: 'Limpieza', icon: <CleaningServicesIcon />, colorAreaId: 'LIMPIEZA' },
-  { id: 'GERENTE', name: 'CT Gerente', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
-  { id: 'SUPERVISOR', name: 'CT Supervisor', subtitle: 'Supervisión', icon: <AssignmentIndIcon />, colorAreaId: 'SUPERVISOR' },
+  { id: 'FFT', name: 'WC Líneas de producción (FFT)', subtitle: 'líneas activas', badge: 'Líneas 1 - 10', icon: <PrecisionManufacturingIcon />, colorAreaId: 'LINEA1' },
+  { id: 'HIGH_VALUE', name: 'WC Midea / High Value / DMT', subtitle: 'Productos mixtos', icon: <DevicesOtherIcon />, colorAreaId: 'HIGH_VALUE' },
+  { id: 'PALETIZADO', name: 'WC Paletizado (Palletizing)', subtitle: 'Zona de paletizado', icon: <Inventory2Icon />, colorAreaId: 'PALETIZADO' },
+  { id: 'INSUMOS_SUMINISTRO', name: 'WC Insumos y Suministro de material', subtitle: 'Suministro', icon: <ShoppingCartIcon />, colorAreaId: 'INSUMOS' },
+  { id: 'ACCESORIOS', name: 'WC Accesorios', subtitle: 'Accesorios', icon: <LocalOfferIcon />, colorAreaId: 'ACCESORIOS' },
+  { id: 'CALIDAD', name: 'WC Calidad', subtitle: 'Control de calidad', icon: <VerifiedUserIcon />, colorAreaId: 'CALIDAD' },
+  { id: 'CAPACITACION', name: 'WC Capacitación', subtitle: 'Capacitación', icon: <SchoolIcon />, colorAreaId: 'CAPACITACION' },
+  { id: 'TEAM_LEADER', name: 'WC Team Leader', subtitle: 'Liderazgo', icon: <SupervisorAccountIcon />, colorAreaId: 'TEAM_LEADER' },
+  { id: 'SOPORTE', name: 'WC Soporte', subtitle: 'Soporte operativo', icon: <SupportAgentIcon />, colorAreaId: 'SOPORTE' },
+  { id: 'LIMPIEZA', name: 'WC Limpieza', subtitle: 'Limpieza', icon: <CleaningServicesIcon />, colorAreaId: 'LIMPIEZA' },
+  { id: 'GERENTE', name: 'WC Gerente', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
+  { id: 'SUPERVISOR', name: 'WC Supervisor', subtitle: 'Supervisión', icon: <AssignmentIndIcon />, colorAreaId: 'SUPERVISOR' },
 ]
 
 /* Placeholders sin área de catálogo mapeada (igual criterio que
@@ -184,7 +184,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
         <Box>
           <Stack direction="row" alignItems="center" spacing={0.75}>
             <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Estaciones del centro de trabajo</Typography>
-            <Tooltip title="Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el plano físico se administran en Áreas de trabajo / Layout 2D.">
+            <Tooltip title="Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el plano físico se administran en Áreas de trabajo.">
               <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
             </Tooltip>
           </Stack>

@@ -30,7 +30,7 @@ import { showToast } from '../../ui/toast'
    Gerente, Supervisor, Accesorios ni Paletizado (son areas fijas que
    casi no rotan) -- getBaselineOnlyPeopleIds() ya excluye esas areas
    (ver PROTECTED_FROM_LAYOUT_CLEAR_AREAS en personnelByArea.js). Solo
-   sigue vaciando las CT LINEA (LINEA1-10 + CT LINEA 0/Proyecto), que son
+   sigue vaciando las WC LINEA (LINEA1-10 + WC LINEA 0/Proyecto), que son
    las que de verdad cambian de personal dia a dia. */
 export default function ClearLayoutPanel() {
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -38,7 +38,7 @@ export default function ClearLayoutPanel() {
 
   function handleConfirm() {
     setConfirmOpen(false)
-    // Solo la ubicacion HISTORICA (snapshot BASE) de las CT LINEA --
+    // Solo la ubicacion HISTORICA (snapshot BASE) de las WC LINEA --
     // nunca a quien ya tiene una asignacion real de hoy
     // (checkInEmployee/moveEmployee), eso seria borrar un movimiento
     // real que un lider/supervisor acaba de hacer (bug real detectado
@@ -47,7 +47,7 @@ export default function ClearLayoutPanel() {
     // Supervisor, Accesorios, Paletizado -- ver getBaselineOnlyPeopleIds).
     const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
-      showToast('No hay nadie por snapshot en las CT LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.', 'info')
+      showToast('No hay nadie por snapshot en las WC LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.', 'info')
       return
     }
     suppressBaselinePlacement(ids)
@@ -57,9 +57,9 @@ export default function ClearLayoutPanel() {
 
   return (
     <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Vaciar layout de las CT LINEA</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Vaciar layout de las WC LINEA</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-        Deja sin área asignada, en el mapa visual, solo al personal de las CT LINEA (líneas de producción + CT LINEA 0)
+        Deja sin área asignada, en el mapa visual, solo al personal de las WC LINEA (líneas de producción + WC LINEA 0)
         para que los líderes los vayan ubicando desde Registro de personal. Calidad, Capacitación, Team Leader,
         Soporte, Limpieza, Gerente, Supervisor, Accesorios y Paletizado nunca se ven afectados por este botón. No
         borra a nadie ni los quita de Personal/buscadores — solo del layout. A diferencia de liberar por hoy, esto no
@@ -79,10 +79,10 @@ export default function ClearLayoutPanel() {
       </Button>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Vaciar layout de las CT LINEA</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>Vaciar layout de las WC LINEA</DialogTitle>
         <DialogContent>
           <Typography>
-            Todo el personal ubicado hoy por el snapshot histórico en una CT LINEA quedará sin área en el mapa visual,
+            Todo el personal ubicado hoy por el snapshot histórico en una WC LINEA quedará sin área en el mapa visual,
             de forma permanente hasta que alguien lo reasigne. Calidad, Capacitación, Team Leader, Soporte, Limpieza,
             Gerente, Supervisor, Accesorios y Paletizado no se tocan. Esto no afecta el módulo de Personal ni la
             búsqueda. ¿Confirmas?

@@ -465,52 +465,110 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
 }
 
 /**
- * Coloca automaticamente en una estacion REAL a quien ya esta
- * "efectivamente" en una CT LINEA (snapshot de BASE o estado actual)
- * pero todavia no tiene una fila de DailyAssignment de hoy en
- * ninguna area -- 2026-08-26, a peticion explicita del usuario: antes
- * esa gente se veia en la linea pero con las estaciones vacias y la
- * tabla incompleta (sin estacion/rol/entrada), porque BASE nunca dijo
- * en que estacion especifica esta cada quien.
+ * Reconcilia las asignaciones REALES de una WC LINEA contra sus
+ * estaciones reales -- 2026-08-27, a peticion explicita del usuario
+ * ("reconcileLineAssignments"). Corrige DOS problemas distintos que
+ * antes dejaban gente "flotando" sin estacion en la tabla:
  *
- * `employeeIds` lo decide quien llama (LineDetailDrawer.jsx, via
- * getPeopleByArea) en un orden YA estable (por nombre) -- esta
- * funcion NUNCA decide sola quien "esta en la linea", solo turna a
- * cada id de la lista, en orden, contra las estaciones REALES de esa
- * linea (getWorkstationsForLine, ya en el orden Montaje/Montaje 2/
- * Prueba electrica/... de workstations.js) que sigan libres --
- * exactamente la regla "orden sugerido de asignacion" pedida. Idempotente:
- * a quien ya tenga una asignacion real HOY (en esta u otra area) nunca
- * se le toca ni se le duplica. Si sobran personas y ya no quedan
- * estaciones libres (linea sobre plantilla), esas personas se quedan
- * sin estacion -- nunca se inventa una estacion extra ni se sobrescribe
- * a quien ya esta en una.
+ * CASO A -- asignacion real de HOY en esta linea con `stationId`
+ * invalido (nunca coincide con ninguna estacion real actual de la
+ * linea) o duplicado (dos personas con el MISMO stationId valido --
+ * nunca deberia pasar, pero se corrige si aparece). Causa real
+ * encontrada en auditoria: asignaciones HISTORICAS (de antes del
+ * rediseno de estaciones repetidas) con stationId de roles que ya NO
+ * son validos para una linea (ej. "Empaque", "Calidad" -- existian en
+ * el STATIONS generico viejo, nunca fueron parte de LINE_BASE_ROLES).
+ * Se CORRIGE el stationId de la asignacion existente (nunca se crea
+ * una duplicada) preservando su checkInAt/shift reales -- nunca se
+ * inventa ni se sobrescribe una hora real ya guardada.
+ *
+ * CASO B -- gente que ya esta "efectivamente" en la linea (snapshot de
+ * BASE o estado actual, via getPeopleByArea) pero todavia no tiene
+ * NINGUNA asignacion real de hoy en ninguna area -- se le crea una
+ * nueva asignacion (equivalente a un check-in), con `checkInAt`/`shift`
+ * por defecto (07:00 Matutino) ya que no existe hora real que preservar.
+ *
+ * En ambos casos: orden determinístico (createdAt de la asignacion
+ * existente para el caso A; el orden ya estable -- por nombre -- que
+ * arma quien llama para el caso B), estaciones libres en el orden real
+ * de la linea (Montaje/Montaje 2/Prueba electrica/... de
+ * workstations.js), y NUNCA se inventa una estacion extra ni se toca a
+ * alguien con una asignacion real ya valida. Si sobran personas y no
+ * quedan estaciones libres (linea sobre plantilla), esas personas se
+ * quedan sin tocar -- se reportan como excepcion por quien llama.
+ * Empleados BAJA nunca se tocan (ni se corrigen ni se llenan).
+ * Idempotente: correr esto de nuevo sobre un estado ya reconciliado no
+ * cambia nada (0 fixedCount, 0 filledCount).
  */
-export function autoFillLineStations(areaId, employeeIds, { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {}) {
-  if (!areaId || !Array.isArray(employeeIds) || !employeeIds.length) return { assignedCount: 0 }
+export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {}) {
+  if (!areaId) return { fixedCount: 0, filledCount: 0 }
 
   const date = todayISO()
   const assignments = readAssignments()
-  const alreadyAssignedTodayIds = new Set(assignments.filter(a => a.date === date).map(a => a.employeeId))
-  const occupiedStationNames = new Set(
-    assignments.filter(a => a.date === date && a.areaId === areaId).map(a => a.stationId)
-  )
-  const freeStations = getWorkstationsForLine(areaId)
-    .slice()
-    .sort((a, b) => a.order - b.order)
-    .filter(s => !occupiedStationNames.has(s.name))
-
   const movements = readMovements()
+  const stationNamesForLine = new Set(getWorkstationsForLine(areaId).map(s => s.name))
+  const orderedStations = getWorkstationsForLine(areaId).slice().sort((a, b) => a.order - b.order)
+  const lineAssignmentsToday = assignments.filter(a => a.date === date && a.areaId === areaId)
+
+  // Quien conserva su estacion (valida y sin duplicar) vs quien necesita reasignacion (estacion
+  // invalida, o duplicada -- solo la mas antigua por createdAt conserva el station valido).
+  const stationClaimedBy = new Map()
+  const needsReassignment = []
+  lineAssignmentsToday
+    .filter(a => stationNamesForLine.has(a.stationId))
+    .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
+    .forEach((a) => {
+      if (stationClaimedBy.has(a.stationId)) needsReassignment.push(a)
+      else stationClaimedBy.set(a.stationId, a)
+    })
+  lineAssignmentsToday
+    .filter(a => !stationNamesForLine.has(a.stationId))
+    .forEach((a) => needsReassignment.push(a))
+  needsReassignment.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
+
+  const freeStations = orderedStations.filter(s => !stationClaimedBy.has(s.name))
   let cursor = 0
-  let assignedCount = 0
+  let fixedCount = 0
+  let changed = false
 
-  for (const employeeId of employeeIds) {
-    if (alreadyAssignedTodayIds.has(employeeId)) continue
+  needsReassignment.forEach((existing) => {
+    const employee = getEmployeeById(existing.employeeId)
+    if (!employee || employee.status === 'BAJA') return // nunca se toca a una baja
     const station = freeStations[cursor]
-    if (!station) break // no quedan estaciones libres -- se deja a esta persona sin estacion, nunca se inventa una
+    if (!station) return // no quedan estaciones libres -- se deja tal cual, se reporta como excepcion
+    cursor += 1
 
+    const idx = assignments.findIndex(a => a.id === existing.id)
+    assignments[idx] = { ...existing, stationId: station.name, updatedAt: nowISO() }
+    movements.push({
+      id: makeId('mov'),
+      employeeId: existing.employeeId,
+      employeeNumber: existing.employeeNumber,
+      date,
+      fromAreaId: areaId,
+      fromStationId: existing.stationId,
+      toAreaId: areaId,
+      toStationId: station.name,
+      movedAt: existing.checkInAt,
+      shift: existing.shift,
+      movedBy: null,
+      type: 'MOVE',
+    })
+    syncMove({ employeeId: existing.employeeId, toAreaId: areaId, toStationId: station.name, shift: existing.shift })
+    fixedCount += 1
+    changed = true
+  })
+
+  // Caso B -- gente efectivamente en la linea sin NINGUNA asignacion real hoy (en esta ni otra area).
+  const alreadyAssignedTodayAnywhere = new Set(assignments.filter(a => a.date === date).map(a => a.employeeId))
+  let filledCount = 0
+
+  snapshotEmployeeIds.forEach((employeeId) => {
+    if (alreadyAssignedTodayAnywhere.has(employeeId)) return
+    const station = freeStations[cursor]
+    if (!station) return
     const employee = getEmployeeById(employeeId)
-    if (!employee || employee.status === 'BAJA') continue
+    if (!employee || employee.status === 'BAJA') return
     cursor += 1
 
     const assignment = {
@@ -544,15 +602,16 @@ export function autoFillLineStations(areaId, employeeIds, { shift = CURRENT_SHIF
     ensureAttendance(employee, date, shift, checkInAt)
     unsuppressBaselinePlacement(employee.id)
     syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId: station.name, shift })
-    assignedCount += 1
-  }
+    filledCount += 1
+    changed = true
+  })
 
-  if (assignedCount > 0) {
+  if (changed) {
     writeAssignments(assignments)
     writeMovements(movements)
     notify()
   }
-  return { assignedCount }
+  return { fixedCount, filledCount }
 }
 
 /**

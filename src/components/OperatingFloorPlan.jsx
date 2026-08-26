@@ -47,8 +47,8 @@ import AreaDetail from '../pages/centro-trabajo/AreaDetail'
 
    Decisiones explícitas del usuario (2026-08-24):
    - Los dos conveyors (Principal/Secundario) son SOLO decoración,
-     sin conteo -- prohibido crear cualquier card "CT Conveyor".
-   - "CT Sellado" no aparece en este módulo bajo ninguna forma.
+     sin conteo -- prohibido crear cualquier card "WC Conveyor".
+   - "WC Sellado" no aparece en este módulo bajo ninguna forma.
    Ver floorPlanZones.js para el detalle completo de estas exclusiones
    y los ajustes de fusion/intercambio de cajas (Paletizado, Insumos+
    Suministro, Midea+Mixtos, Accesorios).
@@ -299,12 +299,12 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
       >
         <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
           <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
-          <HorizontalLineBar lineId="PROYECTO" title="CT LINEA 0" onOpen={onOpen} readOnly={readOnly} />
+          <HorizontalLineBar lineId="PROYECTO" title="WC LINEA 0" onOpen={onOpen} readOnly={readOnly} />
         </Box>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
-        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="CT Midea / High Value" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="WC Midea / High Value" onOpen={onOpen} readOnly={readOnly}>
           <Stack sx={{ height: '100%', minHeight: 0 }}>
             <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
               <Box sx={{ flex: 1.4, minWidth: 0 }}>
@@ -317,7 +317,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
             </Stack>
             {/* Nombres reales debajo de la cuadricula decorativa (2026-08-25, a
                 peticion explicita del usuario: si hay personal en cualquier
-                area, debe verse su nombre igual que en CT Accesorios, no solo
+                area, debe verse su nombre igual que en WC Accesorios, no solo
                 un indicador visual abstracto). */}
             <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', mt: 0.75, pt: 0.75, borderTop: '1px dashed', borderColor: 'divider' }}>
               <PersonList areaId="HIGH_VALUE" columns={2} readOnly={readOnly} />
@@ -325,7 +325,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
           </Stack>
         </BigZone>
 
-        <BigZone areaId="PALETIZADO" gridArea="palletizing" title="CT Paletizado (Palletizing)" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone areaId="PALETIZADO" gridArea="palletizing" title="WC Paletizado (Palletizing)" onOpen={onOpen} readOnly={readOnly}>
           <PersonList areaId="PALETIZADO" columns={2} readOnly={readOnly} />
         </BigZone>
 
@@ -341,7 +341,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
 
         <InsumosSuministroZone gridArea="stock" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
-        <BigZone areaId="ACCESORIOS" gridArea="accessories" title="CT Accesorios" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone areaId="ACCESORIOS" gridArea="accessories" title="WC Accesorios" onOpen={onOpen} readOnly={readOnly}>
           <PersonList areaId="ACCESORIOS" columns={2} readOnly={readOnly} />
         </BigZone>
       </Box>
@@ -422,7 +422,7 @@ function SmallRealZone({ areaId, gridArea, icon, onOpen, readOnly }) {
     >
       <Stack direction="row" spacing={0.4} alignItems="center" justifyContent="center">
         {icon}
-        <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{wc?.name?.replace('CT ', '') || areaId}</Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{wc?.name?.replace('WC ', '') || areaId}</Typography>
       </Stack>
       <Typography sx={{ fontSize: 9.5, fontWeight: 700, textAlign: 'center', color: 'text.secondary' }}>{isOver ? 'Soltar aquí' : label}</Typography>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
@@ -470,9 +470,9 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   )
 }
 
-/* LINEA1 se dibuja aparte (HorizontalLineBar, acostada junto a CT LINEA 0 --
+/* LINEA1 se dibuja aparte (HorizontalLineBar, acostada junto a WC LINEA 0 --
    a peticion del usuario 2026-08-24) pero sigue sumando en el total de este
-   bloque: sigue siendo parte real de "CT Líneas de producción (FFT)", solo
+   bloque: sigue siendo parte real de "WC Líneas de producción (FFT)", solo
    cambia donde se dibuja su columna. */
 const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
 
@@ -489,7 +489,7 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
         direction="row" alignItems="baseline" justifyContent="space-between"
         onClick={() => onOpenSummary('FFT_ALL')} sx={{ cursor: 'pointer' }}
       >
-        <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>CT Líneas de producción (FFT)</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>WC Líneas de producción (FFT)</Typography>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{totalReal} / {totalIdeal}</Typography>
       </Stack>
       {/* minHeight:0 (2026-08-25, correccion definitiva, mismo motivo que
@@ -503,7 +503,7 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   )
 }
 
-/* Barra horizontal ("acostada") -- usada para LINEA1 y CT LINEA 0
+/* Barra horizontal ("acostada") -- usada para LINEA1 y WC LINEA 0
    (PROYECTO), apiladas en el espacio que dejó libre la caja de
    Paletizado de arriba a la izquierda (a petición del usuario
    2026-08-24). Mismo lenguaje visual que BigZone, solo horizontal. */
@@ -539,7 +539,7 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
         <Box sx={{ width: `${pct * 100}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
       </Box>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
-          personal, debe verse su nombre igual que en CT Accesorios, no solo la
+          personal, debe verse su nombre igual que en WC Accesorios, no solo la
           barra de avance. */}
       <Box sx={{ mt: 0.5, maxHeight: 70, overflow: 'auto' }}>
         <PersonList areaId={lineId} columns={2} readOnly={readOnly} />
@@ -568,14 +568,14 @@ function LineColumn({ lineId, onOpen, readOnly }) {
       }}
     >
       <Typography sx={{ fontSize: 9.5, fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-        {isOver ? 'Soltar' : (wc?.name || lineId).replace('CT ', '')}
+        {isOver ? 'Soltar' : (wc?.name || lineId).replace('WC ', '')}
       </Typography>
       <Box sx={{ width: 8, height: 36, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden', my: 0.5 }}>
         <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />
       </Box>
       <Typography sx={{ fontSize: 11.5, fontWeight: 700 }}>{staffing.real}/{staffing.ideal}</Typography>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
-          personal, debe verse su nombre igual que en CT Accesorios, no solo la
+          personal, debe verse su nombre igual que en WC Accesorios, no solo la
           barra de avance. */}
       <Box sx={{ width: '100%', flex: 1, minHeight: 0, overflow: 'auto', mt: 0.4 }}>
         <PersonList areaId={lineId} readOnly={readOnly} />
@@ -615,7 +615,7 @@ function MixtosDecoration() {
   )
 }
 
-/* CT Insumos + CT Suministro de material fusionados en una sola caja visual
+/* WC Insumos + WC Suministro de material fusionados en una sola caja visual
    (a petición explícita del usuario 2026-08-24) -- siguen siendo dos áreas
    reales separadas en el catálogo (INSUMOS/SUMINISTRO_MATERIAL, ninguna
    tiene plantilla oficial), esto solo combina cómo se dibujan aquí. */
@@ -647,7 +647,7 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
-        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>CT Insumos y Suministro de material</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>WC Insumos y Suministro de material</Typography>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : `${real} persona${real === 1 ? '' : 's'}`}</Typography>
       </Stack>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
@@ -730,13 +730,13 @@ function DetailDialog({ areaId, onClose }) {
   let people = []
 
   if (areaId === 'FFT_ALL') {
-    title = 'CT Líneas de producción (FFT)'
+    title = 'WC Líneas de producción (FFT)'
     const real = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
     const ideal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
     staffing = { real, ideal }
     people = getFftPeopleWithLine()
   } else if (areaId === 'INSUMOS_SUMINISTRO_ALL') {
-    title = 'CT Insumos y Suministro de material'
+    title = 'WC Insumos y Suministro de material'
     staffing = { real: getAreaHeadcount('INSUMOS') + getAreaHeadcount('SUMINISTRO_MATERIAL'), ideal: null }
     people = [...(getPeopleByArea()['INSUMOS'] || []), ...(getPeopleByArea()['SUMINISTRO_MATERIAL'] || [])]
   } else if (areaId) {
