@@ -160,6 +160,39 @@ export function hasLineStations(workCenterId) {
   return workCenterById(workCenterId)?.type === AREA_TYPES.PRODUCTION_LINE
 }
 
+/* Allowlist central de areas que usan el detalle operativo nuevo
+   (OperationalAreaDetail.jsx, 2026-08-25, a peticion explicita del
+   usuario) -- NUNCA se decide por nombre (`if (name === 'CT Accesorios')`),
+   siempre por esta lista, calculada a partir de la clasificacion REAL
+   que ya existe en WORK_CENTERS (type/kind), con dos excepciones
+   explicitas documentadas por el propio usuario en este mismo pedido:
+
+   - Se EXCLUYE 'PROYECTO' (CT LINEA 0) aunque su type sea WORK_AREA:
+     el usuario listo explicitamente "CT LINEA 0" junto con LINEA1..10
+     como fuera de alcance ("ya tienen un diseño especial diferente").
+   - Se INCLUYE 'BOX_PREP' aunque su type sea SUPPORT_AREA: el usuario
+     lo pidio explicitamente por nombre en su lista de areas operativas
+     ("Box Prep"), aunque el catalogo lo clasifica como apoyo
+     (isProduction:false) por no tener plantilla oficial.
+
+   El resto de type===WORK_AREA (Paletizado, Accesorios, Conveyor
+   Principal/Secundario, Midea/High Value, Calidad, Sellado, Insumos,
+   Suministro de material) coincide 1:1 con la lista que el usuario dio
+   por nombre -- confirmado area por area, no asumido. CT Calidad
+   califica porque su clasificacion real YA es WORK_AREA/isProduction:true
+   (verificado antes de incluirla, tal como pidio el usuario explicitamente
+   "revisar clasificacion real, no asumir"). Las SUPPORT_AREA restantes
+   (Capacitacion, Team Leader, Soporte, Limpieza, Gerente, Supervisor) y
+   todas las PRODUCTION_LINE quedan fuera, sin excepcion. */
+export const OPERATIONAL_DETAIL_AREA_IDS = new Set([
+  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.WORK_AREA && w.id !== 'PROYECTO').map((w) => w.id),
+  'BOX_PREP',
+])
+
+export function usesOperationalDetail(workCenterId) {
+  return OPERATIONAL_DETAIL_AREA_IDS.has(workCenterId)
+}
+
 export const STATIONS = [
   'Montaje',
   'Prueba eléctrica',

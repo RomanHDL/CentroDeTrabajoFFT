@@ -319,6 +319,41 @@ export function getFftPeopleWithLine() {
    las areas del catalogo van una por una. Ordenado por personal
    descendente; las areas en 0 se conservan (no se ocultan del
    todo) para que "ver todas" pueda mostrarlas. */
+/* Clasificacion de 4 estados (2026-08-25, para OperationalAreaDetail.jsx
+   -- ver catalog.js/usesOperationalDetail) -- misma regla que ya usaba
+   OperatingFloorPlan.jsx (documentada ahi como "puramente de
+   presentacion"), ahora centralizada aqui para no crear una tercera
+   copia. OperatingFloorPlan.jsx NO se toco (fuera de alcance de este
+   pedido, es parte del "layout general" que el usuario pidio no tocar)
+   -- sigue con su propia copia identica, sin romper nada. */
+export const AREA_STATUS_META = {
+  COMPLETA: { key: 'COMPLETA', color: '#10B981', label: 'Completa' },
+  PARCIAL: { key: 'PARCIAL', color: '#3B82F6', label: 'Parcial' },
+  FALTA: { key: 'FALTA', color: '#EF4444', label: 'Falta personal' },
+  SIN_PERSONAL: { key: 'SIN_PERSONAL', color: '#94A3B8', label: 'Sin personal' },
+}
+
+export function classifyAreaStatus(real, ideal) {
+  if (ideal == null) return null
+  if (real <= 0) return 'SIN_PERSONAL'
+  if (real >= ideal) return 'COMPLETA'
+  if (real >= ideal - 1 || real / ideal >= 0.75) return 'PARCIAL'
+  return 'FALTA'
+}
+
+/* Codigo crudo de ACTIVIDAD (columna real de LAYOUT FFT.xlsx, hoja BASE)
+   para un empleado especifico -- unica fuente real de "tipo de puesto"
+   que existe hoy (SEED_SKILLS esta vacio, ver skills.js: "las
+   habilidades reales se registran manualmente o vendran de la
+   importacion... en Etapa 2", todavia no ocurrio). SIN interpretar
+   significado (mismo criterio que el resto del snapshot): "L", "SA",
+   "PC", etc. se muestran tal cual, nunca traducidos a un nombre de rol
+   inventado. null para quien no viene de BASE (personal "sem34-N" o
+   asignado/movido despues via la app, que no trae esta columna). */
+export function getActividadForEmployee(employeeId) {
+  return REAL_PERSONNEL_SNAPSHOT.find((p) => p.id === employeeId)?.actividad || null
+}
+
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)

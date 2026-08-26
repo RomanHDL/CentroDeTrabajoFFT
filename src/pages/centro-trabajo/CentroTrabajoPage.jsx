@@ -13,7 +13,7 @@ import LineasTab from './LineasTab'
 import EstacionesTab from './EstacionesTab'
 import PersonalDeHoyTab from './PersonalDeHoyTab'
 import BajasTab from './BajasTab'
-import LineDetailDrawer from './LineDetailDrawer'
+import AreaDetail from './AreaDetail'
 
 const TABS = [
   { key: 'areas', label: 'Áreas de trabajo' },
@@ -84,7 +84,7 @@ export default function CentroTrabajoPage() {
       {tab === 'personal' && <PersonalDeHoyTab onGoToBajas={() => setTab('bajas')} onGoToAreas={() => setTab('areas')} />}
       {tab === 'bajas' && <BajasTab />}
 
-      <LineDetailDrawer workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={() => setSelectedLine(null)} />
+      <AreaDetail workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={() => setSelectedLine(null)} />
     </Box>
   )
 }

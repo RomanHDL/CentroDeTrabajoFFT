@@ -30,7 +30,7 @@ import {
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../data/production/floorPlanZones'
 import { useEmployeeDropTarget } from '../ui/dnd'
 import DraggablePersonChip from '../ui/DraggablePersonChip'
-import LineDetailDrawer from '../pages/centro-trabajo/LineDetailDrawer'
+import AreaDetail from '../pages/centro-trabajo/AreaDetail'
 
 /* ─────────────────────────────────────────────
    "Área operando" -- plano 2D completo (rediseño 2026-08-24 a partir
@@ -236,7 +236,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
 
       <DetailDialog areaId={detailId} onClose={() => setDetailId(null)} />
       {!readOnly && (
-        <LineDetailDrawer workCenterId={assignAreaId} open={!!assignAreaId} onClose={() => setAssignAreaId(null)} />
+        <AreaDetail workCenterId={assignAreaId} open={!!assignAreaId} onClose={() => setAssignAreaId(null)} />
       )}
     </Box>
   )

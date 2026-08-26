@@ -33,6 +33,7 @@ import personnelApproveMoveHandler from '../api/personnel/approve-move.js'
 import personnelRejectMoveHandler from '../api/personnel/reject-move.js'
 import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline.js'
 import personnelRestoreBaselineHandler from '../api/personnel/restore-baseline.js'
+import personnelAreaHistoryHandler from '../api/personnel/area-history.js'
 import dashboardTrendsHandler from '../api/dashboard/trends.js'
 
 const app = express()
@@ -78,6 +79,7 @@ app.post('/api/personnel/approve-move', wrapAsync(personnelApproveMoveHandler))
 app.post('/api/personnel/reject-move', wrapAsync(personnelRejectMoveHandler))
 app.post('/api/personnel/suppress-baseline', wrapAsync(personnelSuppressBaselineHandler))
 app.post('/api/personnel/restore-baseline', wrapAsync(personnelRestoreBaselineHandler))
+app.get('/api/personnel/area-history', wrapAsync(personnelAreaHistoryHandler))
 
 app.get('/api/dashboard/trends', wrapAsync(dashboardTrendsHandler))
 
