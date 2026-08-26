@@ -2,28 +2,71 @@
    Workstation — catalogo de estaciones/puestos.
 
    REGLA CONCEPTUAL (corregida): el template de estaciones de linea
-   (Montaje, Prueba electrica, Limpieza, Etiquetado, etc.) SOLO
-   aplica a Linea 1..10 (catalog.js: type === 'PRODUCTION_LINE').
-   Antes se generaba ese mismo template para CUALQUIER area del
-   catalogo (Paletizado, Cajas, Accesorios, Team Leader, etc.), lo
-   cual era incorrecto: esas areas no trabajan por "estaciones de
-   linea", tienen su propia forma de operar (ver
-   data/production/personnelByArea.getAreaStaffing para el
-   ideal/real de cada una).
+   (Montaje, Prueba electrica, Limpieza, Etiquetado, Suministro de
+   Accesorios) SOLO aplica a Linea 1..10 y CT LINEA 0/Proyecto
+   (catalog.js: LINE_FAMILY_AREA_IDS -- "familia CT LINEA" completa,
+   2026-08-26, a peticion explicita del usuario: "CT LINEA 0" se
+   redisena junto con las demas). Antes se generaba ese mismo template
+   para CUALQUIER area del catalogo (Paletizado, Cajas, Accesorios,
+   Team Leader, etc.), lo cual era incorrecto: esas areas no trabajan
+   por "estaciones de linea", tienen su propia forma de operar (ver
+   data/production/personnelByArea.getAreaStaffing para el ideal/real
+   de cada una).
 
-   Para el resto de las areas (WORK_AREA / SUPPORT_AREA) se genera
-   UN solo puesto generico con el nombre de la propia area — esto
-   NO se muestra como "Distribucion de estaciones" en la UI, existe
-   solo para que el check-in diario (checkInEmployee/moveEmployee,
-   que requieren areaId+stationId) siga funcionando para cualquier
-   area sin inventar puestos de linea que no existen ahi.
-   ───────────────────────────────────────────── */
+   Para el resto de las areas (WORK_AREA / SUPPORT_AREA que no son CT
+   LINEA) se genera UN solo puesto generico con el nombre de la propia
+   area -- esto NO se muestra como "Distribucion de estaciones" en la
+   UI, existe solo para que el check-in diario (checkInEmployee/
+   moveEmployee, que requieren areaId+stationId) siga funcionando para
+   cualquier area sin inventar puestos de linea que no existen ahi.
 
-import { WORK_CENTERS, STATIONS, AREA_TYPES } from '../production/catalog'
+   REDISEÑO 2026-08-26 (a peticion explicita del usuario, "REGLA MAS
+   IMPORTANTE: REPETIR PUESTOS DE TRABAJO"): antes la cantidad de
+   estaciones por linea vivia en STATION_COUNT_BY_LINE (5-7, mantenido
+   a mano) y los nombres salian de recorrer las 9 entradas de STATIONS
+   con modulo -- como STATION_COUNT_BY_LINE nunca pasaba de 7 y
+   STATIONS.length=9, el modulo NUNCA repetia un rol de verdad, y
+   ademas STATION_COUNT_BY_LINE estaba DESALINEADO del idealHeadcount
+   real de varias lineas (ej. LINEA2 ideal=6 pero solo generaba 5
+   estaciones -- un bug real: nunca se podia alcanzar la plantilla
+   ideal completa desde "Distribucion de estaciones"). Ahora:
 
-/* Etiqueta de rol legible para cada estacion de LINEA — solo texto
+   - La cantidad de estaciones de una linea es SIEMPRE su idealHeadcount
+     real (catalog.js), acotado 6..10 (limites reales de una CT LINEA,
+     confirmados por el usuario) -- nunca un numero separado a mantener
+     a mano.
+   - Solo se usan los 5 roles base reales de una CT LINEA (LINE_BASE_ROLES),
+     nunca los otros 4 de STATIONS (Empaque/Calidad/Supervision/
+     Capacitacion -- esos no son puestos de piso de una linea).
+   - Cuando idealHeadcount > 5, se repiten roles siguiendo
+     DEFAULT_REPEAT_ORDER (o LINE_STATION_OVERRIDES[lineId] si esa
+     linea tiene una distribucion recomendada propia -- estructura
+     lista, hoy vacia, "si existe configuracion guardada por linea,
+     usala; si no existe, crea una estructura clara para soportarla").
+
+   IMPORTANTE (nombre = identidad tecnica real, no solo texto): `name`
+   es el `stationId` que persiste en DailyAssignment/EmployeeMovement/
+   EmployeeSkill.stationName, y el `value` de cada <Select> de estacion
+   en MoveConfirmDialog/RegisterPersonnelForm/SelfAssignDialog/
+   StationAssignDialog -- TODOS esos archivos ya asumian implicitamente
+   que `name` es unico dentro de una linea (confirmado por investigacion
+   antes de este cambio: getWorkstation/getStationOccupancy resuelven
+   por `.find(w => w.name === x)`, sin eso dos estaciones con el mismo
+   nombre comparten cupo/ocupantes y los <Select> quedan con `value`
+   duplicado). Por eso cada repeticion de un rol recibe un `name` UNICO
+   ("Montaje", "Montaje 2", ...) -- la primera ocurrencia de cada rol
+   conserva el nombre plano de siempre (compatible con asignaciones ya
+   guardadas), solo las repeticiones llevan sufijo. `role` (nuevo campo)
+   guarda el rol base sin sufijo, para agrupar/mostrar sin tocar la
+   identidad tecnica. Esto de paso corrige el bug latente que ya existia
+   en los <Select> de esos 4 archivos (value duplicado) -- nunca podia
+   pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
+
+import { WORK_CENTERS, LINE_FAMILY_AREA_IDS } from '../production/catalog'
+
+/* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
    de presentacion, la compatibilidad de habilidades sigue usando
-   el nombre de estacion como vocabulario unico. */
+   el nombre de estacion (role base, sin sufijo) como vocabulario. */
 const ROLE_LABELS = {
   'Montaje': 'Operador de Montaje',
   'Prueba eléctrica': 'Técnico eléctrico',
@@ -36,35 +79,71 @@ const ROLE_LABELS = {
   'Capacitación': 'Instructor',
 }
 
-/* Cantidad de estaciones por LINEA — NO todas iguales. Linea 1
-   queda mas grande porque el snapshot real de BASE le tiene mas
-   gente (7). El resto (2-10) queda en 5-7 segun lo confirmado;
-   ajusta estos numeros libremente cuando tengan el dato exacto. */
-const STATION_COUNT_BY_LINE = {
-  LINEA1: 7,
-  LINEA2: 5, LINEA3: 6, LINEA4: 6, LINEA5: 6,
-  LINEA6: 5, LINEA7: 5, LINEA8: 5, LINEA9: 5, LINEA10: 5,
+/* Los 5 roles base reales de una CT LINEA (Parte "REGLA MAS IMPORTANTE"
+   del pedido, 2026-08-26) -- orden = orden de aparicion en la
+   distribucion cuando NO hay repeticiones. */
+export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza', 'Etiquetado', 'Suministro de Accesorios']
+
+/* Orden en que se repiten roles cuando idealHeadcount > 5 (min 6, max 10
+   personas por linea) -- POR DEFECTO para cualquier linea sin
+   configuracion propia. Con el maximo real (10, extra=5) cada rol se
+   repite exactamente una vez -- nunca hace falta una 3a vez del mismo
+   rol, asi que nunca hay que desambiguar mas alla de "Rol"/"Rol 2". */
+export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza']
+
+/* Configuracion explicita por linea (Parte "CONFIGURACION DE PUESTOS
+   REPETIDOS" del pedido: "Si existe una configuracion guardada por
+   linea, usala. Si no existe, crea una estructura clara para
+   soportarla"). Vacio hoy -- ninguna linea tiene todavia una
+   distribucion recomendada distinta a la regla generica de arriba;
+   agregar `{ LINEA6: { repeatOrder: [...] } }` aqui basta para que esa
+   linea use su propio orden sin tocar el resto de este archivo. */
+export const LINE_STATION_OVERRIDES = {}
+
+/* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para
+   una linea real -- separado de la generacion de `Workstation` de abajo
+   para poder probarlo/reutilizarlo aparte (ej. mostrar "N posiciones"
+   sin construir objetos de estacion completos). */
+export function buildLineRolePlan(lineId, idealHeadcount) {
+  const target = Math.max(6, Math.min(10, idealHeadcount || 6))
+  const repeatOrder = LINE_STATION_OVERRIDES[lineId]?.repeatOrder || DEFAULT_REPEAT_ORDER
+
+  const counts = {}
+  LINE_BASE_ROLES.forEach((role) => { counts[role] = 1 })
+  let extra = target - LINE_BASE_ROLES.length
+  let i = 0
+  while (extra > 0) {
+    const role = repeatOrder[i % repeatOrder.length]
+    counts[role] = (counts[role] || 0) + 1
+    extra -= 1
+    i += 1
+  }
+
+  const plan = []
+  LINE_BASE_ROLES.forEach((role) => {
+    for (let n = 0; n < counts[role]; n += 1) plan.push({ role, repeatIndex: n })
+  })
+  return plan
 }
 
 function buildWorkstations() {
   const map = {}
   WORK_CENTERS.forEach((wc) => {
-    if (wc.type === AREA_TYPES.PRODUCTION_LINE) {
-      const count = STATION_COUNT_BY_LINE[wc.id] || 5
-      const stations = []
-      for (let i = 0; i < count; i += 1) {
-        const name = STATIONS[i % STATIONS.length]
-        stations.push({
+    if (LINE_FAMILY_AREA_IDS.has(wc.id)) {
+      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount)
+      map[wc.id] = plan.map((entry, i) => {
+        const name = entry.repeatIndex === 0 ? entry.role : `${entry.role} ${entry.repeatIndex + 1}`
+        return {
           id: `${wc.id}-${i + 1}`,
           lineId: wc.id,
           name,
-          requiredRole: ROLE_LABELS[name] || name,
+          role: entry.role,
+          requiredRole: ROLE_LABELS[entry.role] || entry.role,
           capacity: 1,
           order: i + 1,
           status: 'ACTIVA',
-        })
-      }
-      map[wc.id] = stations
+        }
+      })
     } else {
       // Un solo puesto generico (no es "Montaje/Prueba/..."): permite
       // que el check-in diario funcione para cualquier area sin
@@ -79,6 +158,7 @@ function buildWorkstations() {
         id: `${wc.id}-GENERAL`,
         lineId: wc.id,
         name: wc.name,
+        role: wc.name,
         requiredRole: wc.name,
         capacity: 999,
         order: 1,
