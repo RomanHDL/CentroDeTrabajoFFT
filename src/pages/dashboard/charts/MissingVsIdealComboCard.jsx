@@ -29,7 +29,7 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
   const data = areas
     .filter((a) => a.ideal != null)
     .sort((a, b) => b.ideal - a.ideal)
-    .map((a) => ({ ...a, shortName: a.name.replace(/^CT /, '') }))
+    .map((a) => ({ ...a, shortName: a.name.replace(/^WC /, '') }))
 
   return (
     <ChartCard

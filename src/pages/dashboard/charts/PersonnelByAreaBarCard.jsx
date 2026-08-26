@@ -23,7 +23,7 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
   const gridColor = d ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)'
   const axisColor = d ? 'rgba(148,163,184,.8)' : 'rgba(71,85,105,.8)'
 
-  const data = [...areas].sort((a, b) => b.actual - a.actual).map((a, i) => ({ ...a, shortName: a.name.replace(/^CT /, ''), color: colorForIndex(i) }))
+  const data = [...areas].sort((a, b) => b.actual - a.actual).map((a, i) => ({ ...a, shortName: a.name.replace(/^WC /, ''), color: colorForIndex(i) }))
   const height = Math.max(240, data.length * 34)
 
   return (

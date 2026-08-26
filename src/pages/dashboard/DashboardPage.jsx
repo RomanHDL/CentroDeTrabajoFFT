@@ -18,24 +18,37 @@ import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
 import DashboardExecKpiCard from './DashboardExecKpiCard'
 import DashboardExportButton from './DashboardExportButton'
 import FindingsCard from './FindingsCard'
+import DailyMovementsSummaryCard from './DailyMovementsSummaryCard'
+import RecentActivityCard from './RecentActivityCard'
+import DashboardQuickSummaryStrip from './DashboardQuickSummaryStrip'
 import CoverageDonutCard from './charts/CoverageDonutCard'
 import AreaStatusDonutCard from './charts/AreaStatusDonutCard'
-import MovementsHourlyCard from './charts/MovementsHourlyCard'
-import PersonnelByAreaBarCard from './charts/PersonnelByAreaBarCard'
+import ShiftDistributionDonutCard from './charts/ShiftDistributionDonutCard'
 import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
-import MovementsDailyCard from './charts/MovementsDailyCard'
 
 /* ─────────────────────────────────────────────
-   Dashboard rediseñado (2026-08-25, contrato visual exacto del mockup
-   aprobado por el usuario) -- centro de control real del área,
-   apoyado 100% en datos reales existentes (personal/asistencia/
-   asignaciones/áreas/líneas/plantilla/movimientos). Sin producción
-   ficticia (se quitaron "Producción por línea" y "Tendencia por hora",
-   que dependían de HAS_PRODUCTION_SOURCE=false), sin Layout 2D, sin
-   accesos rápidos -- todo el espacio es analítica real. Toda la
-   aritmética vive en useDashboardMetrics()/dashboardMetrics.js, una
-   sola capa de cálculo central (nunca una segunda definición de
-   real/ideal/faltante/cobertura por gráfica). */
+   Dashboard rediseñado (2026-08-25, extendido 2026-08-26 a peticion
+   explicita del usuario -- "el Dashboard debe ser la representacion
+   analitica del mismo estado que ya usa todo Centro de Trabajo") --
+   centro de control real del área, apoyado 100% en datos reales
+   existentes (personal/asistencia/asignaciones/áreas/líneas/plantilla/
+   movimientos). Sin producción ficticia, sin Layout 2D, sin accesos
+   rápidos -- todo el espacio es analítica real. Toda la aritmética vive
+   en useDashboardMetrics()/dashboardMetrics.js, una sola capa de cálculo
+   central (nunca una segunda definición de real/ideal/faltante/cobertura
+   por gráfica) -- reutiliza directamente getStaffingTotals/
+   classifyAreaStatus/AREA_STATUS_META de personnelByArea.js (la MISMA
+   fuente que Centro de Trabajo) y getCurrentShift/OFFICIAL_SHIFTS de
+   catalog.js.
+
+   2026-08-26: se quitaron de esta pagina "Personal por área" (barra) y
+   "Movimientos por hora/día" (MovementsHourlyCard/MovementsDailyCard) --
+   NO son datos falsos (ambas siguen siendo reales, backing en
+   /api/dashboard/trends), simplemente el nuevo orden visual exacto que
+   pidio el usuario ya no las incluye. Los componentes NO se borraron
+   (quedan disponibles si se piden de vuelta), solo se dejaron de
+   renderizar aqui -- decision documentada en el reporte final de esa
+   tarea. */
 export default function DashboardPage() {
   const ps = usePageStyles()
   const metrics = useDashboardMetrics()
@@ -69,19 +82,10 @@ export default function DashboardPage() {
         </Box>
       </Paper>
 
-      {/* Fila 1 -- 5 KPIs ejecutivos. "Plantilla ideal" se agrego 2026-08-27
-          (a peticion explicita del usuario: "Resumen general de plantilla",
-          antes una card aparte en Centro de Trabajo, se integra aqui en vez
-          de duplicarse -- misma fuente, metrics.kpis/metrics.totals, ambos
-          ya calculados por useDashboardMetrics()/getStaffingTotals()). */}
+      {/* Fila 1 -- 5 KPIs ejecutivos, ORDEN EXACTO pedido 2026-08-26:
+          Personal actual, Personal faltante, Plantilla ideal, Líneas
+          operando, Cobertura total (antes: Plantilla ideal primero). */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<TrackChangesIcon />} accent="#A855F7" title="Plantilla ideal"
-            value={metrics.kpis.personalIdeal} unit="personas"
-            footerLabel="Total ideal definida"
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
             icon={<PeopleAltIcon />} accent="#3B82F6" title="Personal actual"
@@ -94,6 +98,13 @@ export default function DashboardPage() {
             icon={<PersonOffIcon />} accent="#EF4444" title="Personal faltante"
             value={metrics.kpis.personalFaltante} unit="personas faltantes"
             footerLabel={metrics.kpis.faltantePct != null ? `${metrics.kpis.faltantePct}% del ideal` : 'Sin plantilla ideal'}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2.4}>
+          <DashboardExecKpiCard
+            icon={<TrackChangesIcon />} accent="#A855F7" title="Plantilla ideal"
+            value={metrics.kpis.personalIdeal} unit="personas"
+            footerLabel="Total ideal definida"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
@@ -113,41 +124,44 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
-      {/* Fila 2 -- 3 graficas principales (30% | 40% | 30%) */}
+      {/* Fila 2 -- Cobertura por área | Faltante vs ideal por área | Estado de las áreas */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={4} lg={3.6}>
+        <Grid item xs={12} md={6} lg={4}>
           <CoverageDonutCard areas={metrics.areas} coveragePct={metrics.kpis.coveragePct} />
         </Grid>
-        <Grid item xs={12} md={4} lg={4.8}>
-          <MovementsHourlyCard hourlyToday={metrics.trends.hourlyToday} loading={metrics.trends.loading} error={metrics.trends.error} />
+        <Grid item xs={12} md={6} lg={4}>
+          <MissingVsIdealComboCard areas={metrics.areas} />
         </Grid>
-        <Grid item xs={12} md={4} lg={3.6}>
+        <Grid item xs={12} md={12} lg={4}>
           <AreaStatusDonutCard statusCounts={metrics.statusCounts} />
         </Grid>
       </Grid>
 
-      {/* Fila 3 -- Personal por área (40%) | Faltante vs ideal (60%) */}
+      {/* Fila 3 -- Distribución por turno | Movimientos del día | Actividades recientes */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={5}>
-          <PersonnelByAreaBarCard areas={metrics.areas} />
+        <Grid item xs={12} md={6} lg={4}>
+          <ShiftDistributionDonutCard shifts={metrics.shifts} />
         </Grid>
-        <Grid item xs={12} md={7}>
-          <MissingVsIdealComboCard areas={metrics.areas} />
+        <Grid item xs={12} md={6} lg={4}>
+          <DailyMovementsSummaryCard dailyMovements={metrics.dailyMovements} />
+        </Grid>
+        <Grid item xs={12} md={12} lg={4}>
+          <RecentActivityCard recentActivity={metrics.recentActivity} />
         </Grid>
       </Grid>
 
-      {/* Fila 4 -- Movimientos por día (50%) | Hallazgos del día (50%) */}
+      {/* Fila 4 -- Hallazgos del día */}
       <Grid container spacing={2} sx={{ mb: 1.5 }}>
-        <Grid item xs={12} md={6}>
-          <MovementsDailyCard dailyLast7={metrics.trends.dailyLast7} loading={metrics.trends.loading} error={metrics.trends.error} />
-        </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <FindingsCard findings={metrics.findings} />
         </Grid>
       </Grid>
 
-      {/* Ultima actualizacion -- discreto, nunca una card grande (Parte 44) */}
-      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end" sx={{ opacity: 0.65 }}>
+      {/* Resumen rápido del centro de trabajo -- franja compacta final */}
+      <DashboardQuickSummaryStrip metrics={metrics} />
+
+      {/* Ultima actualizacion -- discreto, nunca una card grande */}
+      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end" sx={{ opacity: 0.65, mt: 1.5 }}>
         <RefreshIcon sx={{ fontSize: 13 }} />
         <Typography sx={{ fontSize: 11 }}>Última actualización: {metrics.updatedAt.format('hh:mm A')}</Typography>
       </Stack>

@@ -5,16 +5,17 @@ import dayjs from 'dayjs'
 import { workCenterById } from '../../data/production/catalog'
 import { getMovementsForDate, getAttendanceForDate, getEmployeeById } from '../../data/personnel/repository'
 
-/* Export de Excel EXCLUSIVO del Dashboard rediseñado (2026-08-25) --
+/* Export de Excel EXCLUSIVO del Dashboard rediseñado (2026-08-25,
+   hoja Turnos agregada 2026-08-26 a peticion explicita del usuario) --
    distinto a ExportMenuButton.jsx (ese sigue existiendo tal cual, sigue
    siendo de "Producción", no se toca). Este boton exporta un resumen
-   real del propio Dashboard (Parte 57 del prompt): Resumen, Cobertura
-   por área, Movimientos y Asistencia -- solo datos ya calculados por
-   useDashboardMetrics(), nunca una segunda fuente. Autofilter en cada
-   hoja (soportado por la libreria xlsx instalada); freeze panes y
-   negritas de encabezado NO se incluyen porque la edicion community de
-   SheetJS (unica instalada, sin costo) no los soporta al escribir un
-   archivo -- se documenta aqui en vez de fingir que se aplicaron. */
+   real del propio Dashboard: Resumen, Áreas, Movimientos, Turnos y
+   Asistencia -- solo datos ya calculados por useDashboardMetrics(),
+   nunca una segunda fuente. Autofilter en cada hoja (soportado por la
+   libreria xlsx instalada); freeze panes y negritas de encabezado NO se
+   incluyen porque la edicion community de SheetJS (unica instalada, sin
+   costo) no los soporta al escribir un archivo -- se documenta aqui en
+   vez de fingir que se aplicaron. */
 
 function buildSheet(rows, columns) {
   const header = columns.map((c) => c.header)
@@ -61,7 +62,16 @@ export default function DashboardExportButton({ metrics }) {
         { key: 'estado', header: 'Estado', width: 16 },
       ],
     )
-    XLSX.utils.book_append_sheet(wb, coberturaWs, 'Cobertura por área')
+    XLSX.utils.book_append_sheet(wb, coberturaWs, 'Áreas')
+
+    const turnosWs = buildSheet(
+      metrics.shifts.map((s) => ({ turno: s.label, personas: s.count })),
+      [
+        { key: 'turno', header: 'Turno', width: 24 },
+        { key: 'personas', header: 'Personas', width: 12 },
+      ],
+    )
+    XLSX.utils.book_append_sheet(wb, turnosWs, 'Turnos')
 
     const movements = getMovementsForDate(dateISO)
     if (movements.length > 0) {

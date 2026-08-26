@@ -60,7 +60,7 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
           {data.map((row) => (
             <Stack key={row.id} direction="row" alignItems="center" spacing={0.75}>
               <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11, flex: 1, minWidth: 0 }} noWrap title={row.name}>{row.name.replace(/^CT /, '')}</Typography>
+              <Typography sx={{ fontSize: 11, flex: 1, minWidth: 0 }} noWrap title={row.name}>{row.name.replace(/^WC /, '')}</Typography>
               <Typography sx={{ fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{row.share.toFixed(0)}%</Typography>
             </Stack>
           ))}

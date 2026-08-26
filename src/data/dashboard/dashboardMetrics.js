@@ -1,5 +1,8 @@
-import { LINES_ONLY, workCenterById } from '../production/catalog'
-import { getAllAreaSummaries, getAreaHeadcount } from '../production/personnelByArea'
+import { LINES_ONLY, OFFICIAL_SHIFTS, workCenterById } from '../production/catalog'
+import {
+  getAllAreaSummaries, getAreaHeadcount, AREA_STATUS_META, classifyAreaStatus,
+} from '../production/personnelByArea'
+import { getAssignmentsForDate, getMovementsForDate, getEmployeeById } from '../personnel/repository'
 
 /* ─────────────────────────────────────────────
    Capa de calculo EXCLUSIVA del rediseño del Dashboard (2026-08-25).
@@ -8,27 +11,13 @@ import { getAllAreaSummaries, getAreaHeadcount } from '../production/personnelBy
    (personnelByArea.js) -- si esos cambian, esto cambia solo, sin una
    segunda fuente de verdad.
 
-   La clasificacion de 4 estados (COMPLETA/PARCIAL/FALTA/SIN_PERSONAL)
-   es una copia deliberada -- no una importacion -- de la misma logica
-   que ya vive en OperatingFloorPlan.jsx (ahi documentada como "puramente
-   de presentacion"). No se toca ese archivo porque es compartido con
-   Layout 2D y Centro de Trabajo, fuera de alcance de este rediseño
-   exclusivo del Dashboard. ───────────────────────────────────────────── */
-
-export const AREA_STATUS_META = {
-  COMPLETA: { key: 'COMPLETA', color: '#10B981', label: 'Completa' },
-  PARCIAL: { key: 'PARCIAL', color: '#3B82F6', label: 'Parcial' },
-  FALTA: { key: 'FALTA', color: '#EF4444', label: 'Falta personal' },
-  SIN_PERSONAL: { key: 'SIN_PERSONAL', color: '#94A3B8', label: 'Sin personal' },
-}
-
-export function classifyAreaStatus(real, ideal) {
-  if (ideal == null) return null
-  if (real <= 0) return 'SIN_PERSONAL'
-  if (real >= ideal) return 'COMPLETA'
-  if (real >= ideal - 1 || real / ideal >= 0.75) return 'PARCIAL'
-  return 'FALTA'
-}
+   AREA_STATUS_META/classifyAreaStatus (2026-08-26, correccion explicita
+   del usuario: "no quiero que Centro de Trabajo calcule Parcial de una
+   manera y Dashboard de otra") -- ANTES eran una copia manual literal de
+   personnelByArea.js (idénticas caracter por caracter, pero una segunda
+   fuente que podia desincronizarse con el tiempo). Ahora se REEXPORTAN
+   de ahi directo, nunca se reimplementan. */
+export { AREA_STATUS_META, classifyAreaStatus }
 
 /* Areas para las graficas del Dashboard -- misma fuente que "Resumen por
    área" de Centro de Trabajo (getAllAreaSummaries). Se excluyen SOLO las
@@ -73,7 +62,7 @@ export function getIncompleteLines() {
 }
 
 function shortAreaName(name) {
-  return name.replace(/^CT /, '')
+  return name.replace(/^WC /, '')
 }
 
 /* Hallazgos del dia -- reglas deterministicas sobre datos reales, nunca
@@ -165,4 +154,77 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
 
 export function workCenterShortName(id) {
   return shortAreaName(workCenterById(id)?.name || id)
+}
+
+/* Distribucion por turno (2026-08-26, a peticion explicita del usuario)
+   -- usa EXCLUSIVAMENTE OFFICIAL_SHIFTS, nunca SHIFT_HOURS ni el
+   "07:00-14:00" ya corregido en otras vistas. El campo `shift` real solo
+   existe en una asignacion local de alguien que tuvo un check-in/
+   movimiento explicito HOY (repository.js) -- la mayoria de "Personal
+   actual" viene del snapshot BASE sin ese campo (ver PersonalDeHoyTab.jsx/
+   AUTO_ACTIVE_AREAS: esa gente se muestra activa visualmente pero SIN
+   crear ninguna asignacion real). Ademas el valor guardado usa el
+   vocabulario legacy de los selects (SHIFT_OPTIONS: Matutino/Vespertino/
+   Nocturno), que NO coincide con las 3 etiquetas oficiales salvo
+   "Matutino". Por eso: se cuenta SOLO a quien tiene un `shift` que hace
+   match EXACTO con una etiqueta oficial, y el resto de "Personal actual"
+   cae en un bucket explicito "Sin turno registrado" -- nunca se inventa
+   a que turno pertenece alguien sin ese dato real. */
+export function getShiftDistribution(realTotal) {
+  const assignments = getAssignmentsForDate()
+  const counts = new Map(OFFICIAL_SHIFTS.map((s) => [s.label, 0]))
+  let matched = 0
+  assignments.forEach((a) => {
+    if (counts.has(a.shift)) {
+      counts.set(a.shift, counts.get(a.shift) + 1)
+      matched += 1
+    }
+  })
+  const sinTurno = Math.max(0, realTotal - matched)
+  return [
+    ...OFFICIAL_SHIFTS.map((s) => ({ id: s.id, label: s.label, count: counts.get(s.label) || 0 })),
+    { id: 'SIN_TURNO', label: 'Sin turno registrado', count: sinTurno },
+  ]
+}
+
+/* Movimientos del dia, desglosados por tipo real (2026-08-26) --
+   `movements` local ya distingue CHECK_IN/MOVE/RELEASE (repository.js,
+   escrito por checkInEmployee/moveEmployee/releaseAssignment). ANTES el
+   Dashboard solo mostraba getMovesCountForDate() (solo tipo MOVE) bajo
+   el nombre generico "movimientos hoy" -- aqui se desglosan los 3 tipos
+   reales por separado, tal como se pidio explicitamente. */
+export function getDailyMovementsBreakdown(date) {
+  const moves = getMovementsForDate(date)
+  const asignaciones = moves.filter((m) => m.type === 'CHECK_IN').length
+  const removidos = moves.filter((m) => m.type === 'RELEASE').length
+  const movimientos = moves.filter((m) => m.type === 'MOVE').length
+  return { asignaciones, removidos, movimientos, neto: asignaciones - removidos, total: moves.length }
+}
+
+const ACTIVITY_LABELS = { CHECK_IN: 'Asignación', MOVE: 'Movimiento', RELEASE: 'Liberación' }
+
+/* Actividades recientes (2026-08-26) -- misma fuente que el desglose de
+   arriba (getMovementsForDate, ya sincronizada localmente, cero
+   requests nuevos), solo enriquecida con nombre real de empleado/area
+   para mostrar. `movedAt` es "HH:mm" del dia de hoy (nowTime(),
+   repository.js) -- nunca un timestamp completo, por eso se muestra tal
+   cual (hora real) en vez de fabricar un "hace X minutos" que
+   implicaria una precision que el dato no tiene. */
+export function getRecentActivity(limit = 30) {
+  const moves = getMovementsForDate()
+  return [...moves]
+    .sort((a, b) => (a.movedAt < b.movedAt ? 1 : a.movedAt > b.movedAt ? -1 : 0))
+    .slice(0, limit)
+    .map((m) => {
+      const employee = getEmployeeById(m.employeeId)
+      return {
+        id: m.id,
+        type: m.type,
+        label: ACTIVITY_LABELS[m.type] || m.type,
+        employeeName: employee?.name || m.employeeNumber || 'Empleado',
+        fromAreaName: m.fromAreaId ? (workCenterById(m.fromAreaId)?.name || m.fromAreaId) : null,
+        toAreaName: m.toAreaId ? (workCenterById(m.toAreaId)?.name || m.toAreaId) : null,
+        time: m.movedAt,
+      }
+    })
 }

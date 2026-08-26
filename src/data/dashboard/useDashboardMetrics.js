@@ -6,7 +6,10 @@ import { getStaffingTotals } from '../production/personnelByArea'
 import { getMovesCountForDate, getPendingMoves } from '../personnel/repository'
 import { usePersonnelVersion } from '../personnel/usePersonnelVersion'
 import { useAuth } from '../../state/auth'
-import { getDashboardAreas, getAreaStatusCounts, getIncompleteLines, getDashboardFindings } from './dashboardMetrics'
+import {
+  getDashboardAreas, getAreaStatusCounts, getIncompleteLines, getDashboardFindings,
+  getShiftDistribution, getDailyMovementsBreakdown, getRecentActivity,
+} from './dashboardMetrics'
 
 /* Serie de /api/dashboard/trends -- unico fetch de red nuevo de este
    rediseño (2026-08-25). Todo lo demas (totales, areas, hallazgos) ya
@@ -112,6 +115,9 @@ export function useDashboardMetrics() {
   const movementsToday = getMovesCountForDate()
   const pendingMovesCount = getPendingMoves().filter((p) => p.status === 'PENDING').length
   const canSeeApprovals = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
+  const shifts = getShiftDistribution(totals.realTotal)
+  const dailyMovements = getDailyMovementsBreakdown()
+  const recentActivity = getRecentActivity()
 
   const findings = getDashboardFindings({
     areas, incompleteLines, pendingMovesCount, canSeeApprovals, movementsToday,
@@ -134,6 +140,9 @@ export function useDashboardMetrics() {
     incompleteLines,
     linesTotal: LINES_ONLY.length,
     movementsToday,
+    dailyMovements,
+    shifts,
+    recentActivity,
     pendingMovesCount,
     canSeeApprovals,
     findings,
