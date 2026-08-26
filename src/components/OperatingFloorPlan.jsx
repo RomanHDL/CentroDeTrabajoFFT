@@ -30,7 +30,7 @@ import {
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../data/production/floorPlanZones'
 import { useEmployeeDropTarget } from '../ui/dnd'
 import DraggablePersonChip from '../ui/DraggablePersonChip'
-import AreaDetail from '../pages/centro-trabajo/AreaDetail'
+import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCenter'
 
 /* ─────────────────────────────────────────────
    "Área operando" -- plano 2D completo (rediseño 2026-08-24 a partir
@@ -95,7 +95,16 @@ const SHOWN_AREA_IDS = WORK_CENTERS.filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' 
    hasta que se le quito el layout, 2026-08-25). */
 export default function OperatingFloorPlan({ readOnly = false }) {
   usePersonnelVersion()
-  const [assignAreaId, setAssignAreaId] = useState(null)
+  /* 2026-08-27 (a peticion explicita del usuario): el click directo en
+     una zona del plano ahora abre el detalle a traves del MISMO estado
+     compartido (?area= en la URL) que ya usa CentroTrabajoPage.jsx --
+     antes este componente tenia su propio useState local (assignAreaId)
+     e instanciaba su PROPIO <AreaDetail>, completamente desconectado de
+     lo que las pestañas "Lineas"/"Estaciones" creian abierto (un click
+     aqui nunca actualizaba esa otra vista). openWorkCenter() solo
+     actualiza la URL; el UNICO <AreaDetail> que de verdad se renderiza
+     para /centro-trabajo sigue viviendo en CentroTrabajoPage.jsx. */
+  const { openWorkCenter } = useSelectedWorkCenter()
   const [zoom, setZoom] = useState(1)
   const [autoZoom, setAutoZoom] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -159,7 +168,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   // EXACTAMENTE igual que siempre: solo abre el detalle de solo lectura.
   function handleZoneOpen(areaId) {
     if (readOnly) { setDetailId(areaId); return }
-    setAssignAreaId(areaId)
+    openWorkCenter(areaId)
   }
 
   const operating = hasAnyPersonnelToday()
@@ -235,9 +244,6 @@ export default function OperatingFloorPlan({ readOnly = false }) {
       </Box>
 
       <DetailDialog areaId={detailId} onClose={() => setDetailId(null)} />
-      {!readOnly && (
-        <AreaDetail workCenterId={assignAreaId} open={!!assignAreaId} onClose={() => setAssignAreaId(null)} />
-      )}
     </Box>
   )
 }
@@ -567,8 +573,16 @@ function LineColumn({ lineId, onOpen, readOnly }) {
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
-      <Typography sx={{ fontSize: 9.5, fontWeight: 800, textAlign: 'center', lineHeight: 1.1 }}>
-        {isOver ? 'Soltar' : (wc?.name || lineId).replace('WC ', '')}
+      {/* Prefijo WC completo (2026-08-27, corrigiendo un bug real: este
+          Typography le quitaba "WC " al nombre real de wc.name, dejando
+          "LINEA 2" en vez de "WC LINEA 2" -- el titulo del bloque FFT ya
+          decia "WC Líneas de producción" pero las tarjetas internas no).
+          fontSize/letterSpacing bajan un poco para que "WC LINEA 10" siga
+          cabiendo en columnas angostas sin ensanchar la card; si de plano
+          no cabe, el Typography ya envuelve a 2 líneas solo (sin noWrap),
+          nunca trunca. */}
+      <Typography sx={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.2, textAlign: 'center', lineHeight: 1.15 }}>
+        {isOver ? 'Soltar' : (wc?.name || lineId)}
       </Typography>
       <Box sx={{ width: 8, height: 36, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden', my: 0.5 }}>
         <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />

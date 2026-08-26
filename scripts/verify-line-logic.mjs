@@ -8,7 +8,7 @@
 // Uso: node --import ./scripts/_esm-extensionless-loader.mjs scripts/verify-line-logic.mjs
 import assert from 'node:assert/strict'
 import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine } from '../src/data/personnel/workstations.js'
-import { OFFICIAL_SHIFTS, WORK_CENTERS } from '../src/data/production/catalog.js'
+import { OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext } from '../src/data/production/catalog.js'
 
 let passed = 0
 function check(name, fn) {
@@ -76,6 +76,63 @@ check('los ids internos de WORK_CENTERS no cambiaron (rename fue solo del displa
   const knownIds = new Set(['LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10', 'PROYECTO', 'ACCESORIOS', 'PALETIZADO'])
   WORK_CENTERS.filter((w) => knownIds.has(w.id)).forEach((w) => assert.ok(knownIds.has(w.id)))
   assert.equal(WORK_CENTERS.filter((w) => knownIds.has(w.id)).length, knownIds.size)
+})
+
+// Navegacion Anterior/Siguiente entre Work Centers (2026-08-27).
+check('el recorrido empieza en PROYECTO (WC LINEA 0), luego LINEA1..10 en orden', () => {
+  assert.deepEqual(
+    WORK_CENTER_NAVIGATION_ORDER.slice(0, 12),
+    ['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10', 'CONVEYOR_PRINCIPAL']
+  )
+})
+check('SELLADO y PNP/POC/PEN nunca aparecen en el recorrido (sin detalle propio / sin WORK_CENTER real)', () => {
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SELLADO'))
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('PNP_POC_PEN'))
+})
+check('WC LINEA 0 -> siguiente = WC LINEA 1, sin anterior', () => {
+  const ctx = getWorkCenterNavContext('PROYECTO')
+  assert.equal(ctx.previous, null)
+  assert.equal(ctx.next.id, 'LINEA1')
+})
+check('WC LINEA 1 -> anterior = WC LINEA 0, siguiente = WC LINEA 2', () => {
+  const ctx = getWorkCenterNavContext('LINEA1')
+  assert.equal(ctx.previous.id, 'PROYECTO')
+  assert.equal(ctx.next.id, 'LINEA2')
+})
+check('WC LINEA 10 -> siguiente = WC Conveyor Principal', () => {
+  const ctx = getWorkCenterNavContext('LINEA10')
+  assert.equal(ctx.next.id, 'CONVEYOR_PRINCIPAL')
+})
+check('WC Conveyor Principal -> siguiente = WC Conveyor Secundario', () => {
+  const ctx = getWorkCenterNavContext('CONVEYOR_PRINCIPAL')
+  assert.equal(ctx.next.id, 'CONVEYOR_SECUNDARIO')
+})
+check('el ultimo Work Center del recorrido no tiene siguiente (navegacion lineal, nunca circular)', () => {
+  const lastId = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
+  const ctx = getWorkCenterNavContext(lastId)
+  assert.equal(ctx.next, null)
+})
+check('SELLADO resuelve su navegacion a traves de su id canonico (WC Conveyor Principal)', () => {
+  const ctx = getWorkCenterNavContext('SELLADO')
+  assert.equal(ctx.current.id, 'CONVEYOR_PRINCIPAL')
+})
+check('recorrido completo: 0..10 + 2 conveyors + el resto de areas reales, sin huecos ni saltos rotos', () => {
+  for (let i = 0; i < WORK_CENTER_NAVIGATION_ORDER.length - 1; i += 1) {
+    const ctx = getWorkCenterNavContext(WORK_CENTER_NAVIGATION_ORDER[i])
+    assert.equal(ctx.next.id, WORK_CENTER_NAVIGATION_ORDER[i + 1], `salto roto en la posicion ${i}`)
+  }
+})
+check('recorrido inverso desde el ultimo Work Center llega exactamente hasta WC LINEA 0', () => {
+  let id = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
+  const visited = [id]
+  while (true) {
+    const ctx = getWorkCenterNavContext(id)
+    if (!ctx.previous) break
+    id = ctx.previous.id
+    visited.push(id)
+  }
+  assert.equal(id, 'PROYECTO')
+  assert.equal(visited.length, WORK_CENTER_NAVIGATION_ORDER.length)
 })
 
 console.log(`\n${passed}/${passed} checks OK`)

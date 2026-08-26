@@ -250,6 +250,66 @@ export function usesOperationalDetail(workCenterId) {
   return OPERATIONAL_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))
 }
 
+/* Orden central de navegacion Anterior/Siguiente entre TODOS los Work
+   Centers reales -- 2026-08-27, a peticion explicita del usuario. Unica
+   fuente de verdad: las 3 familias de detalle (LineDetailDrawer/
+   OperationalAreaDetail/SupportAreaDetail) consumen exclusivamente
+   getWorkCenterNavContext() de abajo, nunca un if/else por componente.
+
+   NO reordena WORK_CENTERS (ese array lo consumen otras vistas -- ej.
+   "Resumen por area", EstacionesTab.jsx -- que dependen de su orden
+   incidental actual; reordenarlo habria reorganizado esas vistas sin
+   que el usuario lo pidiera, ver "NO reorganizar el mapa/layout
+   general" en el pedido). Este es un array SEPARADO, de solo ids
+   reales, exclusivo para navegacion -- una sola fuente de verdad para
+   ESTE proposito, sin desincronizarse porque nunca se copian nombres/
+   ids a mano en otro lado, solo se referencia WORK_CENTERS.
+
+   SELLADO se excluye a proposito: no tiene detalle propio, cualquier
+   click sobre ella resuelve a CONVEYOR_PRINCIPAL (AREA_DETAIL_GROUPS
+   arriba) -- incluirla aqui crearia una parada duplicada/inalcanzable.
+   "PNP / POC / PEN" tampoco tiene WORK_CENTER real (decoracion en
+   floorPlanZones.js/REFERENCE_ONLY_ZONES) -- nunca se inventa un id
+   para poder navegar a algo que no existe. "WC LINEA 11" no existe hoy
+   en WORK_CENTERS (confirmado) -- si se agrega en el futuro con
+   kind:'linea', LINES_ONLY la recoge sola (mismo patron que las demas
+   lineas) y aparece aqui automaticamente, sin volver a tocar este
+   archivo. El .filter final es una red de seguridad defensiva (nunca
+   debería quitar nada hoy) por si algun id de esta lista dejara de
+   existir en WORK_CENTERS. */
+export const WORK_CENTER_NAVIGATION_ORDER = [
+  'PROYECTO',
+  ...LINES_ONLY.map((w) => w.id),
+  'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO',
+  'HIGH_VALUE', 'PALETIZADO', 'BOX_PREP', 'INSUMOS', 'SUMINISTRO_MATERIAL', 'ACCESORIOS', 'CALIDAD',
+  'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+].filter((id) => WORK_CENTERS.some((w) => w.id === id))
+
+/* previous/current/next dentro de WORK_CENTER_NAVIGATION_ORDER --
+   navegacion LINEAL (nunca circular): en el primer elemento `previous`
+   es null, en el ultimo `next` es null. `currentAreaId` se resuelve a
+   su id canonico primero (ej. SELLADO -> CONVEYOR_PRINCIPAL) para que
+   anterior/siguiente funcionen igual sin importar por cual id grupal
+   se haya abierto el detalle. */
+export function getWorkCenterNavContext(currentAreaId) {
+  const canonicalId = currentAreaId ? canonicalOperationalAreaId(currentAreaId) : null
+  const idx = canonicalId ? WORK_CENTER_NAVIGATION_ORDER.indexOf(canonicalId) : -1
+  if (idx === -1) return { previous: null, current: null, next: null }
+  return {
+    previous: idx > 0 ? workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx - 1]) : null,
+    current: workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx]),
+    next: idx < WORK_CENTER_NAVIGATION_ORDER.length - 1 ? workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx + 1]) : null,
+  }
+}
+
+export function getPreviousWorkCenter(currentAreaId) {
+  return getWorkCenterNavContext(currentAreaId).previous
+}
+
+export function getNextWorkCenter(currentAreaId) {
+  return getWorkCenterNavContext(currentAreaId).next
+}
+
 /* ─────────────────────────────────────────────
    Tres familias de detalle de area (2026-08-26, a peticion explicita del
    usuario) -- configuracion CENTRAL unica, para que ningun componente

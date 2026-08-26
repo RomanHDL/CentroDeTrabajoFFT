@@ -39,6 +39,7 @@ import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
 import EmployeeAvatar from './EmployeeAvatar'
 import AssignedPersonChip from './AssignedPersonChip'
+import WorkCenterNavControls from './WorkCenterNavControls'
 
 /* ─────────────────────────────────────────────
    Vista operativa de detalle para AREAS PRODUCTIVAS (2026-08-25,
@@ -212,7 +213,7 @@ function classifyForTip(real, ideal) {
   return { icon: '⭐', label: 'Cerca de completarse', tip: `Solo faltan ${ideal - real} persona(s) para cobertura completa.` }
 }
 
-export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
+export default function OperationalAreaDetail({ workCenterId, open, onClose, previous, next, onNavigate }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -222,6 +223,16 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
   const [highlightAvailable, setHighlightAvailable] = useState(false)
 
   const [history, setHistory] = useState({ loading: true, error: null, items: [] })
+
+  /* Reinicio de estado transitorio al cambiar de Work Center (Anterior/
+     Siguiente, 2026-08-27) -- el Dialog ya no se desmonta entre areas.
+     `history` no hace falta reiniciarlo aqui: su propio useEffect de
+     abajo ya depende de [workCenterId, ...] y lo vuelve a cargar solo. */
+  useEffect(() => {
+    setRegisterOpen(false)
+    setSelfAssignOpen(false)
+    setHighlightAvailable(false)
+  }, [workCenterId])
 
   // Id canonico (2026-08-25, ver catalog.js/AREA_DETAIL_GROUPS): CT Sellado
   // no tiene detalle propio, "va junto con Conveyor Principal" a peticion
@@ -297,6 +308,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
           <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Centro de Trabajo • Área de producción</Typography>
         </Box>
         <Box sx={{ flex: 1 }} />
+        {onNavigate && <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />}
         <Button
           variant="contained" startIcon={<PersonAddAlt1Icon />}
           onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
@@ -307,7 +319,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose }) {
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </Box>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
+      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
         {/* Fila superior de metricas */}
         <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 2.5, overflow: 'hidden' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} divider={false}>

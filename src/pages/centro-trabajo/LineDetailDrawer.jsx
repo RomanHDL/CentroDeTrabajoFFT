@@ -48,6 +48,7 @@ import StationAssignDialog from './StationAssignDialog'
 import AvailablePersonnelTray from './AvailablePersonnelTray'
 import AssignedPersonChip from './AssignedPersonChip'
 import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
+import WorkCenterNavControls from './WorkCenterNavControls'
 import { useDndAssign } from '../../state/dndAssign'
 
 /* Zona de "soltar aqui" generica — usada tanto en areas sin
@@ -81,7 +82,7 @@ function formatHour12(hhmm) {
   return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
 }
 
-export default function LineDetailDrawer({ workCenterId, open, onClose }) {
+export default function LineDetailDrawer({ workCenterId, open, onClose, previous, next, onNavigate }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -96,6 +97,25 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
   const [assignStation, setAssignStation] = useState(null)
   const [includeAbsent, setIncludeAbsent] = useState(false)
   const [actionError, setActionError] = useState('')
+
+  /* Reinicio de estado transitorio al cambiar de Work Center (Anterior/
+     Siguiente, 2026-08-27, a peticion explicita del usuario) -- el
+     Dialog ya NO se desmonta entre areas (workCenterId cambia con el
+     mismo `open`), asi que sin esto quedaria la estacion/dialogo/error
+     de la linea anterior. El buscador (EmployeeAssignSearchBar) se
+     reinicia aparte via `key={workCenterId}` mas abajo, sin tocar ese
+     componente compartido. */
+  useEffect(() => {
+    setRegisterOpen(false)
+    setSelfAssignOpen(false)
+    setLineHistoryOpen(false)
+    setHistoryEmployee(null)
+    setMoveTarget(null)
+    setSelectedStationName(null)
+    setAssignStation(null)
+    setIncludeAbsent(false)
+    setActionError('')
+  }, [workCenterId])
 
   const isLine = workCenterId ? LINE_FAMILY_AREA_IDS.has(workCenterId) : false
   const area = workCenterId ? workCenterById(workCenterId) : null
@@ -194,6 +214,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
           }}
         />
         <Box sx={{ flex: 1 }} />
+        {onNavigate && <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />}
         <Button
           variant="contained"
           startIcon={<PersonAddAlt1Icon />}
@@ -205,7 +226,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose }) {
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </Box>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
+      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
         {/* Encabezado compacto — NUNCA cards KPI grandes, ni en Linea
            1-10 ni en el resto de las areas. Real/Ideal/Faltante (y
            turno/fecha para lineas) va integrado aqui en 1-2 lineas. */}

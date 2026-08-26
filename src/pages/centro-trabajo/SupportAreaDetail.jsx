@@ -48,6 +48,7 @@ import SelfAssignDialog from './SelfAssignDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
 import EmployeeAvatar from './EmployeeAvatar'
+import WorkCenterNavControls from './WorkCenterNavControls'
 
 /* ─────────────────────────────────────────────
    Vista de detalle para AREAS DE APOYO / INGENIERÍA / GESTIÓN
@@ -187,7 +188,7 @@ function AvailableCandidateRow({ person, areaId }) {
   )
 }
 
-export default function SupportAreaDetail({ workCenterId, open, onClose }) {
+export default function SupportAreaDetail({ workCenterId, open, onClose, previous, next, onNavigate }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -195,6 +196,16 @@ export default function SupportAreaDetail({ workCenterId, open, onClose }) {
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
   const [showAllHistory, setShowAllHistory] = useState(false)
   const [history, setHistory] = useState({ loading: true, error: null, items: [] })
+
+  /* Reinicio de estado transitorio al cambiar de Work Center (Anterior/
+     Siguiente, 2026-08-27) -- el Dialog ya no se desmonta entre areas.
+     `history` no hace falta reiniciarlo aqui: su propio useEffect de
+     abajo ya depende de [workCenterId, ...] y lo vuelve a cargar solo. */
+  useEffect(() => {
+    setRegisterOpen(false)
+    setSelfAssignOpen(false)
+    setShowAllHistory(false)
+  }, [workCenterId])
 
   const area = workCenterId ? workCenterById(workCenterId) : null
   const staffing = useMemo(() => (workCenterId ? getAreaStaffing(workCenterId) : null), [workCenterId, version])
@@ -257,6 +268,7 @@ export default function SupportAreaDetail({ workCenterId, open, onClose }) {
           <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Centro de Trabajo · Área de soporte</Typography>
         </Box>
         <Box sx={{ flex: 1 }} />
+        {onNavigate && <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />}
         <Button
           variant="contained" startIcon={<PersonAddAlt1Icon />}
           onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
@@ -267,7 +279,7 @@ export default function SupportAreaDetail({ workCenterId, open, onClose }) {
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </Box>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
+      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
         {/* Fila superior de resumen */}
         <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 2.5, overflow: 'hidden' }}>
           <Stack direction={{ xs: 'column', md: 'row' }}>

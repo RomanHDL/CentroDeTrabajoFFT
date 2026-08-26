@@ -14,6 +14,7 @@ import EstacionesTab from './EstacionesTab'
 import PersonalDeHoyTab from './PersonalDeHoyTab'
 import BajasTab from './BajasTab'
 import AreaDetail from './AreaDetail'
+import { useSelectedWorkCenter } from './useSelectedWorkCenter'
 
 const TABS = [
   { key: 'areas', label: 'Áreas de trabajo' },
@@ -31,7 +32,7 @@ const TABS = [
 export default function CentroTrabajoPage() {
   const ps = usePageStyles()
   const [tab, setTab] = useState('areas')
-  const [selectedLine, setSelectedLine] = useState(null)
+  const { workCenterId: selectedLine, openWorkCenter: setSelectedLine, closeWorkCenter } = useSelectedWorkCenter()
 
   return (
     <Box sx={ps.page}>
@@ -84,7 +85,7 @@ export default function CentroTrabajoPage() {
       {tab === 'personal' && <PersonalDeHoyTab onGoToBajas={() => setTab('bajas')} onGoToAreas={() => setTab('areas')} />}
       {tab === 'bajas' && <BajasTab />}
 
-      <AreaDetail workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={() => setSelectedLine(null)} />
+      <AreaDetail workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={closeWorkCenter} onNavigate={setSelectedLine} />
     </Box>
   )
 }
