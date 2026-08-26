@@ -1,5 +1,3 @@
-import { useMemo } from 'react'
-import dayjs from 'dayjs'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Box from '@mui/material/Box'
@@ -10,31 +8,37 @@ import WbSunnyIcon from '@mui/icons-material/WbSunny'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import BarChartIcon from '@mui/icons-material/BarChart'
+import ShieldIcon from '@mui/icons-material/Shield'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import dayjs from 'dayjs'
 import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT } from '../../data/production/catalog'
-import { allLineSummaries, generalKpis, buildAlerts } from '../../data/production/selectors'
-import { hourlyTrendTotal, HAS_PRODUCTION_SOURCE } from '../../data/production/production'
-import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import ExportMenuButton from '../centro-trabajo/ExportMenuButton'
-import ComparisonChart from './ComparisonChart'
-import HourlyTrendChart from './HourlyTrendChart'
-import AlertsPanel from './AlertsPanel'
-import DashboardKpiCard from './DashboardKpiCard'
+import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
+import DashboardExecKpiCard from './DashboardExecKpiCard'
+import DashboardExportButton from './DashboardExportButton'
+import FindingsCard from './FindingsCard'
+import CoverageDonutCard from './charts/CoverageDonutCard'
+import AreaStatusDonutCard from './charts/AreaStatusDonutCard'
+import MovementsHourlyCard from './charts/MovementsHourlyCard'
+import PersonnelByAreaBarCard from './charts/PersonnelByAreaBarCard'
+import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
+import MovementsDailyCard from './charts/MovementsDailyCard'
 
+/* ─────────────────────────────────────────────
+   Dashboard rediseñado (2026-08-25, contrato visual exacto del mockup
+   aprobado por el usuario) -- centro de control real del área,
+   apoyado 100% en datos reales existentes (personal/asistencia/
+   asignaciones/áreas/líneas/plantilla/movimientos). Sin producción
+   ficticia (se quitaron "Producción por línea" y "Tendencia por hora",
+   que dependían de HAS_PRODUCTION_SOURCE=false), sin Layout 2D, sin
+   accesos rápidos -- todo el espacio es analítica real. Toda la
+   aritmética vive en useDashboardMetrics()/dashboardMetrics.js, una
+   sola capa de cálculo central (nunca una segunda definición de
+   real/ideal/faltante/cobertura por gráfica). */
 export default function DashboardPage() {
   const ps = usePageStyles()
-  const personnelVersion = usePersonnelVersion()
-  const summaries = useMemo(() => allLineSummaries(), [personnelVersion])
-  const kpis = useMemo(() => generalKpis(), [personnelVersion])
-  const alerts = useMemo(() => buildAlerts(), [personnelVersion])
-  const hourlyTotal = useMemo(() => hourlyTrendTotal(), [])
+  const metrics = useDashboardMetrics()
   const today = dayjs()
-
-  const comparisonData = summaries.map(s => ({
-    id: s.id, name: s.name, production: s.production, target: s.target, pct: s.pct, accent: s.tone.accent,
-  }))
 
   return (
     <Box sx={ps.page}>
@@ -58,99 +62,82 @@ export default function DashboardPage() {
               sx={{ ...ps.metricChip('info'), fontWeight: 700 }}
             />
             <Chip label={`Hoy: ${today.format('DD MMMM YYYY')}`} sx={ps.metricChip('default')} />
-            <ExportMenuButton dateISO={today.format('YYYY-MM-DD')} />
+            <DashboardExportButton metrics={metrics} />
           </Stack>
         </Box>
       </Paper>
 
-      {/* KPIs generales — simplificado a 3 (personal, faltante, lineas
-          operando); produccion/meta/avance/mayor produccion se retiraron
-          a peticion del usuario (no hay fuente real de produccion).
-          Rediseño 2026-08-24 (a peticion explicita del usuario): cards
-          compactas y horizontales (antes eran altas/verticales) via
-          DashboardKpiCard, exclusivo de este bloque -- KpiCard de
-          src/ui sigue igual para PersonalDeHoyTab.jsx/UsuariosPage.jsx. */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <DashboardKpiCard
-            icon={<PeopleAltIcon />}
-            accent="#3B82F6"
-            title="Personal"
-            subtitle="Personal que hay actualmente"
-            value={kpis.personalActivo}
-            secondaryLabel="Ideal"
-            secondaryValue={kpis.personalIdeal}
-            secondaryNote="Meta por área"
-            tooltipNote="Meta de personal por área — no es el total de empleados del sistema."
+      {/* Fila 1 -- 4 KPIs ejecutivos */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <DashboardExecKpiCard
+            icon={<PeopleAltIcon />} accent="#3B82F6" title="Personal actual"
+            value={metrics.kpis.personalActual} unit="personas en turno"
+            footerLabel="Ideal" footerValue={metrics.kpis.personalIdeal}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <DashboardKpiCard
-            icon={<PersonOffIcon />}
-            accent="#EF4444"
-            title="Personal faltante"
-            subtitle="Personas faltantes"
-            value={kpis.personalFaltante}
-            unit="personas"
+        <Grid item xs={12} sm={6} md={3}>
+          <DashboardExecKpiCard
+            icon={<PersonOffIcon />} accent="#EF4444" title="Personal faltante"
+            value={metrics.kpis.personalFaltante} unit="personas faltantes"
+            footerLabel={metrics.kpis.faltantePct != null ? `${metrics.kpis.faltantePct}% del ideal` : 'Sin plantilla ideal'}
           />
         </Grid>
-        <Grid item xs={12} sm={12} md={4}>
-          <DashboardKpiCard
-            icon={<PrecisionManufacturingIcon />}
-            accent="#06B6D4"
-            title="Líneas operando"
-            subtitle="Líneas en operación"
-            value={`${kpis.lineasOperando} / ${kpis.lineasTotal}`}
+        <Grid item xs={12} sm={6} md={3}>
+          <DashboardExecKpiCard
+            icon={<PrecisionManufacturingIcon />} accent="#06B6D4" title="Líneas operando"
+            value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`} unit="líneas operativas"
+            footerLabel={metrics.kpis.lineasTotal > 0 ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas` : ''}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <DashboardExecKpiCard
+            icon={<ShieldIcon />} accent="#10B981" title="Cobertura total"
+            value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'} unit="de cobertura general"
+            progressPct={metrics.kpis.coverageBarPct}
+            footerLabel={`${metrics.totals.realTotal} / ${metrics.totals.idealTotal} del ideal`}
           />
         </Grid>
       </Grid>
 
-      {/* Layout del área de trabajo (2026-08-25, a peticion explicita del
-          usuario): se quito del Dashboard -- ahora vive solo en Centro de
-          Trabajo > Áreas de trabajo (mismo componente OperatingFloorPlan,
-          ver AreasLayoutView.jsx) y en Layout 2D. */}
-
-      {/* Comparativa por linea */}
-      <Paper elevation={0} sx={{ ...ps.card, mb: 3 }}>
-        <Box sx={ps.cardHeader}>
-          <Typography sx={ps.cardHeaderTitle}>Producción por línea</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>Comparativa de todas las líneas y áreas — hoy</Typography>
-        </Box>
-        <Box sx={{ p: 2 }}>
-          {HAS_PRODUCTION_SOURCE ? (
-            <ComparisonChart data={comparisonData} />
-          ) : (
-            <EmptyState
-              compact
-              icon={<BarChartIcon />}
-              title="Sin datos de producción todavía"
-              description="Este dashboard todavía no tiene una fuente real de piezas producidas conectada."
-            />
-          )}
-        </Box>
-      </Paper>
-
-      {/* Tendencia + alertas */}
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={8}>
-          <Paper elevation={0} sx={ps.card}>
-            <Box sx={ps.cardHeader}>
-              <Typography sx={ps.cardHeaderTitle}>Tendencia por hora</Typography>
-              <Typography sx={ps.cardHeaderSubtitle}>Producción total durante el turno</Typography>
-            </Box>
-            <Box sx={{ p: 2 }}>
-              {HAS_PRODUCTION_SOURCE ? (
-                <HourlyTrendChart data={hourlyTotal} height={230} />
-              ) : (
-                <EmptyState compact title="Sin datos de producción todavía" />
-              )}
-            </Box>
-          </Paper>
+      {/* Fila 2 -- 3 graficas principales (30% | 40% | 30%) */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={4} lg={3.6}>
+          <CoverageDonutCard areas={metrics.areas} coveragePct={metrics.kpis.coveragePct} />
         </Grid>
-        <Grid item xs={12} md={4}>
-          <AlertsPanel alerts={alerts} />
+        <Grid item xs={12} md={4} lg={4.8}>
+          <MovementsHourlyCard hourlyToday={metrics.trends.hourlyToday} loading={metrics.trends.loading} error={metrics.trends.error} />
+        </Grid>
+        <Grid item xs={12} md={4} lg={3.6}>
+          <AreaStatusDonutCard statusCounts={metrics.statusCounts} />
         </Grid>
       </Grid>
+
+      {/* Fila 3 -- Personal por área (40%) | Faltante vs ideal (60%) */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={5}>
+          <PersonnelByAreaBarCard areas={metrics.areas} />
+        </Grid>
+        <Grid item xs={12} md={7}>
+          <MissingVsIdealComboCard areas={metrics.areas} />
+        </Grid>
+      </Grid>
+
+      {/* Fila 4 -- Movimientos por día (50%) | Hallazgos del día (50%) */}
+      <Grid container spacing={2} sx={{ mb: 1.5 }}>
+        <Grid item xs={12} md={6}>
+          <MovementsDailyCard dailyLast7={metrics.trends.dailyLast7} loading={metrics.trends.loading} error={metrics.trends.error} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <FindingsCard findings={metrics.findings} />
+        </Grid>
+      </Grid>
+
+      {/* Ultima actualizacion -- discreto, nunca una card grande (Parte 44) */}
+      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end" sx={{ opacity: 0.65 }}>
+        <RefreshIcon sx={{ fontSize: 13 }} />
+        <Typography sx={{ fontSize: 11 }}>Última actualización: {metrics.updatedAt.format('hh:mm A')}</Typography>
+      </Stack>
     </Box>
   )
 }
