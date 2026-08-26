@@ -229,6 +229,61 @@ export function usesOperationalDetail(workCenterId) {
   return OPERATIONAL_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))
 }
 
+/* ─────────────────────────────────────────────
+   Tres familias de detalle de area (2026-08-26, a peticion explicita del
+   usuario) -- configuracion CENTRAL unica, para que ningun componente
+   tenga que decidir "if (name === 'CT Capacitación')" por su cuenta:
+
+   LINE         -> LINEA1..10 + PROYECTO (CT LINEA 0, mismo criterio ya
+                   usado para excluirla de OPERATIONAL_DETAIL_AREA_IDS) ->
+                   LineDetailDrawer.jsx, SIN CAMBIOS.
+   OPERATIONAL  -> OPERATIONAL_DETAIL_AREA_IDS (Accesorios, Paletizado,
+                   Midea/High Value, Box Prep, Insumos, Suministro,
+                   Conveyor Principal/Secundario -- incluye Sellado
+                   fusionada -- Calidad) -> OperationalAreaDetail.jsx.
+   SUPPORT      -> el resto: Capacitacion, Team Leader, Soporte, Limpieza,
+                   Gerente, Supervisor (type===SUPPORT_AREA, MENOS
+                   BOX_PREP que ya tiene su excepcion explicita hacia
+                   OPERATIONAL) -> SupportAreaDetail.jsx (nuevo).
+
+   Las tres listas se derivan de WORK_CENTERS sin overlap: cada
+   WORK_CENTER real cae en exactamente una. NO se decide por nombre en
+   ningun momento -- ver getAreaDetailVariant, unico punto de resolucion
+   (AreaDetail.jsx lo consume, no reimplementa la logica). */
+export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', OPERATIONAL: 'OPERATIONAL', SUPPORT: 'SUPPORT' }
+
+export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
+
+export const SUPPORT_DETAIL_AREA_IDS = new Set(
+  WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && w.id !== 'BOX_PREP').map((w) => w.id),
+)
+
+export function getAreaDetailVariant(workCenterId) {
+  if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE
+  if (usesOperationalDetail(workCenterId)) return AREA_DETAIL_VARIANTS.OPERATIONAL
+  if (SUPPORT_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.SUPPORT
+  // Defensivo: cualquier id futuro que no encaje en ninguna lista (no
+  // deberia pasar hoy, las tres cubren el 100% de WORK_CENTERS) cae en
+  // LINE -- LineDetailDrawer.jsx ya maneja correctamente cualquier area
+  // sin estaciones de linea con su propia rama "vista simple", el mismo
+  // comportamiento que existia antes de esta clasificacion.
+  return AREA_DETAIL_VARIANTS.LINE
+}
+
+/* Descripcion editorial corta por area de apoyo (Parte 5 del pedido:
+   revisado primero -- NO existe ningun campo de descripcion/categoria
+   real en WorkArea/Employee/User, ver prisma/schema.prisma -- por eso
+   esta configuracion central nueva, en un solo lugar, fácil de editar).
+   Contenido tal como lo especifico el usuario, no inventado por Claude. */
+export const SUPPORT_AREA_DESCRIPTIONS = {
+  CAPACITACION: 'Área de capacitación y desarrollo',
+  TEAM_LEADER: 'Liderazgo y coordinación operativa',
+  SOPORTE: 'Soporte operativo / ingeniería',
+  LIMPIEZA: 'Soporte de limpieza del área',
+  GERENTE: 'Gestión y dirección del área',
+  SUPERVISOR: 'Supervisión y coordinación',
+}
+
 export const STATIONS = [
   'Montaje',
   'Prueba eléctrica',
