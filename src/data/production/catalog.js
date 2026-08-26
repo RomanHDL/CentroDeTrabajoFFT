@@ -249,8 +249,8 @@ export function hasLineStations(workCenterId) {
    (OperationalAreaDetail.jsx, 2026-08-25, a peticion explicita del
    usuario) -- NUNCA se decide por nombre (`if (name === 'CT Accesorios')`),
    siempre por esta lista, calculada a partir de la clasificacion REAL
-   que ya existe en WORK_CENTERS (type/kind), con dos excepciones
-   explicitas documentadas por el propio usuario en este mismo pedido:
+   que ya existe en WORK_CENTERS (type/kind), con tres excepciones
+   explicitas documentadas por el propio usuario:
 
    - Se EXCLUYE 'PROYECTO' (CT LINEA 0) aunque su type sea WORK_AREA:
      el usuario listo explicitamente "CT LINEA 0" junto con LINEA1..10
@@ -259,16 +259,24 @@ export function hasLineStations(workCenterId) {
      lo pidio explicitamente por nombre en su lista de areas operativas
      ("Box Prep"), aunque el catalogo lo clasifica como apoyo
      (isProduction:false) por no tener plantilla oficial.
+   - Se EXCLUYE 'CALIDAD' aunque su type sea WORK_AREA (2026-08-26,
+     REVERSION explicita del usuario sobre la decision anterior de este
+     mismo archivo: "aunque el mockup use WC Calidad como referencia
+     visual, la clasificacion real es SUPPORT -- forma parte de las 7
+     cards inferiores que deben quedarse con su otra experiencia"). El
+     `type`/`isProduction` de CALIDAD en WORK_CENTERS NO se toco (sigue
+     reflejando su clasificacion real de produccion del Excel LAYOUT
+     FFT.xlsx) -- esto es puramente una excepcion en QUE VISTA DE
+     DETALLE usa, exactamente el mismo patron que la excepcion de
+     BOX_PREP de arriba pero en sentido inverso. Ver SUPPORT_DETAIL_AREA_IDS
+     mas abajo, donde CALIDAD se agrega de vuelta explicitamente.
 
    El resto de type===WORK_AREA (Paletizado, Accesorios, Conveyor
-   Principal/Secundario, Midea/High Value, Calidad, Sellado, Insumos,
-   Suministro de material) coincide 1:1 con la lista que el usuario dio
-   por nombre -- confirmado area por area, no asumido. CT Calidad
-   califica porque su clasificacion real YA es WORK_AREA/isProduction:true
-   (verificado antes de incluirla, tal como pidio el usuario explicitamente
-   "revisar clasificacion real, no asumir"). Las SUPPORT_AREA restantes
-   (Capacitacion, Team Leader, Soporte, Limpieza, Gerente, Supervisor) y
-   todas las PRODUCTION_LINE quedan fuera, sin excepcion.
+   Principal/Secundario, Midea/High Value, Sellado, Insumos, Suministro
+   de material) coincide 1:1 con la lista que el usuario dio por nombre
+   -- confirmado area por area, no asumido. Las SUPPORT_AREA restantes
+   (Capacitacion, Team Leader, Soporte, Limpieza, Gerente, Supervisor,
+   Calidad) y todas las PRODUCTION_LINE quedan fuera, sin excepcion.
 
    CT SELLADO (2026-08-25, correccion explicita del usuario): no tiene
    entrada propia -- "va en Conveyor Principal, ponlos ahi juntos". No
@@ -280,7 +288,7 @@ export function hasLineStations(workCenterId) {
    ya usado para "CT Insumos y Suministro de material" en el plano 2D
    (dos WORK_CENTER reales, una sola representacion visual). */
 export const OPERATIONAL_DETAIL_AREA_IDS = new Set([
-  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.WORK_AREA && w.id !== 'PROYECTO').map((w) => w.id),
+  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.WORK_AREA && w.id !== 'PROYECTO' && w.id !== 'CALIDAD').map((w) => w.id),
   'BOX_PREP',
 ])
 
@@ -385,11 +393,14 @@ export function getNextWorkCenter(currentAreaId) {
    OPERATIONAL  -> OPERATIONAL_DETAIL_AREA_IDS (Accesorios, Paletizado,
                    Midea/High Value, Box Prep, Insumos, Suministro,
                    Conveyor Principal/Secundario -- incluye Sellado
-                   fusionada -- Calidad) -> OperationalAreaDetail.jsx.
+                   fusionada) -> OperationalAreaDetail.jsx.
    SUPPORT      -> el resto: Capacitacion, Team Leader, Soporte, Limpieza,
-                   Gerente, Supervisor (type===SUPPORT_AREA, MENOS
-                   BOX_PREP que ya tiene su excepcion explicita hacia
-                   OPERATIONAL) -> SupportAreaDetail.jsx (nuevo).
+                   Gerente, Supervisor, Calidad (type===SUPPORT_AREA,
+                   MENOS BOX_PREP que ya tiene su excepcion explicita
+                   hacia OPERATIONAL, MAS CALIDAD que la tiene al reves --
+                   ver la excepcion explicita en OPERATIONAL_DETAIL_AREA_IDS
+                   de arriba, 2026-08-26, reversion explicita del usuario)
+                   -> SupportAreaDetail.jsx.
 
    Las tres listas se derivan de WORK_CENTERS sin overlap: cada
    WORK_CENTER real cae en exactamente una. NO se decide por nombre en
@@ -399,9 +410,10 @@ export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', OPERATIONAL: 'OPERATIONAL', 
 
 export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
-export const SUPPORT_DETAIL_AREA_IDS = new Set(
-  WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && w.id !== 'BOX_PREP').map((w) => w.id),
-)
+export const SUPPORT_DETAIL_AREA_IDS = new Set([
+  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && w.id !== 'BOX_PREP').map((w) => w.id),
+  'CALIDAD',
+])
 
 export function getAreaDetailVariant(workCenterId) {
   if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE

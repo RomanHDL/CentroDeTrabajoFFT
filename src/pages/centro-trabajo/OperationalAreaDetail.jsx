@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -73,6 +75,30 @@ function relativeTimeEs(iso) {
   if (diffH < 24) return `Hace ${diffH} h`
   const diffD = Math.floor(diffH / 24)
   return `Hace ${diffD} d`
+}
+
+/* Fila de historial reutilizada tal cual entre la vista compacta (5
+   eventos) y el dialogo "Ver todo" (los mismos datos ya obtenidos por
+   el unico fetch de arriba -- limit=8 -- nunca una segunda consulta). */
+function HistoryRow({ h }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Box sx={{
+        width: 24, height: 24, borderRadius: '50%', flexShrink: 0, mt: 0.1,
+        bgcolor: alpha('#10B981', 0.14), display: 'grid', placeItems: 'center', color: '#10B981',
+      }}>
+        <PersonAddAlt1Icon sx={{ fontSize: 13 }} />
+      </Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3 }} noWrap>
+          {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
+        </Typography>
+        <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+          {h.byName ? `Por ${h.byName} · ` : ''}{relativeTimeEs(h.movedAt)}
+        </Typography>
+      </Box>
+    </Stack>
+  )
 }
 
 function MetricBlock({ label, children, borderLeft }) {
@@ -225,6 +251,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const availableRef = useRef(null)
   const [highlightAvailable, setHighlightAvailable] = useState(false)
   const [availableQuery, setAvailableQuery] = useState('')
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false)
 
   const [history, setHistory] = useState({ loading: true, error: null, items: [] })
 
@@ -237,6 +264,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
     setSelfAssignOpen(false)
     setHighlightAvailable(false)
     setAvailableQuery('')
+    setHistoryDialogOpen(false)
   }, [workCenterId])
 
   // Id canonico (2026-08-25, ver catalog.js/AREA_DETAIL_GROUPS): CT Sellado
@@ -331,7 +359,14 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
       </Box>
 
       <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* Fila superior de metricas */}
+        {/* Estado del area -- 2026-08-26, mockup aprobado: seccion con
+            titulo propio envolviendo la card horizontal de metricas
+            (antes la card no tenia un titulo de seccion encima). Cuando
+            no hay plantilla ideal, se explica con texto en vez de "—"
+            (peticion explicita del usuario: "Sin meta"/"Sin definir"/
+            "No calculable" en vez de un guion sin contexto) -- nunca se
+            inventa un numero. */}
+        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>Estado del área</Typography>
         <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 2.5, overflow: 'hidden' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} divider={false}>
             <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 180px', display: 'flex', alignItems: 'center', gap: 1.25 }}>
@@ -348,8 +383,8 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             </Box>
 
             <MetricBlock label="Cobertura actual" borderLeft>
-              <Typography sx={{ fontSize: 21, fontWeight: 800, color: coveragePct != null && coveragePct >= 100 ? '#10B981' : '#3B82F6', lineHeight: 1.1 }}>
-                {coveragePct != null ? `${coveragePct}%` : '—'}
+              <Typography sx={{ fontSize: coveragePct != null ? 21 : 14, fontWeight: 800, color: coveragePct != null && coveragePct >= 100 ? '#10B981' : coveragePct != null ? '#3B82F6' : 'text.secondary', lineHeight: 1.2 }}>
+                {coveragePct != null ? `${coveragePct}%` : 'Sin meta'}
               </Typography>
               {coveragePct != null && (
                 <>
@@ -362,13 +397,17 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             </MetricBlock>
 
             <MetricBlock label="Plantilla ideal" borderLeft>
-              <Typography sx={{ fontSize: 21, fontWeight: 800, lineHeight: 1.1 }}>{staffing.ideal ?? '—'}</Typography>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
+              <Typography sx={{ fontSize: staffing.ideal != null ? 21 : 14, fontWeight: 800, lineHeight: 1.2, color: staffing.ideal != null ? 'text.primary' : 'text.secondary' }}>
+                {staffing.ideal != null ? staffing.ideal : 'Sin definir'}
+              </Typography>
+              {staffing.ideal != null && <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>}
             </MetricBlock>
 
             <MetricBlock label="Faltante" borderLeft>
-              <Typography sx={{ fontSize: 21, fontWeight: 800, lineHeight: 1.1, color: missing > 0 ? '#EF4444' : 'text.primary' }}>{staffing.ideal != null ? missing : '—'}</Typography>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
+              <Typography sx={{ fontSize: staffing.ideal != null ? 21 : 14, fontWeight: 800, lineHeight: 1.2, color: staffing.ideal == null ? 'text.secondary' : missing > 0 ? '#EF4444' : 'text.primary' }}>
+                {staffing.ideal != null ? missing : 'No calculable'}
+              </Typography>
+              {staffing.ideal != null && <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>}
             </MetricBlock>
 
             <MetricBlock label="Estado del área" borderLeft>
@@ -414,120 +453,120 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
           </Grid>
         </Grid>
 
-        {/* Disponibles / Drop zone / Resumen rapido / Historial -- 2026-08-26,
-            reparacion del contrato aprobado (WC Accesorios sigue siendo la
-            referencia visual): alignItems="flex-start" es la correccion
-            central. El Grid (MUI v1, flexbox) estira por defecto TODOS los
-            hermanos de una fila a la altura del mas alto (align-items:
-            stretch implicito) -- con Disponibles renderizando su lista
-            completa sin limite, eso forzaba Drop zone/Resumen/Historial a
-            crecer igual de gigantes. Con flex-start cada bloque toma su
-            propia altura natural; el limite del propio Disponibles (abajo,
-            maxHeight + overflowY local) es lo que evita que ESE bloque
-            crezca sin fin, no que los demas lo imiten. */}
-        <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
-          <Grid item xs={12} md={6} lg={3}>
-            <Paper
-              ref={availableRef}
-              elevation={0}
-              sx={{
-                borderRadius: '16px', border: '1px solid', borderColor: highlightAvailable ? '#3B82F6' : 'divider',
-                p: 2, transition: 'border-color .3s ease',
-                boxShadow: highlightAvailable ? (t) => `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}` : 'none',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1 }}>
-                Disponibles para asignar ({available.length})
-                {availableQuery.trim() && (
-                  <Typography component="span" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}>
-                    · {filteredAvailable.length} resultado{filteredAvailable.length === 1 ? '' : 's'}
-                  </Typography>
+        {/* Gestion de personal -- 2026-08-26, mockup aprobado: las tres
+            columnas (Disponibles / Drop zone / Resumen+Historial) ahora
+            viven dentro de UNA sola seccion envolvente (titulo propio +
+            un Paper de fondo compartido) para que "se sientan parte de
+            una misma seccion", en vez de 4 cards sueltas al mismo nivel
+            que el resto de la pagina. La correccion de altura de la
+            tarea anterior sigue siendo la misma y NO se revierte:
+            alignItems="flex-start" en el Grid interno (el Grid de MUI
+            estira por defecto todos los hermanos de una fila a la altura
+            del mas alto -- con Disponibles renderizando su lista sin
+            limite, eso forzaba Drop zone/Resumen/Historial a crecer
+            igual de gigantes). Cada columna sigue teniendo su propio
+            limite: Disponibles con maxHeight+overflowY local, Resumen +
+            Historial apilados en la tercera columna (su suma vertical es
+            lo que ahora se alinea con las otras dos, en vez de 4 columnas
+            iguales forzadas). */}
+        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>Gestión de personal</Typography>
+        <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', bgcolor: (t) => (t.palette.mode === 'dark' ? alpha('#fff', 0.02) : alpha('#000', 0.012)), p: { xs: 1.5, md: 2 }, mb: 2.5 }}>
+          <Grid container spacing={2} alignItems="flex-start">
+            <Grid item xs={12} md={4}>
+              <Paper
+                ref={availableRef}
+                elevation={0}
+                sx={{
+                  borderRadius: '16px', border: '1px solid', borderColor: highlightAvailable ? '#3B82F6' : 'divider',
+                  p: 2, transition: 'border-color .3s ease', bgcolor: 'background.paper',
+                  boxShadow: highlightAvailable ? (t) => `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}` : 'none',
+                }}
+              >
+                <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1 }}>
+                  Disponibles para asignar ({available.length})
+                  {availableQuery.trim() && (
+                    <Typography component="span" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}>
+                      · {filteredAvailable.length} resultado{filteredAvailable.length === 1 ? '' : 's'}
+                    </Typography>
+                  )}
+                </Typography>
+                {available.length === 0 ? (
+                  <EmptyState compact title="Sin personal disponible" description="Todo el personal activo ya tiene ubicación asignada hoy." />
+                ) : (
+                  <>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={availableQuery}
+                      onChange={(e) => setAvailableQuery(e.target.value)}
+                      placeholder="Buscar por nombre o número..."
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} /></InputAdornment>,
+                      }}
+                      sx={{ mb: 1, '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    />
+                    {filteredAvailable.length === 0 ? (
+                      <EmptyState compact title="Sin coincidencias" description="Nadie disponible coincide con la búsqueda." />
+                    ) : (
+                      <Stack spacing={1} sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}>
+                        {filteredAvailable.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
+                      </Stack>
+                    )}
+                  </>
                 )}
-              </Typography>
-              {available.length === 0 ? (
-                <EmptyState compact title="Sin personal disponible" description="Todo el personal activo ya tiene ubicación asignada hoy." />
-              ) : (
-                <>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={availableQuery}
-                    onChange={(e) => setAvailableQuery(e.target.value)}
-                    placeholder="Buscar por nombre o número..."
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} /></InputAdornment>,
-                    }}
-                    sx={{ mb: 1, '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                  {filteredAvailable.length === 0 ? (
-                    <EmptyState compact title="Sin coincidencias" description="Nadie disponible coincide con la búsqueda." />
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <DropZone areaId={canonicalId} label={area.name} />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Stack spacing={2}>
+                <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.paper' }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Resumen rápido</Typography>
+                  <Stack spacing={1}>
+                    {[
+                      ['Total en el área', staffing.real],
+                      ['Plantilla ideal', staffing.ideal != null ? staffing.ideal : 'Sin definir'],
+                      ['Faltante', staffing.ideal != null ? missing : 'No calculable'],
+                      ['Cobertura', coveragePct != null ? `${coveragePct}%` : 'Sin meta'],
+                      ['Disponibles', available.length],
+                    ].map(([label, value]) => (
+                      <Stack key={label} direction="row" justifyContent="space-between">
+                        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{label}</Typography>
+                        <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{value}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Paper>
+                <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.paper' }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>Historial reciente</Typography>
+                    {history.items.length > 5 && (
+                      <Typography
+                        component="button"
+                        onClick={() => setHistoryDialogOpen(true)}
+                        sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', p: 0 }}
+                      >
+                        Ver todo
+                      </Typography>
+                    )}
+                  </Stack>
+                  {history.loading ? (
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Cargando…</Typography>
+                  ) : history.error ? (
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>No se pudo cargar el historial.</Typography>
+                  ) : history.items.length === 0 ? (
+                    <EmptyState compact title="Sin movimientos recientes" description="Todavía no hay asignaciones o movimientos registrados para esta área." />
                   ) : (
-                    <Stack spacing={1} sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}>
-                      {filteredAvailable.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
+                    <Stack spacing={1.25}>
+                      {history.items.slice(0, 5).map((h) => <HistoryRow key={h.id} h={h} />)}
                     </Stack>
                   )}
-                </>
-              )}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DropZone areaId={canonicalId} label={area.name} />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Resumen rápido</Typography>
-              <Stack spacing={1}>
-                {[
-                  ['Total en el área', staffing.real],
-                  ['Plantilla ideal', staffing.ideal ?? '—'],
-                  ['Faltante', staffing.ideal != null ? missing : '—'],
-                  ['Cobertura', coveragePct != null ? `${coveragePct}%` : '—'],
-                  ['Disponibles para asignar', available.length],
-                ].map(([label, value]) => (
-                  <Stack key={label} direction="row" justifyContent="space-between">
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{label}</Typography>
-                    <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{value}</Typography>
-                  </Stack>
-                ))}
+                </Paper>
               </Stack>
-            </Paper>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>Historial reciente</Typography>
-              </Stack>
-              {history.loading ? (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Cargando…</Typography>
-              ) : history.error ? (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>No se pudo cargar el historial.</Typography>
-              ) : history.items.length === 0 ? (
-                <EmptyState compact title="Sin movimientos recientes" description="Todavía no hay asignaciones o movimientos registrados para esta área." />
-              ) : (
-                <Stack spacing={1.25} sx={{ maxHeight: 280, overflowY: 'auto', pr: 0.5 }}>
-                  {history.items.map((h) => (
-                    <Stack key={h.id} direction="row" spacing={1} alignItems="flex-start">
-                      <Box sx={{
-                        width: 24, height: 24, borderRadius: '50%', flexShrink: 0, mt: 0.1,
-                        bgcolor: alpha('#10B981', 0.14), display: 'grid', placeItems: 'center', color: '#10B981',
-                      }}>
-                        <PersonAddAlt1Icon sx={{ fontSize: 13 }} />
-                      </Box>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography sx={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3 }} noWrap>
-                          {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
-                        </Typography>
-                        <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-                          {h.byName ? `Por ${h.byName} · ` : ''}{relativeTimeEs(h.movedAt)}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  ))}
-                </Stack>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
+        </Paper>
 
         <Divider sx={{ mb: 2.5 }} />
 
@@ -616,6 +655,21 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
 
       <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
       <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
+
+      {/* "Ver todo" del historial -- 2026-08-26, mockup aprobado. Reutiliza
+          los mismos `history.items` ya obtenidos (fetch limit=8), nunca una
+          segunda consulta: la vista compacta de arriba solo corta a 5. */}
+      <Dialog open={historyDialogOpen} onClose={() => setHistoryDialogOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800, fontSize: 16 }}>
+          Historial de {area.name}
+          <IconButton size="small" onClick={() => setHistoryDialogOpen(false)}><CloseIcon fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pb: 1 }}>
+            {history.items.map((h) => <HistoryRow key={h.id} h={h} />)}
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

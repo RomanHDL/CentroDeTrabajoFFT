@@ -11,6 +11,7 @@ import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine } from '../s
 import {
   OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext,
   getCurrentShift, getShiftSchedule, formatShiftSchedule,
+  getAreaDetailVariant, AREA_DETAIL_VARIANTS, OPERATIONAL_DETAIL_AREA_IDS, SUPPORT_DETAIL_AREA_IDS,
 } from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 
@@ -194,6 +195,34 @@ check('formatShiftSchedule -- Matutino se muestra "07:00 AM – 05:10 PM" (nunca
 })
 check('formatShiftSchedule -- Noche cruza medianoche en el texto (10:01 PM – 07:00 AM)', () => {
   assert.equal(formatShiftSchedule(getShiftSchedule('NOCHE')), '10:01 PM – 07:00 AM')
+})
+
+// Reclasificacion de WC Calidad (2026-08-26, reversion explicita del usuario):
+// ya NO usa OperationalAreaDetail, ahora es SUPPORT junto con las otras 6
+// cards inferiores -- verificado por la unica fuente de verdad central
+// (getAreaDetailVariant), nunca por nombre.
+check('WC Calidad -> variante SUPPORT (ya no OPERATIONAL)', () => {
+  assert.equal(getAreaDetailVariant('CALIDAD'), AREA_DETAIL_VARIANTS.SUPPORT)
+  assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CALIDAD'))
+  assert.ok(SUPPORT_DETAIL_AREA_IDS.has('CALIDAD'))
+})
+check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
+  ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR'].forEach((id) => {
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
+  })
+})
+check('las areas operativas restantes (incluyendo Box Prep) siguen OPERATIONAL', () => {
+  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'HIGH_VALUE', 'PALETIZADO', 'BOX_PREP', 'INSUMOS', 'SUMINISTRO_MATERIAL', 'ACCESORIOS'].forEach((id) => {
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
+  })
+})
+check('WC LINEA 0-10 siguen LINE, sin cambio', () => {
+  ;['PROYECTO', 'LINEA1', 'LINEA5', 'LINEA10'].forEach((id) => {
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE, id)
+  })
+})
+check('WC LINEA 11 no existe en el catalogo (no se inventa)', () => {
+  assert.ok(!WORK_CENTERS.some((w) => w.id === 'LINEA11'))
 })
 
 console.log(`\n${passed}/${passed} checks OK`)
