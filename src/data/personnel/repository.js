@@ -398,6 +398,10 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   if (!stationId) return { status: 'ERROR', message: 'Selecciona el rol/estación.' }
 
   let employee = employeeId ? getEmployeeById(employeeId) : getEmployeeByNumber(number)
+  // wasJustCreated: distingue "persona genuinamente nueva" (recien creada AQUI mismo) de
+  // "persona ya conocida localmente" -- ver syncCheckIn mas abajo, es la bandera que evita
+  // el bug real de duplicados (2026-08-27, ver apiSync.js).
+  let wasJustCreated = false
   if (!employee) {
     if (employeeId) return { status: 'ERROR', message: 'Empleado no encontrado.' }
     if (!name || !name.trim()) {
@@ -405,6 +409,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
     }
     try {
       employee = createEmployee({ employeeNumber: number, name })
+      wasJustCreated = true
     } catch (e) {
       return { status: 'ERROR', message: e.message }
     }
@@ -459,7 +464,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   })
   writeMovements(movements)
 
-  syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId, shift })
+  syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId, shift, isNewEmployee: wasJustCreated })
   notify()
   return { status: 'OK', employee, assignment }
 }

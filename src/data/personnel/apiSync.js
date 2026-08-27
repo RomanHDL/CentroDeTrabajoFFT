@@ -83,9 +83,26 @@ function isPlaceholderNumber(number) {
    Si falla, solo se registra en consola: el siguiente poll reconcilia
    el estado real (ver pollOnce). ── */
 
-export function syncCheckIn({ employeeId, employeeNumber, name, areaId, stationId, shift }) {
+/* isNewEmployee (2026-08-27, corrige bug real de duplicados): SOLO checkInEmployee lo manda en
+   true, y solo cuando la persona se acaba de crear AHI MISMO (createEmployee recien llamado) --
+   es el UNICO caso legitimo donde no hay serverId todavia porque el empleado en verdad no existe
+   en el servidor. Para cualquier otro caso (persona ya conocida localmente -- snapshot de BASE,
+   directorio, o reconciliacion) sin serverId resuelto TODAVIA, antes se mandaba `name` igual y el
+   backend creaba un EMPLEADO DUPLICADO (checkin.js: sin employeeId/employeeNumber, siempre da de
+   alta uno nuevo por nombre) -- confirmado en produccion con "Cesar Hernandez Hernandez" y otros
+   6 nombres que por coincidencia se repiten entre personas reales distintas (sin numero de
+   empleado que los distinga, el mapeo local->servidor por nombre no puede diferenciarlos, ver
+   buildLocalIndex/pollOnce mas abajo). Ahora, igual que ya hacian syncMove/syncRelease, si no hay
+   serverId Y no es alguien genuinamente nuevo, se omite el POST -- el siguiente poll de
+   pollOnce() resuelve el serverId real (por numero de empleado si lo tiene) sin arriesgarse a
+   crear un fantasma. */
+export function syncCheckIn({ employeeId, employeeNumber, name, areaId, stationId, shift, isNewEmployee = false }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)
+  if (!serverId && !isNewEmployee) {
+    console.warn('[personnel-sync] checkin: sin serverId todavia y no es alta nueva, se omite (el siguiente poll lo resuelve)')
+    return
+  }
   const placeholder = isPlaceholderNumber(employeeNumber)
   apiFetch('/api/personnel/checkin', {
     method: 'POST',
