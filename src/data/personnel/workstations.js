@@ -163,35 +163,40 @@ function buildWorkstations() {
       // +1 de Calidad, ver la nota junto a WORK_CENTERS en catalog.js) antes
       // de calcular el plan base: garantiza que Montaje/Prueba eléctrica/
       // Limpieza/Etiquetado/Suministro de Accesorios y sus repeticiones
-      // generen EXACTAMENTE las mismas posiciones que antes de este cambio
-      // (mismos nombres, mismo orden, ninguna asignacion real ya guardada
-      // queda huerfana). Calidad se agrega despues, como una posicion mas al
-      // final -- nunca reemplaza ni reordena las anteriores.
+      // generen EXACTAMENTE las mismas posiciones de siempre (mismos
+      // nombres, mismo orden RELATIVO entre ellas, ninguna asignacion real
+      // ya guardada queda huerfana) -- Calidad nunca reemplaza ni reordena
+      // esas 5.
+      //
+      // Orden 2026-08-28 (a peticion explicita del usuario, "los de calidad
+      // deben ir primero"): Calidad ahora es la POSICION 1 de cada CT LINEA
+      // (antes iba al final) -- el resto de posiciones se recorre una a la
+      // derecha, sin cambiar su orden relativo entre si.
       const plan = buildLineRolePlan(wc.id, wc.idealHeadcount - 1)
-      const stations = plan.map((entry, i) => {
-        const name = entry.repeatIndex === 0 ? entry.role : `${entry.role} ${entry.repeatIndex + 1}`
-        return {
-          id: `${wc.id}-${i + 1}`,
-          lineId: wc.id,
-          name,
-          role: entry.role,
-          requiredRole: ROLE_LABELS[entry.role] || entry.role,
-          capacity: 1,
-          order: i + 1,
-          status: 'ACTIVA',
-        }
-      })
-      stations.push({
-        id: `${wc.id}-${stations.length + 1}`,
+      const calidadStation = {
+        id: `${wc.id}-1`,
         lineId: wc.id,
         name: 'Calidad',
         role: 'Calidad',
         requiredRole: ROLE_LABELS.Calidad || 'Calidad',
         capacity: 1,
-        order: stations.length + 1,
+        order: 1,
         status: 'ACTIVA',
+      }
+      const stations = plan.map((entry, i) => {
+        const name = entry.repeatIndex === 0 ? entry.role : `${entry.role} ${entry.repeatIndex + 1}`
+        return {
+          id: `${wc.id}-${i + 2}`,
+          lineId: wc.id,
+          name,
+          role: entry.role,
+          requiredRole: ROLE_LABELS[entry.role] || entry.role,
+          capacity: 1,
+          order: i + 2,
+          status: 'ACTIVA',
+        }
       })
-      map[wc.id] = stations
+      map[wc.id] = [calidadStation, ...stations]
     } else if (CUSTOM_STATION_PLANS[wc.id]) {
       // Accesorios/Paletizado/Insumos (2026-08-26): plantilla real por
       // puesto, ver CUSTOM_STATION_PLANS (catalog.js) -- capacidad 1 por

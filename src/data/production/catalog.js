@@ -175,7 +175,22 @@ export const CUSTOM_STATION_PLANS = {
     { role: 'Cables', count: 1 },
   ],
   PALETIZADO: [
+    // Orden 2026-08-28 (a peticion explicita del usuario, "los de calidad deben
+    // ir primero"): Calidad ENCABEZA la distribucion de Paletizado (igual que en
+    // cada CT LINEA, ver workstations.js), seguido del Team Leader (lider) --
+    // nunca al reves en las areas donde existe Calidad. Las 2 Ayudante General
+    // Escaneador van justo despues del lider ("alado del lider", peticion
+    // explicita) porque asi las pidio el usuario agrupadas visualmente. El resto
+    // de roles conserva su orden relativo de siempre.
+    //
+    // Calidad ahora son 3 puestos (antes 2, "Calidad 1"/"Calidad 2" para
+    // Beckham/Patricia): el usuario confirmo que hay una 3a persona de Calidad
+    // en Paletizado todavia sin registrar en el sistema -- el puesto "Calidad 3"
+    // se agrega ya (disponible, sin ocupante) para que el usuario la registre
+    // el la misma app cuando la tenga a la mano.
+    { role: 'Calidad', count: 3 },
     { role: 'Team Leader', count: 1 },
+    { role: 'Ayudante General Escaneador', count: 2 },
     { role: 'Operador de Flejadora', count: 1 },
     { role: 'Conveyor', count: 2 },
     { role: 'Ayudante General Conveyor', count: 2 },
@@ -188,14 +203,6 @@ export const CUSTOM_STATION_PLANS = {
     // nuevo.
     { role: 'Ayudante General Paletizador', count: 7 },
     { role: 'Ayudante General Flejado', count: 2 },
-    { role: 'Ayudante General Escaneador', count: 2 },
-    // Calidad (2026-08-27, a peticion explicita del usuario): 2 puestos reales
-    // ("Calidad 1"/"Calidad 2") para Beckham y Patricia -- a diferencia del
-    // ajuste anterior (que los puso en un rol de Ayudante General por falta de
-    // uno propio), ahora Calidad es su propio rol real dentro de Paletizado,
-    // igual que ya lo es dentro de cada CT LINEA (ver catalog.js WORK_CENTERS
-    // arriba). Rango visual distinto (Personal de apoyo) via rankSystem.js.
-    { role: 'Calidad', count: 2 },
   ],
   /* Insumos fusiona PNP/POC/PEN (decorativa, sin WORK_CENTER propio) +
      Box Prep + Suministro de material en un solo WC (ver

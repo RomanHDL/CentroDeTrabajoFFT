@@ -70,6 +70,11 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
         '&:hover': { borderColor: '#3B82F6', boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)' },
       }}
     >
+      {/* 2026-08-28, a peticion explicita del usuario ("hay mucho de Ayudante
+          General pero son de diferentes roles, identificalos"): el nombre ya
+          NO se trunca a una linea (antes "Ayudante General..." ocultaba cual
+          era -- Paletizador/Conveyor/Flejado/Escaneador). Ahora se permite
+          hasta 2 lineas completas antes de recortar. */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
         <Box sx={{
           width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
@@ -78,7 +83,15 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
         }}>
           {workstation.order}
         </Box>
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5, lineHeight: 1.2 }} noWrap>{workstation.name}</Typography>
+        <Typography
+          sx={{
+            fontWeight: 800, fontSize: 11.5, lineHeight: 1.2,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word',
+          }}
+        >
+          {workstation.name}
+        </Typography>
       </Box>
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 0.5 }}>
