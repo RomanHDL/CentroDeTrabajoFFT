@@ -77,6 +77,23 @@ export function getSnapshotPeopleByArea() {
   return map
 }
 
+/* Zona real de ORIGEN (2026-08-26, a peticion explicita del usuario: al
+   mover a un lider real a WC Team Leader, "que me pongas en que lugar
+   están" -- de donde viene realmente cada quien). Busca en el snapshot
+   PURO (nunca cambia, ver arriba) cual era la zona real de esa persona
+   segun LAYOUT FFT.xlsx -- solo devuelve un id si mapea a un WORK_CENTER
+   real (nunca 'PRODUCCION'/'CHOFER', que no tienen area propia). null si
+   la persona no viene del snapshot (fue creada/registrada despues) o si
+   su zona cruda no mapea a ningun WORK_CENTER real. Generico -- no
+   hardcodea ningun nombre de persona, sirve para cualquiera. */
+export function getSnapshotHomeAreaId(employeeId) {
+  const buckets = getSnapshotPeopleByArea()
+  for (const [areaId, people] of Object.entries(buckets)) {
+    if (workCenterById(areaId) && people.some((p) => p.id === employeeId)) return areaId
+  }
+  return null
+}
+
 /* Personal "efectivo" de HOY, por area — la fuente que alimenta
    TODO el REAL de Ideal/Real/Diferencia y el layout visual.
 

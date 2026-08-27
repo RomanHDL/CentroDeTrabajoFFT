@@ -14,7 +14,13 @@ import EmployeeAvatar from './EmployeeAvatar'
    DndAssignProvider, un solo lugar para toda la app). No duplica
    logica: ambos caminos llaman a requestRelease/releaseAssignment.
    ───────────────────────────────────────────── */
-export default function AssignedPersonChip({ employeeId, name, size = 32 }) {
+/* `subtitle` (2026-08-26, a peticion explicita del usuario: "los puestos
+   que te pasé no los veo en mi layout") -- segunda linea opcional bajo el
+   nombre, hoy usada para mostrar el PUESTO/estación real de la persona
+   (ej. "Surtidor de Accesorios 3") en areas con plantilla por puesto
+   (Accesorios/Paletizado/Insumos). Sin `subtitle` se ve exactamente igual
+   que antes -- no rompe ningun uso existente. */
+export default function AssignedPersonChip({ employeeId, name, subtitle, size = 32 }) {
   const dnd = useDndAssign()
   return (
     <DraggablePersonChip employeeId={employeeId} sx={{ width: '100%' }}>
@@ -25,6 +31,7 @@ export default function AssignedPersonChip({ employeeId, name, size = 32 }) {
         <EmployeeAvatar employee={{ name }} size={size} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>{name}</Typography>
+          {subtitle && <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>{subtitle}</Typography>}
         </Box>
         <IconButton size="small" onClick={() => dnd.requestRelease(employeeId)} sx={{ color: 'text.secondary' }}>
           <CloseIcon sx={{ fontSize: 16 }} />

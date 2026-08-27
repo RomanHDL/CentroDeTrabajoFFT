@@ -35,7 +35,7 @@ import { EmptyState } from '../../ui'
 import { workCenterById, SUPPORT_AREA_DESCRIPTIONS } from '../../data/production/catalog'
 import {
   getPeopleByArea, getAreaStaffing, getAvailablePersonnelToday,
-  AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee,
+  AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee, getSnapshotHomeAreaId,
 } from '../../data/production/personnelByArea'
 import { getCurrentAssignment } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -103,6 +103,15 @@ function PersonCard({ person, areaId, canManage }) {
   const assignment = getCurrentAssignment(person.id)
   const actividad = getActividadForEmployee(person.id)
   const assignedDate = assignment?.createdAt ? dayjs(assignment.createdAt).format('DD MMM YYYY') : null
+  /* Zona real de origen (2026-08-26, a peticion explicita del usuario:
+     "que me pongas en que lugar están" al mover lideres reales a WC Team
+     Leader) -- solo se muestra si la persona SI viene del snapshot real
+     Y su zona de origen es distinta al area actual (nunca redundante,
+     ej. no le decimos "antes en Team Leader" a alguien cuya zona de
+     origen YA es Team Leader). Generico: aplica a cualquier persona
+     movida a cualquier area de apoyo, no solo a los 4 lideres. */
+  const homeAreaId = getSnapshotHomeAreaId(person.id)
+  const homeArea = homeAreaId && homeAreaId !== areaId ? workCenterById(homeAreaId) : null
 
   return (
     <Paper elevation={0} sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
@@ -112,9 +121,14 @@ function PersonCard({ person, areaId, canManage }) {
         </DraggablePersonChip>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 800, fontSize: 14 }} noWrap>{person.name}</Typography>
-          {actividad && (
-            <Chip size="small" label={actividad} sx={{ height: 18, fontSize: 10, fontWeight: 700, mt: 0.25, bgcolor: alpha('#3B82F6', 0.12), color: '#3B82F6' }} />
-          )}
+          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            {actividad && (
+              <Chip size="small" label={actividad} sx={{ height: 18, fontSize: 10, fontWeight: 700, mt: 0.25, bgcolor: alpha('#3B82F6', 0.12), color: '#3B82F6' }} />
+            )}
+            {homeArea && (
+              <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary', mt: 0.25 }}>Zona real: {homeArea.name}</Typography>
+            )}
+          </Stack>
         </Box>
         {assignedDate && (
           <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0, display: { xs: 'none', sm: 'flex' } }}>

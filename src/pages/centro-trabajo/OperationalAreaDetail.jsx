@@ -36,6 +36,8 @@ import {
   AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee,
 } from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { reconcileLineAssignments, getCurrentAssignment } from '../../data/personnel/repository'
+import { hasMultipleStations } from '../../data/personnel/workstations'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useDndAssign } from '../../state/dndAssign'
@@ -281,6 +283,33 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
   const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
+
+  /* Reconciliacion de puestos reales al abrir el area (2026-08-26, a
+     peticion explicita del usuario: "te pasé los puestos... ya tú el
+     personal ponlos en los puestos" -- los puestos definidos en
+     CUSTOM_STATION_PLANS existian en el sistema pero nadie quedaba
+     realmente colocado en un puesto especifico, solo en la lista plana
+     de "Personal asignado"). Mismo mecanismo ya usado por WC LINEA/Midea
+     (reconcileLineAssignments, repository.js) -- idempotente, nunca
+     inventa una estacion extra, nunca toca a una BAJA, preserva
+     checkInAt/shift reales ya guardados. Solo corre para areas con mas
+     de 1 estacion real (Accesorios/Paletizado/Insumos) -- las demas
+     (Conveyors, etc.) siguen con su unico puesto generico, sin cambio.
+     Para el grupo fusionado de Insumos, se reconcilian TODOS los
+     miembros (incluye BOX_PREP/SUMINISTRO_MATERIAL) contra las 9
+     estaciones reales de INSUMOS -- su gente pasa a tener una asignacion
+     real en INSUMOS con puesto especifico, en vez de quedar "atrapada"
+     en su bucket de snapshot original sin puesto. */
+  useEffect(() => {
+    if (!open || !canonicalId || !hasMultipleStations(canonicalId)) return
+    const ids = memberIds
+      .flatMap((id) => getGroupPeople([id]))
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      .map((p) => p.id)
+    reconcileLineAssignments(canonicalId, ids)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonicalId, open])
   const filteredAvailable = useMemo(() => {
     const q = availableQuery.trim().toLowerCase()
     if (!q) return available
@@ -441,7 +470,7 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
                 <Grid container spacing={1.25} sx={{ maxHeight: 420, overflowY: 'auto', pr: 0.5 }}>
                   {people.map((p) => (
                     <Grid item xs={12} sm={6} md={4} key={p.id}>
-                      <AssignedPersonChip employeeId={p.id} name={p.name} />
+                      <AssignedPersonChip employeeId={p.id} name={p.name} subtitle={getCurrentAssignment(p.id)?.stationId} />
                     </Grid>
                   ))}
                 </Grid>
