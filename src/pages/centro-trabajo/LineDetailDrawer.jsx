@@ -479,7 +479,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     </Tooltip>
                   </Stack>
                 </Box>
-                <Box sx={{ p: 2, display: 'grid', gap: 1.25, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+                <Box sx={{ p: 2, display: 'grid', gap: 1.5, gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
                   {workstations.map((w) => (
                     <LineWorkstationCard
                       key={w.id}

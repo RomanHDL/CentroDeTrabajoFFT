@@ -19,17 +19,21 @@ import { LineTypeIcon } from './LineVisualLegend'
 /* ─────────────────────────────────────────────
    Tarjeta de estacion, exclusiva de WC LINEA 0-10 (2026-08-28, "REDISEÑO DE
    WC LINEA 0 A WC LINEA 10"; ampliada 2026-08-27, "estaciones configurables
-   por ADMINISTRADOR"). Separada a proposito de LineStationCard.jsx -- ese
-   sigue intacto, usado exclusivamente por LineLikeAreaDetail.jsx.
+   por ADMINISTRADOR"; agrandada 2026-08-27, "AJUSTE VISUAL MUY ESPECIFICO
+   -- cards mas grandes/legibles", a peticion explicita del usuario). Separada
+   a proposito de LineStationCard.jsx -- ese sigue intacto, usado
+   exclusivamente por LineLikeAreaDetail.jsx.
 
-   Layout HORIZONTAL compacto (2026-08-27, a peticion explicita del usuario:
-   "no quiero cards grandes") -- avatar chico a la izquierda, texto a la
-   derecha, sin bloque centrado que infla la altura. La categoria
-   (LIDERAZGO/CALIDAD/PRODUCCION/TECNICO/SUMINISTRO/APOYO) es una propiedad
-   de la ESTACION, no del ocupante -- se calcula siempre (con o sin
-   ocupante) y se muestra explicitamente (seccion 5/12 del pedido: nombre +
-   rol requerido + categoria, nunca solo color). Estado (ocupada/disponible)
-   sigue siendo un sistema de color SEPARADO (borde/fondo de la card). */
+   Layout VERTICAL centrado (seccion 3 del pedido de agrandado): encabezado
+   (orden + nombre de estacion + menu admin), fila de categoria, bloque
+   central con avatar + nombre de empleado (hasta 2 lineas reservadas SIEMPRE,
+   para que todas las cards midan lo mismo sin importar el largo del nombre --
+   seccion 10: "todas las cards de una misma distribucion deben mantener una
+   altura visual consistente"), rol requerido (hasta 2 lineas), estado. La
+   categoria (LIDERAZGO/CALIDAD/PRODUCCION/TECNICO/SUMINISTRO/APOYO) sigue
+   siendo una propiedad de la ESTACION, no del ocupante -- se calcula siempre
+   (con o sin ocupante). Estado (ocupada/disponible) sigue siendo un sistema
+   de color SEPARADO (borde/fondo de la card). */
 export default function LineWorkstationCard({ workAreaId, workstation, selected, onSelect, onEmployeeClick, isAdmin, onEdit, onDeactivate }) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
@@ -50,9 +54,9 @@ export default function LineWorkstationCard({ workAreaId, workstation, selected,
       {...dropProps}
       onClick={() => onSelect(workstation)}
       sx={{
-        position: 'relative', p: 1.1, borderRadius: 2.5, cursor: 'pointer',
-        height: 118, boxSizing: 'border-box',
-        display: 'flex', flexDirection: 'column', gap: 0.5,
+        position: 'relative', p: 1.75, borderRadius: 3, cursor: 'pointer',
+        height: 192, boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', gap: 0.6,
         border: '1.5px solid',
         borderStyle: available && !occupant ? 'dashed' : 'solid',
         borderColor: isOver || selected ? '#3B82F6' : occupant ? alpha('#10B981', d ? 0.4 : 0.35) : alpha('#F59E0B', d ? 0.4 : 0.35),
@@ -70,9 +74,9 @@ export default function LineWorkstationCard({ workAreaId, workstation, selected,
           <IconButton
             size="small"
             onClick={(e) => { e.stopPropagation(); setMenuAnchor(e.currentTarget) }}
-            sx={{ position: 'absolute', top: 2, right: 2, p: 0.3 }}
+            sx={{ position: 'absolute', top: 6, right: 6, p: 0.4 }}
           >
-            <MoreVertIcon sx={{ fontSize: 15 }} />
+            <MoreVertIcon sx={{ fontSize: 18 }} />
           </IconButton>
           <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={(e) => { e?.stopPropagation?.(); setMenuAnchor(null) }} onClick={(e) => e.stopPropagation()}>
             <MenuItem onClick={() => { setMenuAnchor(null); onEdit?.(workstation) }}>Editar puesto</MenuItem>
@@ -83,64 +87,83 @@ export default function LineWorkstationCard({ workAreaId, workstation, selected,
         </>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0, pr: isAdmin ? 2 : 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75, minWidth: 0, pr: isAdmin ? 3 : 0 }}>
         <Box sx={{
-          width: 17, height: 17, borderRadius: '50%', flexShrink: 0,
-          display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 800,
+          width: 22, height: 22, borderRadius: '50%', flexShrink: 0, mt: 0.1,
+          display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800,
           bgcolor: alpha(accent, d ? 0.22 : 0.14), color: accent,
         }}>
           {workstation.order}
         </Box>
         <Tooltip title={workstation.name}>
-          <Typography sx={{ fontWeight: 800, fontSize: 11, lineHeight: 1.2, flex: 1, minWidth: 0 }} noWrap>
+          <Typography sx={{
+            fontWeight: 800, fontSize: 13, lineHeight: 1.25, flex: 1, minWidth: 0,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word',
+          }}>
             {workstation.name}
           </Typography>
         </Tooltip>
       </Box>
 
-      {visualType && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-          <LineTypeIcon type={visualType} size={10} />
-          <Typography sx={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, color: visualType.color }} noWrap>
-            {visualType.label}
-          </Typography>
-        </Box>
-      )}
-
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-        {occupant ? (
-          <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, flex: 1 }}>
-            <Box onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, flex: 1 }}>
-              <EmployeeAvatar employee={occupant.employee} size={26} />
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Tooltip title={occupant.employee?.name || ''}>
-                  <Typography sx={{ fontWeight: 700, fontSize: 10.5, lineHeight: 1.2 }} noWrap>
-                    {occupant.employee?.name || '—'}
-                  </Typography>
-                </Tooltip>
-                <Typography sx={{ fontSize: 8.5, color: 'text.secondary', lineHeight: 1.2 }} noWrap>
-                  {workstation.requiredRole}
-                </Typography>
-              </Box>
-            </Box>
-          </DraggablePersonChip>
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, flex: 1 }}>
-            <PersonOffIcon sx={{ fontSize: 18, color: alpha('#F59E0B', d ? 0.7 : 0.55), flexShrink: 0 }} />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', lineHeight: 1.2 }}>Sin asignar</Typography>
-              <Typography sx={{ fontSize: 8.5, color: 'text.disabled', lineHeight: 1.2 }} noWrap>{workstation.requiredRole}</Typography>
-            </Box>
-          </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minHeight: 16 }}>
+        {visualType && (
+          <>
+            <LineTypeIcon type={visualType} size={12} />
+            <Typography sx={{ fontSize: 9.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, color: visualType.color }} noWrap>
+              {visualType.label}
+            </Typography>
+          </>
         )}
       </Box>
 
-      <Typography sx={{
-        fontSize: 9, fontWeight: 800, letterSpacing: 0.3, alignSelf: 'flex-start',
-        color: occupant ? '#059669' : '#B45309',
-      }}>
-        {occupant ? 'OCUPADA' : 'DISPONIBLE'}
-      </Typography>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.5, minWidth: 0, width: '100%' }}>
+        {occupant ? (
+          <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, width: '100%' }}>
+            <Box
+              onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
+              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, width: '100%' }}
+            >
+              <EmployeeAvatar employee={occupant.employee} size={40} />
+              <Tooltip title={occupant.employee?.name || ''}>
+                <Typography sx={{
+                  fontWeight: 700, fontSize: 12.5, lineHeight: 1.2, textAlign: 'center', width: '100%',
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word',
+                  minHeight: '2.4em',
+                }}>
+                  {occupant.employee?.name || '—'}
+                </Typography>
+              </Tooltip>
+            </Box>
+          </DraggablePersonChip>
+        ) : (
+          <>
+            <PersonOffIcon sx={{ fontSize: 30, color: alpha('#F59E0B', d ? 0.7 : 0.55) }} />
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textAlign: 'center', minHeight: '2.4em' }}>
+              Sin asignar
+            </Typography>
+          </>
+        )}
+        <Typography sx={{
+          fontSize: 10.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1.25, width: '100%',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word',
+          minHeight: '2.4em',
+        }}>
+          {workstation.requiredRole}
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6 }}>
+        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: occupant ? '#10B981' : '#F59E0B', flexShrink: 0 }} />
+        <Typography sx={{
+          fontSize: 11, fontWeight: 800, letterSpacing: 0.3,
+          color: occupant ? '#059669' : '#B45309',
+        }}>
+          {occupant ? 'OCUPADA' : 'DISPONIBLE'}
+        </Typography>
+      </Box>
     </Paper>
   )
 }
