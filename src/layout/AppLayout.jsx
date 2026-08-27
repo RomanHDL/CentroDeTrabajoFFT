@@ -1,44 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import Avatar from '@mui/material/Avatar'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import Divider from '@mui/material/Divider'
-import ListItemIcon from '@mui/material/ListItemIcon'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
-import LightModeIcon from '@mui/icons-material/LightMode'
 import MenuIcon from '@mui/icons-material/Menu'
-import LockResetIcon from '@mui/icons-material/LockReset'
-import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../state/auth'
-import { ROLE_LABELS } from './roleLabels'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 import { setCurrentUserId } from '../data/personnel/apiSync'
 import Sidebar from './Sidebar'
-import NotificationBell from './NotificationBell'
-
-function initialsOf(name) {
-  return (name || '')
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('') || '?'
-}
+import HeaderUserActions from './HeaderUserActions'
 
 const CLOSE_DELAY_MS = 320
 const HOTSPOT_WIDTH = 14
 
 export default function AppLayout({ mode, setMode }) {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const location = useLocation()
   // El plano 2D (OperatingFloorPlan) es el unico contenido que de verdad
   // necesita aprovechar casi todo el ancho de la pantalla (2026-08-25, a
@@ -69,7 +48,6 @@ export default function AppLayout({ mode, setMode }) {
   }, [isTouch])
 
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [menuAnchor, setMenuAnchor] = useState(null)
   const [hoverOpen, setHoverOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const closeTimer = useRef(null)
@@ -89,89 +67,49 @@ export default function AppLayout({ mode, setMode }) {
     closeTimer.current = setTimeout(() => setHoverOpen(false), CLOSE_DELAY_MS)
   }
 
-  const roleLabel = useMemo(() => ROLE_LABELS[user?.role] || user?.role, [user])
-  const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
-
   // apiSync.js necesita saber a quien avisarle cuando SU solicitud se resuelve (ver Cambio 4,
   // pollOnce) -- se fija aqui porque este es el componente que ya consume la sesion real.
   useEffect(() => { setCurrentUserId(user?.id || null) }, [user?.id])
 
-  async function handleLogout() {
-    setMenuAnchor(null)
-    await logout()
-    navigate('/login', { replace: true })
-  }
-
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', overflowX: 'hidden' }}>
-      <AppBar position="sticky" elevation={0} sx={{
-        bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary',
-      }}>
-        <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
-          {!hasFineHover && (
-            <IconButton size="small" onClick={() => setMobileOpen(true)}>
-              <MenuIcon fontSize="small" />
-            </IconButton>
-          )}
-          <PrecisionManufacturingIcon sx={{ color: '#3B82F6' }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.2 }}>
-            Centro de Trabajo FFT
-          </Typography>
-          <Box sx={{ flex: 1 }} />
-          {canApproveMoves && <NotificationBell userId={user?.id} />}
-          <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
-            <IconButton size="small" onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}>
-              {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-
-          <Box
-            onClick={(e) => setMenuAnchor(e.currentTarget)}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', ml: 0.5, px: 1, py: 0.5, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' } }}
-          >
-            <Avatar sx={{ width: 30, height: 30, fontSize: 13, fontWeight: 700, bgcolor: '#3B82F6' }}>
-              {initialsOf(user?.name)}
-            </Avatar>
-            <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1.1 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{user?.name}</Typography>
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{roleLabel}</Typography>
-            </Box>
-          </Box>
-
-          <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
-            <Box sx={{ px: 2, py: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{user?.name}</Typography>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{roleLabel} · Mi cuenta</Typography>
-            </Box>
-            <Divider />
-            {/* Cambio de contraseña voluntario: solo ADMINISTRADOR (a peticion
-                explicita del usuario). SUPERVISOR/LIDER reciben su contraseña
-                nueva de un administrador (Usuarios > Restablecer contraseña);
-                el cambio FORZADO por contraseña temporal sigue aplicando a
-                cualquier rol via el redirect de ProtectedRoute, sin pasar por
-                este menu. */}
-            {user?.role === 'ADMINISTRADOR' && (
-              <MenuItem onClick={() => { setMenuAnchor(null); navigate('/cambiar-contrasena') }}>
-                <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
-                Cambiar contraseña
-              </MenuItem>
+      {/* 2026-08-27 ("rediseño del header de Centro de Trabajo", a peticion
+          explicita del usuario): la barra superior global se OCULTA
+          unicamente en /centro-trabajo -- esa pagina construye su propio
+          header (logo+titulo+acciones+tabs, ver CentroTrabajoPage.jsx)
+          reutilizando exactamente los mismos datos/handlers via
+          <Outlet context={...}> mas abajo, en vez de duplicar la barra.
+          El resto de rutas (Dashboard, Registro de personal, Usuarios)
+          conserva la barra superior tal cual, sin ningun cambio. */}
+      {!isWideLayoutRoute && (
+        <AppBar position="sticky" elevation={0} sx={{
+          bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary',
+        }}>
+          <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
+            {!hasFineHover && (
+              <IconButton size="small" onClick={() => setMobileOpen(true)}>
+                <MenuIcon fontSize="small" />
+              </IconButton>
             )}
-            <MenuItem onClick={handleLogout}>
-              <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-              Cerrar sesión
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+            <PrecisionManufacturingIcon sx={{ color: '#3B82F6' }} />
+            <Typography sx={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.2 }}>
+              Centro de Trabajo FFT
+            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <HeaderUserActions mode={mode} setMode={setMode} />
+          </Toolbar>
+        </AppBar>
+      )}
 
       {hasFineHover && (
         // Hotspot invisible: entrar aqui abre el sidebar. Una vez abierto,
         // el propio sidebar (mas ancho, mismo left:0) lo cubre por completo,
         // asi que el mouse nunca "pierde" cobertura entre los dos elementos.
+        // top:0 en /centro-trabajo (sin AppBar arriba), top:56 en el resto.
         <Box
           onMouseEnter={openOnHover}
           sx={{
-            position: 'fixed', left: 0, top: 56, bottom: 0, width: HOTSPOT_WIDTH,
+            position: 'fixed', left: 0, top: isWideLayoutRoute ? 0 : 56, bottom: 0, width: HOTSPOT_WIDTH,
             zIndex: (t) => t.zIndex.drawer + 1,
           }}
         />
@@ -192,7 +130,11 @@ export default function AppLayout({ mode, setMode }) {
         px: { xs: 1.5, sm: 2, md: isWideLayoutRoute ? 2 : 3 }, py: { xs: 2, md: 2.5 },
         maxWidth: isWideLayoutRoute ? 1920 : 1600, mx: 'auto', width: '100%',
       }}>
-        <Outlet />
+        {/* mode/setMode + apertura del sidebar movil: SOLO los consume
+            CentroTrabajoPage.jsx (via useOutletContext) para construir su
+            propio header cuando la barra superior global esta oculta arriba
+            -- el resto de paginas no llama useOutletContext, no les afecta. */}
+        <Outlet context={{ mode, setMode, onOpenMobileSidebar: () => setMobileOpen(true), showMobileMenuButton: !hasFineHover }} />
       </Box>
     </Box>
   )
