@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import PersonOffIcon from '@mui/icons-material/PersonOffOutlined'
 import { alpha, useTheme } from '@mui/material/styles'
 import { useEmployeeDropTargetStation } from '../../ui/dnd'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
@@ -70,15 +71,24 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 0.5 }}>
         {occupant ? (
-          <Box
-            onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
-            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
-          >
-            <EmployeeAvatar employee={occupant.employee} size={40} />
-            <Typography sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }} noWrap>
-              {occupant.employee?.name || '—'}
-            </Typography>
-          </Box>
+          // 2026-08-27, a peticion explicita del usuario ("quiero arrastrarlos
+          // entre ahí y que se cambien"): antes solo la fila de la tabla de
+          // abajo era arrastrable -- el ocupante mostrado AQUÍ, en la propia
+          // tarjeta del puesto, era un simple onClick. Ahora tambien es
+          // origen de drag (DraggablePersonChip, mismo hook que ya usa toda
+          // la app), para poder arrastrar directo de un puesto a otro dentro
+          // de la cuadrícula y disparar el intercambio real (dndAssign.jsx).
+          <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+            <Box
+              onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
+              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
+            >
+              <EmployeeAvatar employee={occupant.employee} size={40} />
+              <Typography sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }} noWrap>
+                {occupant.employee?.name || '—'}
+              </Typography>
+            </Box>
+          </DraggablePersonChip>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
             <PersonOffIcon sx={{ fontSize: 26, color: alpha('#F59E0B', d ? 0.7 : 0.55) }} />
