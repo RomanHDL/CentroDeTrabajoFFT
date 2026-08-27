@@ -377,9 +377,14 @@ export function hasLineStations(workCenterId) {
    peticion tambien explicita del usuario), asi que su unica forma de
    detalle es fusionada dentro del detalle de CONVEYOR_PRINCIPAL -- ver
    AREA_DETAIL_GROUPS/canonicalOperationalAreaId mas abajo. */
+// 2026-08-26 (segunda ronda, a peticion explicita del usuario: "copia el
+// diseño de WC LINEA... quiero que pongas los puestos de trabajo" para
+// las areas que ya tienen CUSTOM_STATION_PLANS) -- ACCESORIOS/PALETIZADO/
+// INSUMOS se excluyen de OPERATIONAL igual que HIGH_VALUE: pasan a
+// LINE_LIKE_AREA_IDS mas abajo, reutilizan LineDetailDrawer.jsx completo.
 export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
   WORK_CENTERS
-    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP'].includes(w.id))
+    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'].includes(w.id))
     .map((w) => w.id),
 )
 
@@ -519,11 +524,18 @@ export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', LINE_LIKE: 'LINE_LIKE', OPER
 
 export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
-/* Unico miembro hoy: WC Midea / High Value. Set separado (no un boolean
+/* WC Midea/High Value + Accesorios/Paletizado/Insumos (2026-08-26,
+   segunda ronda -- a peticion explicita del usuario: "copia el diseño
+   que tiene los WC LINEA 0 a la 10... quiero que pongas los puestos de
+   trabajo... y la cantidad de personal que debe ocupar cada puesto").
+   Estas 3 ya tenian CUSTOM_STATION_PLANS (plantilla real por puesto,
+   ronda anterior) pero se mostraban con la lista plana de
+   OperationalAreaDetail.jsx -- ahora reutilizan LineDetailDrawer.jsx
+   completo (grid de estaciones, vacantes, candidatos sugeridos) igual
+   que Midea, sin llamarse "línea" en la UI. Set separado (no un boolean
    suelto en WORK_CENTERS) para que agregar otra area LINE_LIKE en el
-   futuro sea un solo id agregado aqui, igual que las demas listas de
-   este archivo. */
-export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE'])
+   futuro sea un solo id agregado aqui. */
+export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'])
 
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
   ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),
@@ -532,7 +544,12 @@ export const SUPPORT_DETAIL_AREA_IDS = new Set([
 
 export function getAreaDetailVariant(workCenterId) {
   if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE
-  if (LINE_LIKE_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE_LIKE
+  // Resuelto por id canonico (no el crudo) -- necesario desde que INSUMOS
+  // (LINE_LIKE) fusiona miembros no-canonicos (BOX_PREP/SUMINISTRO_MATERIAL,
+  // ver AREA_DETAIL_GROUPS): sin esto, abrir el detalle de un miembro
+  // fusionado caia por error en el defensivo de abajo (LINE) en vez de
+  // LINE_LIKE. Mismo patron ya usado por el chequeo de SUPPORT mas abajo.
+  if (LINE_LIKE_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.LINE_LIKE
   if (usesOperationalDetail(workCenterId)) return AREA_DETAIL_VARIANTS.OPERATIONAL
   if (SUPPORT_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.SUPPORT
   // Defensivo: cualquier id futuro que no encaje en ninguna lista (no

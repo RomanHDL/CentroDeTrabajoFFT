@@ -213,14 +213,20 @@ check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
   })
 })
-check('las areas operativas restantes (Conveyors, Paletizado, Insumos, Accesorios) siguen OPERATIONAL', () => {
-  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS'].forEach((id) => {
+check('las areas operativas restantes (solo Conveyors) siguen OPERATIONAL', () => {
+  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO'].forEach((id) => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
   })
 })
-check('BOX_PREP/SUMINISTRO_MATERIAL (fusionadas, archivadas) siguen resolviendo a OPERATIONAL via su id canonico', () => {
+check('Accesorios/Paletizado/Insumos -> variante LINE_LIKE (2026-08-26, segunda ronda: "copia el diseño de WC LINEA")', () => {
+  ;['ACCESORIOS', 'PALETIZADO', 'INSUMOS'].forEach((id) => {
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
+    assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has(id), id)
+  })
+})
+check('BOX_PREP/SUMINISTRO_MATERIAL (fusionadas, archivadas) resuelven a LINE_LIKE via su id canonico (INSUMOS)', () => {
   ;['BOX_PREP', 'SUMINISTRO_MATERIAL'].forEach((id) => {
-    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
     assert.equal(canonicalOperationalAreaId(id), 'INSUMOS', id)
     assert.equal(isWorkCenterActive(id), false, id)
   })

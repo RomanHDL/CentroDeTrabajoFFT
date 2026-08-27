@@ -27,8 +27,11 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, getCurrentShift, workCenterById, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
-import { getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster } from '../../data/production/personnelByArea'
+import { CURRENT_SHIFT, getCurrentShift, workCenterById, LINE_FAMILY_AREA_IDS, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
+import {
+  getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster,
+  getGroupAreaStaffing, getGroupPeople,
+} from '../../data/production/personnelByArea'
 import {
   getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
 } from '../../data/personnel/repository'
@@ -126,35 +129,46 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   // cual para lo que es genuinamente exclusivo de una linea real (el
   // copy que dice literalmente "línea").
   const isStationBased = isLine || lineLike
-  const area = workCenterId ? workCenterById(workCenterId) : null
-  const staffing = useMemo(() => (workCenterId ? getAreaStaffing(workCenterId) : null), [workCenterId, version])
+  // 2026-08-26 ("copia el diseño de WC LINEA para Accesorios/Paletizado/
+  // Insumos", a peticion explicita del usuario): canonicalId/memberIds
+  // hacen este componente "group-aware" -- necesario para WC Insumos y
+  // Suministro de Material, que fusiona 3 areas reales (INSUMOS,
+  // SUMINISTRO_MATERIAL, BOX_PREP -- ver catalog.js/AREA_DETAIL_GROUPS).
+  // Para cualquier area SIN grupo (todas las WC LINEA reales, Midea,
+  // Accesorios, Paletizado) canonicalId===workCenterId y memberIds===
+  // [workCenterId] -- mismo comportamiento exacto que antes, cero
+  // cambio para lo que ya funcionaba.
+  const canonicalId = workCenterId ? canonicalOperationalAreaId(workCenterId) : null
+  const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
+  const area = canonicalId ? workCenterById(canonicalId) : null
+  const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
   const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
-  const workstations = useMemo(() => (workCenterId ? getLineWorkstationsWithOccupancy(workCenterId) : []), [workCenterId, version])
-  const people = useMemo(() => (workCenterId ? (getPeopleByArea()[workCenterId] || []) : []), [workCenterId, version])
+  const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version])
+  const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
 
-  /* Reconcilia estaciones reales al abrir una WC LINEA -- 2026-08-27, a
-     peticion explicita del usuario: corrige tanto a quien ya esta en la
-     linea pero sin ninguna asignacion real hoy (snapshot de BASE) COMO a
-     quien ya tiene una asignacion real pero con un stationId invalido/
-     heredado (ej. "Empaque", de antes del rediseno de estaciones
-     repetidas) -- ver reconcileLineAssignments en repository.js para la
-     regla completa. Orden estable por nombre (nunca aleatorio);
-     idempotente (correr esto de nuevo sobre un estado ya reconciliado no
-     cambia nada), asi que corre una vez por apertura de la linea sin
-     depender de `version`/`people` (evita un loop de notify() -> re-render
-     -> notify()). */
+  /* Reconcilia estaciones reales al abrir una WC LINEA (o cualquier area
+     con estaciones reales -- Midea, Accesorios, Paletizado, Insumos) --
+     2026-08-27, a peticion explicita del usuario: corrige tanto a quien
+     ya esta en el area pero sin ninguna asignacion real hoy (snapshot de
+     BASE) COMO a quien ya tiene una asignacion real pero con un stationId
+     invalido/heredado -- ver reconcileLineAssignments en repository.js
+     para la regla completa. Para areas fusionadas (Insumos), se
+     reconcilian los snapshot ids de TODOS los miembros del grupo contra
+     las estaciones reales del id canonico. Orden estable por nombre
+     (nunca aleatorio); idempotente. */
   useEffect(() => {
-    if (!open || !isStationBased || !workCenterId) return
-    const ids = (getPeopleByArea()[workCenterId] || [])
+    if (!open || !isStationBased || !canonicalId) return
+    const ids = memberIds
+      .flatMap((id) => getGroupPeople([id]))
       .slice()
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map(p => p.id)
-    reconcileLineAssignments(workCenterId, ids)
+    reconcileLineAssignments(canonicalId, ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workCenterId, isStationBased, open])
+  }, [canonicalId, isStationBased, open])
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null
@@ -164,17 +178,19 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   }, [workstations, selectedStationName])
 
   const suggestions = useMemo(() => {
-    if (!workCenterId || !selectedStation || selectedStation.occupants.length > 0) return []
-    return getSuggestedCandidates(workCenterId, selectedStation.name, { includeAbsent })
-  }, [workCenterId, selectedStation, includeAbsent, version])
+    if (!canonicalId || !selectedStation || selectedStation.occupants.length > 0) return []
+    return getSuggestedCandidates(canonicalId, selectedStation.name, { includeAbsent })
+  }, [canonicalId, selectedStation, includeAbsent, version])
 
   /* getEffectiveTodayRoster (no solo workstations.occupants): en lineas con
      personal historico de BASE que todavia nadie movio hoy (ej. CT LINEA 0),
      ese personal cuenta en staffing.real pero NO tiene una estacion real
      asignada -- si la tabla solo mostrara occupants de estaciones, esas
-     personas reales quedarian invisibles aunque el encabezado ya las cuenta. */
+     personas reales quedarian invisibles aunque el encabezado ya las cuenta.
+     `memberIds` (no solo canonicalId) para que Insumos siga mostrando
+     tambien a quien todavia no fue reconciliado a la estacion canonica. */
   const roster = useMemo(
-    () => (workCenterId ? getEffectiveTodayRoster().filter(r => r.areaId === workCenterId) : []),
+    () => (memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []),
     [workCenterId, version]
   )
 
@@ -186,7 +202,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       const res = checkInEmployee({
         employeeId: candidate.employee.id,
         employeeNumber: candidate.employee.employeeNumber,
-        areaId: workCenterId,
+        areaId: canonicalId,
         stationId: selectedStation.name,
         shift: CURRENT_SHIFT,
       })
@@ -195,7 +211,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       setMoveTarget({
         employee: candidate.employee,
         currentAssignment: candidate.assignment,
-        presetTo: { areaId: workCenterId, stationId: selectedStation.name },
+        presetTo: { areaId: canonicalId, stationId: selectedStation.name },
       })
     }
   }
@@ -297,7 +313,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
         )}
 
         <Box sx={{ mb: 3, maxWidth: 480 }}>
-          <EmployeeAssignSearchBar areaId={workCenterId} />
+          <EmployeeAssignSearchBar areaId={canonicalId} />
         </Box>
 
         {actionError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>{actionError}</Alert>}
@@ -328,7 +344,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                   {workstations.map((w) => (
                     <LineStationCard
                       key={w.id}
-                      workAreaId={workCenterId}
+                      workAreaId={canonicalId}
                       workstation={w}
                       selected={selectedStation?.name === w.name}
                       onSelect={(ws) => {
@@ -407,7 +423,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
               </Paper>
 
               <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-                <AvailablePersonnelTray scopedAreaId={workCenterId} title="Personal disponible" />
+                <AvailablePersonnelTray scopedAreaId={canonicalId} title="Personal disponible" />
               </Paper>
             </Grid>
 
@@ -501,11 +517,11 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
               </Paper>
 
               <Box sx={{ mb: 2 }}>
-                <DropZoneBanner areaId={workCenterId} label={area.name} />
+                <DropZoneBanner areaId={canonicalId} label={area.name} />
               </Box>
 
               <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-                <AvailablePersonnelTray scopedAreaId={workCenterId} />
+                <AvailablePersonnelTray scopedAreaId={canonicalId} />
               </Paper>
             </Grid>
           </Grid>
@@ -515,14 +531,14 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       <StationAssignDialog
         open={Boolean(assignStation)}
         onClose={() => setAssignStation(null)}
-        areaId={workCenterId}
+        areaId={canonicalId}
         station={assignStation}
         onDone={() => {}}
       />
-      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
-      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={workCenterId} onDone={() => {}} />
+      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
+      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
       <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />
-      <LineHistoryDialog lineId={workCenterId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
+      <LineHistoryDialog lineId={canonicalId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
       {moveTarget && (
         <MoveConfirmDialog
           open={Boolean(moveTarget)}
