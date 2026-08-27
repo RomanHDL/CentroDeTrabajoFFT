@@ -602,6 +602,17 @@ export const SUPPORT_DETAIL_AREA_IDS = new Set([
   'CALIDAD',
 ])
 
+/* Subconjunto de SUPPORT_DETAIL_AREA_IDS (2026-08-28, "REDISEÑO DE 6
+   AREAS ESPECIALES", a peticion explicita del usuario) -- estas 6 usan
+   SpecialAreaDetail.jsx (vista compacta sin Disponibles para asignar/
+   Actividad reciente/dona, ver ese archivo). CALIDAD y SOPORTE (el
+   resto de SUPPORT_DETAIL_AREA_IDS) NO estan aqui a proposito -- el
+   usuario NO las incluyo en su pedido, siguen usando SupportAreaDetail.jsx
+   exactamente igual que antes. Set separado (no se reutiliza
+   SUPPORT_DETAIL_AREA_IDS) para que AreaDetail.jsx pueda distinguir sin
+   tocar la lista existente. */
+export const SPECIAL_AREA_IDS = new Set(['CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR'])
+
 export function getAreaDetailVariant(workCenterId) {
   if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE
   // Resuelto por id canonico (no el crudo) -- necesario desde que INSUMOS
