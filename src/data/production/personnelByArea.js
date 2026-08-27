@@ -1,5 +1,5 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
-import { WORK_CENTERS, workCenterById, hasLineStations } from './catalog'
+import { WORK_CENTERS, workCenterById, hasLineStations, LINE_LIKE_AREA_IDS, canonicalOperationalAreaId, operationalGroupMembers } from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
 import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees, getAssignableEmployees, getBaselineSuppressed, todayISO } from '../personnel/repository'
 
@@ -14,7 +14,10 @@ export { BASE_SNAPSHOT_DATE }
    igual forma pero tampoco entra en AUTO_ACTIVE_AREAS (el usuario
    pidio explicitamente que a Calidad no se le ponga hora de entrada
    fija) — ver uso de AUTO_ACTIVE_AREAS en PersonalDeHoyTab.jsx. */
-export const FIXED_SUPPORT_AREAS = ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR']
+// 2026-08-26 ("Reestructuracion operativa FFT"): SOPORTE se quita (archivada,
+// `active:false` -- ya no aparece en "Personal de hoy" como area fija).
+// ENTRENADOR se agrega (WC nuevo, mismo trato que las demas areas de apoyo).
+export const FIXED_SUPPORT_AREAS = ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR']
 export const AUTO_ACTIVE_AREAS = FIXED_SUPPORT_AREAS.filter((id) => id !== 'CALIDAD')
 
 /* BUG REAL detectado en produccion 2026-08-24: esta lista antes se mantenia a mano (los 7 fijos +
@@ -117,6 +120,19 @@ export function getPeopleByArea() {
     // (igual que si areaZona fuera null), consistente con la regla ya
     // documentada de que CHOFER/PRODUCCION nunca tienen area propia. */
     if (!areaId || !workCenterById(areaId)) return
+    // 2026-08-26 ("Reestructuracion operativa FFT"): un area `active:false`
+    // SIN redireccion (canonico = ella misma -- hoy solo SOPORTE) ya no
+    // "atrapa" a su gente historica del snapshot -- esas personas deben
+    // caer en "Personal sin área asignada"/disponibles, no quedar
+    // invisibles en un area archivada que ningun lado ya muestra (bug real
+    // que se hubiera creado si no se agrega este guard: 2 personas reales
+    // sin asignacion activa, ni visibles en ningun WC, ni contadas como
+    // disponibles). Las areas fusionadas (BOX_PREP/SUMINISTRO_MATERIAL,
+    // canonico=INSUMOS) SI se siguen bucketizando bajo su propio id real --
+    // ahi las necesita getGroupPeople/getGroupAreaStaffing para sumar el
+    // detalle fusionado de Insumos.
+    const areaWc = workCenterById(areaId)
+    if (areaWc.active === false && canonicalOperationalAreaId(areaId) === areaId) return
     map[areaId] = map[areaId] || []
     map[areaId].push(p)
   })
@@ -220,7 +236,10 @@ export function getEffectiveTodayRoster() {
         employeeNumber: employee?.employeeNumber || 'PENDIENTE',
         employee,
         areaId,
-        stationId: hasLineStations(areaId) ? null : (workCenterById(areaId)?.name || areaId),
+        // 2026-08-26: WC Midea/High Value (LINE_LIKE) tampoco lleva estacion
+        // especifica desde snapshot -- igual que Linea 1..10, BASE no dice en
+        // que "Puesto N" estaba cada quien.
+        stationId: (hasLineStations(areaId) || LINE_LIKE_AREA_IDS.has(areaId)) ? null : (workCenterById(areaId)?.name || areaId),
         checkInAt: null,
         shift: null,
         date: todayISO(),
@@ -318,9 +337,18 @@ export function getStaffingTotals() {
   // meta numerica en el Excel origen) quedaban fuera del "personal presente hoy" del Dashboard aunque
   // tuvieran gente real. idealTotal SI debe restringirse a areas con meta (no tiene sentido sumar
   // null), pero realTotal debe contar a TODOS, tengan meta o no.
-  const withIdeal = WORK_CENTERS.filter((w) => w.idealHeadcount != null)
+  //
+  // 2026-08-26 ("Reestructuracion operativa FFT"): `eligible` excluye SOLO
+  // areas `active:false` que ademas NO estan fusionadas en otra (su id
+  // canonico es el mismo que el propio -- ej. SOPORTE, archivada de
+  // verdad). BOX_PREP/SUMINISTRO_MATERIAL tambien son `active:false` pero
+  // su id canonico es INSUMOS (fusionadas, no eliminadas) -- su personal
+  // real sigue contando en el total, exactamente igual que antes de
+  // archivarlas, solo que ahora conceptualmente pertenece a Insumos.
+  const eligible = WORK_CENTERS.filter((w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id)
+  const withIdeal = eligible.filter((w) => w.idealHeadcount != null)
   const idealTotal = withIdeal.reduce((sum, w) => sum + w.idealHeadcount, 0)
-  const realTotal = WORK_CENTERS.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
+  const realTotal = eligible.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
   return {
     idealTotal,
     realTotal,
@@ -406,15 +434,26 @@ export function getActividadForEmployee(employeeId) {
   return REAL_PERSONNEL_SNAPSHOT.find((p) => p.id === employeeId)?.actividad || null
 }
 
+/* 2026-08-26 ("Reestructuracion operativa FFT"): ahora es "group-aware" y
+   respeta `active` -- una sola fila por grupo de detalle fusionado (ej.
+   INSUMOS suma BOX_PREP+SUMINISTRO_MATERIAL+INSUMOS, misma fuente que
+   OperationalAreaDetail.jsx/getGroupAreaStaffing, nunca dos numeros
+   distintos para lo mismo), y las areas archivadas sin fusion (SOPORTE)
+   ya no aparecen como fila propia. Los miembros NO canonicos de un grupo
+   (SELLADO, BOX_PREP, SUMINISTRO_MATERIAL) se saltan -- su personal ya se
+   sumo en la fila de su id canonico. */
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
   const fftIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
   const entries = [
     { id: 'FFT', name: 'FFT', count: fftCount, ideal: fftIdeal, group: colorGroupForArea('LINEA1') },
-    ...WORK_CENTERS.filter((w) => w.kind === 'area').map((w) => ({
-      id: w.id, name: w.name, count: byArea[w.id]?.length || 0, ideal: w.idealHeadcount ?? null, group: colorGroupForArea(w.id),
-    })),
+    ...WORK_CENTERS
+      .filter((w) => w.kind === 'area' && w.active !== false && canonicalOperationalAreaId(w.id) === w.id)
+      .map((w) => {
+        const count = operationalGroupMembers(w.id).reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
+        return { id: w.id, name: w.name, count, ideal: w.idealHeadcount ?? null, group: colorGroupForArea(w.id) }
+      }),
   ]
   return entries.sort((a, b) => b.count - a.count)
 }

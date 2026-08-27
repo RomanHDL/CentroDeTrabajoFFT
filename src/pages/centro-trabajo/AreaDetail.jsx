@@ -39,5 +39,9 @@ export default function AreaDetail({ workCenterId, open, onClose, onNavigate }) 
   if (variant === AREA_DETAIL_VARIANTS.SUPPORT) {
     return <SupportAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
   }
-  return <LineDetailDrawer workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+  // LINE_LIKE (2026-08-26, WC Midea/High Value): misma experiencia visual
+  // de LineDetailDrawer (estaciones/vacantes/buscador/drag&drop), pero
+  // `lineLike` le dice al componente que NO es una CT LINEA real -- nunca
+  // debe decir "Línea" en su copy (ver LineDetailDrawer.jsx).
+  return <LineDetailDrawer workCenterId={workCenterId} open={open} onClose={onClose} lineLike={variant === AREA_DETAIL_VARIANTS.LINE_LIKE} {...navProps} />
 }

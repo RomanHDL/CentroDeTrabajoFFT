@@ -40,8 +40,9 @@ import Groups2Icon from '@mui/icons-material/Groups2'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
 import DonutLargeIcon from '@mui/icons-material/DonutLarge'
 import { alpha } from '@mui/material/styles'
-import { getAreaStaffing, getPeopleByArea } from '../../data/production/personnelByArea'
+import { getAreaStaffing, getPeopleByArea, getGroupAreaStaffing } from '../../data/production/personnelByArea'
 import { FFT_LINE_IDS, REFERENCE_ONLY_ZONES } from '../../data/production/floorPlanZones'
+import { operationalGroupMembers } from '../../data/production/catalog'
 import { colorForArea } from '../../data/production/layoutZones'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 
@@ -108,14 +109,14 @@ const AREA_SLOTS = [
   { id: 'FFT', name: 'WC Líneas de producción (FFT)', subtitle: 'líneas activas', badge: 'Líneas 1 - 10', icon: <PrecisionManufacturingIcon />, colorAreaId: 'LINEA1' },
   { id: 'HIGH_VALUE', name: 'WC Midea / High Value / DMT', subtitle: 'Productos mixtos', icon: <DevicesOtherIcon />, colorAreaId: 'HIGH_VALUE' },
   { id: 'PALETIZADO', name: 'WC Paletizado (Palletizing)', subtitle: 'Zona de paletizado', icon: <Inventory2Icon />, colorAreaId: 'PALETIZADO' },
-  { id: 'INSUMOS_SUMINISTRO', name: 'WC Insumos y Suministro de material', subtitle: 'Suministro', icon: <ShoppingCartIcon />, colorAreaId: 'INSUMOS' },
+  { id: 'INSUMOS_SUMINISTRO', name: 'WC Insumos y Suministro de Material', subtitle: 'PNP/POC/PEN · Box Prep · Suministro', icon: <ShoppingCartIcon />, colorAreaId: 'INSUMOS' },
   { id: 'ACCESORIOS', name: 'WC Accesorios', subtitle: 'Accesorios', icon: <LocalOfferIcon />, colorAreaId: 'ACCESORIOS' },
   { id: 'CALIDAD', name: 'WC Calidad', subtitle: 'Control de calidad', icon: <VerifiedUserIcon />, colorAreaId: 'CALIDAD' },
   { id: 'CAPACITACION', name: 'WC Capacitación', subtitle: 'Capacitación', icon: <SchoolIcon />, colorAreaId: 'CAPACITACION' },
   { id: 'TEAM_LEADER', name: 'WC Team Leader', subtitle: 'Liderazgo', icon: <SupervisorAccountIcon />, colorAreaId: 'TEAM_LEADER' },
-  { id: 'SOPORTE', name: 'WC Soporte', subtitle: 'Soporte operativo', icon: <SupportAgentIcon />, colorAreaId: 'SOPORTE' },
+  { id: 'ENTRENADOR', name: 'WC Entrenador', subtitle: 'Entrenamiento', icon: <SupportAgentIcon />, colorAreaId: 'ENTRENADOR' },
   { id: 'LIMPIEZA', name: 'WC Limpieza', subtitle: 'Limpieza', icon: <CleaningServicesIcon />, colorAreaId: 'LIMPIEZA' },
-  { id: 'GERENTE', name: 'WC Gerente', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
+  { id: 'GERENTE', name: 'WC Gerente FFT', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
   { id: 'SUPERVISOR', name: 'WC Supervisor', subtitle: 'Supervisión', icon: <AssignmentIndIcon />, colorAreaId: 'SUPERVISOR' },
 ]
 
@@ -133,8 +134,11 @@ function computeRow(slot) {
     return { slot, real, ideal, extraNote: `${FFT_LINE_IDS.length} ${slot.subtitle}` }
   }
   if (slot.id === 'INSUMOS_SUMINISTRO') {
-    const real = (getPeopleByArea()['INSUMOS']?.length || 0) + (getPeopleByArea()['SUMINISTRO_MATERIAL']?.length || 0)
-    return { slot, real, ideal: null, extraNote: slot.subtitle }
+    // 2026-08-26: group-aware (PNP/POC/PEN + Box Prep + Insumos + Suministro
+    // de material fusionados, catalog.js/AREA_DETAIL_GROUPS.INSUMOS) --
+    // mismos numeros que el detalle real, ideal ya no es null (9).
+    const staffing = getGroupAreaStaffing(operationalGroupMembers('INSUMOS'))
+    return { slot, real: staffing.real, ideal: staffing.ideal, extraNote: slot.subtitle }
   }
   const staffing = getAreaStaffing(slot.id)
   return { slot, real: staffing.real, ideal: staffing.ideal, extraNote: slot.subtitle }

@@ -83,7 +83,7 @@ function formatHour12(hhmm) {
   return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
 }
 
-export default function LineDetailDrawer({ workCenterId, open, onClose, previous, next, onNavigate }) {
+export default function LineDetailDrawer({ workCenterId, open, onClose, previous, next, onNavigate, lineLike = false }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -119,6 +119,13 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   }, [workCenterId])
 
   const isLine = workCenterId ? LINE_FAMILY_AREA_IDS.has(workCenterId) : false
+  // 2026-08-26: WC Midea/High Value (lineLike=true, ver AreaDetail.jsx) usa
+  // TODA la misma experiencia de estaciones que una CT LINEA real, pero
+  // nunca debe llamarse "línea" en la UI -- `isStationBased` gatea el
+  // diseño (grid de estaciones vs vista simple), `isLine` se conserva tal
+  // cual para lo que es genuinamente exclusivo de una linea real (el
+  // copy que dice literalmente "línea").
+  const isStationBased = isLine || lineLike
   const area = workCenterId ? workCenterById(workCenterId) : null
   const staffing = useMemo(() => (workCenterId ? getAreaStaffing(workCenterId) : null), [workCenterId, version])
   const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
@@ -140,14 +147,14 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
      depender de `version`/`people` (evita un loop de notify() -> re-render
      -> notify()). */
   useEffect(() => {
-    if (!open || !isLine || !workCenterId) return
+    if (!open || !isStationBased || !workCenterId) return
     const ids = (getPeopleByArea()[workCenterId] || [])
       .slice()
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map(p => p.id)
     reconcileLineAssignments(workCenterId, ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workCenterId, isLine, open])
+  }, [workCenterId, isStationBased, open])
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null
@@ -243,14 +250,14 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
           {staffing.ideal == null && (
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Sin plantilla definida</Typography>
           )}
-          {isLine && (
+          {isStationBased && (
             <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
               Turno {currentOfficialShift.label} · {dayjs().format('DD/MM/YYYY')}
             </Typography>
           )}
         </Box>
 
-        {isLine && staffing.ideal != null && (
+        {isStationBased && staffing.ideal != null && (
           <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 } }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: { xs: 2, md: 3 } }}>
               <Box>
@@ -278,7 +285,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
               </Box>
               <Box sx={{ flex: 1, minWidth: 160, alignSelf: 'center' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Cobertura de la línea</Typography>
+                  <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>{lineLike ? 'Cobertura del área' : 'Cobertura de la línea'}</Typography>
                   <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{coveragePct}%</Typography>
                 </Box>
                 <Box sx={ps.progressBar}>
@@ -295,7 +302,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
 
         {actionError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>{actionError}</Alert>}
 
-        {isLine ? (
+        {isStationBased ? (
           <Grid container spacing={2}>
             {/* Columna principal */}
             <Grid item xs={12} md={8.5}>
@@ -305,16 +312,14 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     <Typography sx={ps.cardHeaderTitle}>Distribución de estaciones</Typography>
                     <Typography sx={ps.cardHeaderSubtitle}>Toca (o arrastra a alguien) sobre una estación disponible</Typography>
                   </Box>
-                  {isLine && (
-                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
-                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
-                        {workstations.length} posiciones
-                      </Typography>
-                      <Tooltip title="Los roles se repiten según la cantidad de posiciones requeridas en la línea.">
-                        <InfoOutlinedIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
-                      </Tooltip>
-                    </Stack>
-                  )}
+                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
+                      {workstations.length} posiciones
+                    </Typography>
+                    <Tooltip title={lineLike ? 'Cada puesto es una posición individual, 1 persona por puesto.' : 'Los roles se repiten según la cantidad de posiciones requeridas en la línea.'}>
+                      <InfoOutlinedIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
+                    </Tooltip>
+                  </Stack>
                 </Box>
                 <Box sx={{
                   p: 2, display: 'grid', gap: 1.25,
@@ -338,7 +343,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
 
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
                 <Box sx={ps.cardHeader}>
-                  <Typography sx={ps.cardHeaderTitle}>Personal asignado a la línea hoy ({roster.length})</Typography>
+                  <Typography sx={ps.cardHeaderTitle}>{lineLike ? `Personal asignado hoy (${roster.length})` : `Personal asignado a la línea hoy (${roster.length})`}</Typography>
                 </Box>
                 <TableContainer sx={{ maxHeight: 340 }}>
                   <Table size="small" stickyHeader>
@@ -396,7 +401,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                 </TableContainer>
                 <Box sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
                   <Button size="small" startIcon={<HistoryIcon />} onClick={() => setLineHistoryOpen(true)} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    Ver historial de la línea
+                    {lineLike ? 'Ver historial del área' : 'Ver historial de la línea'}
                   </Button>
                 </Box>
               </Paper>
@@ -414,7 +419,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     <Typography sx={ps.cardHeaderTitle}>
                       {selectedStation ? `Estación ${selectedStation.isAvailable ? 'disponible' : 'asignada'}` : 'Estación'}
                     </Typography>
-                    {isLine && selectedStation && (
+                    {isStationBased && selectedStation && (
                       <Typography sx={ps.cardHeaderSubtitle}>Posición {selectedStation.order} de {workstations.length}</Typography>
                     )}
                   </Box>

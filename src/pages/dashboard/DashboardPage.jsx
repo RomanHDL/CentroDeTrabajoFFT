@@ -18,6 +18,7 @@ import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
 import DashboardExecKpiCard from './DashboardExecKpiCard'
 import DashboardExportButton from './DashboardExportButton'
 import FindingsCard from './FindingsCard'
+import FftIndicatorsCard from './FftIndicatorsCard'
 import DailyMovementsSummaryCard from './DailyMovementsSummaryCard'
 import RecentActivityCard from './RecentActivityCard'
 import DashboardQuickSummaryStrip from './DashboardQuickSummaryStrip'
@@ -150,10 +151,13 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
-      {/* Fila 4 -- Hallazgos del día */}
+      {/* Fila 4 -- Hallazgos del día | Indicadores FFT */}
       <Grid container spacing={2} sx={{ mb: 1.5 }}>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={7}>
           <FindingsCard findings={metrics.findings} />
+        </Grid>
+        <Grid item xs={12} md={5}>
+          <FftIndicatorsCard />
         </Grid>
       </Grid>
 

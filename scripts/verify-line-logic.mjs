@@ -7,11 +7,13 @@
 //
 // Uso: node --import ./scripts/_esm-extensionless-loader.mjs scripts/verify-line-logic.mjs
 import assert from 'node:assert/strict'
-import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine } from '../src/data/personnel/workstations.js'
+import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine, buildCustomRolePlan, hasMultipleStations } from '../src/data/personnel/workstations.js'
 import {
   OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext,
   getCurrentShift, getShiftSchedule, formatShiftSchedule,
   getAreaDetailVariant, AREA_DETAIL_VARIANTS, OPERATIONAL_DETAIL_AREA_IDS, SUPPORT_DETAIL_AREA_IDS,
+  CUSTOM_STATION_PLANS, workCenterById, isWorkCenterActive, canonicalOperationalAreaId, operationalGroupMembers,
+  FFT_INDICATORS,
 } from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 
@@ -211,10 +213,21 @@ check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
   })
 })
-check('las areas operativas restantes (incluyendo Box Prep) siguen OPERATIONAL', () => {
-  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'HIGH_VALUE', 'PALETIZADO', 'BOX_PREP', 'INSUMOS', 'SUMINISTRO_MATERIAL', 'ACCESORIOS'].forEach((id) => {
+check('las areas operativas restantes (Conveyors, Paletizado, Insumos, Accesorios) siguen OPERATIONAL', () => {
+  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS'].forEach((id) => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
   })
+})
+check('BOX_PREP/SUMINISTRO_MATERIAL (fusionadas, archivadas) siguen resolviendo a OPERATIONAL via su id canonico', () => {
+  ;['BOX_PREP', 'SUMINISTRO_MATERIAL'].forEach((id) => {
+    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
+    assert.equal(canonicalOperationalAreaId(id), 'INSUMOS', id)
+    assert.equal(isWorkCenterActive(id), false, id)
+  })
+})
+check('WC Midea/High Value -> variante LINE_LIKE (2026-08-26, ya no OPERATIONAL)', () => {
+  assert.equal(getAreaDetailVariant('HIGH_VALUE'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+  assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('HIGH_VALUE'))
 })
 check('WC LINEA 0-10 siguen LINE, sin cambio', () => {
   ;['PROYECTO', 'LINEA1', 'LINEA5', 'LINEA10'].forEach((id) => {
@@ -223,6 +236,84 @@ check('WC LINEA 0-10 siguen LINE, sin cambio', () => {
 })
 check('WC LINEA 11 no existe en el catalogo (no se inventa)', () => {
   assert.ok(!WORK_CENTERS.some((w) => w.id === 'LINEA11'))
+})
+
+// Reestructuracion operativa FFT (2026-08-26): fusion Insumos, plantillas
+// por puesto, Midea tipo Linea, archivado de Soporte, WC Entrenador,
+// Gerente FFT, indicadores FFT.
+check('WC Insumos y Suministro de Material: ideal = suma real de CUSTOM_STATION_PLANS.INSUMOS (9)', () => {
+  assert.equal(workCenterById('INSUMOS').idealHeadcount, 9)
+  assert.equal(workCenterById('INSUMOS').name, 'WC Insumos y Suministro de Material')
+})
+check('WC Accesorios: ideal = suma real de CUSTOM_STATION_PLANS.ACCESORIOS (18)', () => {
+  assert.equal(workCenterById('ACCESORIOS').idealHeadcount, 18)
+  assert.equal(CUSTOM_STATION_PLANS.ACCESORIOS.reduce((s, r) => s + r.count, 0), 18)
+})
+check('WC Paletizado: ideal = suma real de CUSTOM_STATION_PLANS.PALETIZADO (14)', () => {
+  assert.equal(workCenterById('PALETIZADO').idealHeadcount, 14)
+  assert.equal(CUSTOM_STATION_PLANS.PALETIZADO.reduce((s, r) => s + r.count, 0), 14)
+})
+check('puestos con count>1 generan slots individuales numerados desde 1 (Surtidor de Accesorios 1..7)', () => {
+  const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
+  const surtidores = plan.filter((p) => p.role === 'Surtidor de Accesorios').map((p) => p.name)
+  assert.deepEqual(surtidores, ['Surtidor de Accesorios 1', 'Surtidor de Accesorios 2', 'Surtidor de Accesorios 3', 'Surtidor de Accesorios 4', 'Surtidor de Accesorios 5', 'Surtidor de Accesorios 6', 'Surtidor de Accesorios 7'])
+})
+check('puestos con count=1 NO llevan numero (Team Leader, no "Team Leader 1")', () => {
+  const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
+  const teamLeader = plan.find((p) => p.role === 'Team Leader')
+  assert.equal(teamLeader.name, 'Team Leader')
+})
+check('no se duplica el tipo de rol en el catalogo: 7 slots de Surtidor comparten el mismo `role`', () => {
+  const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
+  const roles = new Set(plan.filter((p) => p.name.startsWith('Surtidor')).map((p) => p.role))
+  assert.equal(roles.size, 1)
+})
+check('WC Accesorios/Paletizado/Insumos tienen sus estaciones reales generadas (no un solo slot generico)', () => {
+  assert.equal(getWorkstationsForLine('ACCESORIOS').length, 18)
+  assert.equal(getWorkstationsForLine('PALETIZADO').length, 14)
+  assert.equal(getWorkstationsForLine('INSUMOS').length, 9)
+})
+check('el picker de estacion se activa por CANTIDAD real de estaciones, no por tipo de area', () => {
+  assert.equal(hasMultipleStations('ACCESORIOS'), true)
+  assert.equal(hasMultipleStations('PALETIZADO'), true)
+  assert.equal(hasMultipleStations('INSUMOS'), true)
+  assert.equal(hasMultipleStations('HIGH_VALUE'), true)
+  assert.equal(hasMultipleStations('LINEA1'), true)
+  assert.equal(hasMultipleStations('GERENTE'), false)
+})
+check('WC Midea/High Value: 1 slot por persona (capacity 1), cantidad = idealHeadcount real (16), sin nombres inventados', () => {
+  const stations = getWorkstationsForLine('HIGH_VALUE')
+  assert.equal(stations.length, workCenterById('HIGH_VALUE').idealHeadcount)
+  stations.forEach((s) => assert.equal(s.capacity, 1))
+  // Nunca se inventan puestos de linea (Montaje/Prueba electrica/etc.) para Midea.
+  const invented = ['Montaje', 'Prueba eléctrica', 'Limpieza', 'Etiquetado', 'Suministro de Accesorios']
+  stations.forEach((s) => assert.ok(!invented.includes(s.role), `puesto inventado detectado: ${s.role}`))
+})
+check('WC Soporte: archivada (active:false), pero el id sigue resolviendo (historial preservado)', () => {
+  assert.equal(isWorkCenterActive('SOPORTE'), false)
+  assert.ok(workCenterById('SOPORTE'), 'SOPORTE debe seguir existiendo en WORK_CENTERS para historial')
+  assert.equal(getAreaDetailVariant('SOPORTE'), AREA_DETAIL_VARIANTS.SUPPORT)
+})
+check('WC Soporte ya no aparece en la navegacion Anterior/Siguiente activa', () => {
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SOPORTE'))
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('BOX_PREP'))
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SUMINISTRO_MATERIAL'))
+})
+check('WC Entrenador existe, activo, clasificado SUPPORT, y aparece en la navegacion', () => {
+  assert.ok(workCenterById('ENTRENADOR'))
+  assert.equal(isWorkCenterActive('ENTRENADOR'), true)
+  assert.equal(getAreaDetailVariant('ENTRENADOR'), AREA_DETAIL_VARIANTS.SUPPORT)
+  assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('ENTRENADOR'))
+})
+check('WC Gerente ahora se muestra "WC Gerente FFT", mismo id interno (GERENTE)', () => {
+  assert.equal(workCenterById('GERENTE').name, 'WC Gerente FFT')
+})
+check('operationalGroupMembers(INSUMOS) suma Box Prep + Suministro de material + Insumos', () => {
+  assert.deepEqual(operationalGroupMembers('INSUMOS'), ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'])
+})
+check('indicadores FFT: orden oficial 1-4 (Eficiencia, Demoras, Produccion, Cumplimiento), ninguno con fuente real inventada', () => {
+  assert.deepEqual(FFT_INDICATORS.map((i) => i.id), ['EFICIENCIA', 'DEMORAS', 'PRODUCCION', 'CUMPLIMIENTO_PROGRAMAS'])
+  FFT_INDICATORS.forEach((i) => assert.equal(i.hasSource, false, `${i.id} no deberia tener fuente real todavia`))
 })
 
 console.log(`\n${passed}/${passed} checks OK`)

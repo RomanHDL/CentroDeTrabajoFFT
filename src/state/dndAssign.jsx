@@ -7,8 +7,8 @@ import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
-import { CURRENT_SHIFT, hasLineStations, workCenterById } from '../data/production/catalog'
-import { getWorkstationsForLine } from '../data/personnel/workstations'
+import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
+import { getWorkstationsForLine, hasMultipleStations } from '../data/personnel/workstations'
 import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
 import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
@@ -84,7 +84,11 @@ export function DndAssignProvider({ children }) {
     const employee = getEmployeeById(employeeId)
     if (!employee) return
     const current = getCurrentAssignment(employeeId)
-    if (hasLineStations(targetAreaId)) {
+    // 2026-08-26: antes se usaba hasLineStations() (solo type===PRODUCTION_LINE)
+    // -- ahora Accesorios/Paletizado/Insumos/Midea tambien tienen multiples
+    // estaciones reales sin ser WC LINEA, asi que el guard es por CANTIDAD
+    // real de estaciones, no por tipo de area (ver workstations.js/hasMultipleStations).
+    if (hasMultipleStations(targetAreaId)) {
       if (current && current.areaId === targetAreaId) {
         showToast(`${employee.name} ya está en ${workCenterById(targetAreaId)?.name}.`, 'info')
         return

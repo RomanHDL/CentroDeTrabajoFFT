@@ -153,6 +153,56 @@ export const AREA_TYPES = {
   SUPPORT_AREA: 'SUPPORT_AREA',
 }
 
+/* Plantillas de puesto por rol (2026-08-26, "Reestructuracion operativa
+   FFT + puestos + plantillas", a peticion explicita del usuario) --
+   UNICA fuente de verdad para cuantos puestos de cada rol tiene un area,
+   consumida por workstations.js (genera los slots individuales reales,
+   "Surtidor de Accesorios 1".."7", nunca un solo slot "x7") Y por el
+   idealHeadcount de WORK_CENTERS mas abajo (nunca dos numeros que se
+   puedan desincronizar -- Parte 39 del pedido). Contenido tal como lo
+   especifico el usuario, no inventado: NUNCA agregar un rol que no
+   este aqui, NUNCA inventar cantidades. */
+export const CUSTOM_STATION_PLANS = {
+  ACCESORIOS: [
+    { role: 'Team Leader', count: 1 },
+    { role: 'Operador de Compatibilidad', count: 1 },
+    { role: 'Surtidor de Accesorios', count: 7 },
+    { role: 'Controles', count: 2 },
+    { role: 'Armar Bases', count: 2 },
+    { role: 'Ayudante General Almacenista', count: 2 },
+    { role: 'Ayudante General Recolectar Accesorios', count: 1 },
+    { role: 'Tornillería', count: 1 },
+    { role: 'Cables', count: 1 },
+  ],
+  PALETIZADO: [
+    { role: 'Team Leader', count: 1 },
+    { role: 'Operador de Flejadora', count: 1 },
+    { role: 'Conveyor', count: 2 },
+    { role: 'Ayudante General Conveyor', count: 2 },
+    { role: 'Ayudante General Paletizador', count: 4 },
+    { role: 'Ayudante General Flejado', count: 2 },
+    { role: 'Ayudante General Escaneador', count: 2 },
+  ],
+  /* Insumos fusiona PNP/POC/PEN (decorativa, sin WORK_CENTER propio) +
+     Box Prep + Suministro de material en un solo WC (ver
+     AREA_DETAIL_GROUPS.INSUMOS mas abajo) -- "Materia Prima/PNP" y
+     "Fusion/Burbuja/Bolsas" (Parte 6-7 del pedido) NO son Work Centers
+     propios, son subprocesos internos: se modelan como parte del NOMBRE
+     de cada rol de Ayudante General (dos slots x2 explicitamente
+     distintos, nunca colapsados en uno solo de x4). */
+  INSUMOS: [
+    { role: 'Team Leader', count: 1 },
+    { role: 'Materialista', count: 3 },
+    { role: 'Ayudante General — Materia Prima / PNP', count: 2 },
+    { role: 'Operador de Troqueladora', count: 1 },
+    { role: 'Ayudante General — Fusión / Burbuja / Bolsas', count: 2 },
+  ],
+}
+
+function sumStationPlan(plan) {
+  return plan.reduce((sum, r) => sum + r.count, 0)
+}
+
 /* Todos los nombres empiezan con "CT " (Centro de Trabajo), tal como
    en el plano fisico real del piso (pizarron, confirmado por el
    usuario 2026-08-19). Actualizacion 2026-08-24 (a peticion explicita
@@ -176,8 +226,13 @@ export const WORK_CENTERS = [
   { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
   { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
   { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
-  { id: 'PALETIZADO', name: 'WC Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 },
-  { id: 'ACCESORIOS', name: 'WC Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 20 },
+  /* Paletizado/Accesorios (2026-08-26, a peticion explicita del usuario):
+     idealHeadcount ya NO es un numero mantenido a mano -- se deriva de
+     CUSTOM_STATION_PLANS de arriba (suma de puestos reales configurados),
+     para que nunca existan dos numeros (Dashboard vs Detail) que se
+     puedan desincronizar (Parte 39 del pedido, "una sola fuente"). */
+  { id: 'PALETIZADO', name: 'WC Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.PALETIZADO) },
+  { id: 'ACCESORIOS', name: 'WC Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.ACCESORIOS) },
   /* CONVEYOR se dividio en dos areas reales independientes (2026-08-25,
      a peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
      dibuja "CONVEYOR PRINCIPAL"/"CONVEYOR SECUNDARIO" como dos barras
@@ -203,40 +258,67 @@ export const WORK_CENTERS = [
      personnelByArea.mapAreaZonaToId). */
   { id: 'HIGH_VALUE', name: 'WC Midea / High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 16 },
   { id: 'CALIDAD', name: 'WC Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  /* Sellado / Insumos / Suministro de material: areas nuevas del
-     plano fisico real (pizarron del piso, 2026-08-19), confirmadas
-     por el usuario como areas nuevas de verdad — todavia SIN
-     plantilla oficial ni personal identificado, por eso
-     idealHeadcount queda null (nunca se inventa) hasta que se
-     confirme la tabla IDEAL/REAL correspondiente. */
   { id: 'SELLADO', name: 'WC Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'INSUMOS', name: 'WC Insumos', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'SUMINISTRO_MATERIAL', name: 'WC Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  /* BOX_PREP (2026-08-25, a peticion explicita del usuario): antes CAJAS no
-     tenia WORK_CENTER (mismo patron documentado arriba) y esas 4 personas
-     reales del snapshot nunca aparecian en ningun bloque visual. El usuario
-     aclaro que CAJAS es en realidad "Box Prep" -- pero es la MISMA caja
-     "BOX PREP" que ya existia como decoracion junto a "PNP/POC/PEN" en el
-     plano 2D (OperatingFloorPlan.jsx), no una segunda: esa caja se volvio
-     real (cuenta/personas) en vez de agregarse una nueva en otro lugar.
-     idealHeadcount null: no hay plantilla oficial (mismo criterio que
-     CALIDAD/SELLADO/INSUMOS). CHOFER/PRODUCCION NO tienen WORK_CENTER --
-     correccion explicita del usuario 2026-08-25: esa gente es real de linea
-     pero no se sabe cual linea especifica, asi que NO se les inventa una
-     area propia; aparecen en "Personal sin area asignada" (getPeopleWithoutArea,
-     personnelByArea.js) con su zona cruda como etiqueta identificadora. */
-  { id: 'BOX_PREP', name: 'WC Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
+  /* WC Insumos y Suministro de Material (2026-08-26, "Reestructuracion
+     operativa FFT", a peticion explicita del usuario) -- fusion de PNP/POC/PEN
+     (nunca tuvo WORK_CENTER propio, decoracion pura) + Box Prep + Insumos +
+     Suministro de material en UN SOLO Work Center activo. idealHeadcount ya
+     no es null: se deriva de CUSTOM_STATION_PLANS.INSUMOS (Team Leader,
+     Materialista x3, Ayudante General Materia Prima x2, Operador de
+     Troqueladora, Ayudante General Fusion/Burbuja/Bolsas x2 = 9), la primera
+     plantilla oficial real de esta area. Este id (INSUMOS) es el CANONICO --
+     ver AREA_DETAIL_GROUPS mas abajo: BOX_PREP y SUMINISTRO_MATERIAL siguen
+     existiendo como entradas (nunca se borran, tienen WorkArea real en la
+     DB con historial -- Parte 51 del pedido: "preferir isActive=false a
+     DELETE") pero quedan `active:false` y su personal/plantilla se suma
+     aqui via operationalGroupMembers, exactamente el mismo patron ya
+     probado con SELLADO->CONVEYOR_PRINCIPAL. */
+  { id: 'INSUMOS', name: 'WC Insumos y Suministro de Material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.INSUMOS) },
+  { id: 'SUMINISTRO_MATERIAL', name: 'WC Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
+  /* BOX_PREP (2026-08-25): ver nota historica completa mas abajo en el
+     comentario original -- 2026-08-26 se fusiono dentro de WC Insumos y
+     Suministro de Material (ver AREA_DETAIL_GROUPS), `active:false` pero
+     SIN borrar (tiene WorkArea real con historial en la DB). */
+  { id: 'BOX_PREP', name: 'WC Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null, active: false },
   { id: 'CAPACITACION', name: 'WC Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   { id: 'TEAM_LEADER', name: 'WC Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'SOPORTE', name: 'WC Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3 },
+  /* ENTRENADOR (2026-08-26, WC nuevo a peticion explicita del usuario) --
+     personal de entrenamiento/capacitacion correspondiente. idealHeadcount
+     null: el usuario no dio un numero de plantilla oficial para esta area
+     (solo nombres de personas a resolver), nunca se inventa uno -- se
+     muestra "Sin definir" en la UI (misma regla que Calidad/Sellado). */
+  { id: 'ENTRENADOR', name: 'WC Entrenador', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
+  /* SOPORTE (2026-08-26, a peticion explicita del usuario: "ELIMINAR WC
+     SOPORTE" del esquema activo) -- `active:false`, NUNCA DELETE (tiene
+     WorkArea real con historial/asignaciones en la DB -- Parte 21/51 del
+     pedido: preservar DailyAssignment/EmployeeMovement/Attendance
+     historicos, preferir archivar). Desaparece de layout/navegacion/
+     Dashboard/conteos activos, pero el id sigue resolviendo (workCenterById)
+     para cualquier referencia historica que lo necesite. */
+  { id: 'SOPORTE', name: 'WC Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3, active: false },
   { id: 'LIMPIEZA', name: 'WC Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'GERENTE', name: 'WC Gerente', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+  /* GERENTE (2026-08-26, a peticion explicita del usuario): solo cambia el
+     `name` mostrado a "WC Gerente FFT" -- el id interno NO se toca (mismo
+     criterio de siempre: renombrar visual nunca reescribe el id real). */
+  { id: 'GERENTE', name: 'WC Gerente FFT', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
   { id: 'SUPERVISOR', name: 'WC Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
 ]
 
+/* `active` (2026-08-26, a peticion explicita del usuario -- "eliminar WC
+   Soporte del esquema activo, preservando historial") -- un WORK_CENTER
+   sin el campo `active` (la inmensa mayoria) se considera activo por
+   omision; solo se marca `active:false` explicitamente en las entradas
+   archivadas (hoy: SOPORTE, BOX_PREP, SUMINISTRO_MATERIAL). El id NUNCA
+   se borra de WORK_CENTERS (workCenterById sigue resolviendolo para
+   historial/auditoria) -- `active` solo controla si aparece en
+   layout/navegacion/conteos/Dashboard. */
+export function isWorkCenterActive(id) {
+  return workCenterById(id)?.active !== false
+}
+
 export const LINES_ONLY = WORK_CENTERS.filter(w => w.kind === 'linea')
-export const PRODUCTION_CENTERS = WORK_CENTERS.filter(w => w.isProduction)
-export const SUPPORT_CENTERS = WORK_CENTERS.filter(w => !w.isProduction)
+export const PRODUCTION_CENTERS = WORK_CENTERS.filter(w => w.isProduction && w.active !== false)
+export const SUPPORT_CENTERS = WORK_CENTERS.filter(w => !w.isProduction && w.active !== false)
 
 /* Unica fuente de verdad de "esta area usa el template de
    estaciones de linea" — antes esto se asumia implicitamente para
@@ -255,10 +337,12 @@ export function hasLineStations(workCenterId) {
    - Se EXCLUYE 'PROYECTO' (CT LINEA 0) aunque su type sea WORK_AREA:
      el usuario listo explicitamente "CT LINEA 0" junto con LINEA1..10
      como fuera de alcance ("ya tienen un diseño especial diferente").
-   - Se INCLUYE 'BOX_PREP' aunque su type sea SUPPORT_AREA: el usuario
-     lo pidio explicitamente por nombre en su lista de areas operativas
-     ("Box Prep"), aunque el catalogo lo clasifica como apoyo
-     (isProduction:false) por no tener plantilla oficial.
+   - Se EXCLUYE 'BOX_PREP' pese a que antes tenia una excepcion explicita
+     hacia OPERATIONAL: desde 2026-08-26 esta fusionada dentro de
+     'INSUMOS' (ver AREA_DETAIL_GROUPS mas abajo) -- su membresia ya no
+     hace falta aqui porque canonicalOperationalAreaId('BOX_PREP')
+     resuelve a 'INSUMOS', que SI esta en esta lista. Ademas ahora es
+     `active:false`.
    - Se EXCLUYE 'CALIDAD' aunque su type sea WORK_AREA (2026-08-26,
      REVERSION explicita del usuario sobre la decision anterior de este
      mismo archivo: "aunque el mockup use WC Calidad como referencia
@@ -267,16 +351,24 @@ export function hasLineStations(workCenterId) {
      `type`/`isProduction` de CALIDAD en WORK_CENTERS NO se toco (sigue
      reflejando su clasificacion real de produccion del Excel LAYOUT
      FFT.xlsx) -- esto es puramente una excepcion en QUE VISTA DE
-     DETALLE usa, exactamente el mismo patron que la excepcion de
-     BOX_PREP de arriba pero en sentido inverso. Ver SUPPORT_DETAIL_AREA_IDS
-     mas abajo, donde CALIDAD se agrega de vuelta explicitamente.
+     DETALLE usa. Ver SUPPORT_DETAIL_AREA_IDS mas abajo, donde CALIDAD
+     se agrega de vuelta explicitamente.
+   - Se EXCLUYE 'HIGH_VALUE' (2026-08-26, a peticion explicita del
+     usuario: "WC Midea / High Value debe funcionar COMO UNA WC LINEA")
+     -- deja de usar OperationalAreaDetail.jsx, pasa a la nueva variante
+     LINE_LIKE (ver AREA_DETAIL_VARIANTS mas abajo), que reutiliza la
+     experiencia de LineDetailDrawer.jsx sin ser clasificada como LINE
+     real (no entra en LINE_FAMILY_AREA_IDS).
 
-   El resto de type===WORK_AREA (Paletizado, Accesorios, Conveyor
-   Principal/Secundario, Midea/High Value, Sellado, Insumos, Suministro
-   de material) coincide 1:1 con la lista que el usuario dio por nombre
-   -- confirmado area por area, no asumido. Las SUPPORT_AREA restantes
-   (Capacitacion, Team Leader, Soporte, Limpieza, Gerente, Supervisor,
+   El resto de type===WORK_AREA activo (Paletizado, Accesorios, Conveyor
+   Principal/Secundario, Insumos y Suministro de Material) coincide 1:1
+   con la lista que el usuario dio por nombre -- confirmado area por
+   area, no asumido. Las SUPPORT_AREA restantes (Capacitacion, Team
+   Leader, Entrenador, Soporte, Limpieza, Gerente FFT, Supervisor,
    Calidad) y todas las PRODUCTION_LINE quedan fuera, sin excepcion.
+   Areas `active:false` (SOPORTE, BOX_PREP, SUMINISTRO_MATERIAL) tambien
+   se filtran aqui -- SUMINISTRO_MATERIAL/BOX_PREP igual siguen
+   accesibles vía su grupo canonico (INSUMOS).
 
    CT SELLADO (2026-08-25, correccion explicita del usuario): no tiene
    entrada propia -- "va en Conveyor Principal, ponlos ahi juntos". No
@@ -284,22 +376,26 @@ export function hasLineStations(workCenterId) {
    OperatingFloorPlan.jsx la excluyen explicitamente desde antes, a
    peticion tambien explicita del usuario), asi que su unica forma de
    detalle es fusionada dentro del detalle de CONVEYOR_PRINCIPAL -- ver
-   AREA_DETAIL_GROUPS/canonicalOperationalAreaId mas abajo, mismo patron
-   ya usado para "CT Insumos y Suministro de material" en el plano 2D
-   (dos WORK_CENTER reales, una sola representacion visual). */
-export const OPERATIONAL_DETAIL_AREA_IDS = new Set([
-  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.WORK_AREA && w.id !== 'PROYECTO' && w.id !== 'CALIDAD').map((w) => w.id),
-  'BOX_PREP',
-])
+   AREA_DETAIL_GROUPS/canonicalOperationalAreaId mas abajo. */
+export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
+  WORK_CENTERS
+    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP'].includes(w.id))
+    .map((w) => w.id),
+)
 
 /* Grupos de detalle fusionado: la clave es el id "canonico" (el que se
    muestra/al que se asignan movimientos nuevos), el arreglo son TODOS
    los WORK_CENTER reales cuyo personal/plantilla se suma en ese mismo
-   detalle. Hoy solo existe un grupo (Sellado dentro de Conveyor
-   Principal); si el usuario pide fusionar otro par en el futuro, se
-   agrega aqui, sin tocar OperationalAreaDetail.jsx. */
+   detalle. INSUMOS (2026-08-26, "Reestructuracion operativa FFT",
+   fusion PNP/POC/PEN + Box Prep + Insumos + Suministro de material en
+   un solo WC -- ver Parte 4-6 del pedido) sigue exactamente el mismo
+   patron ya probado con Sellado/Conveyor Principal: los ids fusionados
+   (BOX_PREP, SUMINISTRO_MATERIAL) NUNCA se borran (tienen WorkArea real
+   con historial), solo quedan `active:false` y su personal/plantilla se
+   suma en el detalle de INSUMOS via operationalGroupMembers. */
 export const AREA_DETAIL_GROUPS = {
   CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'SELLADO'],
+  INSUMOS: ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'],
 }
 
 /* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO
@@ -346,16 +442,24 @@ export function usesOperationalDetail(workCenterId) {
    en WORK_CENTERS (confirmado) -- si se agrega en el futuro con
    kind:'linea', LINES_ONLY la recoge sola (mismo patron que las demas
    lineas) y aparece aqui automaticamente, sin volver a tocar este
-   archivo. El .filter final es una red de seguridad defensiva (nunca
-   debería quitar nada hoy) por si algun id de esta lista dejara de
-   existir en WORK_CENTERS. */
+   archivo.
+
+   2026-08-26 (Reestructuracion operativa FFT): BOX_PREP y
+   SUMINISTRO_MATERIAL se quitan de aqui -- igual que SELLADO, ya no
+   tienen detalle propio, resuelven a INSUMOS (AREA_DETAIL_GROUPS),
+   incluirlos crearia paradas duplicadas. SOPORTE se quita -- archivada
+   (`active:false`), ya no es una parada activa. ENTRENADOR se agrega --
+   WC nuevo activo. El .filter final ahora es doble red de seguridad:
+   nunca deberia quitar nada hoy salvo por accidente, pero TAMBIEN excluye
+   defensivamente cualquier id que quede `active:false` en el futuro sin
+   que alguien recuerde actualizar este array a mano. */
 export const WORK_CENTER_NAVIGATION_ORDER = [
   'PROYECTO',
   ...LINES_ONLY.map((w) => w.id),
   'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO',
-  'HIGH_VALUE', 'PALETIZADO', 'BOX_PREP', 'INSUMOS', 'SUMINISTRO_MATERIAL', 'ACCESORIOS', 'CALIDAD',
-  'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
-].filter((id) => WORK_CENTERS.some((w) => w.id === id))
+  'HIGH_VALUE', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS', 'CALIDAD',
+  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+].filter((id) => isWorkCenterActive(id) && WORK_CENTERS.some((w) => w.id === id))
 
 /* previous/current/next dentro de WORK_CENTER_NAVIGATION_ORDER --
    navegacion LINEAL (nunca circular): en el primer elemento `previous`
@@ -383,44 +487,56 @@ export function getNextWorkCenter(currentAreaId) {
 }
 
 /* ─────────────────────────────────────────────
-   Tres familias de detalle de area (2026-08-26, a peticion explicita del
-   usuario) -- configuracion CENTRAL unica, para que ningun componente
-   tenga que decidir "if (name === 'CT Capacitación')" por su cuenta:
+   CUATRO familias de detalle de area (LINE_LIKE agregada 2026-08-26,
+   "Reestructuracion operativa FFT", a peticion explicita del usuario)
+   -- configuracion CENTRAL unica, para que ningun componente tenga que
+   decidir "if (name === 'CT Capacitación')" por su cuenta:
 
-   LINE         -> LINEA1..10 + PROYECTO (CT LINEA 0, mismo criterio ya
-                   usado para excluirla de OPERATIONAL_DETAIL_AREA_IDS) ->
-                   LineDetailDrawer.jsx, SIN CAMBIOS.
+   LINE         -> LINEA1..10 + PROYECTO (CT LINEA 0) -> LineDetailDrawer.jsx,
+                   SIN CAMBIOS.
+   LINE_LIKE    -> HIGH_VALUE (WC Midea / High Value) unicamente -- usa la
+                   MISMA experiencia visual/funcional de LineDetailDrawer.jsx
+                   (estaciones, vacantes, buscador, drag&drop, navegacion)
+                   pero NUNCA se le llama "Línea" en la UI ni entra en
+                   LINE_FAMILY_AREA_IDS/WORK_CENTERS.kind='linea' -- es una
+                   categoria distinta a proposito (Parte 13-14/32 del
+                   pedido: "ya no quiero esa logica generica [Operational],
+                   pero su nombre sigue siendo WC Midea / High Value").
    OPERATIONAL  -> OPERATIONAL_DETAIL_AREA_IDS (Accesorios, Paletizado,
-                   Midea/High Value, Box Prep, Insumos, Suministro,
-                   Conveyor Principal/Secundario -- incluye Sellado
-                   fusionada) -> OperationalAreaDetail.jsx.
-   SUPPORT      -> el resto: Capacitacion, Team Leader, Soporte, Limpieza,
-                   Gerente, Supervisor, Calidad (type===SUPPORT_AREA,
-                   MENOS BOX_PREP que ya tiene su excepcion explicita
-                   hacia OPERATIONAL, MAS CALIDAD que la tiene al reves --
-                   ver la excepcion explicita en OPERATIONAL_DETAIL_AREA_IDS
-                   de arriba, 2026-08-26, reversion explicita del usuario)
-                   -> SupportAreaDetail.jsx.
+                   Insumos y Suministro de Material -- incluye Sellado,
+                   Box Prep y Suministro de material fusionados,
+                   Conveyor Principal/Secundario) -> OperationalAreaDetail.jsx.
+   SUPPORT      -> el resto: Capacitacion, Team Leader, Entrenador, Soporte
+                   (archivada pero sigue resolviendo aqui por si alguien
+                   navega a su id historico), Limpieza, Gerente FFT,
+                   Supervisor, Calidad -> SupportAreaDetail.jsx.
 
-   Las tres listas se derivan de WORK_CENTERS sin overlap: cada
+   Las cuatro listas se derivan de WORK_CENTERS sin overlap: cada
    WORK_CENTER real cae en exactamente una. NO se decide por nombre en
    ningun momento -- ver getAreaDetailVariant, unico punto de resolucion
    (AreaDetail.jsx lo consume, no reimplementa la logica). */
-export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', OPERATIONAL: 'OPERATIONAL', SUPPORT: 'SUPPORT' }
+export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', LINE_LIKE: 'LINE_LIKE', OPERATIONAL: 'OPERATIONAL', SUPPORT: 'SUPPORT' }
 
 export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
+/* Unico miembro hoy: WC Midea / High Value. Set separado (no un boolean
+   suelto en WORK_CENTERS) para que agregar otra area LINE_LIKE en el
+   futuro sea un solo id agregado aqui, igual que las demas listas de
+   este archivo. */
+export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE'])
+
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
-  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && w.id !== 'BOX_PREP').map((w) => w.id),
+  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),
   'CALIDAD',
 ])
 
 export function getAreaDetailVariant(workCenterId) {
   if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE
+  if (LINE_LIKE_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE_LIKE
   if (usesOperationalDetail(workCenterId)) return AREA_DETAIL_VARIANTS.OPERATIONAL
   if (SUPPORT_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.SUPPORT
   // Defensivo: cualquier id futuro que no encaje en ninguna lista (no
-  // deberia pasar hoy, las tres cubren el 100% de WORK_CENTERS) cae en
+  // deberia pasar hoy, las cuatro cubren el 100% de WORK_CENTERS) cae en
   // LINE -- LineDetailDrawer.jsx ya maneja correctamente cualquier area
   // sin estaciones de linea con su propia rama "vista simple", el mismo
   // comportamiento que existia antes de esta clasificacion.
@@ -468,3 +584,21 @@ export const OPERATIONAL_STATUS = {
 export function workCenterById(id) {
   return WORK_CENTERS.find(w => w.id === id)
 }
+
+/* Indicadores del area FFT (2026-08-26, "Reestructuracion operativa FFT",
+   a peticion explicita del usuario) -- orden oficial 1..4, NUNCA
+   reordenar: Eficiencia, Demoras, Produccion, Cumplimiento de programas.
+   `hasSource:false` en los 4 -- hoy NO existe ninguna fuente real de
+   datos para ninguno (variables operativas de eficiencia, registro de
+   demoras, produccion real, o plan/programa vs resultado): no se
+   inventa ni un solo porcentaje. La UI (Dashboard) debe mostrar "Sin
+   fuente de datos configurada" para cada uno mientras `hasSource` sea
+   false -- este objeto es el unico lugar a cambiar (`hasSource:true` +
+   agregar el selector real correspondiente) el dia que exista una
+   fuente real, sin tocar el componente visual. */
+export const FFT_INDICATORS = [
+  { id: 'EFICIENCIA', order: 1, label: 'Eficiencia del área FFT', hasSource: false },
+  { id: 'DEMORAS', order: 2, label: 'Demoras en área FFT', hasSource: false },
+  { id: 'PRODUCCION', order: 3, label: 'Indicador de producción', hasSource: false },
+  { id: 'CUMPLIMIENTO_PROGRAMAS', order: 4, label: 'Cumplimiento de programas área FFT', hasSource: false },
+]

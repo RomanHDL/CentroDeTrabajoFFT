@@ -65,17 +65,21 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 /* Cards pequeñas de apoyo, fila inferior del mismo plano -- mismo
    sistema visual que las zonas grandes, solo más compactas (no
    representan una línea física principal). */
+// 2026-08-26 ("Reestructuracion operativa FFT", a peticion explicita del
+// usuario): SOPORTE se quita (archivada, `active:false` -- ya no aparece
+// en el plano). ENTRENADOR se agrega (WC nuevo, mismo trato de card
+// pequeña que el resto de areas de apoyo).
 export const SUPPORT_CARD_AREA_IDS = [
-  'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+  'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ]
 
-/* Zonas visibles en la imagen sin área de catálogo mapeada con
-   confianza -- se dibujan como referencia (sin conteo) en vez de
-   forzar un mapeo incierto. "BOX PREP" ya NO va aqui (correccion explicita
-   del usuario 2026-08-25: es la MISMA caja de siempre, junto a PNP/POC/PEN
-   -- solo que ahora es real, ver 'boxprep' con datos reales directo en
-   OperatingFloorPlan.jsx, misma posicion de grid de siempre). PNP/POC/PEN
-   sigue sin info real. */
-export const REFERENCE_ONLY_ZONES = [
-  { key: 'pnp', label: 'PNP / POC / PEN' },
-]
+/* Zonas visibles en la imagen sin área de catálogo mapeada con confianza
+   -- se dibujan como referencia (sin conteo) en vez de forzar un mapeo
+   incierto. Vacío desde 2026-08-26: "PNP / POC / PEN" (única entrada que
+   existió aquí) se fusionó dentro de WC Insumos y Suministro de Material
+   (ver catalog.js/AREA_DETAIL_GROUPS.INSUMOS) -- ya no se dibuja como caja
+   propia en ningún lado, deja de mostrarse como Work Center independiente.
+   El array se conserva vacío (en vez de borrarlo) para no romper a quien
+   ya lo consume (EstacionesTab.jsx) y por si en el futuro aparece otra
+   zona real sin WORK_CENTER confirmado. */
+export const REFERENCE_ONLY_ZONES = []

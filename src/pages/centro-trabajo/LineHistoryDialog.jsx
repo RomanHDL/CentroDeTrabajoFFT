@@ -32,7 +32,7 @@ export default function LineHistoryDialog({ lineId, open, onClose }) {
       <DialogTitle sx={{ fontWeight: 800 }}>Historial de {workCenterById(lineId)?.name || lineId} — hoy</DialogTitle>
       <DialogContent dividers>
         {movements.length === 0 ? (
-          <EmptyState compact title="Sin movimientos hoy" description="No ha habido entradas ni movimientos en esta línea hoy." />
+          <EmptyState compact title="Sin movimientos hoy" description="No ha habido entradas ni movimientos en esta área hoy." />
         ) : (
           <Stack spacing={1}>
             {movements.map((m) => (

@@ -17,17 +17,16 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit'
 import PersonIcon from '@mui/icons-material/Person'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
 import CloseIcon from '@mui/icons-material/Close'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
-import { workCenterById, WORK_CENTERS } from '../data/production/catalog'
+import { workCenterById, WORK_CENTERS, canonicalOperationalAreaId, operationalGroupMembers } from '../data/production/catalog'
 import {
   getAreaHeadcount, getAreaStaffing, getPeopleByArea, hasAnyPersonnelToday,
-  getStaffingTotals, getFftPeopleWithLine,
+  getStaffingTotals, getFftPeopleWithLine, getGroupAreaStaffing, getGroupPeople,
 } from '../data/production/personnelByArea'
-import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS, REFERENCE_ONLY_ZONES } from '../data/production/floorPlanZones'
+import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS } from '../data/production/floorPlanZones'
 import { useEmployeeDropTarget } from '../ui/dnd'
 import DraggablePersonChip from '../ui/DraggablePersonChip'
 import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCenter'
@@ -86,7 +85,15 @@ function statusText(status, staffing) {
   return `${STATUS_META[status].label} · Faltan ${staffing.ideal - staffing.real}`
 }
 
-const SHOWN_AREA_IDS = WORK_CENTERS.filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO').map((w) => w.id)
+// 2026-08-26 ("Reestructuracion operativa FFT"): se excluyen tambien las
+// areas `active:false` sin fusion (SOPORTE, archivada de verdad) -- las
+// fusionadas (BOX_PREP/SUMINISTRO_MATERIAL, canonico=INSUMOS) se quedan,
+// su personal real sigue siendo personal real, solo ahora conceptualmente
+// pertenece a Insumos (mismo criterio que getStaffingTotals()).
+const SHOWN_AREA_IDS = WORK_CENTERS
+  .filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO')
+  .filter((w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id)
+  .map((w) => w.id)
 
 /* readOnly: por defecto false (interactivo) -- ni Layout2DPage.jsx ni
    AreasLayoutView.jsx (Centro de Trabajo) lo pasan, ambos quieren
@@ -297,9 +304,21 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              cada lista interna ya tiene su propio scroll (PersonList,
              overflow:auto), esto es solo una red de seguridad adicional. */
           gridTemplateRows: 'minmax(250px, auto) minmax(160px, auto)',
+          /* Fila 2 (2026-08-26, "Reestructuracion operativa FFT", a peticion
+             explicita del usuario): antes eran 4 celdas independientes
+             (pnp/boxprep/stock/accessories) -- ahora "insumos" (fusion de
+             PNP/POC/PEN + Box Prep + Insumos + Suministro de material, ver
+             InsumosSuministroZone) ocupa las primeras 7 columnas (desde
+             donde empezaba PNP hasta aproximadamente donde termina, arriba,
+             la 5a columna del bloque FFT -- Parte 27 del pedido) y
+             "accessories" ocupa las 7 columnas siguientes (Parte 28: se
+             extiende "hasta Línea 6"). Las columnas de FFT/highvalue/
+             palletizing (fila 1) NO se tocaron -- solo se redistribuyo el
+             span interno de la fila 2 sobre las mismas 15 columnas de
+             siempre, sin overlap (verificado: 7+7+1=15). */
           gridTemplateAreas: `
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
-            "pnp boxprep stock stock accessories accessories accessories accessories accessories accessories accessories accessories accessories accessories palletizing"
+            "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
@@ -335,17 +354,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
           <PersonList areaId="PALETIZADO" columns={2} readOnly={readOnly} />
         </BigZone>
 
-        {REFERENCE_ONLY_ZONES.map((z) => (
-          <ReferenceZone key={z.key} gridArea={z.key} label={z.label} />
-        ))}
-
-        {/* "BOX PREP" (2026-08-25, correccion explicita del usuario): es la
-            MISMA caja de siempre junto a PNP/POC/PEN, ahora con datos reales
-            (antes CAJAS no tenia WORK_CENTER y esas 4 personas nunca
-            aparecian en ningun lado) -- NO es una caja nueva ni duplicada. */}
-        <SmallRealZone areaId="BOX_PREP" gridArea="boxprep" icon={<Inventory2Icon sx={{ fontSize: 16 }} />} onOpen={onOpen} readOnly={readOnly} />
-
-        <InsumosSuministroZone gridArea="stock" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
+        <InsumosSuministroZone gridArea="insumos" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
         <BigZone areaId="ACCESORIOS" gridArea="accessories" title="WC Accesorios" onOpen={onOpen} readOnly={readOnly}>
           <PersonList areaId="ACCESORIOS" columns={2} readOnly={readOnly} />
@@ -385,55 +394,6 @@ function ConveyorBar({ label, areaId, onOpenAssign, readOnly }) {
       <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: isOver ? '#3B82F6' : 'text.secondary' }}>
         {isOver ? 'Soltar aquí' : label}
       </Typography>
-    </Box>
-  )
-}
-
-function ReferenceZone({ gridArea, label, icon }) {
-  return (
-    <Box sx={{
-      gridArea, borderRadius: 1.5, border: '1px dashed', borderColor: 'divider',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.5,
-      color: 'text.disabled', p: 0.75,
-    }}>
-      {icon}
-      <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{label}</Typography>
-    </Box>
-  )
-}
-
-/* Misma forma/tamano que ReferenceZone (celda pequeña de grid junto a
-   PNP/POC/PEN) pero con datos reales -- usada solo para "BOX PREP"
-   (2026-08-25, correccion explicita del usuario: reusar esta caja de
-   siempre, no crear una nueva en otro lado). Drop target + click para
-   administrar, igual que el resto de zonas reales. */
-function SmallRealZone({ areaId, gridArea, icon, onOpen, readOnly }) {
-  const wc = workCenterById(areaId)
-  const staffing = getAreaStaffing(areaId)
-  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
-  const label = staffing.ideal != null
-    ? `${staffing.real} / ${staffing.ideal}`
-    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
-  return (
-    <Box
-      {...(readOnly ? {} : dropProps)}
-      onClick={() => onOpen(areaId)}
-      sx={{
-        gridArea, borderRadius: 1.5, p: 0.75, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent',
-        display: 'flex', flexDirection: 'column', gap: 0.4, overflow: 'hidden', minHeight: 0,
-        transition: 'background-color .15s ease',
-      }}
-    >
-      <Stack direction="row" spacing={0.4} alignItems="center" justifyContent="center">
-        {icon}
-        <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{wc?.name?.replace('WC ', '') || areaId}</Typography>
-      </Stack>
-      <Typography sx={{ fontSize: 9.5, fontWeight: 700, textAlign: 'center', color: 'text.secondary' }}>{isOver ? 'Soltar aquí' : label}</Typography>
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        <PersonList areaId={areaId} readOnly={readOnly} />
-      </Box>
     </Box>
   )
 }
@@ -629,31 +589,33 @@ function MixtosDecoration() {
   )
 }
 
-/* WC Insumos + WC Suministro de material fusionados en una sola caja visual
-   (a petición explícita del usuario 2026-08-24) -- siguen siendo dos áreas
-   reales separadas en el catálogo (INSUMOS/SUMINISTRO_MATERIAL, ninguna
-   tiene plantilla oficial), esto solo combina cómo se dibujan aquí. */
-/* Caja fusionada de INSUMOS+SUMINISTRO_MATERIAL (dos areas reales
-   distintas dibujadas juntas, ver floorPlanZones.js). En modo asignable
-   (!readOnly) no hay una sola "area" a la que caiga un arrastre/click sobre
-   la caja fusionada -- se eligio INSUMOS por default (2026-08-25, decision
-   documentada: es la primera de las dos, ninguna tiene plantilla oficial,
-   no hay criterio real para preferir una sobre otra). En readOnly
-   (Dashboard) el click sigue abriendo el resumen combinado de siempre,
-   sin cambios. */
+/* WC Insumos y Suministro de Material (2026-08-26, "Reestructuracion
+   operativa FFT", a peticion explicita del usuario) -- fusion visual de
+   PNP/POC/PEN (decorativa, sin WORK_CENTER propio) + Box Prep + Insumos +
+   Suministro de material en UNA sola caja grande, ocupando el espacio que
+   antes tenian las 4 celdas separadas (ver grid gridTemplateAreas arriba).
+   Sigue siendo group-aware via operationalGroupMembers('INSUMOS')
+   (catalog.js/AREA_DETAIL_GROUPS) -- exactamente los mismos numeros que
+   veras al abrir el detalle completo (OperationalAreaDetail.jsx), nunca
+   una segunda fuente. INSUMOS es el id canonico al que cae cualquier
+   arrastre/click sobre la caja fusionada. */
 function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
-  const peopleInsumos = getPeopleByArea()['INSUMOS'] || []
-  const peopleSuministro = getPeopleByArea()['SUMINISTRO_MATERIAL'] || []
-  const real = peopleInsumos.length + peopleSuministro.length
+  const memberIds = operationalGroupMembers('INSUMOS')
+  const staffing = getGroupAreaStaffing(memberIds)
+  const people = getGroupPeople(memberIds)
+  const status = statusFor(staffing.real, staffing.ideal)
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'INSUMOS')
-  const color = isOver ? '#3B82F6' : (real > 0 ? '#3B82F6' : '#94A3B8')
+  const color = status ? STATUS_META[status].color : '#94A3B8'
+  const label = staffing.ideal != null
+    ? `${staffing.real} / ${staffing.ideal}`
+    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
       onClick={() => (readOnly ? onOpenSummary('INSUMOS_SUMINISTRO_ALL') : onOpen('INSUMOS'))}
       sx={{
         gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
         bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
         transition: 'box-shadow .15s ease, background-color .15s ease',
@@ -661,11 +623,13 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
-        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>WC Insumos y Suministro de material</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : `${real} persona${real === 1 ? '' : 's'}`}</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>WC Insumos y Suministro de Material</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : label}</Typography>
       </Stack>
+      {status && <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
+      <Typography sx={{ fontSize: 9, color: 'text.secondary', fontStyle: 'italic' }}>PNP / POC / PEN · Box Prep · Suministro de material</Typography>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        <PersonList people={[...peopleInsumos, ...peopleSuministro]} columns={2} readOnly={readOnly} />
+        <PersonList people={people} columns={2} readOnly={readOnly} />
       </Box>
     </Box>
   )
@@ -750,9 +714,10 @@ function DetailDialog({ areaId, onClose }) {
     staffing = { real, ideal }
     people = getFftPeopleWithLine()
   } else if (areaId === 'INSUMOS_SUMINISTRO_ALL') {
-    title = 'WC Insumos y Suministro de material'
-    staffing = { real: getAreaHeadcount('INSUMOS') + getAreaHeadcount('SUMINISTRO_MATERIAL'), ideal: null }
-    people = [...(getPeopleByArea()['INSUMOS'] || []), ...(getPeopleByArea()['SUMINISTRO_MATERIAL'] || [])]
+    const memberIds = operationalGroupMembers('INSUMOS')
+    title = workCenterById('INSUMOS')?.name || 'WC Insumos y Suministro de Material'
+    staffing = getGroupAreaStaffing(memberIds)
+    people = getGroupPeople(memberIds)
   } else if (areaId) {
     title = workCenterById(areaId)?.name || areaId
     staffing = getAreaStaffing(areaId)

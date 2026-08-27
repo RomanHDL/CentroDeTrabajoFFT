@@ -62,7 +62,7 @@
    en los <Select> de esos 4 archivos (value duplicado) -- nunca podia
    pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
 
-import { WORK_CENTERS, LINE_FAMILY_AREA_IDS } from '../production/catalog'
+import { WORK_CENTERS, LINE_FAMILY_AREA_IDS, LINE_LIKE_AREA_IDS, CUSTOM_STATION_PLANS } from '../production/catalog'
 
 /* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
    de presentacion, la compatibilidad de habilidades sigue usando
@@ -126,6 +126,28 @@ export function buildLineRolePlan(lineId, idealHeadcount) {
   return plan
 }
 
+/* Plan de puestos por rol para areas NO-linea con plantilla oficial real
+   por puesto (2026-08-26, "Reestructuracion operativa FFT", a peticion
+   explicita del usuario -- CUSTOM_STATION_PLANS en catalog.js). A
+   diferencia de buildLineRolePlan (primera ocurrencia SIN sufijo, para
+   no romper compatibilidad con asignaciones de linea ya guardadas), aqui
+   TODAS las repeticiones llevan numero desde el 1 cuando count>1
+   ("Surtidor de Accesorios 1".."7", Parte 37 del pedido, ejemplo
+   explicito del usuario) -- un puesto con count=1 nunca lleva numero
+   ("Team Leader", no "Team Leader 1"). El `role` (tipo de puesto) es
+   SIEMPRE el mismo string para sus N posiciones -- nunca se crean N
+   roles distintos por N slots (Parte 38 del pedido: "separar tipo de
+   puesto de posicion individual"). */
+export function buildCustomRolePlan(rolePlan) {
+  const counts = {}
+  return rolePlan.flatMap(({ role, count }) => (
+    Array.from({ length: count }, () => {
+      counts[role] = (counts[role] || 0) + 1
+      return { role, name: count > 1 ? `${role} ${counts[role]}` : role }
+    })
+  ))
+}
+
 function buildWorkstations() {
   const map = {}
   WORK_CENTERS.forEach((wc) => {
@@ -144,6 +166,44 @@ function buildWorkstations() {
           status: 'ACTIVA',
         }
       })
+    } else if (CUSTOM_STATION_PLANS[wc.id]) {
+      // Accesorios/Paletizado/Insumos (2026-08-26): plantilla real por
+      // puesto, ver CUSTOM_STATION_PLANS (catalog.js) -- capacidad 1 por
+      // slot individual, nunca un solo puesto generico de capacidad alta.
+      const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS[wc.id])
+      map[wc.id] = plan.map((entry, i) => ({
+        id: `${wc.id}-${i + 1}`,
+        lineId: wc.id,
+        name: entry.name,
+        role: entry.role,
+        requiredRole: entry.role,
+        capacity: 1,
+        order: i + 1,
+        status: 'ACTIVA',
+      }))
+    } else if (LINE_LIKE_AREA_IDS.has(wc.id)) {
+      // WC Midea / High Value (2026-08-26, Parte 13-16 del pedido):
+      // "funciona como una linea, 1 persona por puesto" pero SIN nombres
+      // de puesto reales conocidos hoy (investigado: no existen en
+      // ningun lado del catalogo/DB/snapshot) -- Parte 70A: "NO
+      // inventar nombres de puesto... crear la estructura para
+      // soportarlos, pero reportar que falta definir los nombres
+      // oficiales". Slots numerados NEUTRALES ("Puesto 1".."N", nunca
+      // "Montaje"/"Prueba eléctrica" copiados de WC LINEA), capacidad 1
+      // cada uno, N = idealHeadcount real del area (16 hoy). Reemplazar
+      // el `role`/`requiredRole` de abajo por los puestos oficiales en
+      // cuanto el usuario los confirme -- unico lugar a cambiar.
+      const total = wc.idealHeadcount || 0
+      map[wc.id] = Array.from({ length: total }, (_, i) => ({
+        id: `${wc.id}-${i + 1}`,
+        lineId: wc.id,
+        name: `Puesto ${i + 1}`,
+        role: 'Puesto (nombre oficial pendiente de definir)',
+        requiredRole: 'Puesto (nombre oficial pendiente de definir)',
+        capacity: 1,
+        order: i + 1,
+        status: 'ACTIVA',
+      }))
     } else {
       // Un solo puesto generico (no es "Montaje/Prueba/..."): permite
       // que el check-in diario funcione para cualquier area sin
@@ -173,6 +233,19 @@ export const WORKSTATIONS_BY_LINE = buildWorkstations()
 
 export function getWorkstationsForLine(lineId) {
   return WORKSTATIONS_BY_LINE[lineId] || []
+}
+
+/* Reemplaza el guard antiguo `hasLineStations()` (catalog.js, atado a
+   type===PRODUCTION_LINE) para decidir si el flujo de asignacion debe
+   abrir el picker "Elige una estación" (dndAssign.jsx) -- 2026-08-26,
+   necesario porque ahora Accesorios/Paletizado/Insumos/Midea tienen
+   multiples estaciones reales sin ser WC LINEA. Basado en CANTIDAD real
+   de estaciones, no en el tipo de area: cualquier area con mas de 1
+   estacion (linea real, custom-plan, o LINE_LIKE) activa el picker;
+   cualquier area con exactamente 1 estacion generica sigue asignando
+   directo, sin preguntar, exactamente como hoy. */
+export function hasMultipleStations(areaId) {
+  return getWorkstationsForLine(areaId).length > 1
 }
 
 export function getWorkstation(lineId, stationName) {
