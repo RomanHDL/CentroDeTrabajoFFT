@@ -46,6 +46,8 @@ import MoveConfirmDialog from './MoveConfirmDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
 import LineStationCard from './LineStationCard'
+import LeadershipRow from './LeadershipRow'
+import AreaStaffSummary from './AreaStaffSummary'
 import HierarchyLegend, { RankIcon } from './HierarchyLegend'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
@@ -76,6 +78,27 @@ import { useDndAssign } from '../../state/dndAssign'
 function formatHour12(hhmm) {
   return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
 }
+
+/* Titulo de SECCION por categoria (2026-08-28, "REFINAMIENTO VISUAL
+   Grupo C", a peticion explicita del usuario) -- SOLO cambia el
+   encabezado del grupo, nunca `rank.label` (ese sigue siendo el que
+   pinta el badge individual de cada tarjeta y la columna Rol/Rango de
+   la tabla, sin cambios). Mapa fijo por `rank.key`, 100% generico -- no
+   hay ningun nombre de area ni de persona aqui, se sigue derivando
+   exclusivamente de getPersonnelRank(role) como antes. */
+const RANK_SECTION_LABEL = {
+  TEAM_LEADER: 'Liderazgo',
+  OPERADOR_ESPECIALIZADO: 'Operación especializada',
+  AYUDANTE_GENERAL: 'Apoyo operativo',
+  PERSONAL_DE_APOYO: 'Apoyo / Calidad',
+}
+
+/* Rangos de tipo "liderazgo" -- se renderizan como fila ancha
+   (LeadershipRow) en vez de tarjeta de grid (Seccion 7: "el líder no
+   debe verse como una estación normal"). Hoy solo TEAM_LEADER tiene
+   puestos reales en este grupo de areas; los demas se incluyen por si
+   algun dia existe un puesto real con ese rango aqui. */
+const LEADERSHIP_RANK_KEYS = new Set(['HEAD_CHIEF_AREA', 'GERENTE_FFT', 'SUPERVISOR', 'TEAM_LEADER'])
 
 /* Agrupa las estaciones por su rango REAL (getPersonnelRank(role), nunca
    por substring del nombre de puesto -- Seccion 15 del pedido: "no
@@ -139,6 +162,13 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version])
   const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
   const stationGroups = useMemo(() => groupStationsByRank(workstations), [workstations])
+  const summaryGroups = useMemo(() => stationGroups.map((g) => ({
+    key: g.rank ? g.rank.key : '__SIN_CLASIFICAR__',
+    label: g.rank ? (RANK_SECTION_LABEL[g.rank.key] || g.rank.label) : 'Puestos generales',
+    color: g.rank ? g.rank.color : '#94A3B8',
+    occupied: g.stations.filter((w) => w.occupants.length > 0).length,
+    total: g.stations.length,
+  })), [stationGroups])
 
   useEffect(() => {
     if (!open || !canonicalId) return
@@ -335,52 +365,77 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
               </Box>
 
               <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {stationGroups.map((group) => (
-                  <Box
-                    key={group.rank ? group.rank.key : 'sin-clasificar'}
-                    sx={{
-                      border: '1px solid', borderColor: group.rank ? alpha(group.rank.color, 0.25) : 'divider',
-                      borderRadius: 2.5, overflow: 'hidden',
-                    }}
-                  >
-                    <Box sx={{
-                      display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.75,
-                      bgcolor: group.rank ? alpha(group.rank.color, 0.08) : 'action.hover',
-                    }}>
-                      {group.rank
-                        ? <RankIcon rank={group.rank} size={14} />
-                        : <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />}
-                      <Typography sx={{
-                        fontSize: 11, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase',
-                        color: group.rank ? group.rank.color : 'text.secondary',
+                {stationGroups.map((group) => {
+                  const isLeadership = group.rank && LEADERSHIP_RANK_KEYS.has(group.rank.key)
+                  const sectionLabel = group.rank ? (RANK_SECTION_LABEL[group.rank.key] || group.rank.label) : 'Puestos generales'
+                  const occupiedCount = group.stations.filter((w) => w.occupants.length > 0).length
+                  return (
+                    <Box
+                      key={group.rank ? group.rank.key : 'sin-clasificar'}
+                      sx={{
+                        border: '1px solid', borderColor: group.rank ? alpha(group.rank.color, 0.25) : 'divider',
+                        borderRadius: 2.5, overflow: 'hidden',
+                      }}
+                    >
+                      <Box sx={{
+                        display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.75,
+                        bgcolor: group.rank ? alpha(group.rank.color, 0.08) : 'action.hover',
                       }}>
-                        {group.rank ? group.rank.label : 'Puestos generales'}
-                      </Typography>
-                      <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 600 }}>
-                        ({group.stations.length})
-                      </Typography>
+                        {group.rank
+                          ? <RankIcon rank={group.rank} size={14} />
+                          : <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />}
+                        <Typography sx={{
+                          fontSize: 11, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase',
+                          color: group.rank ? group.rank.color : 'text.secondary',
+                        }}>
+                          {sectionLabel}
+                        </Typography>
+                        <Box sx={{ flex: 1 }} />
+                        <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 700 }}>
+                          {occupiedCount} / {group.stations.length} puesto{group.stations.length === 1 ? '' : 's'}
+                        </Typography>
+                      </Box>
+                      {isLeadership ? (
+                        <Stack spacing={1} sx={{ p: 1.25 }}>
+                          {group.stations.map((w) => (
+                            <LeadershipRow
+                              key={w.id}
+                              workAreaId={canonicalId}
+                              workstation={w}
+                              rank={group.rank}
+                              selected={selectedStation?.name === w.name}
+                              onSelect={(ws) => {
+                                setSelectedStationName(ws.name)
+                                if (ws.isAvailable) setAssignStation(ws)
+                              }}
+                              onEmployeeClick={(emp) => setHistoryEmployee(emp)}
+                            />
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Box sx={{
+                          p: 1.25, display: 'grid', gap: 1.25,
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                        }}>
+                          {group.stations.map((w) => (
+                            <LineStationCard
+                              key={w.id}
+                              workAreaId={canonicalId}
+                              workstation={w}
+                              selected={selectedStation?.name === w.name}
+                              lineLike
+                              onSelect={(ws) => {
+                                setSelectedStationName(ws.name)
+                                if (ws.isAvailable) setAssignStation(ws)
+                              }}
+                              onEmployeeClick={(emp) => setHistoryEmployee(emp)}
+                            />
+                          ))}
+                        </Box>
+                      )}
                     </Box>
-                    <Box sx={{
-                      p: 1.25, display: 'grid', gap: 1.25,
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                    }}>
-                      {group.stations.map((w) => (
-                        <LineStationCard
-                          key={w.id}
-                          workAreaId={canonicalId}
-                          workstation={w}
-                          selected={selectedStation?.name === w.name}
-                          lineLike
-                          onSelect={(ws) => {
-                            setSelectedStationName(ws.name)
-                            if (ws.isAvailable) setAssignStation(ws)
-                          }}
-                          onEmployeeClick={(emp) => setHistoryEmployee(emp)}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                ))}
+                  )
+                })}
               </Box>
             </Paper>
 
@@ -511,6 +566,22 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                       </Typography>
                     </Stack>
 
+                    <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Información del puesto</Typography>
+                    <Stack spacing={0.75} sx={{ mb: 1.5 }}>
+                      <Box>
+                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{area.name}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Tipo</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Operativo</Typography>
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Jerarquía</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedStationRank?.label || 'Sin información disponible'}</Typography>
+                      </Box>
+                    </Stack>
+
                     {selectedStation.occupants.length > 0 && (
                       <>
                         <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Empleado asignado</Typography>
@@ -601,9 +672,18 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
               </Box>
             </Paper>
 
-            <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-              <HierarchyLegend expanded />
-            </Paper>
+            <AreaStaffSummary
+              groups={summaryGroups}
+              total={staffing.real}
+              ideal={staffing.ideal}
+              diff={staffing.diff}
+            />
+
+            <Box sx={{ mt: 2 }}>
+              <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
+                <HierarchyLegend expanded />
+              </Paper>
+            </Box>
           </Grid>
         </Grid>
       </Box>
