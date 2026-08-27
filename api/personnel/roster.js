@@ -38,7 +38,16 @@ export default requireAuth(async (req, res) => {
   if (!date) return res.status(400).json({ error: 'Fecha invalida, usa YYYY-MM-DD.' })
 
   const [employees, activeAssignments, assignmentsForDate, pendingMoves, resolvedMoves] = await Promise.all([
+    // active:true (2026-08-27, bug real): un empleado BAJA/inactivo (incluye los "fantasma"
+    // desactivados por colision de nombre, ver personnel.js/apiSync.js) nunca deberia competir
+    // por el mismo id local en el frontend (EMPLOYEE_DIRECTORY solo conoce un id por nombre
+    // completo para gente sin numero real, ver buildLocalIndex en apiSync.js) -- sin este filtro,
+    // el placement 'NONE' del fantasma (ya sin asignacion) pisaba en cada poll el placement
+    // 'LIVE' real de la persona activa que comparte su nombre, porque ambos se fusionaban en el
+    // mismo id local. Confirmado en vivo: "Cesar Hernandez Hernandez" desaparecia del layout de
+    // WC LINEA 2 en cada poll de 2s pese a tener una asignacion ACTIVE real.
     prisma.employee.findMany({
+      where: { active: true },
       select: { id: true, employeeNumber: true, fullName: true, areaZona: true, baselineSuppressed: true },
     }),
     // LIVE: sin filtro de fecha -- ver nota arriba.
