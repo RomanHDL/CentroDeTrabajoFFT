@@ -35,6 +35,9 @@ import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline
 import personnelRestoreBaselineHandler from '../api/personnel/restore-baseline.js'
 import personnelAreaHistoryHandler from '../api/personnel/area-history.js'
 import dashboardTrendsHandler from '../api/dashboard/trends.js'
+import workAreaWorkstationsIndexHandler from '../api/work-areas/[code]/workstations/index.js'
+import workAreaWorkstationByIdHandler from '../api/work-areas/[code]/workstations/[id].js'
+import workAreaWorkstationsReorderHandler from '../api/work-areas/[code]/workstations/reorder.js'
 
 const app = express()
 app.use(express.json())
@@ -82,6 +85,11 @@ app.post('/api/personnel/restore-baseline', wrapAsync(personnelRestoreBaselineHa
 app.get('/api/personnel/area-history', wrapAsync(personnelAreaHistoryHandler))
 
 app.get('/api/dashboard/trends', wrapAsync(dashboardTrendsHandler))
+
+app.get('/api/work-areas/:code/workstations', withDynamicParams(workAreaWorkstationsIndexHandler))
+app.post('/api/work-areas/:code/workstations', withDynamicParams(workAreaWorkstationsIndexHandler))
+app.patch('/api/work-areas/:code/workstations/reorder', withDynamicParams(workAreaWorkstationsReorderHandler))
+app.patch('/api/work-areas/:code/workstations/:id', withDynamicParams(workAreaWorkstationByIdHandler))
 
 app.use((err, req, res, _next) => {
   console.error(err)

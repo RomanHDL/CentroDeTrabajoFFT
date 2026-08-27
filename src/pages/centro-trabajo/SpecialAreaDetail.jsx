@@ -31,12 +31,13 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
 import { alpha } from '@mui/material/styles'
 import { EmptyState } from '../../ui'
-import { workCenterById, SUPPORT_AREA_DESCRIPTIONS } from '../../data/production/catalog'
+import { workCenterById, SUPPORT_AREA_DESCRIPTIONS, LINE_FAMILY_AREA_IDS } from '../../data/production/catalog'
 import {
   getPeopleByArea, getAreaStaffing, AREA_STATUS_META, classifyAreaStatus,
 } from '../../data/production/personnelByArea'
 import { getCurrentAssignment } from '../../data/personnel/repository'
 import { getAllRealTeamLeaders } from '../../data/personnel/teamLeaderRegistry'
+import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
@@ -201,7 +202,24 @@ export default function SpecialAreaDetail({ workCenterId, open, onClose, previou
   const { isOver, dropProps } = useEmployeeDropTarget(workCenterId)
 
   const isTeamLeaderHub = workCenterId === 'TEAM_LEADER'
-  const allLeaders = useMemo(() => (isTeamLeaderHub ? getAllRealTeamLeaders() : []), [isTeamLeaderHub, version])
+  /* 2026-08-27 ("estaciones configurables por ADMINISTRADOR" + puesto Team
+     Leader por linea): getAllRealTeamLeaders() ahora tambien busca en las
+     11 WC LINEA -- pero esa busqueda depende de que la configuracion real
+     de cada linea ya se haya cargado del backend al menos una vez en esta
+     sesion (ver workstations.js/lineStationConfig.js: sin eso, cada linea
+     sigue devolviendo el generador JS de siempre, que nunca incluye "Team
+     Leader"). Se precarga aqui, solo al abrir el hub de WC Team Leader,
+     para no disparar 11 fetches en cada pantalla que no los necesita. */
+  const [lineConfigsReady, setLineConfigsReady] = useState(false)
+  useEffect(() => {
+    if (!isTeamLeaderHub) { setLineConfigsReady(false); return }
+    let cancelled = false
+    Promise.all([...LINE_FAMILY_AREA_IDS].map((id) => fetchLineStationConfig(id))).then(() => {
+      if (!cancelled) setLineConfigsReady(true)
+    })
+    return () => { cancelled = true }
+  }, [isTeamLeaderHub])
+  const allLeaders = useMemo(() => (isTeamLeaderHub ? getAllRealTeamLeaders() : []), [isTeamLeaderHub, version, lineConfigsReady])
 
   if (!area || !staffing || !meta) return null
 

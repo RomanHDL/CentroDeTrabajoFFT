@@ -13,18 +13,24 @@
    lugares esta sesion, pero fuera de alcance tocarlo aqui; evitarlo por
    completo es mas seguro que depender de el). ───────────────────────────────────────────── */
 
-import { CUSTOM_STATION_PLANS, workCenterById } from '../production/catalog'
+import { CUSTOM_STATION_PLANS, LINE_FAMILY_AREA_IDS, workCenterById } from '../production/catalog'
 import { getPeopleByArea } from '../production/personnelByArea'
 import { getLineWorkstationsWithOccupancy } from './repository'
 
 /* Areas reales (fuera de WC Team Leader mismo) cuya plantilla ya incluye
    un puesto literal 'Team Leader' -- derivado de CUSTOM_STATION_PLANS,
    nunca una lista de ids a mano: si mañana otra area agrega ese rol, se
-   detecta sola sin tocar este archivo. */
+   detecta sola sin tocar este archivo. Ampliado 2026-08-27 ("estaciones
+   configurables por ADMINISTRADOR" + puesto Team Leader por linea) para
+   tambien incluir las 11 WC LINEA (0..10, LINE_FAMILY_AREA_IDS) -- desde
+   esa tarea, cualquiera de ellas puede tener un puesto 'Team Leader' real
+   (sembrado vacio por defecto, ver scripts/seed-personnel.mjs, o creado
+   por un ADMINISTRADOR via el drawer de configuracion de puestos). */
 function areasWithTeamLeaderRole() {
-  return Object.entries(CUSTOM_STATION_PLANS)
+  const fromCustomPlans = Object.entries(CUSTOM_STATION_PLANS)
     .filter(([, plan]) => plan.some((entry) => entry.role === 'Team Leader'))
     .map(([areaId]) => areaId)
+  return [...fromCustomPlans, ...LINE_FAMILY_AREA_IDS]
 }
 
 /**

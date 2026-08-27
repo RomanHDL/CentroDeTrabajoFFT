@@ -7,63 +7,62 @@
    nunca comparten colores/iconos/logica entre si, para que un cambio en
    uno nunca arrastre al otro.
 
-   Deriva SIEMPRE de datos reales, nunca del nombre del empleado:
-   - `stationRole` = workstation.role (el mismo dato ya usado por
-     LineStationCard/workstations.js, nunca inventado).
-   - `actividad` = codigo crudo de BASE (LAYOUT FFT.xlsx), expuesto por
-     getActividadForEmployee() en personnelByArea.js. Ese archivo ya
-     documenta que estos codigos van "SIN interpretar significado" salvo
-     casos inequivocos -- "LIDER" es el UNICO codigo completo y sin
-     ambiguedad (L/EM/LC/SA/PE/M/TC/TG/E/PC/C son abreviaturas sin
-     significado confirmado, nunca se les inventa uno aqui).
+   AMPLIADO 2026-08-27 ("estaciones configurables por ADMINISTRADOR" + puesto
+   Team Leader por linea): de 5 a 6 categorias, con las etiquetas/iconos que
+   pidio el usuario (Liderazgo/Calidad/Produccion/Tecnico/Suministro/Apoyo).
+   Los 6 keys son EXACTAMENTE los valores del enum Prisma WorkstationCategory
+   (schema.prisma) -- una estacion admin-configurada trae su `category` ya
+   explicita desde la base de datos, sin adivinar nada por nombre de rol.
 
-   IMPORTANTE (Seccion 4/31 del pedido): cuando alguien con actividad
-   LIDER ocupa una estacion real (ej. "Etiquetado 2"), la estacion NUNCA
-   se renombra a "Líder de Línea" -- eso inventaria una identidad de
-   estacion falsa. Solo cambia el badge de TIPO DE PERSONAL bajo su
-   nombre; el nombre/numero de la estacion sigue siendo el real. ───────────────────────────────────────────── */
+   Prioridad de clasificacion (nunca por nombre de persona):
+   1. `category` EXPLICITA de la estacion (dato real, ver Workstation.category
+      / server-lib/workstationConfig.js) -- fuente principal.
+   2. Empleado con actividad real "LIDER" (BASE, getActividadForEmployee en
+      personnelByArea.js) -- regla ya existente antes de esta ampliacion, se
+      conserva como respaldo para no perder clasificacion en datos vistos
+      antes de que las estaciones tuvieran `category` propia.
+   3. Mapa de respaldo por `stationRole` conocido (ROLE_TO_CATEGORY_KEY,
+      exportado y REUSADO tal cual por scripts/seed-personnel.mjs para
+      backfillear `category` -- una sola fuente de verdad, nunca duplicada).
+   4. Sin ocupante, o rol/categoria que no calza con nada conocido -> null
+      (nunca se inventa una categoria). ───────────────────────────────────────────── */
 
 export const LINE_VISUAL_TYPES = {
-  APOYO_CALIDAD: { key: 'APOYO_CALIDAD', label: 'Apoyo / Calidad', color: '#DB2777', iconKey: 'apoyoCalidad' },
-  LINE_LEADER: { key: 'LINE_LEADER', label: 'Líder de Línea', color: '#16A34A', iconKey: 'lineLeader' },
-  PRODUCTION: { key: 'PRODUCTION', label: 'Producción', color: '#2563EB', iconKey: 'production' },
-  SPECIALIZED: { key: 'SPECIALIZED', label: 'Especializado', color: '#F59E0B', iconKey: 'specialized' },
-  OTHER_SUPPORT: { key: 'OTHER_SUPPORT', label: 'Otros apoyos', color: '#7C3AED', iconKey: 'otherSupport' },
+  LIDERAZGO: { key: 'LIDERAZGO', label: 'Team Leader', color: '#0D9488', iconKey: 'liderazgo' },
+  CALIDAD: { key: 'CALIDAD', label: 'Calidad', color: '#DB2777', iconKey: 'calidad' },
+  PRODUCCION: { key: 'PRODUCCION', label: 'Producción', color: '#2563EB', iconKey: 'produccion' },
+  TECNICO: { key: 'TECNICO', label: 'Técnico / Especializado', color: '#F59E0B', iconKey: 'tecnico' },
+  SUMINISTRO: { key: 'SUMINISTRO', label: 'Suministro', color: '#7C3AED', iconKey: 'suministro' },
+  APOYO: { key: 'APOYO', label: 'Apoyo operativo', color: '#64748B', iconKey: 'apoyo' },
 }
 
-/* Orden fijo para la leyenda. */
+/* Orden fijo para la leyenda (seccion 13 del pedido). */
 export const LINE_VISUAL_TYPE_ORDER = [
-  LINE_VISUAL_TYPES.APOYO_CALIDAD,
-  LINE_VISUAL_TYPES.LINE_LEADER,
-  LINE_VISUAL_TYPES.PRODUCTION,
-  LINE_VISUAL_TYPES.SPECIALIZED,
-  LINE_VISUAL_TYPES.OTHER_SUPPORT,
+  LINE_VISUAL_TYPES.LIDERAZGO,
+  LINE_VISUAL_TYPES.CALIDAD,
+  LINE_VISUAL_TYPES.PRODUCCION,
+  LINE_VISUAL_TYPES.TECNICO,
+  LINE_VISUAL_TYPES.SUMINISTRO,
+  LINE_VISUAL_TYPES.APOYO,
 ]
 
-/* Roles base reales de linea que se clasifican como PRODUCCION (todos
-   los de LINE_BASE_ROLES en workstations.js excepto "Prueba eléctrica",
-   que es un puesto tecnico real -> ESPECIALIZADO). */
-const PRODUCTION_ROLES = new Set(['Montaje', 'Limpieza', 'Etiquetado', 'Suministro de Accesorios'])
+/* Rol base (sin sufijo numerico) -> categoria, para los puestos YA conocidos
+   hoy (incluye "Team Leader", nuevo). Unica fuente de este mapeo -- tambien
+   la usa scripts/seed-personnel.mjs para backfillear Workstation.category de
+   las estaciones generadas por el codigo, nunca se duplica en dos lugares. */
+export const ROLE_TO_CATEGORY_KEY = {
+  'Team Leader': 'LIDERAZGO',
+  'Calidad': 'CALIDAD',
+  'Montaje': 'PRODUCCION',
+  'Etiquetado': 'PRODUCCION',
+  'Limpieza': 'PRODUCCION',
+  'Suministro de Accesorios': 'SUMINISTRO',
+  'Prueba eléctrica': 'TECNICO',
+}
 
-/**
- * Clasifica visualmente a quien ocupa una estacion de linea. Prioridad
- * determinista (nunca por nombre de persona):
- *   1. Estacion "Calidad" (rol real, ver workstations.js) -> APOYO_CALIDAD.
- *   2. Empleado con actividad real "LIDER" (BASE) -> LINE_LEADER.
- *   3. Estacion "Prueba eléctrica" (puesto tecnico real) -> SPECIALIZED.
- *   4. Resto de roles base reales (Montaje/Limpieza/Etiquetado/Suministro
- *      de Accesorios) -> PRODUCTION.
- *   5. Sin ocupante, o rol que no calza con nada conocido -> null (nunca
- *      se inventa un tipo).
- * OTHER_SUPPORT no tiene hoy ninguna señal real que lo dispare -- queda
- * definido en la leyenda por completitud, pero esta funcion nunca lo
- * devuelve mientras no exista un dato real que lo respalde.
- */
-export function getPersonnelVisualType({ stationRole, actividad } = {}) {
-  if (!stationRole) return null
-  if (stationRole === 'Calidad') return LINE_VISUAL_TYPES.APOYO_CALIDAD
-  if (actividad === 'LIDER') return LINE_VISUAL_TYPES.LINE_LEADER
-  if (stationRole === 'Prueba eléctrica') return LINE_VISUAL_TYPES.SPECIALIZED
-  if (PRODUCTION_ROLES.has(stationRole)) return LINE_VISUAL_TYPES.PRODUCTION
+export function getPersonnelVisualType({ stationRole, actividad, category } = {}) {
+  if (category && LINE_VISUAL_TYPES[category]) return LINE_VISUAL_TYPES[category]
+  if (actividad === 'LIDER') return LINE_VISUAL_TYPES.LIDERAZGO
+  if (stationRole && ROLE_TO_CATEGORY_KEY[stationRole]) return LINE_VISUAL_TYPES[ROLE_TO_CATEGORY_KEY[stationRole]]
   return null
 }

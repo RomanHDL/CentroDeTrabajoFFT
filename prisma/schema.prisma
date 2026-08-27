@@ -398,16 +398,40 @@ model WorkArea {
   workstations Workstation[]
 }
 
+// Categoria visual de un puesto (2026-08-27, "estaciones configurables por
+// ADMINISTRADOR" -- WC LINEA 0-10). Nullable a proposito: las estaciones ya
+// sembradas antes de esta migracion se backfillean explicitamente (ver
+// scripts/seed-personnel.mjs), pero el campo nunca se infiere en el cliente
+// a partir de esto -- es un dato explicito, no una adivinanza por nombre.
+enum WorkstationCategory {
+  LIDERAZGO
+  CALIDAD
+  PRODUCCION
+  TECNICO
+  SUMINISTRO
+  APOYO
+}
+
 model Workstation {
-  id              String   @id @default(cuid())
-  workAreaId      String
-  workArea        WorkArea @relation(fields: [workAreaId], references: [id])
-  name            String
-  requiredSkillId String?
-  requiredSkill   Skill?   @relation(fields: [requiredSkillId], references: [id])
-  capacity        Int      @default(1)
-  displayOrder    Int      @default(0)
-  active          Boolean  @default(true)
+  id                String               @id @default(cuid())
+  workAreaId        String
+  workArea          WorkArea             @relation(fields: [workAreaId], references: [id])
+  name              String
+  requiredSkillId   String?
+  requiredSkill     Skill?               @relation(fields: [requiredSkillId], references: [id])
+  capacity          Int                  @default(1)
+  displayOrder      Int                  @default(0)
+  active            Boolean              @default(true)
+  // rol base sin sufijo numerico (ej. "Montaje", tanto para "Montaje" como
+  // "Montaje 2") -- distinto de `name`, que es el identificador que ya usan
+  // DailyAssignment/EmployeeMovement/EmployeeSkill (ver comentario en
+  // src/data/personnel/workstations.js). Nunca se usa para resolver una
+  // asignacion, solo para agrupar/clasificar en la UI.
+  role              String?
+  // etiqueta humana del rol requerido (ej. "Operador de Montaje") -- lo que
+  // hoy es el string libre `requiredRole` en el generador JS.
+  requiredRoleLabel String?
+  category          WorkstationCategory?
 
   dailyAssignments DailyAssignment[]
   movementsFrom    EmployeeMovement[] @relation("MovementFromWorkstation")

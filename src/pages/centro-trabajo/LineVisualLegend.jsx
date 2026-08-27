@@ -3,9 +3,10 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import ShieldIcon from '@mui/icons-material/Shield'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import SettingsIcon from '@mui/icons-material/Settings'
-import DiversityIcon from '@mui/icons-material/Diversity3'
+import BuildIcon from '@mui/icons-material/Build'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
+import PersonIcon from '@mui/icons-material/Person'
 import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
 
 /* Rediseño WC LINEA 0-10 (2026-08-28, a peticion explicita del usuario)
@@ -17,11 +18,12 @@ import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
    Paletizado/Accesorios/Insumos/Midea/Conveyor, identidad visual
    distinta a proposito). */
 export const LINE_TYPE_ICONS = {
-  apoyoCalidad: ShieldIcon,
-  lineLeader: WorkspacePremiumIcon,
-  production: PrecisionManufacturingIcon,
-  specialized: SettingsIcon,
-  otherSupport: DiversityIcon,
+  liderazgo: WorkspacePremiumIcon,
+  calidad: ShieldIcon,
+  produccion: SettingsIcon,
+  tecnico: BuildIcon,
+  suministro: Inventory2Icon,
+  apoyo: PersonIcon,
 }
 
 export function LineTypeIcon({ type, size = 14, sx }) {
@@ -41,7 +43,7 @@ export default function LineVisualLegend() {
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 }, alignItems: 'center' }}>
       <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center">
         <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-          Tipo de personal (Rol / Función)
+          Jerarquía / Tipo de puesto
         </Typography>
         {LINE_VISUAL_TYPE_ORDER.map((type) => (
           <Stack key={type.key} direction="row" spacing={0.5} alignItems="center">

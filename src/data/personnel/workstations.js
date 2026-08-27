@@ -68,6 +68,7 @@
    pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
 
 import { WORK_CENTERS, LINE_FAMILY_AREA_IDS, LINE_LIKE_AREA_IDS, CUSTOM_STATION_PLANS, operationalGroupMembers } from '../production/catalog'
+import { getCachedLineStationConfig } from './lineStationConfig'
 
 /* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
    de presentacion, la compatibilidad de habilidades sigue usando
@@ -271,7 +272,15 @@ function buildWorkstations() {
 
 export const WORKSTATIONS_BY_LINE = buildWorkstations()
 
+/* 2026-08-27 ("estaciones configurables por ADMINISTRADOR"): si ya se cargo
+   una configuracion real desde el backend para esta linea (ver
+   lineStationConfig.js/fetchLineStationConfig, llamado solo desde
+   LineDetailDrawer.jsx -- Grupo A), se usa esa en vez del generador JS de
+   abajo. Mientras la cache este vacia (primera pintura, o una linea que
+   nadie configuro todavia) el comportamiento es IDENTICO al de siempre. */
 export function getWorkstationsForLine(lineId) {
+  const override = getCachedLineStationConfig(lineId)
+  if (override && override.length) return override
   return WORKSTATIONS_BY_LINE[lineId] || []
 }
 

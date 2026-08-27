@@ -545,7 +545,15 @@ export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shi
     .forEach((a) => needsReassignment.push(a))
   needsReassignment.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
 
-  const freeStations = orderedStations.filter(s => !stationClaimedBy.has(s.name))
+  // 2026-08-27 ("estaciones configurables por ADMINISTRADOR" + puesto Team Leader por linea):
+  // el puesto 'Team Leader' NUNCA debe salir de este auto-relleno (ni CASO A ni CASO B) -- este
+  // mecanismo existe para gente que YA esta efectivamente en la linea/con un stationId invalido
+  // heredado, nunca para decidir quien es lider. Sin esta exclusion, la primera persona sin
+  // asignacion real que pasara por aqui quedaria en "Team Leader" solo por ser la primera
+  // estacion libre en orden -- exactamente lo que la Decision D2 del plan prohibe ("nunca se
+  // inventa ni se mueve automaticamente a nadie"). Team Leader solo se llena por una asignacion
+  // deliberada (StationAssignDialog, drag&drop, o el drawer de configuracion de ADMINISTRADOR).
+  const freeStations = orderedStations.filter(s => !stationClaimedBy.has(s.name) && s.role !== 'Team Leader')
   let cursor = 0
   let fixedCount = 0
   let changed = false

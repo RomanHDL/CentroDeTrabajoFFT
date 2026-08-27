@@ -23,9 +23,23 @@
 //   filas del snapshot (ninguna fila sin numero es indistinguible de otra por este criterio), asi
 //   que este script se puede correr varias veces sin duplicar personal.
 import { prisma } from '../server-lib/prisma.js'
-import { WORK_CENTERS } from '../src/data/production/catalog.js'
+import { WORK_CENTERS, LINE_FAMILY_AREA_IDS } from '../src/data/production/catalog.js'
 import { getWorkstationsForLine } from '../src/data/personnel/workstations.js'
 import { REAL_PERSONNEL_SNAPSHOT } from '../src/data/production/realPersonnelSnapshot.js'
+import { ROLE_TO_CATEGORY_KEY } from '../src/data/personnel/lineVisualType.js'
+
+// "estaciones configurables por ADMINISTRADOR" (2026-08-27): backfillea role/
+// requiredRoleLabel/category (columnas nuevas y aditivas de Workstation, ver
+// prisma/schema.prisma) para cada estacion generada por getWorkstationsForLine
+// -- ROLE_TO_CATEGORY_KEY es la MISMA tabla que usa el fallback de
+// clasificacion en el cliente (lineVisualType.js), nunca duplicada. Ademas
+// agrega el puesto "Team Leader" (posicion inicial, SIN ocupante -- nunca se
+// inventa ni se mueve a nadie) en cada una de las 11 WC LINEA (0..10), mismo
+// mecanismo/riesgo ya validado que "Calidad" (posicion 1) -- decision D2 del
+// plan aprobado.
+function categoryForRole(role) {
+  return ROLE_TO_CATEGORY_KEY[role] || null
+}
 
 let workAreaCount = 0
 let workstationCount = 0
@@ -50,10 +64,41 @@ for (let i = 0; i < WORK_CENTERS.length; i += 1) {
         name: station.name,
         capacity: station.capacity,
         displayOrder: station.order,
+        role: station.role,
+        requiredRoleLabel: station.requiredRole,
+        category: categoryForRole(station.role),
       },
       update: {
         capacity: station.capacity,
         displayOrder: station.order,
+        role: station.role,
+        requiredRoleLabel: station.requiredRole,
+        category: categoryForRole(station.role),
+      },
+    })
+    workstationCount += 1
+  }
+
+  // Puesto "Team Leader" en cada WC LINEA 0..10 (LINE_FAMILY_AREA_IDS) --
+  // posicion inicial (displayOrder 0, antes de Calidad), SIN ocupante hasta
+  // que un ADMINISTRADOR/SUPERVISOR asigne a alguien real por el flujo de
+  // asignacion existente (checkInEmployee/moveEmployee, sin cambios).
+  if (LINE_FAMILY_AREA_IDS.has(wc.id)) {
+    await prisma.workstation.upsert({
+      where: { workAreaId_name: { workAreaId: workArea.id, name: 'Team Leader' } },
+      create: {
+        workAreaId: workArea.id,
+        name: 'Team Leader',
+        capacity: 1,
+        displayOrder: 0,
+        role: 'Team Leader',
+        requiredRoleLabel: 'Team Leader',
+        category: 'LIDERAZGO',
+      },
+      update: {
+        role: 'Team Leader',
+        requiredRoleLabel: 'Team Leader',
+        category: 'LIDERAZGO',
       },
     })
     workstationCount += 1

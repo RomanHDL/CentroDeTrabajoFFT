@@ -27,6 +27,7 @@ import BackHandIcon from '@mui/icons-material/BackHand'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import SettingsIcon from '@mui/icons-material/Settings'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
@@ -40,16 +41,19 @@ import {
 } from '../../data/personnel/repository'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { getPersonnelVisualType } from '../../data/personnel/lineVisualType'
+import { getPersonnelVisualType, LINE_VISUAL_TYPES, LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
+import { fetchLineStationConfig, deactivateLineStation } from '../../data/personnel/lineStationConfig'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useRoleMode } from '../../state/roleMode'
+import { useAuth } from '../../state/auth'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
 import LineWorkstationCard from './LineWorkstationCard'
+import LineStationConfigDrawer from './LineStationConfigDrawer'
 import LineVisualLegend, { LineTypeIcon } from './LineVisualLegend'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
@@ -107,6 +111,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMINISTRADOR'
   const dnd = useDndAssign()
 
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -118,6 +124,17 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const [assignStation, setAssignStation] = useState(null)
   const [includeAbsent, setIncludeAbsent] = useState(false)
   const [actionError, setActionError] = useState('')
+  /* "estaciones configurables por ADMINISTRADOR" (2026-08-27): configLoaded
+     solo se pone en true si la configuracion real (DB) de esta linea ya se
+     cargo -- mientras tanto, aunque isAdmin sea true, no se muestran
+     controles de editar/eliminar (workstation.id todavia seria el id
+     sintetico del generador JS, no un cuid real de Workstation -- ver
+     lineStationConfig.js/workstations.js). configVersion fuerza a
+     `workstations` a releerse tras cualquier alta/edicion/baja/reorden. */
+  const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
+  const [editStationId, setEditStationId] = useState(null)
+  const [configLoaded, setConfigLoaded] = useState(false)
+  const [configVersion, setConfigVersion] = useState(0)
 
   /* Reinicio de estado transitorio al cambiar de Work Center (Anterior/
      Siguiente) -- el Dialog no se desmonta entre lineas (workCenterId
@@ -133,6 +150,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
     setAssignStation(null)
     setIncludeAbsent(false)
     setActionError('')
+    setConfigDrawerOpen(false)
+    setEditStationId(null)
+    setConfigLoaded(false)
   }, [workCenterId])
 
   const isLine = workCenterId ? LINE_FAMILY_AREA_IDS.has(workCenterId) : false
@@ -150,30 +170,104 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? DarkModeOutlinedIcon : WbSunnyOutlinedIcon
-  const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version])
+  const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version, configVersion])
   const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
 
-  /* Resumen de la linea (Seccion 21 del pedido) -- calculado dinamicamente
-     de las estaciones reales, nunca guardado aparte. "Vacantes criticas"
-     siempre 0 hoy: no existe ningun campo real de prioridad/criticidad en
-     Workstation (workstations.js) -- nunca se inventa una. */
-  const lineSummary = useMemo(() => {
-    let occupied = 0
-    let availableCount = 0
-    let apoyoCalidad = 0
+  /* Carga la configuracion real de puestos de esta linea (DB, ver
+     lineStationConfig.js) al abrir -- mientras no llegue, `workstations`
+     sigue viniendo del generador JS de siempre (comportamiento identico).
+     configLoaded solo se activa si la respuesta trajo filas reales, para
+     no exponer edicion/eliminacion contra ids sinteticos (ver comentario
+     junto al estado arriba). */
+  useEffect(() => {
+    if (!open || !isStationBased || !canonicalId) { setConfigLoaded(false); return }
+    let cancelled = false
+    setConfigLoaded(false)
+    fetchLineStationConfig(canonicalId).then((rows) => {
+      if (cancelled) return
+      setConfigLoaded(Boolean(rows && rows.length))
+      setConfigVersion((v) => v + 1)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonicalId, isStationBased, open])
+
+  function handleStationConfigChanged() {
+    setConfigVersion((v) => v + 1)
+  }
+
+  async function handleDeactivateStation(w) {
+    setActionError('')
+    if (w.occupants?.length > 0) {
+      setActionError('No se puede eliminar este puesto porque actualmente tiene personal asignado. Reasígnalo primero.')
+      return
+    }
+    try {
+      await deactivateLineStation(canonicalId, w.id)
+      handleStationConfigChanged()
+    } catch (e) {
+      setActionError(e.message || 'No se pudo eliminar el puesto.')
+    }
+  }
+
+  function handleEditStation(w) {
+    setEditStationId(w.id)
+    setConfigDrawerOpen(true)
+  }
+
+  /* Agrupacion por categoria -- usada SOLO por "Resumen de la linea" (sidebar,
+     ver lineSummary abajo). La cuadricula principal ("Distribución de
+     estaciones") NO se separa en secciones (a peticion explicita del
+     usuario, 2026-08-27: "quiero que las estaciones esten juntas, todas
+     del mismo tamaño") -- se renderiza como una sola grilla plana con
+     `workstations` tal cual, cada card ya muestra su categoria
+     explicitamente (icono+etiqueta, LineWorkstationCard.jsx). La
+     categoria es una propiedad de la ESTACION (workstation.category, o el
+     respaldo por rol/actividad de getPersonnelVisualType), nunca del
+     ocupante -- por eso se calcula incluso para estaciones vacias. */
+  const stationCategories = useMemo(() => {
+    const leadership = []
+    const byCategory = new Map()
     workstations.forEach((w) => {
       const occupant = w.occupants[0]
-      if (occupant) {
-        occupied += 1
-        const actividad = occupant.employee?.id ? getActividadForEmployee(occupant.employee.id) : null
-        const vt = getPersonnelVisualType({ stationRole: w.role, actividad })
-        if (vt?.key === 'APOYO_CALIDAD') apoyoCalidad += 1
-      } else if (w.isAvailable) {
-        availableCount += 1
-      }
+      const actividad = occupant?.employee?.id ? getActividadForEmployee(occupant.employee.id) : null
+      const vt = getPersonnelVisualType({ stationRole: w.role, actividad, category: w.category })
+      if (vt?.key === 'LIDERAZGO') { leadership.push(w); return }
+      const key = vt?.key || '__SIN_CLASIFICAR__'
+      const label = vt?.label || 'Otros puestos'
+      const color = vt?.color || '#94A3B8'
+      if (!byCategory.has(key)) byCategory.set(key, { key, label, color, stations: [] })
+      byCategory.get(key).stations.push(w)
     })
-    return { occupied, available: availableCount, critical: 0, apoyoCalidad }
+    const groups = LINE_VISUAL_TYPE_ORDER.filter((t) => t.key !== 'LIDERAZGO').map((t) => byCategory.get(t.key)).filter(Boolean)
+    if (byCategory.has('__SIN_CLASIFICAR__')) groups.push(byCategory.get('__SIN_CLASIFICAR__'))
+    return { leadership, groups }
   }, [workstations])
+
+  /* Resumen de la linea (Seccion 13/14 del pedido) -- conteos por
+     categoria, calculados dinamicamente de las estaciones reales, nunca
+     guardados aparte. Total/faltan siguen viniendo de `staffing`
+     (getGroupAreaStaffing, SIN recalcular -- Decision D3 del plan: la
+     dotacion ideal no cambia de fuente). */
+  const lineSummary = useMemo(() => {
+    const leadershipGroup = stationCategories.leadership.length
+      ? {
+          key: 'LIDERAZGO',
+          label: LINE_VISUAL_TYPES.LIDERAZGO.label,
+          color: LINE_VISUAL_TYPES.LIDERAZGO.color,
+          occupied: stationCategories.leadership.filter((w) => w.occupants.length > 0).length,
+          total: stationCategories.leadership.length,
+        }
+      : null
+    const rest = stationCategories.groups.map((g) => ({
+      key: g.key,
+      label: g.label,
+      color: g.color,
+      occupied: g.stations.filter((w) => w.occupants.length > 0).length,
+      total: g.stations.length,
+    }))
+    return { groups: [leadershipGroup, ...rest].filter(Boolean) }
+  }, [stationCategories])
 
   /* Reconcilia estaciones reales al abrir una WC LINEA -- corrige tanto a
      quien ya esta en el area pero sin ninguna asignacion real hoy
@@ -203,7 +297,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
     ? getActividadForEmployee(selectedStation.occupants[0].employee.id)
     : null
   const selectedStationVisualType = selectedStation
-    ? getPersonnelVisualType({ stationRole: selectedStation.role, actividad: selectedStationOccupantActividad })
+    ? getPersonnelVisualType({ stationRole: selectedStation.role, actividad: selectedStationOccupantActividad, category: selectedStation.category })
     : null
 
   const suggestions = useMemo(() => {
@@ -344,8 +438,19 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
         )}
 
         {isStationBased && (
-          <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 } }}>
-            <LineVisualLegend />
+          <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 }, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <LineVisualLegend />
+            </Box>
+            {isAdmin && configLoaded && (
+              <Button
+                size="small" variant="outlined" startIcon={<SettingsIcon />}
+                onClick={() => { setEditStationId(null); setConfigDrawerOpen(true) }}
+                sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+              >
+                Configurar puestos
+              </Button>
+            )}
           </Paper>
         )}
 
@@ -374,10 +479,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     </Tooltip>
                   </Stack>
                 </Box>
-                <Box sx={{
-                  p: 2, display: 'grid', gap: 1.25,
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                }}>
+                <Box sx={{ p: 2, display: 'grid', gap: 1.25, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
                   {workstations.map((w) => (
                     <LineWorkstationCard
                       key={w.id}
@@ -389,6 +491,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                         if (ws.isAvailable) setAssignStation(ws)
                       }}
                       onEmployeeClick={(emp) => setHistoryEmployee(emp)}
+                      isAdmin={isAdmin && configLoaded}
+                      onEdit={handleEditStation}
+                      onDeactivate={handleDeactivateStation}
                     />
                   ))}
                 </Box>
@@ -417,7 +522,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                         const ws = workstations.find(w => w.name === r.stationId)
                         const isReal = r.source === 'REGISTRO'
                         const rowActividad = getActividadForEmployee(r.employeeId)
-                        const rowType = getPersonnelVisualType({ stationRole: ws?.role, actividad: rowActividad })
+                        const rowType = getPersonnelVisualType({ stationRole: ws?.role, actividad: rowActividad, category: ws?.category })
                         return (
                           <TableRow key={r.id} sx={ps.tableRow(idx)} hover>
                             <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{formatEmployeeNumber(r.employeeNumber)}</TableCell>
@@ -536,6 +641,12 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                           <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Turno</Typography>
                           <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{currentOfficialShift.label} ({formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)})</Typography>
                         </Box>
+                        <Box>
+                          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Categoría</Typography>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: selectedStationVisualType?.color }}>
+                            {selectedStationVisualType?.label || 'Sin clasificar'}
+                          </Typography>
+                        </Box>
                       </Stack>
 
                       {selectedStation.occupants.length > 0 && (
@@ -564,7 +675,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                              Nunca inventado: area de origen = el `role` real de la
                              estacion (workstation.role), tipo de apoyo = descriptor
                              fijo de la categoria (no un dato inventado por persona). */}
-                          {selectedStationVisualType?.key === 'APOYO_CALIDAD' && (
+                          {selectedStationVisualType?.key === 'CALIDAD' && (
                             <Stack spacing={0.75} sx={{ mb: 1.5 }}>
                               <Box>
                                 <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área de origen</Typography>
@@ -622,24 +733,30 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
 
               <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
                 <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1.25 }}>Resumen de la línea</Typography>
-                <Stack spacing={1}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.occupied}</b> estaciones ocupadas</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#F59E0B', flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.available}</b> disponibles</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.critical}</b> vacantes críticas</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#DB2777', flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.apoyoCalidad}</b> apoyo / Calidad</Typography>
-                  </Stack>
+                <Stack spacing={0.85}>
+                  {lineSummary.groups.map((g) => (
+                    <Stack key={g.key} direction="row" alignItems="center" spacing={1}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: g.color, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: 12.5, flex: 1 }} noWrap>{g.label}</Typography>
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{g.occupied} / {g.total}</Typography>
+                    </Stack>
+                  ))}
                 </Stack>
+                {staffing.ideal != null && (
+                  <>
+                    <Divider sx={{ my: 1.25 }} />
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 800, flex: 1 }}>Total asignado</Typography>
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{staffing.real} / {staffing.ideal}</Typography>
+                    </Stack>
+                    {staffing.diff < 0 && (
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                        <Typography sx={{ fontSize: 12, color: '#EF4444', flex: 1 }}>Faltan por cubrir</Typography>
+                        <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#EF4444' }}>{Math.abs(staffing.diff)}</Typography>
+                      </Stack>
+                    )}
+                  </>
+                )}
               </Paper>
             </Grid>
           </Grid>
@@ -690,6 +807,17 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
       <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />
       <LineHistoryDialog lineId={canonicalId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
+      {isAdmin && configLoaded && (
+        <LineStationConfigDrawer
+          open={configDrawerOpen}
+          onClose={() => { setConfigDrawerOpen(false); setEditStationId(null) }}
+          lineId={canonicalId}
+          areaName={area.name}
+          workstations={workstations}
+          editStationId={editStationId}
+          onChanged={handleStationConfigChanged}
+        />
+      )}
       {moveTarget && (
         <MoveConfirmDialog
           open={Boolean(moveTarget)}
