@@ -25,14 +25,21 @@
    getPersonnelRank devuelve null ("Sin información disponible", nunca se
    inventa un rango). ───────────────────────────────────────────── */
 
+// iconKey/description (2026-08-28, rediseño "tablero operativo" de areas
+// LINE_LIKE, a peticion explicita del usuario): campos ADITIVOS -- ningun
+// consumidor existente (LineStationCard.jsx, RankLegend.jsx) los lee, asi
+// que su comportamiento no cambia. El mapeo iconKey -> icono real de
+// @mui/icons-material vive en la capa de presentacion (HierarchyLegend.jsx/
+// LineLikeAreaDetail.jsx), nunca aqui (este archivo se queda framework-
+// agnostico, solo datos).
 export const PERSONNEL_RANKS = {
-  HEAD_CHIEF_AREA: { key: 'HEAD_CHIEF_AREA', order: 1, label: 'Head Chief Area', color: '#6D28D9' },
-  GERENTE_FFT: { key: 'GERENTE_FFT', order: 2, label: 'Gerente FFT', color: '#1E3A8A' },
-  SUPERVISOR: { key: 'SUPERVISOR', order: 3, label: 'Supervisor', color: '#2563EB' },
-  TEAM_LEADER: { key: 'TEAM_LEADER', order: 4, label: 'Team Leader', color: '#0D9488' },
-  OPERADOR_ESPECIALIZADO: { key: 'OPERADOR_ESPECIALIZADO', order: 5, label: 'Operador especializado', color: '#D97706' },
-  AYUDANTE_GENERAL: { key: 'AYUDANTE_GENERAL', order: 6, label: 'Ayudante General', color: '#64748B' },
-  PERSONAL_DE_APOYO: { key: 'PERSONAL_DE_APOYO', order: 7, label: 'Personal de apoyo', color: '#DB2777' },
+  HEAD_CHIEF_AREA: { key: 'HEAD_CHIEF_AREA', order: 1, label: 'Head Chief Area', color: '#6D28D9', iconKey: 'headChief', description: 'Máxima autoridad del área' },
+  GERENTE_FFT: { key: 'GERENTE_FFT', order: 2, label: 'Gerente FFT', color: '#1E3A8A', iconKey: 'gerente', description: 'Nivel ejecutivo' },
+  SUPERVISOR: { key: 'SUPERVISOR', order: 3, label: 'Supervisor', color: '#2563EB', iconKey: 'supervisor', description: 'Supervisión operativa' },
+  TEAM_LEADER: { key: 'TEAM_LEADER', order: 4, label: 'Team Leader', color: '#0D9488', iconKey: 'teamLeader', description: 'Liderazgo de equipo' },
+  OPERADOR_ESPECIALIZADO: { key: 'OPERADOR_ESPECIALIZADO', order: 5, label: 'Operador especializado', color: '#D97706', iconKey: 'operador', description: 'Operación técnica/especializada' },
+  AYUDANTE_GENERAL: { key: 'AYUDANTE_GENERAL', order: 6, label: 'Ayudante General', color: '#64748B', iconKey: 'ayudante', description: 'Personal operativo general' },
+  PERSONAL_DE_APOYO: { key: 'PERSONAL_DE_APOYO', order: 7, label: 'Personal de apoyo', color: '#DB2777', iconKey: 'apoyo', description: 'Apoyo transversal desde otra función' },
 }
 
 /* Orden fijo para la leyenda (Nivel 1 -> Nivel 7). */
