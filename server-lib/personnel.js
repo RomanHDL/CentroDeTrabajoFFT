@@ -71,6 +71,23 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
       return { status: 'CONFLICT', assignment: current, existingAttendance: existingAttendance || null }
     }
     if (mode === 'MOVE' && !current) return { status: 'NO_CURRENT_ASSIGNMENT' }
+
+    // Cierra cualquier OTRA fila ACTIVE de este empleado que no sea `current` (que arriba solo
+    // se busca con date: today). Bug real encontrado 2026-08-27: si la ultima asignacion real de
+    // un empleado quedo fechada un dia distinto a "hoy" (nadie la toco el dia que cambio --
+    // cruce de medianoche/zona horaria entre cliente y servidor), el lookup de `current` no la
+    // encontraba, y un checkin nuevo creaba una SEGUNDA fila ACTIVE en vez de reemplazarla --
+    // duplicados reales confirmados y corregidos a mano en Accesorios/Paletizado/Conveyor/WC
+    // LINEA 1. Corre para TODOS los casos que llegan hasta aqui (incluido el no-op de abajo) sin
+    // cambiar el comportamiento visible de checkin/move/release -- CONFLICT/NO_CURRENT_ASSIGNMENT
+    // arriba y STATION_FULL abajo siguen decidiendose exactamente igual que antes, solo por
+    // `current` con date: today; esto solo garantiza que nunca quede una fila ACTIVE zombie de
+    // un dia anterior dando vueltas.
+    await tx.dailyAssignment.updateMany({
+      where: { employeeId, status: 'ACTIVE', ...(current ? { id: { not: current.id } } : {}) },
+      data: { status: 'ENDED', endedAt: new Date(), endedByUserId: actingUserId, endReason: 'MOVED' },
+    })
+
     if (current && current.workstationId === workstationId) return { status: 'OK', assignment: current }
 
     const workstation = await tx.workstation.findUnique({ where: { id: workstationId } })
