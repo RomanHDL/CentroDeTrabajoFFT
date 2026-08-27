@@ -60,8 +60,17 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
     if (!employee || !employee.active) return { status: 'INACTIVE_EMPLOYEE' }
 
     const today = todayDateOnly()
+    // Bug real encontrado 2026-08-27 ("Cesar Hernandez Hernandez"/"Migdalia Georgina Ramirez
+    // Díaz" desaparecieron del layout de WC LINEA 2): `current` NO se filtra por date: today --
+    // una asignacion ACTIVE real nunca "expira" sola a medianoche (no existe ningun rollover de
+    // dia que la cierre), asi que sigue siendo la ubicacion vigente del empleado sin importar
+    // que dia quedo registrada. Filtrar por date:today aqui hacia que CHECKIN no detectara el
+    // conflicto real (abriendo la puerta al bug de duplicados ya corregido arriba) y que MOVE
+    // fallara con NO_CURRENT_ASSIGNMENT para cualquiera cuya ultima asignacion real no fuera de
+    // "hoy" exacto (cruce de medianoche/zona horaria entre cliente y servidor) -- el intercambio
+    // real (swap) fallaba en silencio exactamente por esto.
     const current = await tx.dailyAssignment.findFirst({
-      where: { employeeId, date: today, status: 'ACTIVE' },
+      where: { employeeId, status: 'ACTIVE' },
     })
 
     if (mode === 'CHECKIN' && current) {
@@ -91,8 +100,10 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
     if (current && current.workstationId === workstationId) return { status: 'OK', assignment: current }
 
     const workstation = await tx.workstation.findUnique({ where: { id: workstationId } })
+    // Mismo motivo que `current` arriba: sin date:today, para que un ocupante con asignacion
+    // ACTIVE de un dia anterior siga contando de verdad contra la capacidad real de la estacion.
     const occupied = await tx.dailyAssignment.count({
-      where: { workstationId, date: today, status: 'ACTIVE' },
+      where: { workstationId, status: 'ACTIVE' },
     })
     if (occupied >= workstation.capacity) {
       return { status: 'STATION_FULL', occupiedCount: occupied, capacity: workstation.capacity }

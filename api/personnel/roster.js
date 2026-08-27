@@ -1,13 +1,21 @@
 // Placement efectivo por empleado para una fecha -- equivalente real de getPeopleByArea/
 // getEffectiveTodayRoster (personnelByArea.js), simplificado a 3 estados explicitos:
 //
-//   LIVE     -> tiene una DailyAssignment ACTIVE esa fecha (siempre gana).
-//   NONE     -> tiene alguna DailyAssignment esa fecha pero NINGUNA esta ACTIVE ahora mismo
+//   LIVE     -> tiene una DailyAssignment ACTIVE ahora mismo (siempre gana). NO se filtra por
+//               fecha (2026-08-27, bug real: "Cesar Hernandez Hernandez"/"Migdalia Georgina
+//               Ramirez Díaz" desaparecian del layout de WC LINEA 2) -- una asignacion ACTIVE
+//               real nunca "expira" sola a medianoche, sigue siendo la ubicacion vigente del
+//               empleado sin importar que dia quedo registrada (mismo criterio que
+//               placeEmployee/release.js, ver personnel.js).
+//   NONE     -> tiene alguna DailyAssignment de esta fecha pero NINGUNA esta ACTIVE ahora mismo
 //               (p. ej. fue liberado hoy via /release) -- "tocado hoy", NUNCA revierte a su
 //               ubicacion historica el mismo dia (equivalente de `touchedToday` en
 //               personnelByArea.js, que ahi se calcula desde movimientos; aqui se calcula desde
 //               DailyAssignment porque /release no genera EmployeeMovement -- ver nota en
-//               release.js sobre el NOT NULL de EmployeeMovement.toWorkstationId).
+//               release.js sobre el NOT NULL de EmployeeMovement.toWorkstationId). Este check SI
+//               sigue por fecha exacta a proposito -- alguien liberado HOY cuya fila original
+//               traia una fecha distinta es un caso residual raro (release.js no reescribe el
+//               campo `date` al terminar una fila), documentado, no corregido en esta ronda.
 //   SNAPSHOT -> ninguna DailyAssignment esa fecha, baselineSuppressed=false y areaZona no es
 //               null -- se ubica por su zona historica de BASE/SEM 34 (areaZona se devuelve TAL
 //               CUAL viene de Employee, sin normalizar via mapAreaZonaToId -- esa normalizacion
@@ -29,13 +37,19 @@ export default requireAuth(async (req, res) => {
   const date = parseDateOnly(req.query.date)
   if (!date) return res.status(400).json({ error: 'Fecha invalida, usa YYYY-MM-DD.' })
 
-  const [employees, assignmentsForDate, pendingMoves, resolvedMoves] = await Promise.all([
+  const [employees, activeAssignments, assignmentsForDate, pendingMoves, resolvedMoves] = await Promise.all([
     prisma.employee.findMany({
       select: { id: true, employeeNumber: true, fullName: true, areaZona: true, baselineSuppressed: true },
     }),
+    // LIVE: sin filtro de fecha -- ver nota arriba.
+    prisma.dailyAssignment.findMany({
+      where: { status: 'ACTIVE' },
+      include: { workstation: { include: { workArea: true } } },
+    }),
+    // Solo para touchedToday (NONE vs SNAPSHOT) -- este SI sigue scoped a la fecha pedida.
     prisma.dailyAssignment.findMany({
       where: { date },
-      include: { workstation: { include: { workArea: true } } },
+      select: { employeeId: true },
     }),
     prisma.pendingMove.findMany({
       where: { date, status: 'PENDING' },
@@ -61,11 +75,8 @@ export default requireAuth(async (req, res) => {
   ])
 
   const activeByEmployee = new Map()
-  const touchedToday = new Set()
-  assignmentsForDate.forEach((a) => {
-    touchedToday.add(a.employeeId)
-    if (a.status === 'ACTIVE') activeByEmployee.set(a.employeeId, a)
-  })
+  activeAssignments.forEach((a) => activeByEmployee.set(a.employeeId, a))
+  const touchedToday = new Set(assignmentsForDate.map((a) => a.employeeId))
 
   const roster = employees.map((employee) => {
     const base = {
