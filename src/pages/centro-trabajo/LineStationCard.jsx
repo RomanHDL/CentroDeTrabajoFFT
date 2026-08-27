@@ -30,12 +30,17 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
-  // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- SOLO
-  // en areas LINE_LIKE (Familia C: Paletizado/Accesorios/Insumos/Midea/Conveyor General). WC
-  // LINEA real nunca pasa lineLike=true, asi que su diseño queda exactamente igual que antes.
-  // Se deriva del `role` REAL de la estacion (nunca del nombre del empleado, ver rankSystem.js)
-  // -- null cuando el puesto no tiene informacion suficiente, nunca se inventa un rango.
-  const rank = lineLike && occupant ? getPersonnelRank(workstation.role) : null
+  // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- por
+  // defecto SOLO en areas LINE_LIKE (Familia C: Paletizado/Accesorios/Insumos/Midea/Conveyor
+  // General). EXCEPCION explicita (misma fecha, segunda ronda del pedido): el puesto "Calidad"
+  // (agregado como puesto real adicional en cada CT LINEA 0..10, ver workstations.js) SI
+  // muestra el badge de rango aunque lineLike sea false -- es el UNICO rol de una WC LINEA real
+  // que lo hace, ningun otro puesto de linea (Montaje/Prueba eléctrica/...) se ve afectado, el
+  // diseño de esas tarjetas sigue exactamente igual que antes. Se deriva del `role` REAL de la
+  // estacion (nunca del nombre del empleado, ver rankSystem.js) -- null cuando el puesto no
+  // tiene informacion suficiente, nunca se inventa un rango.
+  const showRank = lineLike || workstation.role === 'Calidad'
+  const rank = showRank && occupant ? getPersonnelRank(workstation.role) : null
   // 2026-08-26: antes se deshabilitaba el drop si la estacion ya estaba
   // ocupada -- ahora SIEMPRE es zona de suelta (peticion explicita del
   // usuario: arrastrar a alguien al puesto de otra persona debe

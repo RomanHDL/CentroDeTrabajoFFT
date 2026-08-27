@@ -189,6 +189,13 @@ export const CUSTOM_STATION_PLANS = {
     { role: 'Ayudante General Paletizador', count: 7 },
     { role: 'Ayudante General Flejado', count: 2 },
     { role: 'Ayudante General Escaneador', count: 2 },
+    // Calidad (2026-08-27, a peticion explicita del usuario): 2 puestos reales
+    // ("Calidad 1"/"Calidad 2") para Beckham y Patricia -- a diferencia del
+    // ajuste anterior (que los puso en un rol de Ayudante General por falta de
+    // uno propio), ahora Calidad es su propio rol real dentro de Paletizado,
+    // igual que ya lo es dentro de cada CT LINEA (ver catalog.js WORK_CENTERS
+    // arriba). Rango visual distinto (Personal de apoyo) via rankSystem.js.
+    { role: 'Calidad', count: 2 },
   ],
   /* Insumos fusiona PNP/POC/PEN (decorativa, sin WORK_CENTER propio) +
      Box Prep + Suministro de material en un solo WC (ver
@@ -221,18 +228,27 @@ function sumStationPlan(plan) {
    evitaria tocar mapAreaZonaToId, hasLineStations, workstations.js y
    el snapshot de BASE sin necesidad — solo cambia el texto que se
    muestra. */
+/* idealHeadcount de las 11 CT LINEA (LINEA1..10 + PROYECTO/LINEA0) incluye +1
+   desde 2026-08-27 (a peticion explicita del usuario, "CAMBIO DEFINITIVO —
+   PERSONAL + IDENTIDAD VISUAL"): cada linea gana un puesto real adicional de
+   "Calidad" (ver ROLE_LABELS/buildWorkstations en workstations.js), fuera de
+   los 5 roles base de siempre -- las posiciones Montaje/Prueba eléctrica/
+   Limpieza/Etiquetado/Suministro de Accesorios y sus repeticiones NO
+   cambian ni se reordenan (buildWorkstations resta 1 antes de calcular esas
+   posiciones, ver la nota junto a LINE_FAMILY_AREA_IDS ahi). El numero base
+   original de cada linea (antes de este cambio) queda documentado aqui: */
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 6 },
-  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 },
-  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 },
+  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
+  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
+  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
+  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
+  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
+  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 11 }, // 10 + Calidad
   /* Paletizado/Accesorios (2026-08-26, a peticion explicita del usuario):
      idealHeadcount ya NO es un numero mantenido a mano -- se deriva de
      CUSTOM_STATION_PLANS de arriba (suma de puestos reales configurados),

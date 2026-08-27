@@ -35,9 +35,14 @@
      real (catalog.js), acotado 6..10 (limites reales de una CT LINEA,
      confirmados por el usuario) -- nunca un numero separado a mantener
      a mano.
-   - Solo se usan los 5 roles base reales de una CT LINEA (LINE_BASE_ROLES),
-     nunca los otros 4 de STATIONS (Empaque/Calidad/Supervision/
-     Capacitacion -- esos no son puestos de piso de una linea).
+   - Solo se usan los 5 roles base reales de una CT LINEA (LINE_BASE_ROLES)
+     para el plan de repeticion -- Empaque/Supervision/Capacitacion de
+     STATIONS (legado) siguen sin ser puestos de piso de una linea.
+     Calidad es la EXCEPCION desde 2026-08-27 (a peticion explicita del
+     usuario): se agrega como puesto REAL adicional en cada CT LINEA
+     0..10, fuera de este plan de 5 roles -- ver el bloque que arma
+     `stations` mas abajo (buildWorkstations), nunca dentro de
+     buildLineRolePlan/LINE_BASE_ROLES.
    - Cuando idealHeadcount > 5, se repiten roles siguiendo
      DEFAULT_REPEAT_ORDER (o LINE_STATION_OVERRIDES[lineId] si esa
      linea tiene una distribucion recomendada propia -- estructura
@@ -152,8 +157,18 @@ function buildWorkstations() {
   const map = {}
   WORK_CENTERS.forEach((wc) => {
     if (LINE_FAMILY_AREA_IDS.has(wc.id)) {
-      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount)
-      map[wc.id] = plan.map((entry, i) => {
+      // Calidad (2026-08-27, a peticion explicita del usuario): puesto REAL
+      // adicional en cada CT LINEA 0..10, fuera de los 5 roles base de
+      // siempre -- por eso aqui se resta 1 al idealHeadcount (que ya trae el
+      // +1 de Calidad, ver la nota junto a WORK_CENTERS en catalog.js) antes
+      // de calcular el plan base: garantiza que Montaje/Prueba eléctrica/
+      // Limpieza/Etiquetado/Suministro de Accesorios y sus repeticiones
+      // generen EXACTAMENTE las mismas posiciones que antes de este cambio
+      // (mismos nombres, mismo orden, ninguna asignacion real ya guardada
+      // queda huerfana). Calidad se agrega despues, como una posicion mas al
+      // final -- nunca reemplaza ni reordena las anteriores.
+      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount - 1)
+      const stations = plan.map((entry, i) => {
         const name = entry.repeatIndex === 0 ? entry.role : `${entry.role} ${entry.repeatIndex + 1}`
         return {
           id: `${wc.id}-${i + 1}`,
@@ -166,6 +181,17 @@ function buildWorkstations() {
           status: 'ACTIVA',
         }
       })
+      stations.push({
+        id: `${wc.id}-${stations.length + 1}`,
+        lineId: wc.id,
+        name: 'Calidad',
+        role: 'Calidad',
+        requiredRole: ROLE_LABELS.Calidad || 'Calidad',
+        capacity: 1,
+        order: stations.length + 1,
+        status: 'ACTIVA',
+      })
+      map[wc.id] = stations
     } else if (CUSTOM_STATION_PLANS[wc.id]) {
       // Accesorios/Paletizado/Insumos (2026-08-26): plantilla real por
       // puesto, ver CUSTOM_STATION_PLANS (catalog.js) -- capacidad 1 por
