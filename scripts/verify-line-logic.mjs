@@ -110,9 +110,12 @@ check('WC LINEA 10 -> siguiente = WC Conveyor Principal', () => {
   const ctx = getWorkCenterNavContext('LINEA10')
   assert.equal(ctx.next.id, 'CONVEYOR_PRINCIPAL')
 })
-check('WC Conveyor Principal -> siguiente = WC Conveyor Secundario', () => {
+check('WC Conveyor General (antes Principal) -> siguiente = WC Midea/High Value (Conveyor Secundario ya no es parada propia, fusionado)', () => {
   const ctx = getWorkCenterNavContext('CONVEYOR_PRINCIPAL')
-  assert.equal(ctx.next.id, 'CONVEYOR_SECUNDARIO')
+  assert.equal(ctx.next.id, 'HIGH_VALUE')
+})
+check('CONVEYOR_SECUNDARIO nunca aparece en el recorrido (fusionado en WC Conveyor General, 2026-08-26)', () => {
+  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_SECUNDARIO'))
 })
 check('el ultimo Work Center del recorrido no tiene siguiente (navegacion lineal, nunca circular)', () => {
   const lastId = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
@@ -213,10 +216,28 @@ check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
   })
 })
-check('las areas operativas restantes (solo Conveyors) siguen OPERATIONAL', () => {
-  ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO'].forEach((id) => {
-    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.OPERATIONAL, id)
-  })
+check('WC Conveyor General (fusion Principal+Secundario, 2026-08-26) -> variante LINE_LIKE, ya no OPERATIONAL', () => {
+  assert.equal(getAreaDetailVariant('CONVEYOR_PRINCIPAL'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+  assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_PRINCIPAL'))
+})
+check('CONVEYOR_SECUNDARIO (fusionado, archivado) resuelve a LINE_LIKE via su id canonico (CONVEYOR_PRINCIPAL)', () => {
+  assert.equal(getAreaDetailVariant('CONVEYOR_SECUNDARIO'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+  assert.equal(canonicalOperationalAreaId('CONVEYOR_SECUNDARIO'), 'CONVEYOR_PRINCIPAL')
+  assert.equal(isWorkCenterActive('CONVEYOR_SECUNDARIO'), false)
+})
+check('SELLADO tambien resuelve a LINE_LIKE (mismo grupo que Conveyor General)', () => {
+  assert.equal(getAreaDetailVariant('SELLADO'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+})
+check('WC Conveyor General genera 2 puestos genericos "Puesto N" (1 de Principal + 1 de Secundario, suma via operationalGroupMembers)', () => {
+  assert.deepEqual(operationalGroupMembers('CONVEYOR_PRINCIPAL'), ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'])
+  const stations = getWorkstationsForLine('CONVEYOR_PRINCIPAL')
+  assert.equal(stations.length, 2)
+  assert.equal(stations[0].name, 'Puesto 1')
+  assert.equal(stations[1].name, 'Puesto 2')
+  assert.ok(hasMultipleStations('CONVEYOR_PRINCIPAL'))
+})
+check('WC Conveyor General se renombro (id interno CONVEYOR_PRINCIPAL no cambia)', () => {
+  assert.equal(workCenterById('CONVEYOR_PRINCIPAL').name, 'WC Conveyor General')
 })
 check('Accesorios/Paletizado/Insumos -> variante LINE_LIKE (2026-08-26, segunda ronda: "copia el diseño de WC LINEA")', () => {
   ;['ACCESORIOS', 'PALETIZADO', 'INSUMOS'].forEach((id) => {

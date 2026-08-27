@@ -248,8 +248,28 @@ export const WORK_CENTERS = [
      'CONVEYOR' se eliminó el 2026-08-25 (bug real reportado por el usuario:
      esa caja nunca podia recibir personal porque el area ya no existia) --
      ver layoutZones.js, PHYSICAL_ZONES ya no la incluye. */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor Principal', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  /* 2026-08-26: a peticion explicita del usuario, Principal y Secundario
+     se FUSIONAN en un solo detalle "WC Conveyor General" (mismo patron ya
+     probado con Sellado/Insumos, ver AREA_DETAIL_GROUPS mas abajo) -- el
+     conveyor es fisicamente una sola estructura metalica continua para
+     deslizar cajas, sin puestos fijos reales, asi que ya no tiene sentido
+     tratarlos como dos plantillas independientes de 1 persona cada una.
+     El plano fisico (OperatingFloorPlan.jsx) SIGUE dibujando dos barras
+     separadas -- el usuario pidio explicitamente dejar eso igual ("lo
+     puedes dejar así") -- pero ambas abren el mismo detalle fusionado.
+     CONVEYOR_PRINCIPAL es el id canonico (se renombra el WC, el id real
+     no cambia -- mismo patron que WC Gerente FFT/WC Insumos). Ahora es
+     LINE_LIKE (ver LINE_LIKE_AREA_IDS mas abajo): puestos genericos
+     "Puesto 1"/"Puesto 2" (nunca nombres de rol inventados), cualquiera
+     de los dos puede recibir a cualquier persona -- "que se pueda poner
+     el personal en cualquier ubicación del combeyor". idealHeadcount se
+     mantiene en 1 aqui (el total real, 2, se deriva sumando los dos
+     miembros del grupo via operationalGroupMembers -- nunca se duplica
+     el numero a mano). CONVEYOR_SECUNDARIO queda `active:false` (nunca
+     se borra, tiene WorkArea real con historial en la DB) y su
+     idealHeadcount tambien se conserva sin tocar por la misma razon. */
+  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
+  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1, active: false },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
      dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal
@@ -384,7 +404,7 @@ export function hasLineStations(workCenterId) {
 // LINE_LIKE_AREA_IDS mas abajo, reutilizan LineDetailDrawer.jsx completo.
 export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
   WORK_CENTERS
-    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'].includes(w.id))
+    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'].includes(w.id))
     .map((w) => w.id),
 )
 
@@ -399,7 +419,7 @@ export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
    con historial), solo quedan `active:false` y su personal/plantilla se
    suma en el detalle de INSUMOS via operationalGroupMembers. */
 export const AREA_DETAIL_GROUPS = {
-  CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'SELLADO'],
+  CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'],
   INSUMOS: ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'],
 }
 
@@ -441,6 +461,10 @@ export function usesOperationalDetail(workCenterId) {
    SELLADO se excluye a proposito: no tiene detalle propio, cualquier
    click sobre ella resuelve a CONVEYOR_PRINCIPAL (AREA_DETAIL_GROUPS
    arriba) -- incluirla aqui crearia una parada duplicada/inalcanzable.
+   CONVEYOR_SECUNDARIO (2026-08-26) se excluye por la misma razon desde
+   que se fusiono con CONVEYOR_PRINCIPAL en "WC Conveyor General" --
+   ademas queda `active:false`, asi que el .filter final de abajo ya lo
+   habria quitado igual (doble red de seguridad).
    "PNP / POC / PEN" tampoco tiene WORK_CENTER real (decoracion en
    floorPlanZones.js/REFERENCE_ONLY_ZONES) -- nunca se inventa un id
    para poder navegar a algo que no existe. "WC LINEA 11" no existe hoy
@@ -461,7 +485,7 @@ export function usesOperationalDetail(workCenterId) {
 export const WORK_CENTER_NAVIGATION_ORDER = [
   'PROYECTO',
   ...LINES_ONLY.map((w) => w.id),
-  'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO',
+  'CONVEYOR_PRINCIPAL',
   'HIGH_VALUE', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS', 'CALIDAD',
   'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ].filter((id) => isWorkCenterActive(id) && WORK_CENTERS.some((w) => w.id === id))
@@ -507,10 +531,8 @@ export function getNextWorkCenter(currentAreaId) {
                    categoria distinta a proposito (Parte 13-14/32 del
                    pedido: "ya no quiero esa logica generica [Operational],
                    pero su nombre sigue siendo WC Midea / High Value").
-   OPERATIONAL  -> OPERATIONAL_DETAIL_AREA_IDS (Accesorios, Paletizado,
-                   Insumos y Suministro de Material -- incluye Sellado,
-                   Box Prep y Suministro de material fusionados,
-                   Conveyor Principal/Secundario) -> OperationalAreaDetail.jsx.
+   OPERATIONAL  -> OPERATIONAL_DETAIL_AREA_IDS (resto de areas WORK_AREA
+                   activas sin logica propia) -> OperationalAreaDetail.jsx.
    SUPPORT      -> el resto: Capacitacion, Team Leader, Entrenador, Soporte
                    (archivada pero sigue resolviendo aqui por si alguien
                    navega a su id historico), Limpieza, Gerente FFT,
@@ -534,8 +556,16 @@ export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PR
    completo (grid de estaciones, vacantes, candidatos sugeridos) igual
    que Midea, sin llamarse "línea" en la UI. Set separado (no un boolean
    suelto en WORK_CENTERS) para que agregar otra area LINE_LIKE en el
-   futuro sea un solo id agregado aqui. */
-export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'])
+   futuro sea un solo id agregado aqui.
+
+   CONVEYOR_PRINCIPAL (2026-08-26, tercera ronda -- fusion Conveyor
+   Principal/Secundario en "WC Conveyor General") NO tiene
+   CUSTOM_STATION_PLANS -- sin plan propio, buildWorkstations() (ver
+   workstations.js) genera puestos GENERICOS numerados ("Puesto 1"/
+   "Puesto 2", mismo fallback que Midea), exactamente lo que pidio el
+   usuario: posiciones intercambiables sobre una estructura fisica sin
+   roles fijos, nunca un nombre de rol inventado. */
+export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'])
 
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
   ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),

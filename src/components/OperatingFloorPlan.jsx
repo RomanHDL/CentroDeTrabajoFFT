@@ -288,9 +288,18 @@ function InfoStat({ icon, value, label }) {
 function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
   return (
     <Box ref={floorRef} sx={{ minWidth: 1180 }}>
+      {/* 2026-08-26: ambas barras se fusionaron en un solo detalle "WC
+          Conveyor General" (catalog.js/AREA_DETAIL_GROUPS) -- el usuario
+          pidio explicitamente dejar el plano fisico con las dos barras
+          separadas ("lo puedes dejar así"), asi que SOLO cambia el copy
+          se conserva, pero AMBAS apuntan al id canonico CONVEYOR_PRINCIPAL
+          para click y drag&drop -- sin esto, soltar sobre la barra
+          "SECUNDARIO" asignaria a un area fantasma que ya no tiene su
+          propio grid de estaciones (ver reconcileLineAssignments, que solo
+          reconcilia contra el id canonico). */}
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
         <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
-        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_SECUNDARIO" onOpenAssign={onOpen} readOnly={readOnly} />
+        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
       </Stack>
 
       <Box
@@ -378,8 +387,15 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
    arrastrar-y-soltar ya funciona con useEmployeeDropTarget (mismo hook
    que toda la app), con un resaltado suave SOLO mientras se arrastra
    algo encima (isOver) -- nunca cambia el aspecto en reposo. */
+// 2026-08-26: antes era decoracion pura (solo el label) -- ahora tambien
+// muestra cuantas personas hay HOY en el Conveyor fusionado ("que ahí
+// también se vea los trabajadores que ponga", peticion explicita del
+// usuario), group-aware via operationalGroupMembers (suma Principal +
+// Secundario + Sellado, ver AREA_DETAIL_GROUPS/catalog.js) -- ambas barras
+// muestran el MISMO numero porque son la misma area fusionada.
 function ConveyorBar({ label, areaId, onOpenAssign, readOnly }) {
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
+  const staffing = getGroupAreaStaffing(operationalGroupMembers(areaId))
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
@@ -387,13 +403,18 @@ function ConveyorBar({ label, areaId, onOpenAssign, readOnly }) {
       sx={{
         flex: 1, height: 40, borderRadius: 1, border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
         bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'action.hover',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
         cursor: readOnly ? 'default' : 'pointer', transition: 'all .15s ease',
       }}
     >
       <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: isOver ? '#3B82F6' : 'text.secondary' }}>
         {isOver ? 'Soltar aquí' : label}
       </Typography>
+      {!isOver && (
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.disabled' }}>
+          · {staffing.real}{staffing.ideal != null ? `/${staffing.ideal}` : ''}
+        </Typography>
+      )}
     </Box>
   )
 }

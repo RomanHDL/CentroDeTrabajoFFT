@@ -7,7 +7,7 @@ import {
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
-import { CURRENT_SHIFT, DEFAULT_LINE_ENTRY_TIME } from '../production/catalog'
+import { CURRENT_SHIFT, DEFAULT_LINE_ENTRY_TIME, operationalGroupMembers } from '../production/catalog'
 import {
   startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline, syncRestoreBaseline,
   syncRequestMove, syncApproveMove, syncRejectMove,
@@ -499,6 +499,19 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
  * Empleados BAJA nunca se tocan (ni se corrigen ni se llenan).
  * Idempotente: correr esto de nuevo sobre un estado ya reconciliado no
  * cambia nada (0 fixedCount, 0 filledCount).
+ *
+ * CASO A tambien cubre migracion de grupo (2026-08-26, fusion Conveyor
+ * Principal+Secundario en "WC Conveyor General"): `lineAssignmentsToday`
+ * ahora se busca sobre TODOS los ids reales de operationalGroupMembers(areaId),
+ * no solo el canonico -- necesario porque una asignacion real de ANTES de
+ * fusionar un grupo (ej. alguien ya en CONVEYOR_SECUNDARIO cuando todavia
+ * era area independiente) sigue teniendo `areaId` no-canonico; sin esto
+ * quedaria invisible en el grid de estaciones del detalle fusionado
+ * aunque siga contando en el total (getGroupAreaStaffing). Se corrige
+ * tanto el `stationId` como el `areaId` (al canonico) en la misma pasada,
+ * preservando checkInAt/shift reales. Para areas sin grupo el
+ * comportamiento es identico al de antes (operationalGroupMembers
+ * devuelve solo [areaId]).
  */
 export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {}) {
   if (!areaId) return { fixedCount: 0, filledCount: 0 }
@@ -508,21 +521,22 @@ export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shi
   const movements = readMovements()
   const stationNamesForLine = new Set(getWorkstationsForLine(areaId).map(s => s.name))
   const orderedStations = getWorkstationsForLine(areaId).slice().sort((a, b) => a.order - b.order)
-  const lineAssignmentsToday = assignments.filter(a => a.date === date && a.areaId === areaId)
+  const groupMemberIds = new Set(operationalGroupMembers(areaId))
+  const lineAssignmentsToday = assignments.filter(a => a.date === date && groupMemberIds.has(a.areaId))
 
   // Quien conserva su estacion (valida y sin duplicar) vs quien necesita reasignacion (estacion
   // invalida, o duplicada -- solo la mas antigua por createdAt conserva el station valido).
   const stationClaimedBy = new Map()
   const needsReassignment = []
   lineAssignmentsToday
-    .filter(a => stationNamesForLine.has(a.stationId))
+    .filter(a => a.areaId === areaId && stationNamesForLine.has(a.stationId))
     .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
     .forEach((a) => {
       if (stationClaimedBy.has(a.stationId)) needsReassignment.push(a)
       else stationClaimedBy.set(a.stationId, a)
     })
   lineAssignmentsToday
-    .filter(a => !stationNamesForLine.has(a.stationId))
+    .filter(a => !(a.areaId === areaId && stationNamesForLine.has(a.stationId)))
     .forEach((a) => needsReassignment.push(a))
   needsReassignment.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
 
@@ -539,13 +553,13 @@ export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shi
     cursor += 1
 
     const idx = assignments.findIndex(a => a.id === existing.id)
-    assignments[idx] = { ...existing, stationId: station.name, updatedAt: nowISO() }
+    assignments[idx] = { ...existing, areaId, stationId: station.name, updatedAt: nowISO() }
     movements.push({
       id: makeId('mov'),
       employeeId: existing.employeeId,
       employeeNumber: existing.employeeNumber,
       date,
-      fromAreaId: areaId,
+      fromAreaId: existing.areaId,
       fromStationId: existing.stationId,
       toAreaId: areaId,
       toStationId: station.name,
@@ -665,6 +679,86 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   syncMove({ employeeId, toAreaId, toStationId, shift: updated.shift })
   notify()
   return { status: 'OK', assignment: updated, movedAt }
+}
+
+/**
+ * Intercambia de puesto a dos empleados -- usado por el drop de
+ * drag&drop cuando la estacion destino ya esta ocupada por OTRA
+ * persona (2026-08-26, peticion explicita del usuario: "si deslizo a
+ * tal persona al puesto de otra persona que se cambien y se guarden
+ * de verdad").
+ *
+ * - Si `employeeIdA` YA tenia una asignacion real hoy (en cualquier
+ *   area): intercambio real -- A toma el area/estacion de B y B toma
+ *   la de A. Dos EmployeeMovement tipo MOVE, se actualizan las DOS
+ *   filas de DailyAssignment existentes (nunca se duplica).
+ * - Si `employeeIdA` NO tenia asignacion hoy (p. ej. viene de
+ *   "Personal disponible"): no hay nada que darle a B a cambio, asi
+ *   que B queda liberado (RELEASE, igual que releaseAssignment) y A
+ *   ocupa su puesto (CHECK_IN). Nunca se bloquea silenciosamente.
+ */
+export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
+  const date = todayISO()
+  const assignments = readAssignments()
+  const idxB = assignments.findIndex(a => a.date === date && a.areaId === toAreaId && a.stationId === toStationId)
+  if (idxB === -1) return { status: 'ERROR', message: 'La estación ya no está ocupada.' }
+  const assignmentB = assignments[idxB]
+  if (assignmentB.employeeId === employeeIdA) return { status: 'ERROR', message: 'Ya está en esa estación.' }
+
+  const movedAt = nowTime()
+  const movements = readMovements()
+  const idxA = assignments.findIndex(a => a.employeeId === employeeIdA && a.date === date)
+
+  if (idxA === -1) {
+    const employeeA = getEmployeeById(employeeIdA)
+    if (!employeeA) return { status: 'ERROR', message: 'Empleado no encontrado.' }
+
+    movements.push({
+      id: makeId('mov'), employeeId: assignmentB.employeeId, employeeNumber: assignmentB.employeeNumber, date,
+      fromAreaId: assignmentB.areaId, fromStationId: assignmentB.stationId, toAreaId: null, toStationId: null,
+      movedAt, shift: assignmentB.shift, movedBy: null, type: 'RELEASE',
+    })
+    const bumpedShift = assignmentB.shift
+    assignments[idxB] = {
+      ...assignmentB, employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, checkInAt: movedAt, updatedAt: nowISO(),
+    }
+    movements.push({
+      id: makeId('mov'), employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, date,
+      fromAreaId: null, fromStationId: null, toAreaId, toStationId,
+      movedAt, shift: bumpedShift, movedBy: null, type: 'CHECK_IN',
+    })
+    writeAssignments(assignments)
+    writeMovements(movements)
+    ensureAttendance(employeeA, date, bumpedShift, movedAt)
+    unsuppressBaselinePlacement(employeeA.id)
+    syncRelease({ employeeId: assignmentB.employeeId })
+    syncCheckIn({ employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, name: employeeA.name, areaId: toAreaId, stationId: toStationId, shift: bumpedShift })
+    notify()
+    return { status: 'OK', bumpedEmployeeId: assignmentB.employeeId }
+  }
+
+  const assignmentA = assignments[idxA]
+  const fromA = { areaId: assignmentA.areaId, stationId: assignmentA.stationId }
+  assignments[idxA] = { ...assignmentA, areaId: assignmentB.areaId, stationId: assignmentB.stationId, updatedAt: nowISO() }
+  assignments[idxB] = { ...assignmentB, areaId: fromA.areaId, stationId: fromA.stationId, updatedAt: nowISO() }
+  movements.push({
+    id: makeId('mov'), employeeId: assignmentA.employeeId, employeeNumber: assignmentA.employeeNumber, date,
+    fromAreaId: fromA.areaId, fromStationId: fromA.stationId, toAreaId: assignmentB.areaId, toStationId: assignmentB.stationId,
+    movedAt, shift: assignmentA.shift, movedBy: null, type: 'MOVE',
+  })
+  movements.push({
+    id: makeId('mov'), employeeId: assignmentB.employeeId, employeeNumber: assignmentB.employeeNumber, date,
+    fromAreaId: assignmentB.areaId, fromStationId: assignmentB.stationId, toAreaId: fromA.areaId, toStationId: fromA.stationId,
+    movedAt, shift: assignmentB.shift, movedBy: null, type: 'MOVE',
+  })
+  writeAssignments(assignments)
+  writeMovements(movements)
+  unsuppressBaselinePlacement(assignmentA.employeeId)
+  unsuppressBaselinePlacement(assignmentB.employeeId)
+  syncMove({ employeeId: assignmentA.employeeId, toAreaId: assignmentB.areaId, toStationId: assignmentB.stationId, shift: assignmentA.shift })
+  syncMove({ employeeId: assignmentB.employeeId, toAreaId: fromA.areaId, toStationId: fromA.stationId, shift: assignmentB.shift })
+  notify()
+  return { status: 'OK', swappedEmployeeIds: [assignmentA.employeeId, assignmentB.employeeId] }
 }
 
 /**

@@ -9,7 +9,7 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
 import { getWorkstationsForLine, hasMultipleStations } from '../data/personnel/workstations'
-import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
+import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy, getAssignmentsForArea, swapOrBumpStation } from '../data/personnel/repository'
 import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
@@ -44,6 +44,7 @@ export function DndAssignProvider({ children }) {
   const [stationPicker, setStationPicker] = useState(null) // { employee, current, targetAreaId }
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
   const [releaseTarget, setReleaseTarget] = useState(null) // { employee, currentAssignment }
+  const [swapTarget, setSwapTarget] = useState(null) // { employeeA, employeeB, current, targetAreaId, stationName }
 
   function warnIfOverIdeal(areaId) {
     const wc = workCenterById(areaId)
@@ -100,11 +101,42 @@ export function DndAssignProvider({ children }) {
     finalize(employee, current, targetAreaId, stationName)
   }
 
+  /* Si la estacion destino ya tiene OTRA persona hoy, no se bloquea
+     (2026-08-26, peticion explicita del usuario) -- se pide confirmar
+     un intercambio real: swapOrBumpStation (repository.js) decide si
+     es swap (ambos ya asignados) o "bump" (A no tenia asignacion, B
+     queda liberado). */
   function requestAssignToStation(employeeId, targetAreaId, stationName) {
     const employee = getEmployeeById(employeeId)
     if (!employee) return
+    const occupied = getAssignmentsForArea(targetAreaId).find(a => a.stationId === stationName)
+    if (occupied && occupied.employeeId !== employeeId) {
+      const occupant = getEmployeeById(occupied.employeeId)
+      if (occupant) {
+        const current = getCurrentAssignment(employeeId)
+        setSwapTarget({ employeeA: employee, employeeB: occupant, current, targetAreaId, stationName })
+        return
+      }
+    }
     const current = getCurrentAssignment(employeeId)
     finalize(employee, current, targetAreaId, stationName)
+  }
+
+  function confirmSwap() {
+    if (!swapTarget) return
+    const { employeeA, employeeB, targetAreaId, stationName } = swapTarget
+    const res = swapOrBumpStation({ employeeIdA: employeeA.id, toAreaId: targetAreaId, toStationId: stationName })
+    if (res.status === 'OK') {
+      if (res.bumpedEmployeeId) {
+        showToast(`${employeeA.name} ocupó el puesto de ${employeeB.name}; ${employeeB.name} quedó sin asignación.`)
+      } else {
+        showToast(`${employeeA.name} y ${employeeB.name} intercambiaron de puesto.`)
+      }
+      warnIfOverIdeal(targetAreaId)
+    } else {
+      showToast(res.message || 'No se pudo intercambiar.', 'error')
+    }
+    setSwapTarget(null)
   }
 
   /* Quitar a alguien de su area actual (sin asignarlo a otro lado) —
@@ -218,6 +250,39 @@ export function DndAssignProvider({ children }) {
           }}
         />
       )}
+
+      <Dialog open={Boolean(swapTarget)} onClose={() => setSwapTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        {swapTarget && (
+          <>
+            <DialogTitle sx={{ fontWeight: 800 }}>
+              {swapTarget.current ? 'Intercambiar puesto' : 'Puesto ocupado'}
+            </DialogTitle>
+            <DialogContent>
+              {swapTarget.current ? (
+                <Typography sx={{ fontSize: 14 }}>
+                  <b>{swapTarget.employeeA.name}</b> tomará el puesto de <b>{swapTarget.employeeB.name}</b> en{' '}
+                  <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}), y{' '}
+                  <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
+                  <b>{swapTarget.employeeA.name}</b> en{' '}
+                  <b>{workCenterById(swapTarget.current.areaId)?.name}</b> ({swapTarget.current.stationId}).
+                </Typography>
+              ) : (
+                <Typography sx={{ fontSize: 14 }}>
+                  <b>{swapTarget.stationName}</b> ya está ocupada por <b>{swapTarget.employeeB.name}</b>.
+                  Si continúas, <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
+                  <b>{swapTarget.employeeB.name}</b> quedará sin asignación.
+                </Typography>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setSwapTarget(null)}>Cancelar</Button>
+              <Button variant="contained" onClick={confirmSwap} sx={{ fontWeight: 700 }}>
+                {swapTarget.current ? 'Intercambiar' : 'Ocupar puesto'}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       <Dialog open={Boolean(releaseTarget)} onClose={() => setReleaseTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         {releaseTarget && (

@@ -28,7 +28,12 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
-  const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name, { disabled: !available })
+  // 2026-08-26: antes se deshabilitaba el drop si la estacion ya estaba
+  // ocupada -- ahora SIEMPRE es zona de suelta (peticion explicita del
+  // usuario: arrastrar a alguien al puesto de otra persona debe
+  // intercambiarlos, no quedar bloqueado). requestAssignToStation
+  // (dndAssign.jsx) detecta la ocupacion y decide swap vs asignacion.
+  const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
 
   const accent = isOver ? '#3B82F6' : selected ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
 

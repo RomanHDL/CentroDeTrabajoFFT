@@ -62,7 +62,7 @@
    en los <Select> de esos 4 archivos (value duplicado) -- nunca podia
    pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
 
-import { WORK_CENTERS, LINE_FAMILY_AREA_IDS, LINE_LIKE_AREA_IDS, CUSTOM_STATION_PLANS } from '../production/catalog'
+import { WORK_CENTERS, LINE_FAMILY_AREA_IDS, LINE_LIKE_AREA_IDS, CUSTOM_STATION_PLANS, operationalGroupMembers } from '../production/catalog'
 
 /* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
    de presentacion, la compatibilidad de habilidades sigue usando
@@ -193,7 +193,16 @@ function buildWorkstations() {
       // cada uno, N = idealHeadcount real del area (16 hoy). Reemplazar
       // el `role`/`requiredRole` de abajo por los puestos oficiales en
       // cuanto el usuario los confirme -- unico lugar a cambiar.
-      const total = wc.idealHeadcount || 0
+      //
+      // N se suma sobre TODOS los miembros del grupo fusionado (ver
+      // AREA_DETAIL_GROUPS/operationalGroupMembers en catalog.js), no solo
+      // wc.idealHeadcount propio -- necesario desde que Conveyor Principal
+      // (1) + Conveyor Secundario (1) se fusionaron en un solo detalle
+      // "WC Conveyor General" con 2 puestos genericos (2026-08-26): sin
+      // esto solo se generaria 1 puesto aunque el ideal combinado real sea
+      // 2. Para areas sin grupo (Midea, Accesorios..) el grupo es solo
+      // [wc.id], asi que el comportamiento no cambia.
+      const total = operationalGroupMembers(wc.id).reduce((sum, id) => sum + (WORK_CENTERS.find((w) => w.id === id)?.idealHeadcount || 0), 0)
       map[wc.id] = Array.from({ length: total }, (_, i) => ({
         id: `${wc.id}-${i + 1}`,
         lineId: wc.id,
