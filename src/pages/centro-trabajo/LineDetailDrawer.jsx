@@ -22,21 +22,25 @@ import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import HistoryIcon from '@mui/icons-material/History'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import BackHandIcon from '@mui/icons-material/BackHand'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined'
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT, getCurrentShift, workCenterById, LINE_FAMILY_AREA_IDS, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
 import {
   getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster,
-  getGroupAreaStaffing, getGroupPeople,
+  getGroupAreaStaffing, getGroupPeople, getActividadForEmployee,
 } from '../../data/production/personnelByArea'
 import {
   getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
 } from '../../data/personnel/repository'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { getPersonnelVisualType } from '../../data/personnel/lineVisualType'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useRoleMode } from '../../state/roleMode'
@@ -45,8 +49,8 @@ import SelfAssignDialog from './SelfAssignDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
-import LineStationCard from './LineStationCard'
-import RankLegend from './RankLegend'
+import LineWorkstationCard from './LineWorkstationCard'
+import LineVisualLegend, { LineTypeIcon } from './LineVisualLegend'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
 import StationAssignDialog from './StationAssignDialog'
@@ -56,10 +60,22 @@ import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
 import WorkCenterNavControls from './WorkCenterNavControls'
 import { useDndAssign } from '../../state/dndAssign'
 
-/* Zona de "soltar aqui" generica — usada tanto en areas sin
-   estaciones (unico destino posible) como arriba de la grilla de
-   estaciones de una linea (si se suelta ahi, se abre el picker de
-   estacion; nunca elige una sola por si sola). */
+/* ─────────────────────────────────────────────
+   Tablero operativo de estaciones, EXCLUSIVO de WC LINEA 0-10
+   (2026-08-28, "REDISEÑO DE WC LINEA 0 A WC LINEA 10", a peticion
+   explicita del usuario). Este componente ya no es compartido: desde el
+   rediseño anterior de LINE_LIKE (Paletizado/Accesorios/Insumos/Midea/
+   Conveyor), AreaDetail.jsx solo lo invoca para la variante LINE -- por
+   eso se edita directamente aqui, con identidad visual PROPIA (nunca la
+   de Paletizado): TIPO DE PERSONAL (lineVisualType.js/LineVisualLegend.jsx)
+   separado de ESTADO DE ESTACION, tarjeta de estacion propia
+   (LineWorkstationCard.jsx, LineStationCard.jsx queda intacta para
+   LINE_LIKE). Rama "vista simple" (DropZoneBanner) se conserva tal cual,
+   solo por defensividad (ver getAreaDetailVariant, catalog.js). ───────────────────────────────────────────── */
+
+/* Zona de "soltar aqui" generica -- solo se usa hoy en el caso
+   defensivo (area futura sin estaciones que cayera aqui por
+   clasificacion por defecto, ver catalog.js/getAreaDetailVariant). */
 function DropZoneBanner({ areaId, label }) {
   const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
@@ -87,7 +103,7 @@ function formatHour12(hhmm) {
   return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
 }
 
-export default function LineDetailDrawer({ workCenterId, open, onClose, previous, next, onNavigate, lineLike = false }) {
+export default function LineDetailDrawer({ workCenterId, open, onClose, previous, next, onNavigate }) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -104,12 +120,9 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const [actionError, setActionError] = useState('')
 
   /* Reinicio de estado transitorio al cambiar de Work Center (Anterior/
-     Siguiente, 2026-08-27, a peticion explicita del usuario) -- el
-     Dialog ya NO se desmonta entre areas (workCenterId cambia con el
-     mismo `open`), asi que sin esto quedaria la estacion/dialogo/error
-     de la linea anterior. El buscador (EmployeeAssignSearchBar) se
-     reinicia aparte via `key={workCenterId}` mas abajo, sin tocar ese
-     componente compartido. */
+     Siguiente) -- el Dialog no se desmonta entre lineas (workCenterId
+     cambia con el mismo `open`), asi que sin esto quedaria la estacion/
+     dialogo/error de la linea anterior. */
   useEffect(() => {
     setRegisterOpen(false)
     setSelfAssignOpen(false)
@@ -123,22 +136,11 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   }, [workCenterId])
 
   const isLine = workCenterId ? LINE_FAMILY_AREA_IDS.has(workCenterId) : false
-  // 2026-08-26: WC Midea/High Value (lineLike=true, ver AreaDetail.jsx) usa
-  // TODA la misma experiencia de estaciones que una CT LINEA real, pero
-  // nunca debe llamarse "línea" en la UI -- `isStationBased` gatea el
-  // diseño (grid de estaciones vs vista simple), `isLine` se conserva tal
-  // cual para lo que es genuinamente exclusivo de una linea real (el
-  // copy que dice literalmente "línea").
-  const isStationBased = isLine || lineLike
-  // 2026-08-26 ("copia el diseño de WC LINEA para Accesorios/Paletizado/
-  // Insumos", a peticion explicita del usuario): canonicalId/memberIds
-  // hacen este componente "group-aware" -- necesario para WC Insumos y
-  // Suministro de Material, que fusiona 3 areas reales (INSUMOS,
-  // SUMINISTRO_MATERIAL, BOX_PREP -- ver catalog.js/AREA_DETAIL_GROUPS).
-  // Para cualquier area SIN grupo (todas las WC LINEA reales, Midea,
-  // Accesorios, Paletizado) canonicalId===workCenterId y memberIds===
-  // [workCenterId] -- mismo comportamiento exacto que antes, cero
-  // cambio para lo que ya funcionaba.
+  // isStationBased: true para toda WC LINEA real. false solo en el caso
+  // defensivo (area futura sin clasificar que cayera aqui por defecto,
+  // ver getAreaDetailVariant en catalog.js) -- ahi se usa la rama
+  // "vista simple" de abajo, nunca "Distribución de estaciones".
+  const isStationBased = isLine
   const canonicalId = workCenterId ? canonicalOperationalAreaId(workCenterId) : null
   const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
   const area = canonicalId ? workCenterById(canonicalId) : null
@@ -147,18 +149,37 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
+  const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? DarkModeOutlinedIcon : WbSunnyOutlinedIcon
   const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version])
   const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
 
-  /* Reconcilia estaciones reales al abrir una WC LINEA (o cualquier area
-     con estaciones reales -- Midea, Accesorios, Paletizado, Insumos) --
-     2026-08-27, a peticion explicita del usuario: corrige tanto a quien
-     ya esta en el area pero sin ninguna asignacion real hoy (snapshot de
-     BASE) COMO a quien ya tiene una asignacion real pero con un stationId
-     invalido/heredado -- ver reconcileLineAssignments en repository.js
-     para la regla completa. Para areas fusionadas (Insumos), se
-     reconcilian los snapshot ids de TODOS los miembros del grupo contra
-     las estaciones reales del id canonico. Orden estable por nombre
+  /* Resumen de la linea (Seccion 21 del pedido) -- calculado dinamicamente
+     de las estaciones reales, nunca guardado aparte. "Vacantes criticas"
+     siempre 0 hoy: no existe ningun campo real de prioridad/criticidad en
+     Workstation (workstations.js) -- nunca se inventa una. */
+  const lineSummary = useMemo(() => {
+    let occupied = 0
+    let availableCount = 0
+    let apoyoCalidad = 0
+    workstations.forEach((w) => {
+      const occupant = w.occupants[0]
+      if (occupant) {
+        occupied += 1
+        const actividad = occupant.employee?.id ? getActividadForEmployee(occupant.employee.id) : null
+        const vt = getPersonnelVisualType({ stationRole: w.role, actividad })
+        if (vt?.key === 'APOYO_CALIDAD') apoyoCalidad += 1
+      } else if (w.isAvailable) {
+        availableCount += 1
+      }
+    })
+    return { occupied, available: availableCount, critical: 0, apoyoCalidad }
+  }, [workstations])
+
+  /* Reconcilia estaciones reales al abrir una WC LINEA -- corrige tanto a
+     quien ya esta en el area pero sin ninguna asignacion real hoy
+     (snapshot de BASE) COMO a quien ya tiene una asignacion real pero con
+     un stationId invalido/heredado -- ver reconcileLineAssignments en
+     repository.js para la regla completa. Orden estable por nombre
      (nunca aleatorio); idempotente. */
   useEffect(() => {
     if (!open || !isStationBased || !canonicalId) return
@@ -178,6 +199,13 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       || workstations[0]
   }, [workstations, selectedStationName])
 
+  const selectedStationOccupantActividad = selectedStation?.occupants[0]?.employee?.id
+    ? getActividadForEmployee(selectedStation.occupants[0].employee.id)
+    : null
+  const selectedStationVisualType = selectedStation
+    ? getPersonnelVisualType({ stationRole: selectedStation.role, actividad: selectedStationOccupantActividad })
+    : null
+
   const suggestions = useMemo(() => {
     if (!canonicalId || !selectedStation || selectedStation.occupants.length > 0) return []
     return getSuggestedCandidates(canonicalId, selectedStation.name, { includeAbsent })
@@ -187,9 +215,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
      personal historico de BASE que todavia nadie movio hoy (ej. CT LINEA 0),
      ese personal cuenta en staffing.real pero NO tiene una estacion real
      asignada -- si la tabla solo mostrara occupants de estaciones, esas
-     personas reales quedarian invisibles aunque el encabezado ya las cuenta.
-     `memberIds` (no solo canonicalId) para que Insumos siga mostrando
-     tambien a quien todavia no fue reconciliado a la estacion canonica. */
+     personas reales quedarian invisibles aunque el encabezado ya las cuenta
+     (Seccion 31/32 del pedido: nunca se pierde personal real). */
   const roster = useMemo(
     () => (memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []),
     [workCenterId, version]
@@ -252,64 +279,73 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
       </Box>
 
       <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* Encabezado compacto — NUNCA cards KPI grandes, ni en Linea
-           1-10 ni en el resto de las areas. Real/Ideal/Faltante (y
-           turno/fecha para lineas) va integrado aqui en 1-2 lineas. */}
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ fontSize: 22, fontWeight: 800 }}>
-            {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal} personas` : personnelCountLabel}
-            {staffing.ideal != null && (
-              <Typography component="span" sx={{ fontSize: 15, fontWeight: 700, color: staffing.status === 'COMPLETA' ? '#10B981' : '#EF4444', ml: 1 }}>
-                · {staffing.status === 'COMPLETA' ? 'Completa' : `Falta${Math.abs(staffing.diff) === 1 ? '' : 'n'} ${Math.abs(staffing.diff)}`}
-              </Typography>
-            )}
-          </Typography>
-          {staffing.ideal == null && (
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Sin plantilla definida</Typography>
-          )}
-          {isStationBased && (
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
-              Turno {currentOfficialShift.label} · {dayjs().format('DD/MM/YYYY')}
-            </Typography>
-          )}
-        </Box>
-
-        {isStationBased && staffing.ideal != null && (
-          <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 } }}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: { xs: 2, md: 3 } }}>
-              <Box>
-                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Asignación actual</Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{staffing.real}/{staffing.ideal} personas</Typography>
+        {isStationBased && staffing.ideal != null ? (
+          <Grid container spacing={1.5} sx={{ mb: 2 }}>
+            <Grid item xs={6} sm={3} md={2}>
+              <Box sx={ps.kpiCard('blue')}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Asignación actual</Typography>
+                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>{staffing.real} / {staffing.ideal}</Typography>
+                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>personas</Typography>
               </Box>
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
-              <Box>
-                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Dotación ideal</Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{staffing.ideal} personas</Typography>
+            </Grid>
+            <Grid item xs={6} sm={3} md={2}>
+              <Box sx={ps.kpiCard('slate')}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Dotación ideal</Typography>
+                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>{staffing.ideal}</Typography>
+                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>personas</Typography>
               </Box>
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
-              <Box>
-                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Turno actual</Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{currentOfficialShift.label} {formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)}</Typography>
-              </Box>
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
-              <Box>
-                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+            </Grid>
+            <Grid item xs={6} sm={3} md={2}>
+              <Box sx={ps.kpiCard(staffing.diff < 0 ? 'red' : 'green')}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
                   {staffing.diff > 0 ? 'Personal adicional' : staffing.diff === 0 ? 'Cobertura' : 'Faltan'}
                 </Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 800, color: staffing.diff < 0 ? '#EF4444' : staffing.diff > 0 ? '#10B981' : '#10B981' }}>
-                  {staffing.diff === 0 ? 'Completa' : `${Math.abs(staffing.diff)} persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
+                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25, color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}>
+                  {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                  {staffing.diff === 0 ? 'Completa' : `persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
                 </Typography>
               </Box>
-              <Box sx={{ flex: 1, minWidth: 160, alignSelf: 'center' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>{lineLike ? 'Cobertura del área' : 'Cobertura de la línea'}</Typography>
-                  <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{coveragePct}%</Typography>
+            </Grid>
+            <Grid item xs={6} sm={3} md={2.5}>
+              <Box sx={ps.kpiCard('purple')}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Turno actual</Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
+                  <ShiftIcon sx={{ fontSize: 18, color: '#A855F7' }} />
+                  <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{currentOfficialShift.label}</Typography>
+                </Stack>
+                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                  {formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={12} md={3.5}>
+              <Box sx={{ ...ps.kpiCard(coveragePct >= 100 ? 'green' : 'cyan'), display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Cobertura de la línea</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{coveragePct}%</Typography>
                 </Box>
                 <Box sx={ps.progressBar}>
-                  <Box sx={ps.progressFill(coveragePct, coveragePct >= 100 ? '#10B981' : '#3B82F6')} />
+                  <Box sx={ps.progressFill(coveragePct, coveragePct >= 100 ? '#10B981' : '#06B6D4')} />
                 </Box>
               </Box>
-            </Box>
+            </Grid>
+          </Grid>
+        ) : (
+          <Box sx={{ mb: 2 }}>
+            <Typography sx={{ fontSize: 22, fontWeight: 800 }}>
+              {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal} personas` : personnelCountLabel}
+            </Typography>
+            {staffing.ideal == null && (
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Sin plantilla definida</Typography>
+            )}
+          </Box>
+        )}
+
+        {isStationBased && (
+          <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 } }}>
+            <LineVisualLegend />
           </Paper>
         )}
 
@@ -333,23 +369,21 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
                       {workstations.length} posiciones
                     </Typography>
-                    <Tooltip title={lineLike ? 'Cada puesto es una posición individual, 1 persona por puesto.' : 'Los roles se repiten según la cantidad de posiciones requeridas en la línea.'}>
+                    <Tooltip title="Los roles se repiten según la cantidad de posiciones requeridas en la línea.">
                       <InfoOutlinedIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
                     </Tooltip>
                   </Stack>
                 </Box>
-                {lineLike && <RankLegend />}
                 <Box sx={{
                   p: 2, display: 'grid', gap: 1.25,
                   gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
                 }}>
                   {workstations.map((w) => (
-                    <LineStationCard
+                    <LineWorkstationCard
                       key={w.id}
                       workAreaId={canonicalId}
                       workstation={w}
                       selected={selectedStation?.name === w.name}
-                      lineLike={lineLike}
                       onSelect={(ws) => {
                         setSelectedStationName(ws.name)
                         if (ws.isAvailable) setAssignStation(ws)
@@ -362,7 +396,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
 
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
                 <Box sx={ps.cardHeader}>
-                  <Typography sx={ps.cardHeaderTitle}>{lineLike ? `Personal asignado hoy (${roster.length})` : `Personal asignado a la línea hoy (${roster.length})`}</Typography>
+                  <Typography sx={ps.cardHeaderTitle}>Personal asignado a la línea hoy ({roster.length})</Typography>
                 </Box>
                 <TableContainer sx={{ maxHeight: 340 }}>
                   <Table size="small" stickyHeader>
@@ -372,6 +406,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                         <TableCell>Nombre</TableCell>
                         <TableCell>Estación</TableCell>
                         <TableCell>Rol</TableCell>
+                        <TableCell>Tipo</TableCell>
                         <TableCell>Entrada</TableCell>
                         <TableCell>Estado</TableCell>
                         <TableCell align="right">Acciones</TableCell>
@@ -381,6 +416,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                       {roster.map((r, idx) => {
                         const ws = workstations.find(w => w.name === r.stationId)
                         const isReal = r.source === 'REGISTRO'
+                        const rowActividad = getActividadForEmployee(r.employeeId)
+                        const rowType = getPersonnelVisualType({ stationRole: ws?.role, actividad: rowActividad })
                         return (
                           <TableRow key={r.id} sx={ps.tableRow(idx)} hover>
                             <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{formatEmployeeNumber(r.employeeNumber)}</TableCell>
@@ -389,6 +426,21 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                             </TableCell>
                             <TableCell sx={ps.cellTextSecondary}>{r.stationId || '—'}</TableCell>
                             <TableCell sx={ps.cellTextSecondary}>{ws?.requiredRole || '—'}</TableCell>
+                            <TableCell>
+                              {rowType ? (
+                                <Chip
+                                  size="small"
+                                  icon={<LineTypeIcon type={rowType} size={12} sx={{ ml: '4px !important' }} />}
+                                  label={rowType.label.toUpperCase()}
+                                  sx={{
+                                    fontWeight: 700, fontSize: 10, bgcolor: alpha(rowType.color, 0.12), color: rowType.color,
+                                    border: `1px solid ${alpha(rowType.color, 0.3)}`,
+                                  }}
+                                />
+                              ) : (
+                                <Typography sx={ps.cellTextSecondary}>—</Typography>
+                              )}
+                            </TableCell>
                             <TableCell sx={ps.cellTextSecondary}>{r.checkInAt || '—'}</TableCell>
                             <TableCell>
                               {isReal
@@ -410,7 +462,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                       })}
                       {roster.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7}>
+                          <TableCell colSpan={8}>
                             <EmptyState compact title="Nadie asignado todavía" description="Usa 'Registrar personal', arrastra a alguien sobre una estación, o asigna un candidato sugerido a la derecha." />
                           </TableCell>
                         </TableRow>
@@ -420,7 +472,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                 </TableContainer>
                 <Box sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
                   <Button size="small" startIcon={<HistoryIcon />} onClick={() => setLineHistoryOpen(true)} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    {lineLike ? 'Ver historial del área' : 'Ver historial de la línea'}
+                    Ver historial de la línea
                   </Button>
                 </Box>
               </Paper>
@@ -435,10 +487,8 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
                 <Box sx={ps.cardHeader}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={ps.cardHeaderTitle}>
-                      {selectedStation ? `Estación ${selectedStation.isAvailable ? 'disponible' : 'asignada'}` : 'Estación'}
-                    </Typography>
-                    {isStationBased && selectedStation && (
+                    <Typography sx={ps.cardHeaderTitle}>Detalle de estación</Typography>
+                    {selectedStation && (
                       <Typography sx={ps.cardHeaderSubtitle}>Posición {selectedStation.order} de {workstations.length}</Typography>
                     )}
                   </Box>
@@ -449,25 +499,102 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                   )}
                   {selectedStation && (
                     <>
-                      <Typography sx={{ fontWeight: 800, fontSize: 18, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>
-                        {selectedStation.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.5 }}>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                        {selectedStationVisualType && (
+                          <Box sx={{
+                            width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                            display: 'grid', placeItems: 'center', bgcolor: alpha(selectedStationVisualType.color, 0.14),
+                          }}>
+                            <LineTypeIcon type={selectedStationVisualType} size={14} />
+                          </Box>
+                        )}
+                        <Typography sx={{ fontWeight: 800, fontSize: 17, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>
+                          {selectedStation.name}
+                        </Typography>
+                      </Stack>
+                      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1 }}>
                         Rol requerido: <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}/{selectedStation.capacity}
                       </Typography>
+                      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: selectedStation.isAvailable ? '#F59E0B' : '#10B981' }} />
+                        <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.3, color: selectedStation.isAvailable ? '#B45309' : '#059669' }}>
+                          {selectedStation.isAvailable ? 'DISPONIBLE' : 'OCUPADA'}
+                        </Typography>
+                      </Stack>
+
+                      <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Información de la estación</Typography>
+                      <Stack spacing={0.75} sx={{ mb: 1.5 }}>
+                        <Box>
+                          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área</Typography>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{area.isProduction ? 'Producción' : '—'}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Tipo</Typography>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Operativo</Typography>
+                        </Box>
+                        <Box>
+                          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Turno</Typography>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{currentOfficialShift.label} ({formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)})</Typography>
+                        </Box>
+                      </Stack>
 
                       {selectedStation.occupants.length > 0 && (
-                        <Stack spacing={1} sx={{ mb: 1.5 }}>
-                          {selectedStation.occupants.map(o => (
-                            <Stack key={o.id} direction="row" spacing={1.25} alignItems="center" onClick={() => setHistoryEmployee(o.employee)} sx={{ cursor: 'pointer' }}>
-                              <EmployeeAvatar employee={o.employee} size={36} />
+                        <>
+                          <Divider sx={{ my: 1.5 }} />
+                          <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Empleado asignado</Typography>
+                          <Stack spacing={1} sx={{ mb: 1.5 }}>
+                            {selectedStation.occupants.map(o => (
+                              <Stack key={o.id} direction="row" spacing={1.25} alignItems="center" onClick={() => setHistoryEmployee(o.employee)} sx={{ cursor: 'pointer' }}>
+                                <EmployeeAvatar employee={o.employee} size={36} />
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{o.employeeNumber} — {o.employee?.name}</Typography>
+                                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Entrada {o.checkInAt}</Typography>
+                                  {selectedStationVisualType && (
+                                    <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: selectedStationVisualType.color, letterSpacing: 0.3 }}>
+                                      {selectedStationVisualType.label.toUpperCase()}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Stack>
+                            ))}
+                          </Stack>
+
+                          {/* Area de origen / Tipo de apoyo -- SOLO para Apoyo/Calidad
+                             (unico caso con algo genuinamente distinto que decir).
+                             Nunca inventado: area de origen = el `role` real de la
+                             estacion (workstation.role), tipo de apoyo = descriptor
+                             fijo de la categoria (no un dato inventado por persona). */}
+                          {selectedStationVisualType?.key === 'APOYO_CALIDAD' && (
+                            <Stack spacing={0.75} sx={{ mb: 1.5 }}>
                               <Box>
-                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{o.employeeNumber} — {o.employee?.name}</Typography>
-                                <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Entrada {o.checkInAt}</Typography>
+                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área de origen</Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedStation.role}</Typography>
+                              </Box>
+                              <Box>
+                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Tipo de apoyo</Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Transversal</Typography>
                               </Box>
                             </Stack>
-                          ))}
-                        </Stack>
+                          )}
+
+                          <Divider sx={{ my: 1.5 }} />
+                          <Stack direction="row" spacing={1}>
+                            <Button
+                              size="small" variant="outlined" startIcon={<HistoryIcon />}
+                              onClick={() => setHistoryEmployee(selectedStation.occupants[0].employee)}
+                              sx={{ textTransform: 'none', fontWeight: 700, flex: 1 }}
+                            >
+                              Ver historial
+                            </Button>
+                            <Button
+                              size="small" variant="contained" startIcon={<SwapHorizIcon />}
+                              onClick={() => setHistoryEmployee(selectedStation.occupants[0].employee)}
+                              sx={{ textTransform: 'none', fontWeight: 700, flex: 1 }}
+                            >
+                              Cambiar asignación
+                            </Button>
+                          </Stack>
+                        </>
                       )}
 
                       {selectedStation.isAvailable && (
@@ -492,12 +619,33 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                   )}
                 </Box>
               </Paper>
+
+              <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
+                <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1.25 }}>Resumen de la línea</Typography>
+                <Stack spacing={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.occupied}</b> estaciones ocupadas</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#F59E0B', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.available}</b> disponibles</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.critical}</b> vacantes críticas</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#DB2777', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 12.5 }}><b>{lineSummary.apoyoCalidad}</b> apoyo / Calidad</Typography>
+                  </Stack>
+                </Stack>
+              </Paper>
             </Grid>
           </Grid>
         ) : (
-          /* Vista simplificada para areas sin estaciones — punto 12 del
-             encargo: personal asignado, zona de soltar, personal
-             disponible. Nunca "Distribucion de estaciones" aqui. */
+          /* Vista simplificada, solo por defensividad -- ver comentario junto
+             a isStationBased arriba. Nunca "Distribucion de estaciones" aqui. */
           <Grid container spacing={2}>
             <Grid item xs={12} md={8.5}>
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
