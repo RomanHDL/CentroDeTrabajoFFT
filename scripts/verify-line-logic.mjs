@@ -276,9 +276,9 @@ check('WC Accesorios: ideal = suma real de CUSTOM_STATION_PLANS.ACCESORIOS (18)'
   assert.equal(workCenterById('ACCESORIOS').idealHeadcount, 18)
   assert.equal(CUSTOM_STATION_PLANS.ACCESORIOS.reduce((s, r) => s + r.count, 0), 18)
 })
-check('WC Paletizado: ideal = suma real de CUSTOM_STATION_PLANS.PALETIZADO (14)', () => {
-  assert.equal(workCenterById('PALETIZADO').idealHeadcount, 14)
-  assert.equal(CUSTOM_STATION_PLANS.PALETIZADO.reduce((s, r) => s + r.count, 0), 14)
+check('WC Paletizado: ideal = suma real de CUSTOM_STATION_PLANS.PALETIZADO (17, ampliado 2026-08-27 para Beckham/Patricia/Roman)', () => {
+  assert.equal(workCenterById('PALETIZADO').idealHeadcount, 17)
+  assert.equal(CUSTOM_STATION_PLANS.PALETIZADO.reduce((s, r) => s + r.count, 0), 17)
 })
 check('puestos con count>1 generan slots individuales numerados desde 1 (Surtidor de Accesorios 1..7)', () => {
   const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
@@ -297,7 +297,7 @@ check('no se duplica el tipo de rol en el catalogo: 7 slots de Surtidor comparte
 })
 check('WC Accesorios/Paletizado/Insumos tienen sus estaciones reales generadas (no un solo slot generico)', () => {
   assert.equal(getWorkstationsForLine('ACCESORIOS').length, 18)
-  assert.equal(getWorkstationsForLine('PALETIZADO').length, 14)
+  assert.equal(getWorkstationsForLine('PALETIZADO').length, 17)
   assert.equal(getWorkstationsForLine('INSUMOS').length, 9)
 })
 check('el picker de estacion se activa por CANTIDAD real de estaciones, no por tipo de area', () => {

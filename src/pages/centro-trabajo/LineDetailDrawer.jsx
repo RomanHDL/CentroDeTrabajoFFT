@@ -46,6 +46,7 @@ import MoveConfirmDialog from './MoveConfirmDialog'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
 import LineStationCard from './LineStationCard'
+import RankLegend from './RankLegend'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import EmployeeAvatar from './EmployeeAvatar'
 import StationAssignDialog from './StationAssignDialog'
@@ -337,6 +338,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                     </Tooltip>
                   </Stack>
                 </Box>
+                {lineLike && <RankLegend />}
                 <Box sx={{
                   p: 2, display: 'grid', gap: 1.25,
                   gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
@@ -347,6 +349,7 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                       workAreaId={canonicalId}
                       workstation={w}
                       selected={selectedStation?.name === w.name}
+                      lineLike={lineLike}
                       onSelect={(ws) => {
                         setSelectedStationName(ws.name)
                         if (ws.isAvailable) setAssignStation(ws)

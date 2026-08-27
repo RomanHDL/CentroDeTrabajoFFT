@@ -7,6 +7,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import { useEmployeeDropTargetStation } from '../../ui/dnd'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
+import { getPersonnelRank } from '../../data/personnel/rankSystem'
 
 /* ─────────────────────────────────────────────
    Tarjeta de estacion para el rediseño de CT LINEA (2026-08-26, a
@@ -24,11 +25,17 @@ import EmployeeAvatar from './EmployeeAvatar'
    estacion podia liberar a alguien por accidente -- inaceptable en una
    herramienta de produccion real. Quitar/mover sigue disponible por la
    tabla ("Quitar") y por el panel lateral (click en el ocupante). */
-export default function LineStationCard({ workAreaId, workstation, selected, onSelect, onEmployeeClick }) {
+export default function LineStationCard({ workAreaId, workstation, selected, onSelect, onEmployeeClick, lineLike = false }) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
+  // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- SOLO
+  // en areas LINE_LIKE (Familia C: Paletizado/Accesorios/Insumos/Midea/Conveyor General). WC
+  // LINEA real nunca pasa lineLike=true, asi que su diseño queda exactamente igual que antes.
+  // Se deriva del `role` REAL de la estacion (nunca del nombre del empleado, ver rankSystem.js)
+  // -- null cuando el puesto no tiene informacion suficiente, nunca se inventa un rango.
+  const rank = lineLike && occupant ? getPersonnelRank(workstation.role) : null
   // 2026-08-26: antes se deshabilitaba el drop si la estacion ya estaba
   // ocupada -- ahora SIEMPRE es zona de suelta (peticion explicita del
   // usuario: arrastrar a alguien al puesto de otra persona debe
@@ -83,10 +90,27 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
               onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
               sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
             >
-              <EmployeeAvatar employee={occupant.employee} size={40} />
+              <Box sx={{ position: 'relative' }}>
+                <EmployeeAvatar employee={occupant.employee} size={40} />
+                {rank && (
+                  <Box sx={{
+                    position: 'absolute', inset: -2, borderRadius: '50%',
+                    border: '2px solid', borderColor: rank.color, pointerEvents: 'none',
+                  }} />
+                )}
+              </Box>
               <Typography sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }} noWrap>
                 {occupant.employee?.name || '—'}
               </Typography>
+              {rank && (
+                <Typography sx={{
+                  fontSize: 8.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3,
+                  px: 0.75, py: 0.15, borderRadius: 5,
+                  bgcolor: alpha(rank.color, d ? 0.22 : 0.12), color: rank.color,
+                }} noWrap>
+                  {rank.label}
+                </Typography>
+              )}
             </Box>
           </DraggablePersonChip>
         ) : (

@@ -179,7 +179,14 @@ export const CUSTOM_STATION_PLANS = {
     { role: 'Operador de Flejadora', count: 1 },
     { role: 'Conveyor', count: 2 },
     { role: 'Ayudante General Conveyor', count: 2 },
-    { role: 'Ayudante General Paletizador', count: 4 },
+    // 7 (antes 4) -- 2026-08-27, a peticion explicita del usuario: Paletizado ya estaba a
+    // plantilla completa (14/14) y necesitaba puesto real para Beckham y Patricia (reubicados
+    // desde WC Calidad, +2). Al investigar se encontro ADEMAS a "Roman" (zona real PALETIZADO
+    // desde el snapshot BASE, activo, jamas reconciliado a un puesto real porque el area ya
+    // estaba llena) -- +1 mas para que tambien tenga puesto real, sin desplazar a nadie. Se
+    // amplia el rol ya existente con mas representacion en el area en vez de inventar un rol
+    // nuevo.
+    { role: 'Ayudante General Paletizador', count: 7 },
     { role: 'Ayudante General Flejado', count: 2 },
     { role: 'Ayudante General Escaneador', count: 2 },
   ],

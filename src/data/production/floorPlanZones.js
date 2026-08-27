@@ -69,8 +69,17 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 // usuario): SOPORTE se quita (archivada, `active:false` -- ya no aparece
 // en el plano). ENTRENADOR se agrega (WC nuevo, mismo trato de card
 // pequeña que el resto de areas de apoyo).
+//
+// CALIDAD se quita 2026-08-27 ("CAMBIO DEFINITIVO — PERSONAL + IDENTIDAD
+// VISUAL POR ÁREA, PUESTO Y RANGO", a peticion explicita del usuario): su
+// personal se reubico (Beckham/Patricia -> Paletizado, el resto -> WC
+// LINEA con personal real) y la card independiente de Calidad ya no debe
+// aparecer en este plano -- el WORK_CENTER CALIDAD sigue existiendo tal
+// cual en el catalogo (no se borra, no se marca active:false: sigue
+// siendo un area real y funcional, solo deja de tener representacion
+// propia aqui, mismo criterio que CONVEYOR/SELLADO arriba).
 export const SUPPORT_CARD_AREA_IDS = [
-  'CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ]
 
 /* Zonas visibles en la imagen sin área de catálogo mapeada con confianza
