@@ -303,22 +303,30 @@ export const WORK_CENTERS = [
      conveyor es fisicamente una sola estructura metalica continua para
      deslizar cajas, sin puestos fijos reales, asi que ya no tiene sentido
      tratarlos como dos plantillas independientes de 1 persona cada una.
-     El plano fisico (OperatingFloorPlan.jsx) SIGUE dibujando dos barras
-     separadas -- el usuario pidio explicitamente dejar eso igual ("lo
-     puedes dejar así") -- pero ambas abren el mismo detalle fusionado.
      CONVEYOR_PRINCIPAL es el id canonico (se renombra el WC, el id real
-     no cambia -- mismo patron que WC Gerente FFT/WC Insumos). Ahora es
+     no cambia -- mismo patron que WC Gerente FFT/WC Insumos). Es
      LINE_LIKE (ver LINE_LIKE_AREA_IDS mas abajo): puestos genericos
-     "Puesto 1"/"Puesto 2" (nunca nombres de rol inventados), cualquiera
-     de los dos puede recibir a cualquier persona -- "que se pueda poner
-     el personal en cualquier ubicación del combeyor". idealHeadcount se
-     mantiene en 1 aqui (el total real, 2, se deriva sumando los dos
-     miembros del grupo via operationalGroupMembers -- nunca se duplica
-     el numero a mano). CONVEYOR_SECUNDARIO queda `active:false` (nunca
-     se borra, tiene WorkArea real con historial en la DB) y su
-     idealHeadcount tambien se conserva sin tocar por la misma razon. */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 1, active: false },
+     "Puesto N" (nunca nombres de rol inventados), cualquiera puede
+     recibir a cualquier persona -- "que se pueda poner el personal en
+     cualquier ubicación del combeyor".
+
+     2026-08-28 ("Corregir diseño y estructura del Conveyor General", a
+     peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
+     YA NO dibuja dos barras separadas -- ahora es UNA sola "CONVEYOR
+     GENERAL", alineada exactamente con las columnas de grid de WC LINEA2..10
+     + WC Midea (ver ConveyorGeneralBar). Como consecuencia visual directa,
+     el usuario pidio explicitamente 4 posiciones reales (no 2) para ese
+     unico bloque -- idealHeadcount de CONVEYOR_PRINCIPAL sube de 1 a 4 (el
+     UNICO numero real ahora; ya no hace falta sumarle nada de Secundario).
+     CONVEYOR_SECUNDARIO sigue `active:false` (nunca se borra, tiene
+     WorkArea real con historial en la DB) y SIGUE en AREA_DETAIL_GROUPS
+     (canonicalOperationalAreaId/navegacion no cambian), pero su
+     idealHeadcount pasa a `null`: ya no debe sumar un puesto fantasma
+     aparte en getGroupAreaStaffing/buildWorkstations (el generador de
+     "Puesto N" y la cobertura ambos leen idealHeadcount de TODOS los
+     miembros del grupo) -- sin este cambio el total quedaria en 5, no 4. */
+  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 4 },
+  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
      dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal

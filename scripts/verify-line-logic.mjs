@@ -228,12 +228,11 @@ check('CONVEYOR_SECUNDARIO (fusionado, archivado) resuelve a LINE_LIKE via su id
 check('SELLADO tambien resuelve a LINE_LIKE (mismo grupo que Conveyor General)', () => {
   assert.equal(getAreaDetailVariant('SELLADO'), AREA_DETAIL_VARIANTS.LINE_LIKE)
 })
-check('WC Conveyor General genera 2 puestos genericos "Puesto N" (1 de Principal + 1 de Secundario, suma via operationalGroupMembers)', () => {
+check('WC Conveyor General genera 4 puestos genericos "Puesto N" (2026-08-28: un solo bloque fusionado, 4 posiciones reales -- Secundario/Sellado ya no suman idealHeadcount fantasma)', () => {
   assert.deepEqual(operationalGroupMembers('CONVEYOR_PRINCIPAL'), ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'])
   const stations = getWorkstationsForLine('CONVEYOR_PRINCIPAL')
-  assert.equal(stations.length, 2)
-  assert.equal(stations[0].name, 'Puesto 1')
-  assert.equal(stations[1].name, 'Puesto 2')
+  assert.equal(stations.length, 4)
+  assert.deepEqual(stations.map((s) => s.name), ['Puesto 1', 'Puesto 2', 'Puesto 3', 'Puesto 4'])
   assert.ok(hasMultipleStations('CONVEYOR_PRINCIPAL'))
 })
 check('WC Conveyor General se renombro (id interno CONVEYOR_PRINCIPAL no cambia)', () => {

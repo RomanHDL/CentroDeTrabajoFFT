@@ -241,11 +241,13 @@ function buildWorkstations() {
       // N se suma sobre TODOS los miembros del grupo fusionado (ver
       // AREA_DETAIL_GROUPS/operationalGroupMembers en catalog.js), no solo
       // wc.idealHeadcount propio -- necesario desde que Conveyor Principal
-      // (1) + Conveyor Secundario (1) se fusionaron en un solo detalle
-      // "WC Conveyor General" con 2 puestos genericos (2026-08-26): sin
-      // esto solo se generaria 1 puesto aunque el ideal combinado real sea
-      // 2. Para areas sin grupo (Midea, Accesorios..) el grupo es solo
-      // [wc.id], asi que el comportamiento no cambia.
+      // y Conveyor Secundario se fusionaron en un solo detalle "WC Conveyor
+      // General" (2026-08-26). 2026-08-28: el unico numero real ahora vive
+      // en CONVEYOR_PRINCIPAL.idealHeadcount (4) -- Secundario/Sellado
+      // quedaron con idealHeadcount:null para no sumar puestos fantasma,
+      // asi que N = 4 puestos "Puesto 1".."Puesto 4". Para areas sin grupo
+      // (Midea, Accesorios..) el grupo es solo [wc.id], asi que el
+      // comportamiento no cambia.
       const total = operationalGroupMembers(wc.id).reduce((sum, id) => sum + (WORK_CENTERS.find((w) => w.id === id)?.idealHeadcount || 0), 0)
       map[wc.id] = Array.from({ length: total }, (_, i) => ({
         id: `${wc.id}-${i + 1}`,

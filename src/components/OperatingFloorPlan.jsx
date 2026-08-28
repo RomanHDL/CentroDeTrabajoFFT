@@ -27,8 +27,11 @@ import {
   getStaffingTotals, getFftPeopleWithLine, getGroupAreaStaffing, getGroupPeople,
 } from '../data/production/personnelByArea'
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS } from '../data/production/floorPlanZones'
+import { getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
+import { getPersonnelRank } from '../data/personnel/rankSystem'
 import { useEmployeeDropTarget } from '../ui/dnd'
 import DraggablePersonChip from '../ui/DraggablePersonChip'
+import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCenter'
 
 /* ─────────────────────────────────────────────
@@ -44,9 +47,15 @@ import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCe
    capacidad del componente por si algun consumidor futuro lo necesita
    de solo lectura, pero hoy ningun caller real lo usa.
 
-   Decisiones explícitas del usuario (2026-08-24):
-   - Los dos conveyors (Principal/Secundario) son SOLO decoración,
-     sin conteo -- prohibido crear cualquier card "WC Conveyor".
+   Decisiones explícitas del usuario (2026-08-24, salvo donde se anota):
+   - 2026-08-28 ("Corregir diseño y estructura del Conveyor General"):
+     la decision de "los dos conveyors son solo decoracion, prohibido
+     crear card" se REVIERTE explicitamente -- ahora existe UN solo
+     bloque real "CONVEYOR GENERAL" (ver ConveyorGeneralBar), con 4
+     posiciones reales (CONVEYOR_PRINCIPAL.idealHeadcount, catalog.js),
+     alineado por CSS Grid con el inicio de WC LINEA 2 y el final de WC
+     Midea / High Value (misma fila del grid que fft/highvalue, ver
+     gridTemplateAreas mas abajo -- nunca un ancho en % calculado a ojo).
    - "WC Sellado" no aparece en este módulo bajo ninguna forma.
    Ver floorPlanZones.js para el detalle completo de estas exclusiones
    y los ajustes de fusion/intercambio de cajas (Paletizado, Insumos+
@@ -288,20 +297,6 @@ function InfoStat({ icon, value, label }) {
 function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
   return (
     <Box ref={floorRef} sx={{ minWidth: 1180 }}>
-      {/* 2026-08-26: ambas barras se fusionaron en un solo detalle "WC
-          Conveyor General" (catalog.js/AREA_DETAIL_GROUPS) -- el usuario
-          pidio explicitamente dejar el plano fisico con las dos barras
-          separadas ("lo puedes dejar así"), asi que SOLO cambia el copy
-          se conserva, pero AMBAS apuntan al id canonico CONVEYOR_PRINCIPAL
-          para click y drag&drop -- sin esto, soltar sobre la barra
-          "SECUNDARIO" asignaria a un area fantasma que ya no tiene su
-          propio grid de estaciones (ver reconcileLineAssignments, que solo
-          reconcilia contra el id canonico). */}
-      <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-        <ConveyorBar label="CONVEYOR PRINCIPAL" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
-        <ConveyorBar label="CONVEYOR SECUNDARIO" areaId="CONVEYOR_PRINCIPAL" onOpenAssign={onOpen} readOnly={readOnly} />
-      </Stack>
-
       <Box
         sx={{
           display: 'grid', gap: 1,
@@ -311,8 +306,15 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              siendo el piso normal de siempre, pero ya nunca es un techo que
              recorte personal en silencio si una caja necesita mas espacio --
              cada lista interna ya tiene su propio scroll (PersonList,
-             overflow:auto), esto es solo una red de seguridad adicional. */
-          gridTemplateRows: 'minmax(250px, auto) minmax(160px, auto)',
+             overflow:auto), esto es solo una red de seguridad adicional.
+             Fila 0 (2026-08-28, "Corregir diseño y estructura del Conveyor
+             General", a peticion explicita del usuario): antes las 2 barras
+             de Conveyor vivian FUERA de este grid (Stack de ancho libre, sin
+             relacion real con las columnas de abajo). Ahora "conveyor" es
+             una fila mas de ESTE MISMO grid -- por eso su alineacion con
+             WC LINEA2..10/WC Midea es exacta incluso si cambia el viewport,
+             nunca un porcentaje calculado a ojo. */
+          gridTemplateRows: 'auto minmax(250px, auto) minmax(160px, auto)',
           /* Fila 2 (2026-08-26, "Reestructuracion operativa FFT", a peticion
              explicita del usuario): antes eran 4 celdas independientes
              (pnp/boxprep/stock/accessories) -- ahora "insumos" (fusion de
@@ -324,13 +326,24 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              extiende "hasta Línea 6"). Las columnas de FFT/highvalue/
              palletizing (fila 1) NO se tocaron -- solo se redistribuyo el
              span interno de la fila 2 sobre las mismas 15 columnas de
-             siempre, sin overlap (verificado: 7+7+1=15). */
+             siempre, sin overlap (verificado: 7+7+1=15).
+             Fila 0 ("conveyor"): "." en columnas 1-2 (WC LINEA 1 + WC LINEA 0,
+             area "paletizado") y en la columna 15 (WC Paletizado, area
+             "palletizing") -- deja el bloque de Conveyor exactamente entre
+             el inicio de "fft" (donde arranca WC LINEA 2, ya que WC LINEA 1
+             se dibuja aparte) y el final de "highvalue" (borde derecho de WC
+             Midea), sin invadir ninguna de las dos, tal como se pidio
+             explicitamente ("desde el borde izquierdo de WC LINEA 2 hasta el
+             borde derecho de WC Midea, justo antes de WC Paletizado"). */
           gridTemplateAreas: `
+            ". . conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor ."
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
+        <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
+
         <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
           <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
           <HorizontalLineBar lineId="PROYECTO" title="WC LINEA 0" onOpen={onOpen} readOnly={readOnly} />
@@ -379,43 +392,100 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
   )
 }
 
-/* Diseño visual SIN CAMBIOS (a peticion explicita del usuario,
-   2026-08-25): misma forma/tamaño/color/texto/posicion que siempre.
-   Lo unico nuevo es la capacidad de administrar personal -- click abre
-   el mismo LineDetailDrawer que ya usa el resto de Centro de Trabajo
-   (reutilizado, no se creo una logica de asignacion paralela) y
-   arrastrar-y-soltar ya funciona con useEmployeeDropTarget (mismo hook
-   que toda la app), con un resaltado suave SOLO mientras se arrastra
-   algo encima (isOver) -- nunca cambia el aspecto en reposo. */
-// 2026-08-26: antes era decoracion pura (solo el label) -- ahora tambien
-// muestra cuantas personas hay HOY en el Conveyor fusionado ("que ahí
-// también se vea los trabajadores que ponga", peticion explicita del
-// usuario), group-aware via operationalGroupMembers (suma Principal +
-// Secundario + Sellado, ver AREA_DETAIL_GROUPS/catalog.js) -- ambas barras
-// muestran el MISMO numero porque son la misma area fusionada.
-function ConveyorBar({ label, areaId, onOpenAssign, readOnly }) {
-  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
-  const staffing = getGroupAreaStaffing(operationalGroupMembers(areaId))
+/* WC Conveyor General -- UN SOLO bloque (2026-08-28, "Corregir diseño y
+   estructura del Conveyor General", a peticion explicita del usuario:
+   reemplaza las 2 barras decorativas "CONVEYOR PRINCIPAL"/"CONVEYOR
+   SECUNDARIO" de antes). Mismo lenguaje visual que BigZone (fondo segun
+   estado, borde superior de color, hover con box-shadow) para no introducir
+   un estilo nuevo, pero MAS compacto (menos padding, sin PersonList de lista
+   larga) porque solo tiene 4 posiciones reales, nunca una lista de personal
+   abierta. click en el bloque O en cualquier posicion abre el mismo detalle
+   real (LineLikeAreaDetail via onOpen, exactamente como el resto de areas
+   LINE_LIKE) -- ninguna logica de asignacion/reasignacion/historial nueva,
+   solo se reutiliza la que ya existe para esa pagina. drag&drop conservado
+   igual que la barra anterior (useEmployeeDropTarget sobre el bloque
+   completo, no por posicion individual -- misma granularidad de antes). */
+function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
+  const stations = getLineWorkstationsWithOccupancy('CONVEYOR_PRINCIPAL')
+  const staffing = getGroupAreaStaffing(operationalGroupMembers('CONVEYOR_PRINCIPAL'))
+  const status = statusFor(staffing.real, staffing.ideal)
+  const color = status ? STATUS_META[status].color : '#94A3B8'
+  const label = staffing.ideal != null
+    ? `${staffing.real} / ${staffing.ideal}`
+    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'CONVEYOR_PRINCIPAL')
+
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={readOnly ? undefined : () => onOpenAssign?.(areaId)}
+      onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       sx={{
-        flex: 1, height: 40, borderRadius: 1, border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'action.hover',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
-        cursor: readOnly ? 'default' : 'pointer', transition: 'all .15s ease',
+        gridArea, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
+        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        transition: 'box-shadow .15s ease, background-color .15s ease',
+        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
-      <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: isOver ? '#3B82F6' : 'text.secondary' }}>
-        {isOver ? 'Soltar aquí' : label}
+      <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.75 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.4 }}>CONVEYOR GENERAL</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+      </Stack>
+      {/* height:'1px' explicito (no `1` numerico) -- sx interpreta un numero
+          <=1 en propiedades de tamaño como PORCENTAJE (sizingTransform de
+          MUI), no como pixeles: con `height:1` esta linea se estiraba a
+          100% de la fila del grid (bug real detectado en la primera
+          verificacion visual, empujaba las 4 posiciones fuera de la caja). */}
+      <Box sx={{ height: '1px', bgcolor: alpha(color, 0.25), mb: 0.85 }} />
+      {/* flexWrap (2026-08-28, a peticion explicita del usuario, Parte 14):
+          desktop, las 4 posiciones caben en una sola fila -- si el bloque
+          se angostara demasiado (tablet), se reparten solas en 2+2 sin dejar
+          de ser UN SOLO contenedor, nunca 4 cards independientes. */}
+      <Stack direction="row" flexWrap="wrap" sx={{ rowGap: 0.75, columnGap: 0.5 }}>
+        {stations.map((w, i) => (
+          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('CONVEYOR_PRINCIPAL')} />
+        ))}
+      </Stack>
+    </Box>
+  )
+}
+
+/* Posicion/nodo compacto (Partes 4-7 del pedido: "NO quiero cuatro cards
+   independientes enormes" -- avatar+nombre+rol+estado en un nodo angosto,
+   nunca una BigZone). Reusa EmployeeAvatar (mismo componente de iniciales/
+   color estable/dashed-si-vacante que ya usan las tarjetas de estacion de
+   Accesorios/Insumos/Paletizado, Parte 16: nunca se inventa un nombre) y
+   getPersonnelRank(station.role) -- exactamente la misma fuente de rango que
+   usa LineStationCard.jsx para el resto de areas LINE_LIKE, sin logica de
+   rango paralela. */
+function ConveyorNode({ index, station, onOpen }) {
+  const occupant = station.occupants[0]?.employee || null
+  const rank = occupant ? getPersonnelRank(station.role) : null
+  const nodeColor = occupant ? '#10B981' : '#F59E0B'
+  return (
+    <Stack
+      onClick={(e) => { e.stopPropagation(); onOpen() }}
+      alignItems="center" spacing={0.15}
+      sx={{
+        flex: '1 1 84px', minWidth: 76, maxWidth: 140, py: 0.5, px: 0.5, borderRadius: 1.5, cursor: 'pointer',
+        border: '1px dashed', borderColor: alpha(nodeColor, 0.4),
+        '&:hover': { bgcolor: (t) => alpha(nodeColor, t.palette.mode === 'dark' ? 0.14 : 0.07) },
+      }}
+    >
+      <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'text.disabled', lineHeight: 1 }}>{index}</Typography>
+      <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
+      <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, mt: 0.15 }} noWrap>
+        {occupant ? occupant.name : 'Vacante'}
       </Typography>
-      {!isOver && (
-        <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.disabled' }}>
-          · {staffing.real}{staffing.ideal != null ? `/${staffing.ideal}` : ''}
+      {rank && (
+        <Typography sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1.1 }} noWrap>
+          {rank.label}
         </Typography>
       )}
-    </Box>
+      <Typography sx={{ fontSize: 8, fontWeight: 800, color: nodeColor, letterSpacing: 0.3 }}>
+        {occupant ? 'OCUPADA' : 'DISPONIBLE'}
+      </Typography>
+    </Stack>
   )
 }
 
