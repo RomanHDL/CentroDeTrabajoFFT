@@ -129,6 +129,17 @@ export default function LineStationCard({ workAreaId, workstation, selected, onS
                   {rank.label}
                 </Typography>
               )}
+              {/* 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
+                  explicita del usuario, "diferenciar rango y funcion"): rango (badge de arriba)
+                  y funcion (workstation.role, el puesto real sin sufijo numerico) son dos datos
+                  distintos -- ahora que el rango casi siempre es "Ayudante General", la funcion
+                  es la unica forma de saber QUE hace realmente esta persona. Nunca reemplaza al
+                  badge de rango, se muestra debajo. */}
+              {rank && workstation.role && (
+                <Typography sx={{ fontSize: 10, color: 'text.secondary', textAlign: 'center', lineHeight: 1.2 }} noWrap>
+                  {workstation.role}
+                </Typography>
+              )}
             </Box>
           </DraggablePersonChip>
         ) : (

@@ -206,17 +206,36 @@ export const CUSTOM_STATION_PLANS = {
   ],
   /* Insumos fusiona PNP/POC/PEN (decorativa, sin WORK_CENTER propio) +
      Box Prep + Suministro de material en un solo WC (ver
-     AREA_DETAIL_GROUPS.INSUMOS mas abajo) -- "Materia Prima/PNP" y
-     "Fusion/Burbuja/Bolsas" (Parte 6-7 del pedido) NO son Work Centers
-     propios, son subprocesos internos: se modelan como parte del NOMBRE
-     de cada rol de Ayudante General (dos slots x2 explicitamente
-     distintos, nunca colapsados en uno solo de x4). */
+     AREA_DETAIL_GROUPS.INSUMOS mas abajo).
+
+     2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
+     explicita del usuario) -- dos correcciones sobre el plan anterior:
+     - "Materia Prima / PNP" baja de 2 a 1 posicion (nunca hubo "PNP 1"/"PNP 2"
+       como puestos separados de verdad, era un solo rol con count:2).
+     - "Fusión / Burbuja / Bolsas" (antes un solo rol generico x2) se separa
+       en 3 puestos reales individuales -- Dry Ice/Burbuja/Bolsas -- porque
+       son 3 funciones distintas, no una sola repetida. "Dry Ice" es el
+       nombre oficial pedido para lo que antes se mostraba como "Fusión"
+       (hielo seco).
+     Si alguien ya ocupaba la posicion 2 de Materia Prima/PNP o cualquier
+     posicion de Fusión/Burbuja/Bolsas, su asignacion real NUNCA se toca --
+     al ya no existir esa estacion en este plan, esa persona aparece sola en
+     "Personal sin estación" (ver getPeopleWithoutStation,
+     personnelByArea.js), nunca se borra ni se mueve.
+
+     Investigado y confirmado con el usuario (2026-08-28): "Materialista"
+     (3) y "Operador de Troqueladora" (1) NO se tocan -- no hay forma de
+     determinar con certeza que sean las otras 2 funciones de un "Grupo A"
+     de Ayudante General sin inventarlo, asi que se dejan exactamente como
+     estaban hasta que el usuario confirme esa reclasificacion aparte. */
   INSUMOS: [
     { role: 'Team Leader', count: 1 },
     { role: 'Materialista', count: 3 },
-    { role: 'Ayudante General — Materia Prima / PNP', count: 2 },
+    { role: 'Ayudante General — Materia Prima / PNP', count: 1 },
     { role: 'Operador de Troqueladora', count: 1 },
-    { role: 'Ayudante General — Fusión / Burbuja / Bolsas', count: 2 },
+    { role: 'Ayudante General — Dry Ice', count: 1 },
+    { role: 'Ayudante General — Burbuja', count: 1 },
+    { role: 'Ayudante General — Bolsas', count: 1 },
   ],
 }
 

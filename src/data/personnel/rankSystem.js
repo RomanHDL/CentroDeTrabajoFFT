@@ -37,9 +37,16 @@ export const PERSONNEL_RANKS = {
   GERENTE_FFT: { key: 'GERENTE_FFT', order: 2, label: 'Gerente FFT', color: '#1E3A8A', iconKey: 'gerente', description: 'Nivel ejecutivo' },
   SUPERVISOR: { key: 'SUPERVISOR', order: 3, label: 'Supervisor', color: '#2563EB', iconKey: 'supervisor', description: 'Supervisión operativa' },
   TEAM_LEADER: { key: 'TEAM_LEADER', order: 4, label: 'Team Leader', color: '#0D9488', iconKey: 'teamLeader', description: 'Liderazgo de equipo' },
-  OPERADOR_ESPECIALIZADO: { key: 'OPERADOR_ESPECIALIZADO', order: 5, label: 'Operador especializado', color: '#D97706', iconKey: 'operador', description: 'Operación técnica/especializada' },
-  AYUDANTE_GENERAL: { key: 'AYUDANTE_GENERAL', order: 6, label: 'Ayudante General', color: '#64748B', iconKey: 'ayudante', description: 'Personal operativo general' },
-  PERSONAL_DE_APOYO: { key: 'PERSONAL_DE_APOYO', order: 7, label: 'Personal de apoyo', color: '#DB2777', iconKey: 'apoyo', description: 'Apoyo transversal desde otra función' },
+  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
+  // usuario): rango propio SOLO para este puesto exacto -- unica excepcion (junto con Team
+  // Leader) al fallback nuevo de abajo (AYUDANTE_GENERAL). Nunca se le asigna a nadie mas.
+  OPERADOR_DE_COMPATIBILIDAD: { key: 'OPERADOR_DE_COMPATIBILIDAD', order: 5, label: 'Operador de Compatibilidad', color: '#D97706', iconKey: 'compatibilidad', description: 'Compatibilidad de producto' },
+  // OPERADOR_ESPECIALIZADO ya no tiene ningun puesto real que lo dispare (ver getPersonnelRank
+  // -- el fallback ahora es AYUDANTE_GENERAL) -- se deja definido por completitud de la leyenda
+  // y compatibilidad hacia atras, igual que ya se hacia con HEAD_CHIEF_AREA/GERENTE_FFT/SUPERVISOR.
+  OPERADOR_ESPECIALIZADO: { key: 'OPERADOR_ESPECIALIZADO', order: 6, label: 'Operador especializado', color: '#EA580C', iconKey: 'operador', description: 'Operación técnica/especializada' },
+  AYUDANTE_GENERAL: { key: 'AYUDANTE_GENERAL', order: 7, label: 'Ayudante General', color: '#64748B', iconKey: 'ayudante', description: 'Personal operativo general' },
+  PERSONAL_DE_APOYO: { key: 'PERSONAL_DE_APOYO', order: 8, label: 'Personal de apoyo', color: '#DB2777', iconKey: 'apoyo', description: 'Apoyo transversal desde otra función' },
 }
 
 /* Orden fijo para la leyenda (Nivel 1 -> Nivel 7). */
@@ -54,7 +61,13 @@ const EXACT_ROLE_TO_RANK = {
   // linea -- si algun dia una area LINE_LIKE llega a tener un puesto literal "Calidad" (ej.
   // alguien de Calidad reubicado ahi conserva ese rol real), se identifica como apoyo aqui, sin
   // rastrear que la persona "viene de Calidad" -- es el ROL actual el que decide, nunca el origen.
+  // Fuera de alcance de la "CORRECCIÓN DE PUESTOS" 2026-08-28: esa peticion solo nombro Team
+  // Leader/Operador de Compatibilidad como excepciones -- Calidad ya tenia su propio rango
+  // dedicado de una tarea anterior explicita, no se toca sin que el usuario lo pida.
   'Calidad': PERSONNEL_RANKS.PERSONAL_DE_APOYO,
+  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
+  // usuario): segunda excepcion al fallback AYUDANTE_GENERAL de abajo.
+  'Operador de Compatibilidad': PERSONNEL_RANKS.OPERADOR_DE_COMPATIBILIDAD,
 }
 
 /* Puestos genericos sin nombre oficial todavia (ver LINE_LIKE_AREA_IDS en
@@ -73,8 +86,12 @@ export function getPersonnelRank(role) {
   const trimmed = role.trim()
   if (EXACT_ROLE_TO_RANK[trimmed]) return EXACT_ROLE_TO_RANK[trimmed]
   if (/^ayudante general/i.test(trimmed)) return PERSONNEL_RANKS.AYUDANTE_GENERAL
-  // Cualquier otro puesto real y especifico (Operador de X, Materialista, Surtidor de
-  // Accesorios, Controles, Armar Bases, Conveyor, Tornillería, Cables, ...) es una tarea
-  // tecnica/especializada nombrada -- entra en Operador especializado.
-  return PERSONNEL_RANKS.OPERADOR_ESPECIALIZADO
+  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
+  // usuario, "quiero simplificar la clasificacion"): CUALQUIER otro puesto real y especifico
+  // (Materialista, Surtidor de Accesorios, Controles, Armar Bases, Conveyor, Tornillería,
+  // Cables, Dry Ice, Burbuja, Bolsas, ...) ahora es AYUDANTE_GENERAL -- el nombre exacto del
+  // puesto (workstation.role) sigue disponible aparte como "función" (ver LineStationCard.jsx),
+  // nunca se pierde esa informacion, solo cambia el RANGO mostrado. Antes caia en
+  // OPERADOR_ESPECIALIZADO (ver arriba, rango que se deja definido mas nunca disparado).
+  return PERSONNEL_RANKS.AYUDANTE_GENERAL
 }

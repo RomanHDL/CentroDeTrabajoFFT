@@ -39,9 +39,16 @@ export default function LineStationConfigDrawer({ open, onClose, lineId, areaNam
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
+  // usuario): eliminar un puesto ya NO se bloquea por ocupacion -- si tenia gente real, pasa a
+  // "Personal sin estación" dentro de esta misma línea (getPeopleWithoutStation,
+  // personnelByArea.js), nunca se pierde. En vez de bloquear, se avisa con los ocupantes REALES
+  // tomados de `workstations` (el mismo prop que ya trae occupants desde localStorage, la fuente
+  // que de verdad ve el usuario en pantalla -- nunca una consulta nueva a Postgres).
+  const [confirmTarget, setConfirmTarget] = useState(null)
 
   useEffect(() => {
-    if (!open) { setCreating(false); setEditingDbId(null); setForm(EMPTY_FORM); setError('') }
+    if (!open) { setCreating(false); setEditingDbId(null); setForm(EMPTY_FORM); setError(''); setConfirmTarget(null) }
   }, [open])
 
   useEffect(() => {
@@ -115,13 +122,16 @@ export default function LineStationConfigDrawer({ open, onClose, lineId, areaNam
     }
   }
 
-  async function handleDeactivate(w) {
+  function requestDeactivate(w) {
     setError('')
-    if (w.occupants?.length > 0) {
-      setError('No se puede eliminar este puesto porque actualmente tiene personal asignado. Reasígnalo primero desde el tablero.')
-      return
-    }
+    setConfirmTarget(w)
+  }
+
+  async function confirmDeactivate() {
+    const w = confirmTarget
+    setConfirmTarget(null)
     setBusy(true)
+    setError('')
     try {
       await deactivateLineStation(lineId, w.id)
       onChanged?.()
@@ -164,7 +174,42 @@ export default function LineStationConfigDrawer({ open, onClose, lineId, areaNam
       <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
         {error && <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError('')}>{error}</Alert>}
 
-        {!formOpen && (
+        {confirmTarget && (
+          <Stack spacing={1.5}>
+            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>Eliminar "{confirmTarget.name}"</Typography>
+            {confirmTarget.occupants?.length > 0 ? (
+              <Alert severity="warning">
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 0.5 }}>
+                  Este puesto tiene a {confirmTarget.occupants.length === 1 ? '1 persona asignada' : `${confirmTarget.occupants.length} personas asignadas`}:
+                </Typography>
+                <Stack spacing={0.25} sx={{ mb: 0.75 }}>
+                  {confirmTarget.occupants.map((o) => (
+                    <Typography key={o.id} sx={{ fontSize: 12.5 }}>• {o.employee?.name || 'Empleado'}</Typography>
+                  ))}
+                </Stack>
+                <Typography sx={{ fontSize: 12.5 }}>
+                  Al eliminar este puesto, {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a <b>Personal sin estación</b> dentro
+                  de esta línea, sin perder su asignación real ni su historial.
+                </Typography>
+              </Alert>
+            ) : (
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                Este puesto está disponible, no tiene personal asignado.
+              </Typography>
+            )}
+            <Divider />
+            <Stack direction="row" spacing={1}>
+              <Button fullWidth variant="outlined" onClick={() => setConfirmTarget(null)} disabled={busy} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                Cancelar
+              </Button>
+              <Button fullWidth variant="contained" color="error" disabled={busy} onClick={confirmDeactivate} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                Eliminar puesto
+              </Button>
+            </Stack>
+          </Stack>
+        )}
+
+        {!formOpen && !confirmTarget && (
           <>
             <Stack spacing={1} sx={{ mb: 2 }}>
               {sorted.map((w, i) => (
@@ -184,7 +229,7 @@ export default function LineStationConfigDrawer({ open, onClose, lineId, areaNam
                       <IconButton size="small" disabled={i === 0 || busy} onClick={() => moveStation(i, -1)}><ArrowUpwardIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" disabled={i === sorted.length - 1 || busy} onClick={() => moveStation(i, 1)}><ArrowDownwardIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" onClick={() => startEdit(w)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
-                      <IconButton size="small" color="error" disabled={w.occupants?.length > 0} onClick={() => handleDeactivate(w)}>
+                      <IconButton size="small" color="error" onClick={() => requestDeactivate(w)}>
                         <DeleteIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Stack>

@@ -268,6 +268,26 @@ export function getEffectiveTodayRoster() {
   return [...real, ...synthetic].sort((a, b) => ((a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1))
 }
 
+/* 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
+   explicita del usuario): "PERSONAL SIN ESTACIÓN" -- gente que ya cuenta
+   como asignada a esta WC (misma fuente que la tabla "Personal asignado
+   hoy", getEffectiveTodayRoster) pero cuyo stationId real ya NO coincide
+   con ninguna estacion activa actual (porque esa estacion se elimino/
+   renombro por una correccion de configuracion, ej. "Montaje 2" o "Team
+   Leader" dejaron de existir) -- o que nunca tuvo estacion (snapshot sin
+   reconciliar). Es 100% DERIVADO: nunca escribe/mueve/borra ninguna
+   asignacion real, EmployeeMovement o DailyAssignment -- solo compara el
+   `stationId` que YA tiene guardado contra la lista de nombres de
+   estacion REALES de hoy. El dia que alguien de esta lista se reasigne
+   por el flujo normal (StationAssignDialog/mover), su stationId cambia y
+   deja de aparecer aqui solo, sin ningun codigo especial. */
+export function getPeopleWithoutStation(memberIds, workstations) {
+  const stationNames = new Set((workstations || []).map((w) => w.name))
+  return getEffectiveTodayRoster()
+    .filter((r) => memberIds.includes(r.areaId))
+    .filter((r) => !r.stationId || !stationNames.has(r.stationId))
+}
+
 /* "Personal sin area asignada" (Centro de Trabajo) y "Personal disponible"
    (WC LINEA/areas operativas) son -- 2026-08-28, BUG REAL encontrado y
    corregido a peticion explicita del usuario -- EXACTAMENTE el mismo

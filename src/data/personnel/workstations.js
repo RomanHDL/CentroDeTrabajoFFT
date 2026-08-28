@@ -98,13 +98,25 @@ export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza', 'Eti
 export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza']
 
 /* Configuracion explicita por linea (Parte "CONFIGURACION DE PUESTOS
-   REPETIDOS" del pedido: "Si existe una configuracion guardada por
-   linea, usala. Si no existe, crea una estructura clara para
-   soportarla"). Vacio hoy -- ninguna linea tiene todavia una
-   distribucion recomendada distinta a la regla generica de arriba;
-   agregar `{ LINEA6: { repeatOrder: [...] } }` aqui basta para que esa
-   linea use su propio orden sin tocar el resto de este archivo. */
-export const LINE_STATION_OVERRIDES = {}
+   REPETIDOS" del pedido original: "Si existe una configuracion guardada
+   por linea, usala. Si no existe, crea una estructura clara para
+   soportarla").
+
+   2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
+   explicita del usuario): WC LINEA 2..10 (WC LINEA 0 y 1 quedan EXENTAS,
+   instruccion explicita) ya no deben repetir "Montaje" ni "Suministro de
+   Accesorios" -- si el idealHeadcount de la linea necesita mas posiciones
+   de las que dan los 5 roles base, se completan repitiendo unicamente
+   Etiquetado/Prueba eléctrica/Limpieza. Si alguna de estas 9 lineas ya
+   tenia una segunda posicion real ocupada de Montaje, esa persona no se
+   pierde: al dejar de existir esa estacion en el plan, aparece sola en
+   "Personal sin estación" (getPeopleWithoutStation, personnelByArea.js). */
+const LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO = ['LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
+const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Prueba eléctrica', 'Limpieza']
+
+export const LINE_STATION_OVERRIDES = Object.fromEntries(
+  LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [lineId, { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO }])
+)
 
 /* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para
    una linea real -- separado de la generacion de `Workstation` de abajo

@@ -34,8 +34,9 @@ import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT, getCurrentShift, workCenterById, LINE_FAMILY_AREA_IDS, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
 import {
   getPeopleByArea, getAreaStaffing, classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster,
-  getGroupAreaStaffing, getGroupPeople, getActividadForEmployee,
+  getGroupAreaStaffing, getGroupPeople, getActividadForEmployee, getPeopleWithoutStation,
 } from '../../data/production/personnelByArea'
+import PersonSearchIcon from '@mui/icons-material/PersonSearch'
 import {
   getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
 } from '../../data/personnel/repository'
@@ -315,6 +316,15 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
     () => (memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []),
     [workCenterId, version]
   )
+  // "PERSONAL SIN ESTACIÓN" (2026-08-28, "CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a
+  // peticion explicita del usuario) -- 100% derivado, ver getPeopleWithoutStation
+  // (personnelByArea.js): nunca escribe nada, solo compara contra `workstations` (la lista real
+  // actual). Si una estacion se elimina/renombra (ej. Team Leader/Montaje 2 en esta correccion),
+  // quien la ocupaba aparece aqui, sin perderse.
+  const peopleWithoutStation = useMemo(
+    () => (memberIds.length ? getPeopleWithoutStation(memberIds, workstations) : []),
+    [memberIds, workstations]
+  )
 
   if (!area || !staffing) return null
 
@@ -498,6 +508,37 @@ export default function LineDetailDrawer({ workCenterId, open, onClose, previous
                   ))}
                 </Box>
               </Paper>
+
+              {peopleWithoutStation.length > 0 && (
+                <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
+                  <Box sx={ps.cardHeader}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={ps.cardHeaderTitle}>Personal sin estación ({peopleWithoutStation.length})</Typography>
+                      <Typography sx={ps.cardHeaderSubtitle}>Siguen asignados a esta línea, pero su puesto ya no existe en la configuración actual</Typography>
+                    </Box>
+                  </Box>
+                  <Stack spacing={1} sx={{ p: 2 }}>
+                    {peopleWithoutStation.map((r) => (
+                      <Stack key={r.id} direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <EmployeeAvatar employee={r.employee} size={36} />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: 13 }} noWrap>{r.employee?.name || '—'}</Typography>
+                          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }} noWrap>
+                            {r.stationId ? `Antes: ${r.stationId}` : 'Sin puesto registrado hoy'}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small" variant="outlined" startIcon={<PersonSearchIcon sx={{ fontSize: 16 }} />}
+                          onClick={() => setMoveTarget({ employee: r.employee, currentAssignment: r })}
+                          sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+                        >
+                          Asignar a estación
+                        </Button>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
 
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
                 <Box sx={ps.cardHeader}>

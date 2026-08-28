@@ -8,6 +8,7 @@ import GroupsIcon from '@mui/icons-material/Groups'
 import SettingsIcon from '@mui/icons-material/Settings'
 import PersonIcon from '@mui/icons-material/Person'
 import FavoriteIcon from '@mui/icons-material/Favorite'
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import { alpha } from '@mui/material/styles'
 import { PERSONNEL_RANK_ORDER } from '../../data/personnel/rankSystem'
 
@@ -24,6 +25,7 @@ export const RANK_ICONS = {
   gerente: StarIcon,
   supervisor: VerifiedUserIcon,
   teamLeader: GroupsIcon,
+  compatibilidad: CompareArrowsIcon,
   operador: SettingsIcon,
   ayudante: PersonIcon,
   apoyo: FavoriteIcon,

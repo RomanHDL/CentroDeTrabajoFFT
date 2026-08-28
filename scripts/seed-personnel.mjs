@@ -23,7 +23,7 @@
 //   filas del snapshot (ninguna fila sin numero es indistinguible de otra por este criterio), asi
 //   que este script se puede correr varias veces sin duplicar personal.
 import { prisma } from '../server-lib/prisma.js'
-import { WORK_CENTERS, LINE_FAMILY_AREA_IDS } from '../src/data/production/catalog.js'
+import { WORK_CENTERS } from '../src/data/production/catalog.js'
 import { getWorkstationsForLine } from '../src/data/personnel/workstations.js'
 import { REAL_PERSONNEL_SNAPSHOT } from '../src/data/production/realPersonnelSnapshot.js'
 import { ROLE_TO_CATEGORY_KEY } from '../src/data/personnel/lineVisualType.js'
@@ -79,30 +79,14 @@ for (let i = 0; i < WORK_CENTERS.length; i += 1) {
     workstationCount += 1
   }
 
-  // Puesto "Team Leader" en cada WC LINEA 0..10 (LINE_FAMILY_AREA_IDS) --
-  // posicion inicial (displayOrder 0, antes de Calidad), SIN ocupante hasta
-  // que un ADMINISTRADOR/SUPERVISOR asigne a alguien real por el flujo de
-  // asignacion existente (checkInEmployee/moveEmployee, sin cambios).
-  if (LINE_FAMILY_AREA_IDS.has(wc.id)) {
-    await prisma.workstation.upsert({
-      where: { workAreaId_name: { workAreaId: workArea.id, name: 'Team Leader' } },
-      create: {
-        workAreaId: workArea.id,
-        name: 'Team Leader',
-        capacity: 1,
-        displayOrder: 0,
-        role: 'Team Leader',
-        requiredRoleLabel: 'Team Leader',
-        category: 'LIDERAZGO',
-      },
-      update: {
-        role: 'Team Leader',
-        requiredRoleLabel: 'Team Leader',
-        category: 'LIDERAZGO',
-      },
-    })
-    workstationCount += 1
-  }
+  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
+  // explicita del usuario): WC LINEA 0-10 YA NO tiene el puesto "Team
+  // Leader" como estacion -- antes este bloque lo sembraba aqui (vacio,
+  // 2026-08-27). Los lideres siguen existiendo como personas/rango real,
+  // solo dejaron de tener una estacion artificial en la linea. La
+  // migracion real (desactivar las 11 filas ya sembradas antes) se hace
+  // aparte, ver scripts/migrate-estaciones-2026-08-28.mjs -- este bloque
+  // simplemente ya no vuelve a crearlo.
 }
 
 for (const p of REAL_PERSONNEL_SNAPSHOT) {

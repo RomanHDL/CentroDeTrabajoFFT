@@ -5,9 +5,20 @@
 //
 // IMPORTANTE (ver nota en src/data/personnel/workstations.js): `name` es la clave real que ya usan
 // DailyAssignment/EmployeeMovement/EmployeeSkill para resolver una estacion (no `id`). Por eso
-// renombrar o reducir la capacidad de un puesto con personal ACTIVE asignado esta bloqueado aqui
-// -- nunca se deja huerfano un historial real. Desactivar (soft-delete, `active:false`) sigue la
-// misma regla: nunca se permite si hay alguien asignado hoy.
+// renombrar o reducir la capacidad de un puesto con personal ACTIVE asignado sigue bloqueado aqui.
+//
+// 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del usuario):
+// DESACTIVAR (soft-delete) un puesto YA NO se bloquea por ocupacion. Investigado: la ocupacion que
+// este archivo consulta (DailyAssignment en Postgres) es un espejo de sincronizacion en segundo
+// plano (apiSync.js) de lo que en realidad ve/usa la app (localStorage, repository.js) -- no es la
+// fuente confiable para decidir si alguien "se pierde". Con getPeopleWithoutStation
+// (personnelByArea.js) ya no hace falta bloquear: si el puesto desaparece y alguien lo ocupaba,
+// esa persona simplemente deja de encontrar una estacion real y aparece en "Personal sin estación"
+// dentro de su misma WC -- su asignacion real (localStorage/DailyAssignment/EmployeeMovement)
+// nunca se toca, nunca se borra, nunca se mueve sola. El aviso al ADMINISTRADOR (con el nombre real
+// de a quien afecta) se muestra en el cliente ANTES de llamar a este endpoint
+// (LineStationConfigDrawer.jsx), usando los datos que ya tiene en pantalla (localStorage), no una
+// segunda consulta a Postgres.
 import { prisma } from './prisma.js'
 
 export async function resolveWorkArea(codeOrId) {
@@ -97,12 +108,6 @@ export async function updateWorkstation(id, { name, requiredRoleLabel, category,
 }
 
 export async function deactivateWorkstation(id) {
-  const occupied = await activeOccupancy(id)
-  if (occupied > 0) {
-    const err = new Error('No se puede eliminar este puesto porque actualmente tiene personal asignado.')
-    err.code = 'OCCUPIED'
-    throw err
-  }
   return prisma.workstation.update({ where: { id }, data: { active: false } })
 }
 
