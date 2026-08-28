@@ -29,7 +29,7 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, getCurrentShift, workCenterById, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
+import { CURRENT_SHIFT, getCurrentShift, workCenterById, canonicalOperationalAreaId, operationalGroupMembers, AREA_STATION_SOURCE_OVERRIDE } from '../../data/production/catalog'
 import {
   classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster, getGroupAreaStaffing, getGroupPeople,
   getPeopleWithoutStation,
@@ -156,13 +156,45 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   const canonicalId = workCenterId ? canonicalOperationalAreaId(workCenterId) : null
   const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
   const area = canonicalId ? workCenterById(canonicalId) : null
-  const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
+
+  // "Vista filtrada sobre otra area real" (2026-08-28, "corrección navegación Conveyor
+  // General", a peticion explicita del usuario) -- ver AREA_STATION_SOURCE_OVERRIDE
+  // (catalog.js). Cuando aplica (hoy solo CONVEYOR_PRINCIPAL), `dataAreaId` es de donde
+  // salen/se escriben los datos REALES (Paletizado) mientras `area`/el titulo de arriba
+  // siguen siendo los de `canonicalId` (Conveyor General) -- nunca se crea una WorkArea/
+  // Workstation/DailyAssignment nueva, "una sola fuente real de asignación".
+  const stationSource = canonicalId ? AREA_STATION_SOURCE_OVERRIDE[canonicalId] : null
+  const dataAreaId = stationSource ? stationSource.sourceAreaId : canonicalId
+
+  const allSourceWorkstations = useMemo(
+    () => (dataAreaId ? getLineWorkstationsWithOccupancy(dataAreaId) : []),
+    [dataAreaId, version]
+  )
+  const workstations = useMemo(() => {
+    if (!stationSource) return allSourceWorkstations
+    // Renumera `order` 1..N sobre el subconjunto filtrado (solo para mostrar "Posición X
+    // de Y" correctamente aqui) -- nunca toca displayOrder real de Paletizado.
+    return allSourceWorkstations
+      .filter((w) => stationSource.roles.includes(w.role))
+      .map((w, i) => ({ ...w, order: i + 1 }))
+  }, [allSourceWorkstations, stationSource])
+
+  const staffing = useMemo(() => {
+    if (stationSource) {
+      const real = workstations.filter((w) => w.occupants.length > 0).length
+      const ideal = workstations.length
+      return { ideal, real, diff: real - ideal, status: real >= ideal ? 'COMPLETA' : 'FALTAN' }
+    }
+    return memberIds.length ? getGroupAreaStaffing(memberIds) : null
+  }, [stationSource, workstations, memberIds, version])
   const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
-  const workstations = useMemo(() => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []), [canonicalId, version])
-  const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
+  const people = useMemo(() => {
+    if (stationSource) return workstations.flatMap((w) => w.occupants.map((o) => o.employee).filter(Boolean))
+    return memberIds.length ? getGroupPeople(memberIds) : []
+  }, [stationSource, workstations, memberIds, version])
   const stationGroups = useMemo(() => groupStationsByRank(workstations), [workstations])
   const summaryGroups = useMemo(() => stationGroups.map((g) => ({
     key: g.rank ? g.rank.key : '__SIN_CLASIFICAR__',
@@ -173,7 +205,11 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   })), [stationGroups])
 
   useEffect(() => {
-    if (!open || !canonicalId) return
+    // reconcileLineAssignments es para "corregir asignaciones huerfanas dentro de MI PROPIA
+    // area real" -- no aplica a una vista filtrada (stationSource) que ni siquiera tiene
+    // puestos propios: correrlo aqui no haria nada util (memberIds no tiene roster real) y
+    // podria confundirse con logica que le corresponde a la pantalla real de Paletizado.
+    if (!open || !canonicalId || stationSource) return
     const ids = memberIds
       .flatMap((id) => getGroupPeople([id]))
       .slice()
@@ -181,7 +217,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
       .map(p => p.id)
     reconcileLineAssignments(canonicalId, ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canonicalId, open])
+  }, [canonicalId, open, stationSource])
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null
@@ -193,21 +229,28 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   const selectedStationRank = selectedStation ? getPersonnelRank(selectedStation.role) : null
 
   const suggestions = useMemo(() => {
-    if (!canonicalId || !selectedStation || selectedStation.occupants.length > 0) return []
-    return getSuggestedCandidates(canonicalId, selectedStation.name, { includeAbsent })
-  }, [canonicalId, selectedStation, includeAbsent, version])
+    if (!dataAreaId || !selectedStation || selectedStation.occupants.length > 0) return []
+    return getSuggestedCandidates(dataAreaId, selectedStation.name, { includeAbsent })
+  }, [dataAreaId, selectedStation, includeAbsent, version])
 
-  const roster = useMemo(
-    () => (memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []),
-    [workCenterId, version]
-  )
+  const roster = useMemo(() => {
+    // Vista filtrada: el roster real de Paletizado usa areaId='PALETIZADO' (nunca
+    // 'CONVEYOR_PRINCIPAL'), asi que memberIds.includes(r.areaId) nunca encontraria a
+    // nadie -- se arma directamente desde los 2 puestos ya filtrados (misma fuente real,
+    // solo otra forma de leerla). source:'REGISTRO' explicito: son asignaciones reales,
+    // nunca sinteticas (isReal/"Quitar" de la tabla dependen de ese campo).
+    if (stationSource) return workstations.flatMap((w) => w.occupants.map((o) => ({ ...o, source: 'REGISTRO' })))
+    return memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []
+  }, [stationSource, workstations, memberIds, version])
   // "PERSONAL SIN ESTACIÓN" (2026-08-28, "CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a
   // peticion explicita del usuario) -- 100% derivado, ver getPeopleWithoutStation
   // (personnelByArea.js): nunca escribe nada, solo compara contra `workstations` (la lista real
   // actual). Si una estacion se elimina/renombra, quien la ocupaba aparece aqui, sin perderse.
+  // No aplica a una vista filtrada (stationSource): "sin estación" compararia contra solo 2
+  // puestos de las 18 reales de Paletizado y mostraria a casi todo el mundo por error.
   const peopleWithoutStation = useMemo(
-    () => (memberIds.length ? getPeopleWithoutStation(memberIds, workstations) : []),
-    [memberIds, workstations]
+    () => (stationSource ? [] : (memberIds.length ? getPeopleWithoutStation(memberIds, workstations) : [])),
+    [stationSource, memberIds, workstations]
   )
 
   if (!area || !staffing) return null
@@ -218,7 +261,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
       const res = checkInEmployee({
         employeeId: candidate.employee.id,
         employeeNumber: candidate.employee.employeeNumber,
-        areaId: canonicalId,
+        areaId: dataAreaId,
         stationId: selectedStation.name,
         shift: CURRENT_SHIFT,
       })
@@ -227,7 +270,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
       setMoveTarget({
         employee: candidate.employee,
         currentAssignment: candidate.assignment,
-        presetTo: { areaId: canonicalId, stationId: selectedStation.name },
+        presetTo: { areaId: dataAreaId, stationId: selectedStation.name },
       })
     }
   }
@@ -350,7 +393,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
         </Paper>
 
         <Box sx={{ mb: 3, maxWidth: 480 }}>
-          <EmployeeAssignSearchBar areaId={canonicalId} />
+          <EmployeeAssignSearchBar areaId={dataAreaId} />
         </Box>
 
         {actionError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>{actionError}</Alert>}
@@ -410,7 +453,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                           {group.stations.map((w) => (
                             <LeadershipRow
                               key={w.id}
-                              workAreaId={canonicalId}
+                              workAreaId={dataAreaId}
                               workstation={w}
                               rank={group.rank}
                               selected={selectedStation?.name === w.name}
@@ -430,7 +473,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                           {group.stations.map((w) => (
                             <LineStationCard
                               key={w.id}
-                              workAreaId={canonicalId}
+                              workAreaId={dataAreaId}
                               workstation={w}
                               selected={selectedStation?.name === w.name}
                               lineLike
@@ -561,7 +604,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
             </Paper>
 
             <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-              <AvailablePersonnelTray scopedAreaId={canonicalId} title="Personal disponible" />
+              <AvailablePersonnelTray scopedAreaId={dataAreaId} title="Personal disponible" />
             </Paper>
           </Grid>
 
@@ -732,14 +775,14 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
       <StationAssignDialog
         open={Boolean(assignStation)}
         onClose={() => setAssignStation(null)}
-        areaId={canonicalId}
+        areaId={dataAreaId}
         station={assignStation}
         onDone={() => {}}
       />
-      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
-      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
+      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={dataAreaId} onDone={() => {}} />
+      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={dataAreaId} onDone={() => {}} />
       <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />
-      <LineHistoryDialog lineId={canonicalId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
+      <LineHistoryDialog lineId={dataAreaId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
       {moveTarget && (
         <MoveConfirmDialog
           open={Boolean(moveTarget)}

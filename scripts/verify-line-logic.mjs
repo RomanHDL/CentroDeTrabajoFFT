@@ -13,7 +13,7 @@ import {
   getCurrentShift, getShiftSchedule, formatShiftSchedule,
   getAreaDetailVariant, AREA_DETAIL_VARIANTS, OPERATIONAL_DETAIL_AREA_IDS, SUPPORT_DETAIL_AREA_IDS,
   CUSTOM_STATION_PLANS, workCenterById, isWorkCenterActive, canonicalOperationalAreaId, operationalGroupMembers,
-  FFT_INDICATORS,
+  FFT_INDICATORS, AREA_STATION_SOURCE_OVERRIDE,
 } from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 import { ROLE_TO_CATEGORY_KEY, LINE_VISUAL_TYPES } from '../src/data/personnel/lineVisualType.js'
@@ -139,23 +139,26 @@ check('WC LINEA 1 -> anterior = WC LINEA 0, siguiente = WC LINEA 2', () => {
   assert.equal(ctx.previous.id, 'PROYECTO')
   assert.equal(ctx.next.id, 'LINEA2')
 })
-check('WC LINEA 10 -> siguiente = WC Midea/High Value (2026-08-28: Conveyor General ya no es parada propia, fusionado en Paletizado)', () => {
+check('WC LINEA 10 -> siguiente = WC Conveyor General (2026-08-28, "corrección navegación Conveyor General": vuelve a ser parada propia)', () => {
   const ctx = getWorkCenterNavContext('LINEA10')
+  assert.equal(ctx.next.id, 'CONVEYOR_PRINCIPAL')
+})
+check('WC Conveyor General -> siguiente = WC Midea/High Value', () => {
+  const ctx = getWorkCenterNavContext('CONVEYOR_PRINCIPAL')
   assert.equal(ctx.next.id, 'HIGH_VALUE')
 })
-check('CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO nunca aparecen en el recorrido (fusionados en WC Paletizado, 2026-08-28)', () => {
-  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_PRINCIPAL'))
+check('CONVEYOR_SECUNDARIO nunca aparece en el recorrido (fusionado en WC Conveyor General)', () => {
   assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_SECUNDARIO'))
+  assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_PRINCIPAL'))
 })
 check('el ultimo Work Center del recorrido no tiene siguiente (navegacion lineal, nunca circular)', () => {
   const lastId = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
   const ctx = getWorkCenterNavContext(lastId)
   assert.equal(ctx.next, null)
 })
-check('SELLADO/CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO resuelven su navegacion a traves de su id canonico (WC Paletizado, 2026-08-28)', () => {
-  assert.equal(getWorkCenterNavContext('SELLADO').current.id, 'PALETIZADO')
-  assert.equal(getWorkCenterNavContext('CONVEYOR_PRINCIPAL').current.id, 'PALETIZADO')
-  assert.equal(getWorkCenterNavContext('CONVEYOR_SECUNDARIO').current.id, 'PALETIZADO')
+check('SELLADO resuelve su navegacion a traves de su id canonico (WC Conveyor General, 2026-08-28: vuelve a ser su propio canonico, ya no Paletizado)', () => {
+  assert.equal(getWorkCenterNavContext('SELLADO').current.id, 'CONVEYOR_PRINCIPAL')
+  assert.equal(getWorkCenterNavContext('CONVEYOR_SECUNDARIO').current.id, 'CONVEYOR_PRINCIPAL')
 })
 check('recorrido completo: 0..10 + el resto de areas reales, sin huecos ni saltos rotos', () => {
   for (let i = 0; i < WORK_CENTER_NAVIGATION_ORDER.length - 1; i += 1) {
@@ -247,29 +250,32 @@ check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
   })
 })
-check('CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO/SELLADO (2026-08-28, "ajustes controlados") resuelven a LINE_LIKE via su id canonico (PALETIZADO) -- ya NO tienen detalle propio', () => {
-  ;['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'].forEach((id) => {
+check('CONVEYOR_PRINCIPAL (2026-08-28, "corrección navegación Conveyor General") vuelve a ser su PROPIO canonico, activo, variante LINE_LIKE -- ya NO resuelve a Paletizado', () => {
+  assert.equal(getAreaDetailVariant('CONVEYOR_PRINCIPAL'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+  assert.equal(canonicalOperationalAreaId('CONVEYOR_PRINCIPAL'), 'CONVEYOR_PRINCIPAL')
+  assert.equal(isWorkCenterActive('CONVEYOR_PRINCIPAL'), true)
+  assert.equal(workCenterById('CONVEYOR_PRINCIPAL').idealHeadcount, null, 'idealHeadcount se queda null a proposito -- evita doble conteo en getStaffingTotals/SHOWN_AREA_IDS')
+  ;['CONVEYOR_SECUNDARIO', 'SELLADO'].forEach((id) => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
-    assert.equal(canonicalOperationalAreaId(id), 'PALETIZADO', id)
+    assert.equal(canonicalOperationalAreaId(id), 'CONVEYOR_PRINCIPAL', id)
   })
-  // OPERATIONAL_DETAIL_AREA_IDS se excluye explicitamente solo para CONVEYOR_PRINCIPAL/
-  // CONVEYOR_SECUNDARIO (mismo patron ya usado) -- SELLADO nunca estuvo en esa exclusion
-  // (pre-existente, inofensivo: getAreaDetailVariant resuelve LINE_LIKE primero de todos modos).
   assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_PRINCIPAL'))
   assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_SECUNDARIO'))
-  assert.equal(isWorkCenterActive('CONVEYOR_PRINCIPAL'), false)
   assert.equal(isWorkCenterActive('CONVEYOR_SECUNDARIO'), false)
 })
-check('WC Paletizado tiene exactamente 2 puestos "Ayudante General de Conveyor" (2026-08-28: Conveyor General consolidado ahi, ya no un WC aparte de 4 puestos genericos)', () => {
-  assert.deepEqual(operationalGroupMembers('PALETIZADO'), ['PALETIZADO', 'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'])
+check('WC Paletizado sigue teniendo exactamente 2 puestos "Ayudante General de Conveyor" en su propia distribución (fuente real, sin cambio)', () => {
+  assert.deepEqual(operationalGroupMembers('PALETIZADO'), ['PALETIZADO'])
   const stations = getWorkstationsForLine('PALETIZADO').filter((s) => s.role === 'Ayudante General de Conveyor')
   assert.equal(stations.length, 2)
   assert.deepEqual(stations.map((s) => s.name), ['Ayudante General de Conveyor 1', 'Ayudante General de Conveyor 2'])
   assert.ok(!getWorkstationsForLine('PALETIZADO').some((s) => s.role === 'Conveyor'), 'el rol generico "Conveyor" ya no debe existir')
 })
-check('WC Conveyor General sigue resolviendo por su id interno (para historial), pero sin puestos/idealHeadcount propios', () => {
+check('AREA_STATION_SOURCE_OVERRIDE: WC Conveyor General lee sus 2 puestos reales DESDE Paletizado (vista filtrada, una sola fuente real, sin WorkArea/Workstation propia)', () => {
+  assert.deepEqual(AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL, { sourceAreaId: 'PALETIZADO', roles: ['Ayudante General de Conveyor'] })
+  assert.deepEqual(getWorkstationsForLine('CONVEYOR_PRINCIPAL'), [], 'CONVEYOR_PRINCIPAL no genera puestos propios -- la UI los lee de Paletizado via el override')
+})
+check('WC Conveyor General sigue resolviendo por su id interno (para historial)', () => {
   assert.equal(workCenterById('CONVEYOR_PRINCIPAL').name, 'WC Conveyor General')
-  assert.equal(workCenterById('CONVEYOR_PRINCIPAL').idealHeadcount, null)
 })
 check('Accesorios/Paletizado/Insumos -> variante LINE_LIKE (2026-08-26, segunda ronda: "copia el diseño de WC LINEA")', () => {
   ;['ACCESORIOS', 'PALETIZADO', 'INSUMOS'].forEach((id) => {

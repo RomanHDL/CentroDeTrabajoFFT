@@ -21,7 +21,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
-import { workCenterById, WORK_CENTERS, canonicalOperationalAreaId, operationalGroupMembers } from '../data/production/catalog'
+import { workCenterById, WORK_CENTERS, canonicalOperationalAreaId, operationalGroupMembers, AREA_STATION_SOURCE_OVERRIDE } from '../data/production/catalog'
 import {
   getAreaHeadcount, getAreaStaffing, getPeopleByArea, hasAnyPersonnelToday,
   getStaffingTotals, getFftPeopleWithLine, getGroupAreaStaffing, getGroupPeople,
@@ -99,6 +99,12 @@ function statusText(status, staffing) {
 // fusionadas (BOX_PREP/SUMINISTRO_MATERIAL, canonico=INSUMOS) se quedan,
 // su personal real sigue siendo personal real, solo ahora conceptualmente
 // pertenece a Insumos (mismo criterio que getStaffingTotals()).
+// CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO/SELLADO se excluyen SIEMPRE de
+// aqui, sin importar su `active` (2026-08-28, "corrección navegación
+// Conveyor General": CONVEYOR_PRINCIPAL volvio a `active:true` pero sus 2
+// puestos reales siguen viviendo en Paletizado -- getAreaHeadcount('PALETIZADO')
+// ya los cuenta; si tambien se sumara getAreaHeadcount('CONVEYOR_PRINCIPAL')
+// aqui se duplicarian en el total "N personas" del encabezado).
 const SHOWN_AREA_IDS = WORK_CENTERS
   .filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO')
   .filter((w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id)
@@ -400,35 +406,37 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
    un estilo nuevo, pero MAS compacto (menos padding, sin PersonList de lista
    larga).
 
-   2026-08-28 ("ajustes controlados", segunda ronda, a peticion explicita del
-   usuario -- "Conveyor General SOLO TIENE 2 PERSONAS... pertenecen
-   operativamente a Paletizado"): esta barra YA NO tiene su propio WORK_AREA/
-   idealHeadcount independiente (CONVEYOR_PRINCIPAL se archivo, ver
-   catalog.js) -- ahora lee EXACTAMENTE los 2 puestos reales "Ayudante
-   General de Conveyor" que viven dentro de CUSTOM_STATION_PLANS.PALETIZADO,
-   filtrando getLineWorkstationsWithOccupancy('PALETIZADO') por ese `role`.
-   Mismos datos que ya muestra el detalle completo de WC Paletizado -- nunca
-   un conteo aparte, nunca doble conteo. click en el bloque O en cualquier
-   posicion abre el detalle real de WC Paletizado (LineLikeAreaDetail via
-   onOpen('PALETIZADO'), exactamente como el resto de areas LINE_LIKE) --
-   ninguna logica de asignacion/reasignacion/historial nueva. drag&drop
-   conservado igual que antes (useEmployeeDropTarget sobre el bloque
-   completo, apuntando a PALETIZADO). */
+   2026-08-28 ("corrección navegación Conveyor General", tercera ronda, a
+   peticion explicita del usuario -- CORRIGE un bug reportado, NO la decision
+   de fondo de la ronda anterior): esta barra sigue leyendo EXACTAMENTE los 2
+   puestos reales "Ayudante General de Conveyor" que viven dentro de
+   CUSTOM_STATION_PLANS.PALETIZADO (AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL,
+   catalog.js -- misma fuente que usa el header del bloque abajo, nunca
+   hardcodeada dos veces) -- eso NO cambio, sigue siendo "una sola fuente
+   real de asignación", nunca doble conteo. Lo que SI cambio: click en el
+   bloque O en cualquier posicion ahora abre CONVEYOR_PRINCIPAL (su propia
+   pantalla de detalle, LineLikeAreaDetail via onOpen -- ver
+   AREA_STATION_SOURCE_OVERRIDE en ese componente para como lee los mismos 2
+   puestos desde Paletizado), NO WC Paletizado completo -- bug reportado por
+   el usuario ("me manda incorrectamente a WC Paletizado"). drag&drop sigue
+   escribiendo en el area real (Paletizado, via el mismo override) -- eso
+   tampoco cambio. */
 const CONVEYOR_ROLE = 'Ayudante General de Conveyor'
+const CONVEYOR_SOURCE_AREA_ID = AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL.sourceAreaId
 
 function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
-  const stations = getLineWorkstationsWithOccupancy('PALETIZADO').filter((w) => w.role === CONVEYOR_ROLE)
+  const stations = getLineWorkstationsWithOccupancy(CONVEYOR_SOURCE_AREA_ID).filter((w) => w.role === CONVEYOR_ROLE)
   const real = stations.filter((w) => w.occupants.length > 0).length
   const ideal = stations.length
   const status = statusFor(real, ideal)
   const color = status ? STATUS_META[status].color : '#94A3B8'
   const label = `${real} / ${ideal}`
-  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'PALETIZADO')
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : CONVEYOR_SOURCE_AREA_ID)
 
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={() => onOpen('PALETIZADO')}
+      onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       sx={{
         gridArea, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
         border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
@@ -459,7 +467,7 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
           franja limpia, no como una card a medio llenar. */}
       <Stack direction="row" flexWrap="wrap" justifyContent="center" sx={{ rowGap: 0.75, columnGap: 1.5 }}>
         {stations.map((w, i) => (
-          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('PALETIZADO')} />
+          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('CONVEYOR_PRINCIPAL')} />
         ))}
       </Stack>
     </Box>

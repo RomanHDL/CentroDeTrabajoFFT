@@ -346,29 +346,42 @@ export const WORK_CENTERS = [
      plano fisico dejo de dibujar dos barras separadas, paso a UNA sola
      "CONVEYOR GENERAL" ancha con 4 posiciones propias (idealHeadcount 4).
 
-     2026-08-28 ("ajustes controlados", segunda ronda, a peticion explicita
-     del usuario -- REEMPLAZA la decision anterior): "Conveyor General SOLO
-     TIENE 2 PERSONAS... pertenecen operativamente a Paletizado". Investigado
-     en vivo: existian 4 personas reales distintas ligadas a "conveyor" (1 en
-     este WC independiente + 3 en CUSTOM_STATION_PLANS.PALETIZADO, que YA
-     tenia sus propios puestos "Conveyor"/"Ayudante General Conveyor" desde
-     antes) -- confirmado con el usuario: los 2 puestos reales y definitivos
-     son "Ayudante General de Conveyor" DENTRO de Paletizado (ver
-     CUSTOM_STATION_PLANS.PALETIZADO mas arriba), no un WORK_AREA aparte.
-     CONVEYOR_PRINCIPAL deja de tener puestos/idealHeadcount propios
-     (`null`) y se archiva (`active:false`) -- igual que CONVEYOR_SECUNDARIO/
-     SELLADO, nunca se borra (WorkArea real con historial en la DB). Se
-     fusiona en el grupo de detalle de PALETIZADO (ver AREA_DETAIL_GROUPS
-     mas abajo, ya NO es su propio grupo canonico) para que cualquier
-     asignacion real historica ligada a estos 3 ids (incluida la persona que
-     ocupaba el antiguo "Puesto 1" de este WC) siga siendo visible/
-     reasignable como "Personal sin estación" de Paletizado, nunca invisible
-     ni perdida. La card ancha "CONVEYOR GENERAL" del plano fisico
-     (OperatingFloorPlan.jsx/ConveyorGeneralBar) ahora lee EXACTAMENTE los 2
-     puestos "Ayudante General de Conveyor" de Paletizado -- mismos datos que
-     ya muestra el detalle de WC Paletizado, nunca un conteo aparte (Parte
-     "NO doble conteo" del pedido). */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
+     2026-08-28 ("ajustes controlados", segunda ronda): "Conveyor General
+     SOLO TIENE 2 PERSONAS... pertenecen operativamente a Paletizado".
+     Investigado en vivo: existian 4 personas reales distintas ligadas a
+     "conveyor" (1 en este WC independiente + 3 en
+     CUSTOM_STATION_PLANS.PALETIZADO, que YA tenia sus propios puestos
+     "Conveyor"/"Ayudante General Conveyor" desde antes) -- confirmado con
+     el usuario: los 2 puestos reales y definitivos son "Ayudante General
+     de Conveyor" DENTRO de Paletizado (ver CUSTOM_STATION_PLANS.PALETIZADO
+     mas arriba). En esa ronda CONVEYOR_PRINCIPAL se archivo y se fusiono
+     en el grupo de PALETIZADO (mismo canonico) -- efecto colateral NO
+     deseado (reportado por el usuario, tercera ronda): el click en la
+     card "CONVEYOR GENERAL" del plano fisico terminaba abriendo la
+     pantalla COMPLETA de WC Paletizado (18 puestos), no una pantalla
+     propia de Conveyor.
+
+     2026-08-28 ("corrección navegación Conveyor General", tercera ronda,
+     a peticion explicita del usuario -- CORRIGE el efecto colateral de
+     arriba, NO la decision de fondo): CONVEYOR_PRINCIPAL vuelve a ser
+     `active:true` y su PROPIO grupo canonico (ver AREA_DETAIL_GROUPS mas
+     abajo, ya NO es miembro de PALETIZADO) -- asi tiene su propia parada
+     de navegacion Anterior/Siguiente y su propia pantalla de detalle
+     (AreaDetail.jsx sigue resolviendo LINE_LIKE igual que antes). PERO
+     `idealHeadcount` se queda en `null` a proposito (nunca vuelve a sumar
+     un numero aparte en getStaffingTotals/SHOWN_AREA_IDS -- ver
+     personnelByArea.js/OperatingFloorPlan.jsx, evita el doble conteo que
+     pidio evitar el usuario) y sus 2 puestos reales NO se generan aqui:
+     siguen siendo, fisica y literalmente, los mismos 2 "Ayudante General
+     de Conveyor" de CUSTOM_STATION_PLANS.PALETIZADO -- cero WorkArea
+     nueva, cero DailyAssignment nuevo, "una sola fuente real de
+     asignación" (peticion explicita). AREA_STATION_SOURCE_OVERRIDE (mas
+     abajo) es lo que le dice a LineLikeAreaDetail.jsx que, al mostrar
+     CONVEYOR_PRINCIPAL, lea (y escriba) esos 2 puestos DESDE Paletizado,
+     filtrados por rol -- una VISTA, nunca una copia. WC Paletizado sigue
+     mostrando esos mismos 2 puestos dentro de su propia distribucion
+     completa exactamente igual que antes (sin cambio ahi). */
+  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
   { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
@@ -519,24 +532,27 @@ export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
    con historial), solo quedan `active:false` y su personal/plantilla se
    suma en el detalle de INSUMOS via operationalGroupMembers.
 
-   2026-08-28 ("ajustes controlados", a peticion explicita del usuario):
-   CONVEYOR_PRINCIPAL deja de ser su propio canonico -- se fusiona (junto
-   con CONVEYOR_SECUNDARIO y SELLADO, que ya viajaban con el) dentro del
-   grupo de PALETIZADO. Esto es lo que hace que cualquier persona cuyo
-   roster real todavia tenga areaId='CONVEYOR_PRINCIPAL' (ej. quien
-   ocupaba el antiguo "Puesto 1" del Conveyor independiente) aparezca
-   automaticamente en "Personal sin estación" del detalle de WC Paletizado
-   (getPeopleWithoutStation ya filtra por operationalGroupMembers) -- sin
-   esto quedaria invisible en la UI aunque su DailyAssignment real siga
-   intacto en la base de datos. */
+   2026-08-28 ("corrección navegación Conveyor General", tercera ronda, a
+   peticion explicita del usuario -- REVIERTE el cambio anterior de esta
+   misma tarea): CONVEYOR_PRINCIPAL vuelve a ser su PROPIO canonico
+   (SELLADO/CONVEYOR_SECUNDARIO vuelven a fusionarse con el, no con
+   PALETIZADO) para que tenga su propia parada de navegacion y su propia
+   pantalla de detalle -- el usuario reporto que fusionarlo dentro de
+   PALETIZADO hacia que el click en "CONVEYOR GENERAL" abriera por error
+   la pantalla completa de Paletizado. Sus 2 puestos reales SIGUEN
+   viviendo fisicamente en Paletizado (CUSTOM_STATION_PLANS.PALETIZADO,
+   "Ayudante General de Conveyor") -- eso NO cambia, "una sola fuente real
+   de asignación" sigue siendo Paletizado; ver AREA_STATION_SOURCE_OVERRIDE
+   mas abajo, que es lo que le dice a LineLikeAreaDetail.jsx de donde leer
+   esos 2 puestos cuando se muestra CONVEYOR_PRINCIPAL. */
 export const AREA_DETAIL_GROUPS = {
-  PALETIZADO: ['PALETIZADO', 'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'],
+  CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'],
   INSUMOS: ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'],
 }
 
-/* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO/
-   CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO siempre resuelven a PALETIZADO,
-   cualquier otro id se devuelve tal cual (no pertenece a ningun grupo). */
+/* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO
+   siempre resuelve a CONVEYOR_PRINCIPAL, cualquier otro id se devuelve
+   tal cual (no pertenece a ningun grupo). */
 export function canonicalOperationalAreaId(workCenterId) {
   const entry = Object.entries(AREA_DETAIL_GROUPS).find(([, members]) => members.includes(workCenterId))
   return entry ? entry[0] : workCenterId
@@ -552,6 +568,25 @@ export function operationalGroupMembers(workCenterId) {
 
 export function usesOperationalDetail(workCenterId) {
   return OPERATIONAL_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))
+}
+
+/* "Vista filtrada sobre otra area real" (2026-08-28, "corrección
+   navegación Conveyor General", a peticion explicita del usuario) --
+   distinto de AREA_DETAIL_GROUPS (que SUMA la plantilla/personal de
+   varias areas fusionadas en un area canonica comun). Aqui es lo
+   contrario: `workCenterId` (ej. CONVEYOR_PRINCIPAL) sigue siendo su
+   PROPIO canonico (su propia pantalla/parada de navegacion), pero sus
+   puestos reales no viven en su propia WorkArea -- viven, literal y
+   fisicamente, en `sourceAreaId`, filtrados por `roles`. LineLikeAreaDetail.jsx
+   es el UNICO consumidor: cuando el area mostrada tiene una entrada aqui,
+   lee (y escribe) los puestos reales usando `sourceAreaId` en vez de su
+   propio id, filtra la lista a esos `roles`, y renumera el orden mostrado
+   -- nunca crea una WorkArea/Workstation/DailyAssignment nueva. "Una sola
+   fuente real de asignación" (peticion explicita del usuario): Paletizado
+   sigue siendo la unica fuente para estos 2 puestos, Conveyor General es
+   solo su propia VENTANA hacia ellos. */
+export const AREA_STATION_SOURCE_OVERRIDE = {
+  CONVEYOR_PRINCIPAL: { sourceAreaId: 'PALETIZADO', roles: ['Ayudante General de Conveyor'] },
 }
 
 /* Orden central de navegacion Anterior/Siguiente entre TODOS los Work
@@ -570,14 +605,14 @@ export function usesOperationalDetail(workCenterId) {
    ids a mano en otro lado, solo se referencia WORK_CENTERS.
 
    SELLADO se excluye a proposito: no tiene detalle propio, cualquier
-   click sobre ella resuelve a PALETIZADO (AREA_DETAIL_GROUPS arriba) --
-   incluirla aqui crearia una parada duplicada/inalcanzable.
-   CONVEYOR_SECUNDARIO (2026-08-26) se excluye por la misma razon desde
-   que se fusiono en el grupo de detalle -- ademas queda `active:false`,
-   asi que el .filter final de abajo ya lo habria quitado igual (doble red
-   de seguridad). CONVEYOR_PRINCIPAL (2026-08-28, "ajustes controlados") se
-   quita de aqui por la MISMA razon -- dejo de tener detalle propio, ahora
-   resuelve a PALETIZADO, y tambien queda `active:false`.
+   click sobre ella resuelve a CONVEYOR_PRINCIPAL (AREA_DETAIL_GROUPS
+   arriba) -- incluirla aqui crearia una parada duplicada/inalcanzable.
+   CONVEYOR_SECUNDARIO se excluye por la misma razon -- ademas queda
+   `active:false`, asi que el .filter final de abajo ya lo habria quitado
+   igual (doble red de seguridad). CONVEYOR_PRINCIPAL (2026-08-28,
+   "corrección navegación Conveyor General", tercera ronda) SI vuelve a
+   estar aqui -- recupera su propia parada de navegacion Anterior/
+   Siguiente (antes de HIGH_VALUE, misma posicion de siempre).
    "PNP / POC / PEN" tampoco tiene WORK_CENTER real (decoracion en
    floorPlanZones.js/REFERENCE_ONLY_ZONES) -- nunca se inventa un id
    para poder navegar a algo que no existe. "WC LINEA 11" no existe hoy
@@ -598,6 +633,7 @@ export function usesOperationalDetail(workCenterId) {
 export const WORK_CENTER_NAVIGATION_ORDER = [
   'PROYECTO',
   ...LINES_ONLY.map((w) => w.id),
+  'CONVEYOR_PRINCIPAL',
   'HIGH_VALUE', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS', 'CALIDAD',
   'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ].filter((id) => isWorkCenterActive(id) && WORK_CENTERS.some((w) => w.id === id))
@@ -670,12 +706,13 @@ export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PR
    suelto en WORK_CENTERS) para que agregar otra area LINE_LIKE en el
    futuro sea un solo id agregado aqui.
 
-   CONVEYOR_PRINCIPAL (2026-08-28, "ajustes controlados", a peticion
-   explicita del usuario) YA NO esta aqui -- dejo de tener puestos propios,
-   se fusiono dentro de PALETIZADO (ver AREA_DETAIL_GROUPS): su detalle
-   ahora resuelve, por canonicalOperationalAreaId, directamente a
-   PALETIZADO (que SI esta en este Set), sin necesitar su propia entrada. */
-export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'])
+   CONVEYOR_PRINCIPAL (2026-08-28, "corrección navegación Conveyor
+   General", tercera ronda) vuelve a estar aqui -- vuelve a ser su propio
+   canonico (AREA_DETAIL_GROUPS), asi que necesita su propia entrada para
+   que getAreaDetailVariant siga resolviendo LINE_LIKE (misma pantalla
+   LineLikeAreaDetail.jsx de siempre, ahora mostrando una vista filtrada
+   sobre Paletizado -- ver AREA_STATION_SOURCE_OVERRIDE). */
+export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'])
 
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
   ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),
