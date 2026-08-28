@@ -432,8 +432,11 @@ export const WORK_CENTERS = [
   { id: 'LIMPIEZA', name: 'WC Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
   /* GERENTE (2026-08-26, a peticion explicita del usuario): solo cambia el
      `name` mostrado a "WC Gerente FFT" -- el id interno NO se toca (mismo
-     criterio de siempre: renombrar visual nunca reescribe el id real). */
-  { id: 'GERENTE', name: 'WC Gerente FFT', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+     criterio de siempre: renombrar visual nunca reescribe el id real).
+     2026-08-28 (a peticion explicita del usuario): segundo rename visual,
+     mismo criterio -- "WC Gerente FFT" -> "WC Coordinador de Almacén". El
+     id interno GERENTE sigue igual (historial/asignaciones intactos). */
+  { id: 'GERENTE', name: 'WC Coordinador de Almacén', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
   { id: 'SUPERVISOR', name: 'WC Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
 ]
 

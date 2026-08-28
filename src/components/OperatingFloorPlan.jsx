@@ -51,11 +51,16 @@ import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCe
    - 2026-08-28 ("Corregir diseño y estructura del Conveyor General"):
      la decision de "los dos conveyors son solo decoracion, prohibido
      crear card" se REVIERTE explicitamente -- ahora existe UN solo
-     bloque real "CONVEYOR GENERAL" (ver ConveyorGeneralBar), con 4
-     posiciones reales (CONVEYOR_PRINCIPAL.idealHeadcount, catalog.js),
-     alineado por CSS Grid con el inicio de WC LINEA 2 y el final de WC
-     Midea / High Value (misma fila del grid que fft/highvalue, ver
+     bloque real "CONVEYOR GENERAL" (ver ConveyorGeneralBar), con sus 2
+     puestos reales ("Ayudante General de Conveyor", ver
+     AREA_STATION_SOURCE_OVERRIDE en catalog.js -- viven fisicamente en
+     WC Paletizado, esto es solo una VENTANA hacia ellos). Alineado por
+     CSS Grid (misma fila del grid que fft/highvalue/palletizing, ver
      gridTemplateAreas mas abajo -- nunca un ancho en % calculado a ojo).
+     2026-08-28, segunda correccion: pasa de "inicio de WC LINEA 2 -- fin
+     de WC Midea" a "de extremo a extremo" (columna 1 a 15 completas,
+     inicio de WC LINEA 1 -- fin de WC Paletizado), a peticion explicita
+     del usuario.
    - "WC Sellado" no aparece en este módulo bajo ninguna forma.
    Ver floorPlanZones.js para el detalle completo de estas exclusiones
    y los ajustes de fusion/intercambio de cajas (Paletizado, Insumos+
@@ -333,16 +338,19 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              palletizing (fila 1) NO se tocaron -- solo se redistribuyo el
              span interno de la fila 2 sobre las mismas 15 columnas de
              siempre, sin overlap (verificado: 7+7+1=15).
-             Fila 0 ("conveyor"): "." en columnas 1-2 (WC LINEA 1 + WC LINEA 0,
-             area "paletizado") y en la columna 15 (WC Paletizado, area
-             "palletizing") -- deja el bloque de Conveyor exactamente entre
-             el inicio de "fft" (donde arranca WC LINEA 2, ya que WC LINEA 1
-             se dibuja aparte) y el final de "highvalue" (borde derecho de WC
-             Midea), sin invadir ninguna de las dos, tal como se pidio
-             explicitamente ("desde el borde izquierdo de WC LINEA 2 hasta el
-             borde derecho de WC Midea, justo antes de WC Paletizado"). */
+             Fila 0 ("conveyor", 2026-08-28, segunda correccion, a peticion
+             explicita del usuario -- "de extremo a extremo... que empiece
+             desde WC LINEA 1 y termine en WC Paletizado"): ocupa las 15
+             columnas completas -- desde la columna 1 (donde arranca el area
+             "paletizado", que dibuja WC LINEA 1 arriba de WC LINEA 0) hasta
+             la columna 15 (area "palletizing", WC Paletizado). Antes dejaba
+             "." en columnas 1-2 y 15 para no invadir esas dos cards; ahora
+             las cubre por completo (edge-to-edge del grid), a peticion
+             explicita del usuario -- las cards de abajo (fila 1/2) no
+             cambian de posicion/tamaño, el Conveyor solo pasa por ENCIMA de
+             ellas en su propia fila. */
           gridTemplateAreas: `
-            ". . conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor ."
+            "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor"
             "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,

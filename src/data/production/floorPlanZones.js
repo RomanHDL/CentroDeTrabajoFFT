@@ -78,8 +78,12 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 // cual en el catalogo (no se borra, no se marca active:false: sigue
 // siendo un area real y funcional, solo deja de tener representacion
 // propia aqui, mismo criterio que CONVEYOR/SELLADO arriba).
+// 2026-08-28 (a peticion explicita del usuario, "cambiar de ubicacion WC
+// Gerente FFT [ahora WC Coordinador de Almacén] a WC Supervisor y
+// viceversa"): se intercambian solo las posiciones de estos 2 ids -- las
+// otras 4 cards no se mueven.
 export const SUPPORT_CARD_AREA_IDS = [
-  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'SUPERVISOR', 'GERENTE',
 ]
 
 /* Zonas visibles en la imagen sin área de catálogo mapeada con confianza

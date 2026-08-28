@@ -116,7 +116,7 @@ const AREA_SLOTS = [
   { id: 'TEAM_LEADER', name: 'WC Team Leader', subtitle: 'Liderazgo', icon: <SupervisorAccountIcon />, colorAreaId: 'TEAM_LEADER' },
   { id: 'ENTRENADOR', name: 'WC Entrenador', subtitle: 'Entrenamiento', icon: <SupportAgentIcon />, colorAreaId: 'ENTRENADOR' },
   { id: 'LIMPIEZA', name: 'WC Limpieza', subtitle: 'Limpieza', icon: <CleaningServicesIcon />, colorAreaId: 'LIMPIEZA' },
-  { id: 'GERENTE', name: 'WC Gerente FFT', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
+  { id: 'GERENTE', name: 'WC Coordinador de Almacén', subtitle: 'Gerencia', icon: <PersonIcon />, colorAreaId: 'GERENTE' },
   { id: 'SUPERVISOR', name: 'WC Supervisor', subtitle: 'Supervisión', icon: <AssignmentIndIcon />, colorAreaId: 'SUPERVISOR' },
 ]
 

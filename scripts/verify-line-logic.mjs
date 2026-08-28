@@ -17,6 +17,7 @@ import {
 } from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 import { ROLE_TO_CATEGORY_KEY, LINE_VISUAL_TYPES } from '../src/data/personnel/lineVisualType.js'
+import { SUPPORT_CARD_AREA_IDS } from '../src/data/production/floorPlanZones.js'
 
 let passed = 0
 function check(name, fn) {
@@ -375,8 +376,11 @@ check('WC Entrenador existe, activo, clasificado SUPPORT, y aparece en la navega
   assert.equal(getAreaDetailVariant('ENTRENADOR'), AREA_DETAIL_VARIANTS.SUPPORT)
   assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('ENTRENADOR'))
 })
-check('WC Gerente ahora se muestra "WC Gerente FFT", mismo id interno (GERENTE)', () => {
-  assert.equal(workCenterById('GERENTE').name, 'WC Gerente FFT')
+check('WC Gerente ahora se muestra "WC Coordinador de Almacén" (2026-08-28, segundo rename), mismo id interno (GERENTE)', () => {
+  assert.equal(workCenterById('GERENTE').name, 'WC Coordinador de Almacén')
+})
+check('las 6 cards de soporte intercambiaron GERENTE <-> SUPERVISOR de posición (2026-08-28, a peticion explicita del usuario)', () => {
+  assert.deepEqual(SUPPORT_CARD_AREA_IDS, ['CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'SUPERVISOR', 'GERENTE'])
 })
 check('operationalGroupMembers(INSUMOS) suma Box Prep + Suministro de material + Insumos', () => {
   assert.deepEqual(operationalGroupMembers('INSUMOS'), ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'])
