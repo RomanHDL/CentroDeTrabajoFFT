@@ -73,10 +73,17 @@ import { getCachedLineStationConfig } from './lineStationConfig'
 /* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
    de presentacion, la compatibilidad de habilidades sigue usando
    el nombre de estacion (role base, sin sufijo) como vocabulario. */
+// "Limpieza" -> "Limpieza de TV" (2026-08-28, "ajustes controlados", a
+// peticion explicita del usuario) -- SOLO dentro de WC LINEA 0-10 (este
+// archivo es exclusivo de esa familia; WC Limpieza, el area de soporte
+// aparte, vive en catalog.js/WORK_CENTERS y no se toca). Es un rename
+// puro del string identidad del rol/puesto (nunca convierte el rango a
+// Ayudante General -- "Limpieza de TV" es una de las excepciones
+// explicitas de la normalizacion, ver rankSystem.js/lineVisualType.js).
 const ROLE_LABELS = {
   'Montaje': 'Operador de Montaje',
   'Prueba eléctrica': 'Técnico eléctrico',
-  'Limpieza': 'Auxiliar de Limpieza',
+  'Limpieza de TV': 'Auxiliar de Limpieza',
   'Etiquetado': 'Etiquetador',
   'Suministro de Accesorios': 'Auxiliar de Accesorios',
   'Empaque': 'Empacador',
@@ -88,14 +95,14 @@ const ROLE_LABELS = {
 /* Los 5 roles base reales de una CT LINEA (Parte "REGLA MAS IMPORTANTE"
    del pedido, 2026-08-26) -- orden = orden de aparicion en la
    distribucion cuando NO hay repeticiones. */
-export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza', 'Etiquetado', 'Suministro de Accesorios']
+export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza de TV', 'Etiquetado', 'Suministro de Accesorios']
 
 /* Orden en que se repiten roles cuando idealHeadcount > 5 (min 6, max 10
    personas por linea) -- POR DEFECTO para cualquier linea sin
    configuracion propia. Con el maximo real (10, extra=5) cada rol se
    repite exactamente una vez -- nunca hace falta una 3a vez del mismo
    rol, asi que nunca hay que desambiguar mas alla de "Rol"/"Rol 2". */
-export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza']
+export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza de TV']
 
 /* Configuracion explicita por linea (Parte "CONFIGURACION DE PUESTOS
    REPETIDOS" del pedido original: "Si existe una configuracion guardada
@@ -112,11 +119,38 @@ export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica
    pierde: al dejar de existir esa estacion en el plan, aparece sola en
    "Personal sin estación" (getPeopleWithoutStation, personnelByArea.js). */
 const LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO = ['LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
-const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Prueba eléctrica', 'Limpieza']
+const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Prueba eléctrica', 'Limpieza de TV']
 
-export const LINE_STATION_OVERRIDES = Object.fromEntries(
-  LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [lineId, { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO }])
-)
+export const LINE_STATION_OVERRIDES = {
+  ...Object.fromEntries(
+    LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [lineId, { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO }])
+  ),
+  // LINEA1 (2026-08-28, "ajustes controlados", a peticion explicita del
+  // usuario -- "debe existir solamente 1 Montaje" / "1 Etiquetado"): a
+  // diferencia de LINEA2-10 (excluyen Montaje/Suministro pero SI dejan
+  // repetir Etiquetado), aqui se excluyen Montaje Y Etiquetado -- el plan
+  // base nunca baja de 6 posiciones (piso ya existente), asi que sigue
+  // quedando 1 posicion repetida, pero cae en "Prueba eléctrica 2", nunca
+  // en Montaje/Etiquetado.
+  LINEA1: { repeatOrder: ['Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza de TV'] },
+}
+
+/* Empaque en WC LINEA 0-10 (2026-08-28, "ajustes controlados", a peticion
+   explicita del usuario) -- mismo patron ya probado con Calidad: puesto(s)
+   REAL(es) adicional(es), FUERA del plan de 5 roles base/repeticion
+   (buildLineRolePlan), nunca compitiendo por esas posiciones. Cantidad fija
+   por linea (regla definitiva dada explicitamente): 2 en LINEA 0 y 1, 1 en
+   LINEA 2..10. WORK_CENTERS.idealHeadcount de cada linea sube exactamente
+   este numero (ver catalog.js) -- LINEA1 incluida (8 -> 9): el piso de 6
+   posiciones del plan base (ver LINE_STATION_OVERRIDES.LINEA1 arriba)
+   deja 1 posicion repetida que ya no puede ser Montaje/Etiquetado, asi
+   que el total real no baja lo suficiente para "absorber" las 2 de
+   Empaque sin subir idealHeadcount -- subirlo es lo que mantiene
+   sincronizados "Dotación ideal" y la cantidad real de estaciones. */
+export const EMPAQUE_COUNT_BY_LINE = {
+  PROYECTO: 2, LINEA1: 2,
+  LINEA2: 1, LINEA3: 1, LINEA4: 1, LINEA5: 1, LINEA6: 1, LINEA7: 1, LINEA8: 1, LINEA9: 1, LINEA10: 1,
+}
 
 /* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para
    una linea real -- separado de la generacion de `Workstation` de abajo
@@ -185,7 +219,16 @@ function buildWorkstations() {
       // deben ir primero"): Calidad ahora es la POSICION 1 de cada CT LINEA
       // (antes iba al final) -- el resto de posiciones se recorre una a la
       // derecha, sin cambiar su orden relativo entre si.
-      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount - 1)
+      //
+      // Empaque (2026-08-28, "ajustes controlados"): mismo patron que
+      // Calidad -- puesto(s) fijo(s) fuera del plan de 5 roles base, asi que
+      // tambien se restan de idealHeadcount ANTES de calcular ese plan (ver
+      // EMPAQUE_COUNT_BY_LINE arriba). Se colocan DESPUES de los 5 roles
+      // base/repetidos (Calidad ya ocupa la posicion 1, los 5 roles van
+      // primero por ser los puestos "de siempre" de la linea) para no
+      // desplazar ninguna posicion ya existente.
+      const empaqueCount = EMPAQUE_COUNT_BY_LINE[wc.id] || 0
+      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount - 1 - empaqueCount)
       const calidadStation = {
         id: `${wc.id}-1`,
         lineId: wc.id,
@@ -209,7 +252,17 @@ function buildWorkstations() {
           status: 'ACTIVA',
         }
       })
-      map[wc.id] = [calidadStation, ...stations]
+      const empaqueStations = Array.from({ length: empaqueCount }, (_, i) => ({
+        id: `${wc.id}-empaque-${i + 1}`,
+        lineId: wc.id,
+        name: empaqueCount > 1 ? `Empaque ${i + 1}` : 'Empaque',
+        role: 'Empaque',
+        requiredRole: ROLE_LABELS.Empaque || 'Empaque',
+        capacity: 1,
+        order: stations.length + 2 + i,
+        status: 'ACTIVA',
+      }))
+      map[wc.id] = [calidadStation, ...stations, ...empaqueStations]
     } else if (CUSTOM_STATION_PLANS[wc.id]) {
       // Accesorios/Paletizado/Insumos (2026-08-26): plantilla real por
       // puesto, ver CUSTOM_STATION_PLANS (catalog.js) -- capacidad 1 por
@@ -240,14 +293,13 @@ function buildWorkstations() {
       //
       // N se suma sobre TODOS los miembros del grupo fusionado (ver
       // AREA_DETAIL_GROUPS/operationalGroupMembers en catalog.js), no solo
-      // wc.idealHeadcount propio -- necesario desde que Conveyor Principal
-      // y Conveyor Secundario se fusionaron en un solo detalle "WC Conveyor
-      // General" (2026-08-26). 2026-08-28: el unico numero real ahora vive
-      // en CONVEYOR_PRINCIPAL.idealHeadcount (4) -- Secundario/Sellado
-      // quedaron con idealHeadcount:null para no sumar puestos fantasma,
-      // asi que N = 4 puestos "Puesto 1".."Puesto 4". Para areas sin grupo
-      // (Midea, Accesorios..) el grupo es solo [wc.id], asi que el
-      // comportamiento no cambia.
+      // wc.idealHeadcount propio -- para areas sin grupo (Midea hoy, unica
+      // que sigue usando esta rama LINE_LIKE con puestos genericos "Puesto
+      // N") el grupo es solo [wc.id], asi que es exactamente
+      // wc.idealHeadcount (16). CONVEYOR_PRINCIPAL (2026-08-28, "ajustes
+      // controlados") ya NO usa esta rama -- se fusiono dentro de PALETIZADO
+      // (CUSTOM_STATION_PLANS), sus 2 puestos reales salen de ahi, nunca de
+      // este generador generico.
       const total = operationalGroupMembers(wc.id).reduce((sum, id) => sum + (WORK_CENTERS.find((w) => w.id === id)?.idealHeadcount || 0), 0)
       map[wc.id] = Array.from({ length: total }, (_, i) => ({
         id: `${wc.id}-${i + 1}`,

@@ -27,13 +27,22 @@
    4. Sin ocupante, o rol/categoria que no calza con nada conocido -> null
       (nunca se inventa una categoria). ───────────────────────────────────────────── */
 
+// APOYO (2026-08-28, "ajustes controlados", a peticion explicita del
+// usuario -- "la mayoria de puestos operativos deben utilizar Ayudante
+// General... el rol/rango indica que pertenece a Ayudante General"):
+// mismo enum de Prisma (WorkstationCategory.APOYO, sin cambio de schema),
+// solo se renombra el LABEL visible de "Apoyo operativo" a "Ayudante
+// General" -- key/color/iconKey no cambian. Antes NINGUN `role` real de
+// WC LINEA mapeaba aqui (era solo leyenda), asi que renombrar el label no
+// afecta a nadie mas que a Empaque (unico rol nuevo que se mapea aqui,
+// ver ROLE_TO_CATEGORY_KEY.Empaque mas abajo).
 export const LINE_VISUAL_TYPES = {
   LIDERAZGO: { key: 'LIDERAZGO', label: 'Team Leader', color: '#0D9488', iconKey: 'liderazgo' },
   CALIDAD: { key: 'CALIDAD', label: 'Calidad', color: '#DB2777', iconKey: 'calidad' },
   PRODUCCION: { key: 'PRODUCCION', label: 'Producción', color: '#2563EB', iconKey: 'produccion' },
   TECNICO: { key: 'TECNICO', label: 'Técnico / Especializado', color: '#F59E0B', iconKey: 'tecnico' },
   SUMINISTRO: { key: 'SUMINISTRO', label: 'Suministro', color: '#7C3AED', iconKey: 'suministro' },
-  APOYO: { key: 'APOYO', label: 'Apoyo operativo', color: '#64748B', iconKey: 'apoyo' },
+  APOYO: { key: 'APOYO', label: 'Ayudante General', color: '#64748B', iconKey: 'apoyo' },
 }
 
 /* Orden fijo para la leyenda (seccion 13 del pedido). */
@@ -55,9 +64,13 @@ export const ROLE_TO_CATEGORY_KEY = {
   'Calidad': 'CALIDAD',
   'Montaje': 'PRODUCCION',
   'Etiquetado': 'PRODUCCION',
-  'Limpieza': 'PRODUCCION',
+  'Limpieza de TV': 'PRODUCCION',
   'Suministro de Accesorios': 'SUMINISTRO',
   'Prueba eléctrica': 'TECNICO',
+  // 2026-08-28 ("ajustes controlados"): Empaque es puesto REAL nuevo en WC
+  // LINEA 0-10 -- su rango es "Ayudante General" (APOYO, ver
+  // LINE_VISUAL_TYPES arriba), nunca Producción/Técnico/otro existente.
+  'Empaque': 'APOYO',
 }
 
 export function getPersonnelVisualType({ stationRole, actividad, category } = {}) {

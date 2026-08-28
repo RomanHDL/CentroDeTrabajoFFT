@@ -192,8 +192,24 @@ export const CUSTOM_STATION_PLANS = {
     { role: 'Team Leader', count: 1 },
     { role: 'Ayudante General Escaneador', count: 2 },
     { role: 'Operador de Flejadora', count: 1 },
-    { role: 'Conveyor', count: 2 },
-    { role: 'Ayudante General Conveyor', count: 2 },
+    // 2026-08-28 ("ajustes controlados", a peticion explicita del usuario --
+    // "WC Conveyor General SOLO TIENE 2 PERSONAS... pertenecen operativamente
+    // a Paletizado"): antes habia 4 puestos de conveyor aqui mismo ("Conveyor"
+    // x2 + "Ayudante General Conveyor" x2), ADEMAS de otra WORK_AREA
+    // independiente "WC Conveyor General" (CONVEYOR_PRINCIPAL) con sus
+    // propios 4 "Puesto N" -- hasta 4 personas reales distintas contadas
+    // por separado. Se consolida en UN SOLO rol real de 2 posiciones,
+    // "Ayudante General de Conveyor" (las que ya estaban con ese nombre casi
+    // exacto se quedan -- Jose Sanchez sigue en la 1a, sin tocar su
+    // asignacion). El rol "Conveyor" (2 posiciones, Roman/Jose Francisco
+    // Franco Vara ocupandolas hoy) se elimina de aqui -- ver migracion real
+    // en scripts/, quedan como "Personal sin estación" de Paletizado, nunca
+    // borrados. CONVEYOR_PRINCIPAL como WORK_AREA independiente se archiva
+    // (`active:false`, WORK_CENTERS mas abajo) y se fusiona en el grupo de
+    // detalle de PALETIZADO (ver AREA_DETAIL_GROUPS) -- la card ancha "WC
+    // Conveyor General" del plano fisico (OperatingFloorPlan.jsx) ahora lee
+    // estas 2 posiciones directamente de aqui, nunca un conteo aparte.
+    { role: 'Ayudante General de Conveyor', count: 2 },
     // 7 (antes 4) -- 2026-08-27, a peticion explicita del usuario: Paletizado ya estaba a
     // plantilla completa (14/14) y necesitaba puesto real para Beckham y Patricia (reubicados
     // desde WC Calidad, +2). Al investigar se encontro ADEMAS a "Roman" (zona real PALETIZADO
@@ -227,13 +243,18 @@ export const CUSTOM_STATION_PLANS = {
      (3) y "Operador de Troqueladora" (1) NO se tocan -- no hay forma de
      determinar con certeza que sean las otras 2 funciones de un "Grupo A"
      de Ayudante General sin inventarlo, asi que se dejan exactamente como
-     estaban hasta que el usuario confirme esa reclasificacion aparte. */
+     estaban hasta que el usuario confirme esa reclasificacion aparte.
+
+     2026-08-28 ("ajustes controlados", segunda ronda, a peticion explicita
+     del usuario): "Dry Ice" ya NO debe verse -- se renombra a "Protectores
+     Espuma" (mismo puesto/posicion, cambio de nombre funcional puro; hoy
+     sin ocupante real, cero riesgo de perder una asignacion). */
   INSUMOS: [
     { role: 'Team Leader', count: 1 },
     { role: 'Materialista', count: 3 },
     { role: 'Ayudante General — Materia Prima / PNP', count: 1 },
     { role: 'Operador de Troqueladora', count: 1 },
-    { role: 'Ayudante General — Dry Ice', count: 1 },
+    { role: 'Ayudante General — Protectores Espuma', count: 1 },
     { role: 'Ayudante General — Burbuja', count: 1 },
     { role: 'Ayudante General — Bolsas', count: 1 },
   ],
@@ -263,18 +284,35 @@ function sumStationPlan(plan) {
    cambian ni se reordenan (buildWorkstations resta 1 antes de calcular esas
    posiciones, ver la nota junto a LINE_FAMILY_AREA_IDS ahi). El numero base
    original de cada linea (antes de este cambio) queda documentado aqui: */
+// 2026-08-28 ("ajustes controlados", a peticion explicita del usuario):
+// Empaque se agrega como puesto REAL fijo adicional en cada CT LINEA
+// (2 en LINEA0/1, 1 en LINEA2..10 -- ver EMPAQUE_COUNT_BY_LINE en
+// workstations.js, misma logica de "resta antes del plan base" ya
+// probada con Calidad). idealHeadcount sube ese numero en cada linea.
+// LINEA1 tambien pide reducir Montaje/Etiquetado a 1 sola posicion
+// (elimina "Montaje 2"/"Etiquetado 2") -- PERO el plan base de 5 roles
+// nunca baja de 6 posiciones (limite real ya existente, confirmado por
+// el usuario en una tarea anterior: "min 6, max 10 personas por linea"),
+// asi que sigue quedando 1 posicion repetida ahi -- se excluye
+// explicitamente a Montaje/Etiquetado de esa repeticion (ver
+// LINE_STATION_OVERRIDES.LINEA1 en workstations.js), cae en "Prueba
+// eléctrica 2" en su lugar. Por eso LINEA1 SI sube (8 -> 9): 1 Calidad +
+// 6 del plan base (5 roles + 1 repetido) + 2 Empaque = 9, no 8 -- dejarlo
+// en 8 habria desincronizado "Dotación ideal" contra la cantidad real de
+// estaciones generadas (mismo bug que ya se verifica en
+// verify-line-logic.mjs).
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
-  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
-  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
-  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 7 }, // 6 + Calidad
-  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 7 + Calidad
-  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 11 }, // 10 + Calidad
+  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 1 Calidad + 6 plan base (5 roles + Prueba eléctrica 2) + 2 Empaque
+  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
+  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
+  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
+  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
+  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
+  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 }, // 10 + Calidad + 2 Empaque
   /* Paletizado/Accesorios (2026-08-26, a peticion explicita del usuario):
      idealHeadcount ya NO es un numero mantenido a mano -- se deriva de
      CUSTOM_STATION_PLANS de arriba (suma de puestos reales configurados),
@@ -303,29 +341,34 @@ export const WORK_CENTERS = [
      conveyor es fisicamente una sola estructura metalica continua para
      deslizar cajas, sin puestos fijos reales, asi que ya no tiene sentido
      tratarlos como dos plantillas independientes de 1 persona cada una.
-     CONVEYOR_PRINCIPAL es el id canonico (se renombra el WC, el id real
-     no cambia -- mismo patron que WC Gerente FFT/WC Insumos). Es
-     LINE_LIKE (ver LINE_LIKE_AREA_IDS mas abajo): puestos genericos
-     "Puesto N" (nunca nombres de rol inventados), cualquiera puede
-     recibir a cualquier persona -- "que se pueda poner el personal en
-     cualquier ubicación del combeyor".
 
-     2026-08-28 ("Corregir diseño y estructura del Conveyor General", a
-     peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
-     YA NO dibuja dos barras separadas -- ahora es UNA sola "CONVEYOR
-     GENERAL", alineada exactamente con las columnas de grid de WC LINEA2..10
-     + WC Midea (ver ConveyorGeneralBar). Como consecuencia visual directa,
-     el usuario pidio explicitamente 4 posiciones reales (no 2) para ese
-     unico bloque -- idealHeadcount de CONVEYOR_PRINCIPAL sube de 1 a 4 (el
-     UNICO numero real ahora; ya no hace falta sumarle nada de Secundario).
-     CONVEYOR_SECUNDARIO sigue `active:false` (nunca se borra, tiene
-     WorkArea real con historial en la DB) y SIGUE en AREA_DETAIL_GROUPS
-     (canonicalOperationalAreaId/navegacion no cambian), pero su
-     idealHeadcount pasa a `null`: ya no debe sumar un puesto fantasma
-     aparte en getGroupAreaStaffing/buildWorkstations (el generador de
-     "Puesto N" y la cobertura ambos leen idealHeadcount de TODOS los
-     miembros del grupo) -- sin este cambio el total quedaria en 5, no 4. */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 4 },
+     2026-08-28 ("Corregir diseño y estructura del Conveyor General"): el
+     plano fisico dejo de dibujar dos barras separadas, paso a UNA sola
+     "CONVEYOR GENERAL" ancha con 4 posiciones propias (idealHeadcount 4).
+
+     2026-08-28 ("ajustes controlados", segunda ronda, a peticion explicita
+     del usuario -- REEMPLAZA la decision anterior): "Conveyor General SOLO
+     TIENE 2 PERSONAS... pertenecen operativamente a Paletizado". Investigado
+     en vivo: existian 4 personas reales distintas ligadas a "conveyor" (1 en
+     este WC independiente + 3 en CUSTOM_STATION_PLANS.PALETIZADO, que YA
+     tenia sus propios puestos "Conveyor"/"Ayudante General Conveyor" desde
+     antes) -- confirmado con el usuario: los 2 puestos reales y definitivos
+     son "Ayudante General de Conveyor" DENTRO de Paletizado (ver
+     CUSTOM_STATION_PLANS.PALETIZADO mas arriba), no un WORK_AREA aparte.
+     CONVEYOR_PRINCIPAL deja de tener puestos/idealHeadcount propios
+     (`null`) y se archiva (`active:false`) -- igual que CONVEYOR_SECUNDARIO/
+     SELLADO, nunca se borra (WorkArea real con historial en la DB). Se
+     fusiona en el grupo de detalle de PALETIZADO (ver AREA_DETAIL_GROUPS
+     mas abajo, ya NO es su propio grupo canonico) para que cualquier
+     asignacion real historica ligada a estos 3 ids (incluida la persona que
+     ocupaba el antiguo "Puesto 1" de este WC) siga siendo visible/
+     reasignable como "Personal sin estación" de Paletizado, nunca invisible
+     ni perdida. La card ancha "CONVEYOR GENERAL" del plano fisico
+     (OperatingFloorPlan.jsx/ConveyorGeneralBar) ahora lee EXACTAMENTE los 2
+     puestos "Ayudante General de Conveyor" de Paletizado -- mismos datos que
+     ya muestra el detalle de WC Paletizado, nunca un conteo aparte (Parte
+     "NO doble conteo" del pedido). */
+  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
   { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
@@ -474,15 +517,26 @@ export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
    patron ya probado con Sellado/Conveyor Principal: los ids fusionados
    (BOX_PREP, SUMINISTRO_MATERIAL) NUNCA se borran (tienen WorkArea real
    con historial), solo quedan `active:false` y su personal/plantilla se
-   suma en el detalle de INSUMOS via operationalGroupMembers. */
+   suma en el detalle de INSUMOS via operationalGroupMembers.
+
+   2026-08-28 ("ajustes controlados", a peticion explicita del usuario):
+   CONVEYOR_PRINCIPAL deja de ser su propio canonico -- se fusiona (junto
+   con CONVEYOR_SECUNDARIO y SELLADO, que ya viajaban con el) dentro del
+   grupo de PALETIZADO. Esto es lo que hace que cualquier persona cuyo
+   roster real todavia tenga areaId='CONVEYOR_PRINCIPAL' (ej. quien
+   ocupaba el antiguo "Puesto 1" del Conveyor independiente) aparezca
+   automaticamente en "Personal sin estación" del detalle de WC Paletizado
+   (getPeopleWithoutStation ya filtra por operationalGroupMembers) -- sin
+   esto quedaria invisible en la UI aunque su DailyAssignment real siga
+   intacto en la base de datos. */
 export const AREA_DETAIL_GROUPS = {
-  CONVEYOR_PRINCIPAL: ['CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'],
+  PALETIZADO: ['PALETIZADO', 'CONVEYOR_PRINCIPAL', 'CONVEYOR_SECUNDARIO', 'SELLADO'],
   INSUMOS: ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'],
 }
 
-/* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO
-   siempre resuelve a CONVEYOR_PRINCIPAL, cualquier otro id se devuelve
-   tal cual (no pertenece a ningun grupo). */
+/* Id canonico de detalle para cualquier miembro de un grupo -- SELLADO/
+   CONVEYOR_PRINCIPAL/CONVEYOR_SECUNDARIO siempre resuelven a PALETIZADO,
+   cualquier otro id se devuelve tal cual (no pertenece a ningun grupo). */
 export function canonicalOperationalAreaId(workCenterId) {
   const entry = Object.entries(AREA_DETAIL_GROUPS).find(([, members]) => members.includes(workCenterId))
   return entry ? entry[0] : workCenterId
@@ -516,12 +570,14 @@ export function usesOperationalDetail(workCenterId) {
    ids a mano en otro lado, solo se referencia WORK_CENTERS.
 
    SELLADO se excluye a proposito: no tiene detalle propio, cualquier
-   click sobre ella resuelve a CONVEYOR_PRINCIPAL (AREA_DETAIL_GROUPS
-   arriba) -- incluirla aqui crearia una parada duplicada/inalcanzable.
+   click sobre ella resuelve a PALETIZADO (AREA_DETAIL_GROUPS arriba) --
+   incluirla aqui crearia una parada duplicada/inalcanzable.
    CONVEYOR_SECUNDARIO (2026-08-26) se excluye por la misma razon desde
-   que se fusiono con CONVEYOR_PRINCIPAL en "WC Conveyor General" --
-   ademas queda `active:false`, asi que el .filter final de abajo ya lo
-   habria quitado igual (doble red de seguridad).
+   que se fusiono en el grupo de detalle -- ademas queda `active:false`,
+   asi que el .filter final de abajo ya lo habria quitado igual (doble red
+   de seguridad). CONVEYOR_PRINCIPAL (2026-08-28, "ajustes controlados") se
+   quita de aqui por la MISMA razon -- dejo de tener detalle propio, ahora
+   resuelve a PALETIZADO, y tambien queda `active:false`.
    "PNP / POC / PEN" tampoco tiene WORK_CENTER real (decoracion en
    floorPlanZones.js/REFERENCE_ONLY_ZONES) -- nunca se inventa un id
    para poder navegar a algo que no existe. "WC LINEA 11" no existe hoy
@@ -542,7 +598,6 @@ export function usesOperationalDetail(workCenterId) {
 export const WORK_CENTER_NAVIGATION_ORDER = [
   'PROYECTO',
   ...LINES_ONLY.map((w) => w.id),
-  'CONVEYOR_PRINCIPAL',
   'HIGH_VALUE', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS', 'CALIDAD',
   'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
 ].filter((id) => isWorkCenterActive(id) && WORK_CENTERS.some((w) => w.id === id))
@@ -615,14 +670,12 @@ export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PR
    suelto en WORK_CENTERS) para que agregar otra area LINE_LIKE en el
    futuro sea un solo id agregado aqui.
 
-   CONVEYOR_PRINCIPAL (2026-08-26, tercera ronda -- fusion Conveyor
-   Principal/Secundario en "WC Conveyor General") NO tiene
-   CUSTOM_STATION_PLANS -- sin plan propio, buildWorkstations() (ver
-   workstations.js) genera puestos GENERICOS numerados ("Puesto 1"/
-   "Puesto 2", mismo fallback que Midea), exactamente lo que pidio el
-   usuario: posiciones intercambiables sobre una estructura fisica sin
-   roles fijos, nunca un nombre de rol inventado. */
-export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'])
+   CONVEYOR_PRINCIPAL (2026-08-28, "ajustes controlados", a peticion
+   explicita del usuario) YA NO esta aqui -- dejo de tener puestos propios,
+   se fusiono dentro de PALETIZADO (ver AREA_DETAIL_GROUPS): su detalle
+   ahora resuelve, por canonicalOperationalAreaId, directamente a
+   PALETIZADO (que SI esta en este Set), sin necesitar su propia entrada. */
+export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS'])
 
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
   ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),

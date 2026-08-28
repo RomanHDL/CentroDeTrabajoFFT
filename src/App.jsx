@@ -16,6 +16,9 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import RegistroPersonalPage from './pages/registro-personal/RegistroPersonalPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
+import KpisPage from './pages/kpis/KpisPage'
+import AsistenciaPage from './pages/asistencia/AsistenciaPage'
+import AuditoriaPage from './pages/auditoria/AuditoriaPage'
 import ToastHost from './ui/ToastHost'
 
 export default function App() {
@@ -37,6 +40,9 @@ export default function App() {
                 <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
                 <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
                 <Route path="/usuarios" element={<RequireModuleAccess><UsuariosPage /></RequireModuleAccess>} />
+                <Route path="/kpis" element={<RequireModuleAccess><KpisPage /></RequireModuleAccess>} />
+                <Route path="/asistencia" element={<RequireModuleAccess><AsistenciaPage /></RequireModuleAccess>} />
+                <Route path="/auditoria" element={<RequireModuleAccess><AuditoriaPage /></RequireModuleAccess>} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el

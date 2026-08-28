@@ -56,6 +56,42 @@ export const MODULE_REGISTRY = [
     permissionProtected: true,
     systemReserved: false,
   },
+  // 2026-08-28 ("ajustes controlados", a peticion explicita del usuario):
+  // 3 modulos nuevos, SOLO navegacion -- "por ahora no desarrollar el
+  // contenido... solo crear los modulos/rutas necesarias para poder
+  // acceder a ellos". Cada uno renderiza ComingSoonPage (src/pages/shared),
+  // ningun dato/API/modelo nuevo. permissionProtected:true igual que los 4
+  // modulos existentes -- ADMINISTRADOR los ve automaticamente
+  // (resolveEffectiveAccess), SUPERVISOR/LIDER necesitan que un admin los
+  // habilite desde "Gestion de permisos" (mismo comportamiento por defecto
+  // que tuvo cualquier modulo nuevo hasta hoy, nada especial).
+  {
+    key: '/kpis',
+    name: "KPI's",
+    description: 'Indicadores clave de desempeño (en desarrollo)',
+    icon: 'QueryStats',
+    active: true,
+    permissionProtected: true,
+    systemReserved: false,
+  },
+  {
+    key: '/asistencia',
+    name: 'Asistencia',
+    description: 'Control de asistencia (en desarrollo)',
+    icon: 'EventAvailable',
+    active: true,
+    permissionProtected: true,
+    systemReserved: false,
+  },
+  {
+    key: '/auditoria',
+    name: 'Auditoría',
+    description: 'Auditoría del sistema (en desarrollo)',
+    icon: 'FactCheck',
+    active: true,
+    permissionProtected: true,
+    systemReserved: false,
+  },
 ]
 
 export function listAllModules() {

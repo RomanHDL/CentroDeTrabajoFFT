@@ -11,6 +11,9 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import FactoryIcon from '@mui/icons-material/Factory'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import GroupIcon from '@mui/icons-material/Group'
+import QueryStatsIcon from '@mui/icons-material/QueryStats'
+import EventAvailableIcon from '@mui/icons-material/EventAvailable'
+import FactCheckIcon from '@mui/icons-material/FactCheck'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { NavLink } from 'react-router-dom'
@@ -33,6 +36,13 @@ const NAV_ITEMS = [
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, configurable: true },
   { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, configurable: true },
+  // 2026-08-28 ("ajustes controlados"): 3 modulos nuevos, mismo patron que
+  // los 4 de arriba -- solo navegacion, el permiso real lo resuelve
+  // useEffectiveModules() (shared/moduleRegistry.js), nunca una lista de
+  // permisos aparte aqui.
+  { to: '/kpis', label: "KPI's", icon: QueryStatsIcon, configurable: true },
+  { to: '/asistencia', label: 'Asistencia', icon: EventAvailableIcon, configurable: true },
+  { to: '/auditoria', label: 'Auditoría', icon: FactCheckIcon, configurable: true },
 ]
 
 function NavList({ items, onItemClick }) {

@@ -398,27 +398,37 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
    SECUNDARIO" de antes). Mismo lenguaje visual que BigZone (fondo segun
    estado, borde superior de color, hover con box-shadow) para no introducir
    un estilo nuevo, pero MAS compacto (menos padding, sin PersonList de lista
-   larga) porque solo tiene 4 posiciones reales, nunca una lista de personal
-   abierta. click en el bloque O en cualquier posicion abre el mismo detalle
-   real (LineLikeAreaDetail via onOpen, exactamente como el resto de areas
-   LINE_LIKE) -- ninguna logica de asignacion/reasignacion/historial nueva,
-   solo se reutiliza la que ya existe para esa pagina. drag&drop conservado
-   igual que la barra anterior (useEmployeeDropTarget sobre el bloque
-   completo, no por posicion individual -- misma granularidad de antes). */
+   larga).
+
+   2026-08-28 ("ajustes controlados", segunda ronda, a peticion explicita del
+   usuario -- "Conveyor General SOLO TIENE 2 PERSONAS... pertenecen
+   operativamente a Paletizado"): esta barra YA NO tiene su propio WORK_AREA/
+   idealHeadcount independiente (CONVEYOR_PRINCIPAL se archivo, ver
+   catalog.js) -- ahora lee EXACTAMENTE los 2 puestos reales "Ayudante
+   General de Conveyor" que viven dentro de CUSTOM_STATION_PLANS.PALETIZADO,
+   filtrando getLineWorkstationsWithOccupancy('PALETIZADO') por ese `role`.
+   Mismos datos que ya muestra el detalle completo de WC Paletizado -- nunca
+   un conteo aparte, nunca doble conteo. click en el bloque O en cualquier
+   posicion abre el detalle real de WC Paletizado (LineLikeAreaDetail via
+   onOpen('PALETIZADO'), exactamente como el resto de areas LINE_LIKE) --
+   ninguna logica de asignacion/reasignacion/historial nueva. drag&drop
+   conservado igual que antes (useEmployeeDropTarget sobre el bloque
+   completo, apuntando a PALETIZADO). */
+const CONVEYOR_ROLE = 'Ayudante General de Conveyor'
+
 function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
-  const stations = getLineWorkstationsWithOccupancy('CONVEYOR_PRINCIPAL')
-  const staffing = getGroupAreaStaffing(operationalGroupMembers('CONVEYOR_PRINCIPAL'))
-  const status = statusFor(staffing.real, staffing.ideal)
+  const stations = getLineWorkstationsWithOccupancy('PALETIZADO').filter((w) => w.role === CONVEYOR_ROLE)
+  const real = stations.filter((w) => w.occupants.length > 0).length
+  const ideal = stations.length
+  const status = statusFor(real, ideal)
   const color = status ? STATUS_META[status].color : '#94A3B8'
-  const label = staffing.ideal != null
-    ? `${staffing.real} / ${staffing.ideal}`
-    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
-  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'CONVEYOR_PRINCIPAL')
+  const label = `${real} / ${ideal}`
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'PALETIZADO')
 
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
+      onClick={() => onOpen('PALETIZADO')}
       sx={{
         gridArea, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
         border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
@@ -435,15 +445,21 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
           <=1 en propiedades de tamaño como PORCENTAJE (sizingTransform de
           MUI), no como pixeles: con `height:1` esta linea se estiraba a
           100% de la fila del grid (bug real detectado en la primera
-          verificacion visual, empujaba las 4 posiciones fuera de la caja). */}
+          verificacion visual, empujaba las posiciones fuera de la caja). */}
       <Box sx={{ height: '1px', bgcolor: alpha(color, 0.25), mb: 0.85 }} />
       {/* flexWrap (2026-08-28, a peticion explicita del usuario, Parte 14):
-          desktop, las 4 posiciones caben en una sola fila -- si el bloque
-          se angostara demasiado (tablet), se reparten solas en 2+2 sin dejar
-          de ser UN SOLO contenedor, nunca 4 cards independientes. */}
-      <Stack direction="row" flexWrap="wrap" sx={{ rowGap: 0.75, columnGap: 0.5 }}>
+          las 2 posiciones se centran en una sola fila -- si el bloque se
+          angostara demasiado (tablet), igual se reparten solas sin dejar de
+          ser UN SOLO contenedor, nunca cards independientes. justifyContent
+          'center' (2026-08-28, segunda ronda -- "distribuir visualmente los
+          DOS puestos de forma limpia, equilibrada y centrada", "no quiero
+          cuatro huecos enormes simulando cuatro personas"): con solo 2
+          nodos angostos (maxWidth 140), dejarlos pegados a la izquierda del
+          bloque ancho se veia desbalanceado -- centrados se ve como una
+          franja limpia, no como una card a medio llenar. */}
+      <Stack direction="row" flexWrap="wrap" justifyContent="center" sx={{ rowGap: 0.75, columnGap: 1.5 }}>
         {stations.map((w, i) => (
-          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('CONVEYOR_PRINCIPAL')} />
+          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('PALETIZADO')} />
         ))}
       </Stack>
     </Box>
