@@ -1,11 +1,6 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import { alpha } from '@mui/material/styles'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 /* ─────────────────────────────────────────────
    Anterior / Siguiente entre Work Centers -- 2026-08-27, a peticion
@@ -24,7 +19,12 @@ import { alpha } from '@mui/material/styles'
    desborda ni corta el nombre real a la mitad); el nombre real siempre
    esta disponible via Tooltip, y aparece completo en el boton desde
    sm hacia arriba. Atajo de teclado opcional (Alt+Flecha) -- nunca
-   intercepta flechas mientras se esta escribiendo en un input/textarea. */
+   intercepta flechas mientras se esta escribiendo en un input/textarea.
+
+   Fase 6c: portado de MUI a Tailwind. */
+const BTN_CLASS =
+  'flex min-w-0 items-center gap-1 rounded-[10px] border border-border bg-card px-[11px] py-1 text-[12.5px] font-bold leading-[1.3] text-foreground transition-colors hover:border-[#3B82F6] hover:bg-[rgba(59,130,246,.06)] dark:hover:bg-[rgba(59,130,246,.14)] disabled:cursor-not-allowed disabled:border-border disabled:opacity-35'
+
 export default function WorkCenterNavControls({ previous, next, onNavigate }) {
   useEffect(() => {
     function onKeyDown(e) {
@@ -44,64 +44,38 @@ export default function WorkCenterNavControls({ previous, next, onNavigate }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [previous, next, onNavigate])
 
-  const btnSx = {
-    textTransform: 'none',
-    fontWeight: 700,
-    fontSize: 12.5,
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    color: 'text.primary',
-    bgcolor: 'background.paper',
-    px: 1.1,
-    py: 0.5,
-    minWidth: 0,
-    lineHeight: 1.3,
-    '&:hover': {
-      borderColor: '#3B82F6',
-      bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.14 : 0.06),
-    },
-    '&.Mui-disabled': { opacity: 0.35, borderColor: 'divider' },
-  }
-
   return (
-    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0 }}>
-      <Tooltip title={previous ? previous.name : 'No hay área anterior'}>
-        <span>
-          <Button
-            size="small"
+    <div className="flex shrink-0 items-center gap-1.5">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
             disabled={!previous}
             onClick={() => previous && onNavigate(previous.id)}
-            startIcon={<ChevronLeftIcon sx={{ fontSize: 17 }} />}
-            sx={btnSx}
+            className={BTN_CLASS}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              {previous?.name || 'Anterior'}
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              Anterior
-            </Box>
-          </Button>
-        </span>
+            <ChevronLeft className="h-[17px] w-[17px]" />
+            <span className="hidden sm:inline">{previous?.name || 'Anterior'}</span>
+            <span className="sm:hidden">Anterior</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{previous ? previous.name : 'No hay área anterior'}</TooltipContent>
       </Tooltip>
-      <Tooltip title={next ? next.name : 'No hay área siguiente'}>
-        <span>
-          <Button
-            size="small"
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
             disabled={!next}
             onClick={() => next && onNavigate(next.id)}
-            endIcon={<ChevronRightIcon sx={{ fontSize: 17 }} />}
-            sx={btnSx}
+            className={BTN_CLASS}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              {next?.name || 'Siguiente'}
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              Siguiente
-            </Box>
-          </Button>
-        </span>
+            <span className="hidden sm:inline">{next?.name || 'Siguiente'}</span>
+            <span className="sm:hidden">Siguiente</span>
+            <ChevronRight className="h-[17px] w-[17px]" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{next ? next.name : 'No hay área siguiente'}</TooltipContent>
       </Tooltip>
-    </Stack>
+    </div>
   )
 }

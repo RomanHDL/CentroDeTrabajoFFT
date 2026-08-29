@@ -1,16 +1,15 @@
+import { ChevronRight, X } from 'lucide-react'
 import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import IconButton from '@mui/material/IconButton'
-import Chip from '@mui/material/Chip'
-import CloseIcon from '@mui/icons-material/Close'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 import EmployeeAvatar from './EmployeeAvatar'
 
 const PREVIEW_LIMIT = 5
@@ -45,115 +44,85 @@ export default function UnassignedPersonnelCard({ people }) {
   const extra = Math.max(people.length - PREVIEW_LIMIT, 0)
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: people.length ? 1.5 : 0 }}
-      >
-        <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-            Personal sin área asignada ({people.length})
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+    <div className="rounded-2xl border border-border p-4">
+      <div className={cn('flex items-start justify-between', people.length && 'mb-3')}>
+        <div>
+          <p className="text-sm font-extrabold">Personal sin área asignada ({people.length})</p>
+          <p className="text-[11px] text-muted-foreground">
             Personas activas sin ubicación asignada en el centro de trabajo
-          </Typography>
-        </Box>
+          </p>
+        </div>
         {people.length > 0 && (
           <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
+            variant="ghost"
+            size="sm"
             onClick={() => setOpen(true)}
-            sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+            className="shrink-0 gap-1 font-bold text-primary hover:text-primary"
           >
             Ver lista
+            <ChevronRight className="h-4 w-4" />
           </Button>
         )}
-      </Stack>
+      </div>
 
       {people.length === 0 ? (
-        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}>
+        <p className="text-[11.5px] italic text-muted-foreground">
           Todo el personal activo tiene una zona conocida.
-        </Typography>
+        </p>
       ) : (
-        <Stack direction="row" spacing={1.25} flexWrap="wrap" rowGap={1}>
+        <div className="flex flex-wrap gap-x-2.5 gap-y-2">
           {preview.map((p) => {
             const tag = personTag(p)
             return (
-              <Stack key={p.id} alignItems="center" spacing={0.4} sx={{ width: 56 }}>
+              <div key={p.id} className="flex w-14 flex-col items-center gap-[3.2px]">
                 <EmployeeAvatar employee={p} size={40} />
-                <Typography
-                  sx={{ fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }}
-                  noWrap
-                >
+                <p className="w-full truncate text-center text-[10px] font-semibold leading-[1.1]">
                   {shortName(p.name)}
-                </Typography>
+                </p>
                 {tag && (
-                  <Typography
-                    sx={{
-                      fontSize: 8.5,
-                      color: 'text.secondary',
-                      textAlign: 'center',
-                      lineHeight: 1,
-                    }}
-                    noWrap
-                  >
+                  <p className="w-full truncate text-center text-[8.5px] leading-none text-muted-foreground">
                     {tag}
-                  </Typography>
+                  </p>
                 )}
-              </Stack>
+              </div>
             )
           })}
           {extra > 0 && (
-            <Stack alignItems="center" justifyContent="center" spacing={0.4} sx={{ width: 56 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  bgcolor: 'action.hover',
-                  color: 'text.secondary',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 12,
-                  fontWeight: 800,
-                }}
-              >
+            <div className="flex w-14 flex-col items-center justify-center gap-[3.2px]">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-xs font-extrabold text-muted-foreground">
                 +{extra}
-              </Box>
-              <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>más</Typography>
-            </Stack>
+              </div>
+              <p className="text-[10px] text-muted-foreground">más</p>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontWeight: 800,
-          }}
-        >
-          Personal sin área asignada ({people.length})
-          <IconButton size="small" onClick={() => setOpen(false)}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </DialogTitle>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ pb: 1 }}>
+          <DialogHeader>
+            <DialogTitle>Personal sin área asignada ({people.length})</DialogTitle>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogClose>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-1.5 px-6 pb-6">
             {people.map((p) => {
               const tag = personTag(p)
-              return <Chip key={p.id} size="small" label={tag ? `${p.name} (${tag})` : p.name} />
+              return (
+                <Badge key={p.id} variant="secondary">
+                  {tag ? `${p.name} (${tag})` : p.name}
+                </Badge>
+              )
             })}
-          </Stack>
+          </div>
         </DialogContent>
       </Dialog>
-    </Paper>
+    </div>
   )
 }

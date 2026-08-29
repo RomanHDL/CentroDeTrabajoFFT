@@ -1,10 +1,6 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import { alpha, useTheme } from '@mui/material/styles'
-import { useEmployeeDropTargetStation } from '../../ui/dnd'
+import { cn } from '@/lib/utils'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTargetStation } from '../../ui/dnd'
 import EmployeeAvatar from './EmployeeAvatar'
 import { RankIcon } from './HierarchyLegend'
 
@@ -28,124 +24,117 @@ export default function LeadershipRow({
   onEmployeeClick,
   rank,
 }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
   const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
 
-  const accent = isOver ? '#3B82F6' : selected ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+  const highlighted = isOver || selected
+
+  // Fase 6c: colores dinamicos de acento/borde/fondo expresados como
+  // clases estaticas completas (nunca interpoladas) para que Tailwind
+  // JIT las detecte -- equivalente exacto a los alpha(color, d?..:..)
+  // del original, usando dark: en vez de theme.palette.mode/useTheme.
+  const accentClass = highlighted
+    ? 'bg-[rgba(59,130,246,0.14)] text-[#3B82F6] dark:bg-[rgba(59,130,246,0.22)]'
+    : occupant
+      ? 'bg-[rgba(16,185,129,0.14)] text-[#10B981] dark:bg-[rgba(16,185,129,0.22)]'
+      : 'bg-[rgba(245,158,11,0.14)] text-[#F59E0B] dark:bg-[rgba(245,158,11,0.22)]'
+
+  const borderClass = highlighted
+    ? 'border-[#3B82F6]'
+    : occupant
+      ? 'border-[rgba(16,185,129,0.35)] dark:border-[rgba(16,185,129,0.4)]'
+      : 'border-[rgba(245,158,11,0.35)] dark:border-[rgba(245,158,11,0.4)]'
+
+  const bgClass = isOver
+    ? 'bg-[rgba(59,130,246,0.08)] dark:bg-[rgba(59,130,246,0.18)]'
+    : occupant
+      ? 'bg-[#F7FEFB] dark:bg-[rgba(16,185,129,0.06)]'
+      : 'bg-[#FFFCF5] dark:bg-[rgba(245,158,11,0.05)]'
 
   return (
-    <Paper
-      elevation={0}
+    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- contiene un area interactiva anidada (click en el ocupante, mas abajo) y es blanco de drop de HTML5 DnD (dropProps); ambos casos son incompatibles con un <button> nativo, por eso usa role/tabIndex/onKeyDown manuales.
+    <div
       {...dropProps}
       onClick={() => onSelect(workstation)}
-      sx={{
-        p: 1.5,
-        borderRadius: 3,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        border: '1.5px solid',
-        borderStyle: available && !occupant ? 'dashed' : 'solid',
-        borderColor:
-          isOver || selected
-            ? '#3B82F6'
-            : occupant
-              ? alpha('#10B981', d ? 0.4 : 0.35)
-              : alpha('#F59E0B', d ? 0.4 : 0.35),
-        bgcolor: isOver
-          ? alpha('#3B82F6', d ? 0.18 : 0.08)
-          : occupant
-            ? d
-              ? alpha('#10B981', 0.06)
-              : '#F7FEFB'
-            : d
-              ? alpha('#F59E0B', 0.05)
-              : '#FFFCF5',
-        transition: 'all .15s ease',
-        '&:hover': {
-          borderColor: '#3B82F6',
-          boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)',
-        },
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(workstation)
+        }
       }}
+      className={cn(
+        'flex cursor-pointer items-center gap-3 rounded-[30px] border-[1.5px] p-3 transition-all duration-150',
+        'hover:border-[#3B82F6] hover:shadow-[0_4px_16px_rgba(0,0,0,.08)] dark:hover:shadow-[0_4px_16px_rgba(0,0,0,.35)]',
+        available && !occupant ? 'border-dashed' : 'border-solid',
+        borderClass,
+        bgClass,
+      )}
     >
-      <Box
-        sx={{
-          width: 26,
-          height: 26,
-          borderRadius: '50%',
-          flexShrink: 0,
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: 11,
-          fontWeight: 800,
-          bgcolor: alpha(accent, d ? 0.22 : 0.14),
-          color: accent,
-        }}
+      <div
+        className={cn(
+          'grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[11px] font-extrabold',
+          accentClass,
+        )}
       >
         {workstation.order}
-      </Box>
+      </div>
 
       {occupant ? (
         <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ flex: 1, minWidth: 0 }}>
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
+          {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya esta anidado dentro de la fila que tambien tiene role="button" arriba, y dentro de DraggablePersonChip (draggable=true nativo); un <button> anidado en otro es HTML invalido y podria alterar el drag & drop de HTML5. */}
+          <div
+            className="flex items-center gap-3"
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               e.stopPropagation()
               onEmployeeClick(occupant.employee)
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onEmployeeClick(occupant.employee)
+              }
+            }}
           >
             <EmployeeAvatar employee={occupant.employee} size={42} />
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 15 }} noWrap>
-                {occupant.employee?.name}
-              </Typography>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] font-extrabold">{occupant.employee?.name}</p>
               {rank && (
-                <Stack direction="row" spacing={0.4} alignItems="center" sx={{ mt: 0.25 }}>
+                <div className="mt-0.5 flex items-center gap-[3.2px]">
                   <RankIcon rank={rank} size={12} />
-                  <Typography
-                    sx={{
-                      fontSize: 10.5,
-                      fontWeight: 800,
-                      letterSpacing: 0.4,
-                      color: rank.color,
-                      textTransform: 'uppercase',
-                    }}
+                  <span
+                    className="text-[10.5px] font-extrabold uppercase tracking-[0.4px]"
+                    style={{ color: rank.color }}
                   >
                     {rank.label}
-                  </Typography>
-                </Stack>
+                  </span>
+                </div>
               )}
-            </Box>
-          </Stack>
+            </div>
+          </div>
         </DraggablePersonChip>
       ) : (
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: 'text.secondary' }}>
-            Sin asignar
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.disabled' }} noWrap>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-bold text-muted-foreground">Sin asignar</p>
+          <p className="truncate text-[11px] text-muted-foreground/60">
             {workstation.requiredRole}
-          </Typography>
-        </Box>
+          </p>
+        </div>
       )}
 
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 0.3,
-          flexShrink: 0,
-          color: occupant ? '#059669' : '#B45309',
-        }}
+      <span
+        className={cn(
+          'shrink-0 text-[10px] font-extrabold tracking-[0.3px]',
+          occupant ? 'text-[#059669]' : 'text-[#B45309]',
+        )}
       >
         {occupant ? 'OCUPADO' : 'DISPONIBLE'}
-      </Typography>
-    </Paper>
+      </span>
+    </div>
   )
 }

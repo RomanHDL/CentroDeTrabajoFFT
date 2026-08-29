@@ -1,13 +1,9 @@
+import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import { alpha } from '@mui/material/styles'
-import { getAllAreaSummaries } from '../../data/production/personnelByArea'
+import { Button } from '@/components/ui/button'
+import { hexToRgba } from '@/lib/utils'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { getAllAreaSummaries } from '../../data/production/personnelByArea'
 
 const VISIBLE_LIMIT = 8
 
@@ -18,42 +14,38 @@ const VISIBLE_LIMIT = 8
    AreaSummaryStrip.jsx (ya no existe, se dividio en 2 componentes). */
 export default function AreaCoverageSummaryCard({ onSelectArea }) {
   const [showAll, setShowAll] = useState(false)
+  // `version` fuerza refrescar getAllAreaSummaries() cuando cambia el estado
+  // de personal, aunque no se lea dentro del callback -- comportamiento
+  // original (usePersonnelVersion + useMemo) preservado tal cual.
   const version = usePersonnelVersion()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const summaries = useMemo(() => getAllAreaSummaries(), [version])
   const withPeople = summaries.filter((s) => s.count > 0)
   const visible = showAll ? summaries : withPeople.slice(0, VISIBLE_LIMIT)
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.25 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>Resumen por área</Typography>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+    <div className="rounded-2xl border border-border p-4">
+      <div className="mb-2.5 flex items-center justify-between">
+        <div>
+          <p className="text-[14.5px] font-extrabold">Resumen por área</p>
+          <p className="text-[11.5px] text-muted-foreground">
             Personal actual frente a la plantilla ideal, por área
-          </Typography>
-        </Box>
+          </p>
+        </div>
         {(summaries.length > visible.length || showAll) && (
           <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
+            variant="ghost"
+            size="sm"
             onClick={() => setShowAll((v) => !v)}
-            sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+            className="shrink-0 gap-1 font-bold text-primary hover:text-primary"
           >
             {showAll ? 'Ver menos' : 'Ver todas las áreas'}
+            <ChevronRight className="h-4 w-4" />
           </Button>
         )}
-      </Stack>
+      </div>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 1,
-          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
-        }}
-      >
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
         {visible.map((s) => {
           const ideal = s.ideal ?? null
           const hasIdeal = ideal != null && ideal > 0
@@ -69,31 +61,18 @@ export default function AreaCoverageSummaryCard({ onSelectArea }) {
               ? '#10B981'
               : '#EF4444'
           return (
-            <Box
+            <button
               key={s.id}
+              type="button"
               onClick={() => onSelectArea(s.id)}
-              sx={{
-                p: 1.25,
-                borderRadius: 2,
-                cursor: 'pointer',
-                minWidth: 0,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderLeft: `3px solid ${color}`,
-                transition: 'transform .15s ease, box-shadow .15s ease',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(16,24,40,0.06)',
-                },
-              }}
+              style={{ borderLeftColor: color }}
+              className="block min-w-0 cursor-pointer rounded-[20px] border border-l-[3px] border-border p-2.5 text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(16,24,40,0.06)]"
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 12.5 }} noWrap>
-                {s.name}
-              </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 16, mt: 0.15 }}>
+              <p className="truncate text-[12.5px] font-extrabold">{s.name}</p>
+              <p className="mt-[1.2px] text-base font-extrabold">
                 {hasIdeal ? `${s.count} / ${ideal}` : s.count}
-              </Typography>
-              <Typography sx={{ fontSize: 10, color, fontWeight: 700, mb: 0.5 }}>
+              </p>
+              <p className="mb-1 text-[10px] font-bold" style={{ color }}>
                 {hasIdeal
                   ? complete
                     ? 'Completa'
@@ -103,38 +82,29 @@ export default function AreaCoverageSummaryCard({ onSelectArea }) {
                   : s.count > 0
                     ? 'Con personal'
                     : 'Sin plantilla'}
-              </Typography>
+              </p>
               {hasIdeal ? (
-                <Stack direction="row" alignItems="center" spacing={0.6}>
-                  <Box
-                    sx={{
-                      flex: 1,
-                      height: 5,
-                      borderRadius: 999,
-                      bgcolor: 'action.hover',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: `${barPct}%`,
-                        height: '100%',
-                        bgcolor: color,
-                        borderRadius: 999,
-                      }}
+                <div className="flex items-center gap-[4.8px]">
+                  <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${barPct}%`, backgroundColor: color }}
                     />
-                  </Box>
-                  <Typography sx={{ fontSize: 9.5, fontWeight: 700, color, flexShrink: 0 }}>
+                  </div>
+                  <span className="shrink-0 text-[9.5px] font-bold" style={{ color }}>
                     {pct.toFixed(1)}%
-                  </Typography>
-                </Stack>
+                  </span>
+                </div>
               ) : (
-                <Box sx={{ height: 5, borderRadius: 999, bgcolor: alpha(color, 0.15) }} />
+                <div
+                  className="h-[5px] rounded-full"
+                  style={{ backgroundColor: hexToRgba(color, 0.15) }}
+                />
               )}
-            </Box>
+            </button>
           )
         })}
-      </Box>
-    </Paper>
+      </div>
+    </div>
   )
 }

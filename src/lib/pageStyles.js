@@ -53,3 +53,47 @@ export function metricChipClass(tone = 'default') {
     METRIC_CHIP_TONES[tone] || METRIC_CHIP_TONES.default,
   )
 }
+
+// Fase 6c (Centro de Trabajo, primer lote -- BajasTab): claves de tabla que
+// no usaba Dashboard. tableHeaderRowClass va en <TableRow> (shadcn
+// TableHead ya trae su propio color base, esto solo agrega el fondo/
+// mayusculas/tracking que MUI aplicaba via '& .MuiTableCell-head').
+export const tableHeaderRowClass =
+  '[&>th]:bg-black/[.02] dark:[&>th]:bg-white/[.03] [&>th]:text-[0.6875rem] [&>th]:font-semibold [&>th]:uppercase [&>th]:tracking-[0.6px] [&>th]:text-[rgba(71,85,105,1)] dark:[&>th]:text-[rgba(148,163,184,1)]'
+
+// tableRowClass(idx): hover + zebra impar, mismo criterio que
+// ps.tableRow(idx) del original.
+export function tableRowClass(idx) {
+  return cn(
+    'transition-colors hover:bg-[rgba(59,130,246,.02)] dark:hover:bg-[rgba(59,130,246,.04)]',
+    idx % 2 === 1 && 'bg-black/[.008] dark:bg-white/[.01]',
+  )
+}
+
+export const cellTextClass = 'text-[0.8125rem] text-foreground'
+export const cellTextSecondaryClass = 'text-[0.8125rem] text-muted-foreground'
+
+const STATUS_CHIP_TONES = {
+  PENDIENTE:
+    'border-[#FDE68A] bg-[#FFFBEB] text-[#B45309] dark:border-[rgba(245,158,11,.18)] dark:bg-[rgba(245,158,11,.10)] dark:text-[#FCD34D]',
+  'EN PROCESO':
+    'border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8] dark:border-[rgba(59,130,246,.18)] dark:bg-[rgba(59,130,246,.10)] dark:text-[#93C5FD]',
+  COMPLETADA:
+    'border-[#A7F3D0] bg-[#ECFDF5] text-[#047857] dark:border-[rgba(16,185,129,.18)] dark:bg-[rgba(16,185,129,.10)] dark:text-[#6EE7B7]',
+  CANCELADA:
+    'border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C] dark:border-[rgba(239,68,68,.18)] dark:bg-[rgba(239,68,68,.10)] dark:text-[#FCA5A5]',
+}
+
+// statusChip(status): reemplaza ps.statusChip(status) -- mismo mapa exacto
+// de src/ui/pageStyles.js, como className.
+export function statusChipClass(status) {
+  return cn(
+    'inline-flex h-6 items-center rounded-full border px-2 text-xs font-semibold',
+    STATUS_CHIP_TONES[status] || STATUS_CHIP_TONES.PENDIENTE,
+  )
+}
+
+// Fase 6c (Centro de Trabajo, primer lote -- AreaStaffSummary): reemplaza
+// ps.sectionTitle (fontWeight 700, fontSize 15, letterSpacing -0.2,
+// color text.primary) -- mismos valores exactos, como className.
+export const sectionTitleClass = 'text-[15px] font-bold tracking-[-0.2px] text-foreground'

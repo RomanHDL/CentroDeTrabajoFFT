@@ -1,18 +1,13 @@
+import { Search } from 'lucide-react'
 import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
-import SearchIcon from '@mui/icons-material/Search'
-import { searchEmployees, getCurrentAssignment } from '../../data/personnel/repository'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
+import { getCurrentAssignment, searchEmployees } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { getEffectiveAreaForEmployee } from '../../data/production/personnelByArea'
 import { workCenterById } from '../../data/production/catalog'
+import { getEffectiveAreaForEmployee } from '../../data/production/personnelByArea'
 import { useDndAssign } from '../../state/dndAssign'
 import EmployeeAvatar from './EmployeeAvatar'
 
@@ -36,44 +31,23 @@ export default function EmployeeAssignSearchBar({ areaId }) {
   }
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      <TextField
-        fullWidth
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground opacity-50" />
+      <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar por número de empleado o nombre..."
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ opacity: 0.5 }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={{
-          '& .MuiInputBase-input': { fontSize: 15, py: 1.4 },
-          '& .MuiOutlinedInput-root': { borderRadius: 2.5 },
-        }}
+        className="h-auto rounded-[25px] py-[11.2px] pl-9 text-[15px]"
       />
 
       {query.trim() && (
-        <Paper
-          elevation={4}
-          sx={{
-            position: 'absolute',
-            zIndex: 20,
-            mt: 0.5,
-            width: '100%',
-            maxHeight: 320,
-            overflowY: 'auto',
-            borderRadius: 2,
-          }}
-        >
+        <div className="absolute z-20 mt-1 max-h-[320px] w-full overflow-y-auto rounded-[20px] border border-border bg-card shadow-lg">
           {results.length === 0 ? (
-            <Typography sx={{ p: 2, fontSize: 13, color: 'text.secondary' }}>
+            <p className="p-4 text-[13px] text-muted-foreground">
               No se encontró personal activo con ese criterio.
-            </Typography>
+            </p>
           ) : (
-            <Stack divider={<Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }} />}>
+            <div className="divide-y divide-border">
               {results.map((employee) => {
                 const current = getCurrentAssignment(employee.id)
                 const effectiveAreaId = current?.areaId ?? getEffectiveAreaForEmployee(employee.id)
@@ -82,44 +56,38 @@ export default function EmployeeAssignSearchBar({ areaId }) {
                 const numberLabel =
                   formattedNumber === 'PROYECTO' ? 'PROYECTO' : `#${formattedNumber}`
                 return (
-                  <Stack
-                    key={employee.id}
-                    direction="row"
-                    spacing={1.5}
-                    alignItems="center"
-                    sx={{ p: 1.5 }}
-                  >
+                  <div key={employee.id} className="flex items-center gap-3 p-3">
                     <EmployeeAvatar employee={employee} size={38} />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography noWrap sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                        {employee.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13.5px] font-bold">{employee.name}</p>
+                      <p className="text-[11.5px] text-muted-foreground">
                         {numberLabel} ·{' '}
                         {effectiveAreaId
                           ? `Actualmente: ${workCenterById(effectiveAreaId)?.name || effectiveAreaId}`
                           : 'Sin asignación'}
-                      </Typography>
-                    </Box>
+                      </p>
+                    </div>
                     {sameArea ? (
-                      <Chip size="small" label="Ya está aquí" sx={{ fontWeight: 700 }} />
+                      <Badge variant="secondary" className="font-bold">
+                        Ya está aquí
+                      </Badge>
                     ) : (
                       <Button
-                        size="small"
-                        variant="outlined"
+                        size="sm"
+                        variant="outline"
                         onClick={() => handlePick(employee)}
-                        sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
+                        className="shrink-0 font-bold"
                       >
                         {current ? 'Mover aquí' : 'Asignar'}
                       </Button>
                     )}
-                  </Stack>
+                  </div>
                 )
               })}
-            </Stack>
+            </div>
           )}
-        </Paper>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }

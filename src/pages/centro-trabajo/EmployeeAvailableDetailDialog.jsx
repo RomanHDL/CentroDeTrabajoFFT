@@ -1,38 +1,29 @@
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import IconButton from '@mui/material/IconButton'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
-import Button from '@mui/material/Button'
-import CloseIcon from '@mui/icons-material/Close'
+import { X } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { getActividadForEmployee } from '../../data/production/personnelByArea'
 import EmployeeAvatar from './EmployeeAvatar'
 
 function DetailRow({ label, value }) {
   return (
-    <Box>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.4,
-        }}
-      >
+    <div>
+      <p className="text-[10.5px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
         {label}
-      </Typography>
+      </p>
       {typeof value === 'string' ? (
-        <Typography sx={{ fontSize: 14, fontWeight: 600, mt: 0.25 }}>{value}</Typography>
+        <p className="mt-0.5 text-sm font-semibold">{value}</p>
       ) : (
-        <Box sx={{ mt: 0.4 }}>{value}</Box>
+        <div className="mt-[3.2px]">{value}</div>
       )}
-    </Box>
+    </div>
   )
 }
 
@@ -53,70 +44,53 @@ export default function EmployeeAvailableDetailDialog({ employee, open, onClose,
   const actividad = getActividadForEmployee(employee.id)
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontWeight: 800,
-          fontSize: 16,
-        }}
-      >
-        Detalle del empleado
-        <IconButton size="small" onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </DialogTitle>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
-          <EmployeeAvatar employee={employee} size={52} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>
-            {employee.name}
-          </Typography>
-        </Stack>
-        <Stack spacing={1.75}>
-          <DetailRow label="No. empleado" value={numberLabel} />
-          <DetailRow
-            label="Estado"
-            value={
-              <Chip
-                size="small"
-                label="Disponible"
-                sx={{
-                  fontWeight: 700,
-                  bgcolor: '#10B98122',
-                  color: '#047857',
-                  border: '1px solid #10B98155',
-                }}
-              />
-            }
-          />
-          <DetailRow label="Área actual" value="Sin área asignada" />
-          <DetailRow label="Turno" value="Sin turno asignado hoy" />
-          {actividad && <DetailRow label="Actividad registrada (BASE)" value={actividad} />}
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Cancelar
-        </Button>
-        {onAssign && (
-          <Button
-            variant="contained"
-            onClick={onAssign}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-          >
-            Asignar
+        <DialogHeader>
+          <DialogTitle>Detalle del empleado</DialogTitle>
+          <DialogClose asChild>
+            <button
+              type="button"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </DialogClose>
+        </DialogHeader>
+        <div className="px-6 pb-2">
+          <div className="mb-5 flex items-center gap-3">
+            <EmployeeAvatar employee={employee} size={52} />
+            <p className="text-[16px] font-extrabold leading-[1.2]">{employee.name}</p>
+          </div>
+          <div className="flex flex-col gap-3.5">
+            <DetailRow label="No. empleado" value={numberLabel} />
+            <DetailRow
+              label="Estado"
+              value={
+                <Badge
+                  variant="outline"
+                  className="border-[#10B98155] bg-[#10B98122] font-bold text-[#047857]"
+                >
+                  Disponible
+                </Badge>
+              }
+            />
+            <DetailRow label="Área actual" value="Sin área asignada" />
+            <DetailRow label="Turno" value="Sin turno asignado hoy" />
+            {actividad && <DetailRow label="Actividad registrada (BASE)" value={actividad} />}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 px-6 pb-5">
+          <Button variant="ghost" onClick={onClose} className="font-bold">
+            Cancelar
           </Button>
-        )}
-      </DialogActions>
+          {onAssign && (
+            <Button onClick={onAssign} className="rounded-[20px] font-bold">
+              Asignar
+            </Button>
+          )}
+        </div>
+      </DialogContent>
     </Dialog>
   )
 }
