@@ -1,6 +1,3 @@
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
 import ClearLayoutPanel from './ClearLayoutPanel'
 import RestoreLayoutPanel from './RestoreLayoutPanel'
 
@@ -12,21 +9,16 @@ import RestoreLayoutPanel from './RestoreLayoutPanel'
    restoreBaselinePlacement) NO se toca -- solo cambia el contenedor visual. */
 export default function AdminToolsCard() {
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>
-        Herramientas administrativas
-      </Typography>
-      <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
+    <div className="mt-6 rounded-[20px] border border-border p-5">
+      <p className="mb-1 text-base font-extrabold">Herramientas administrativas</p>
+      <p className="mb-4 text-[13px] text-muted-foreground">
         Acciones de mantenimiento del layout visual de planta -- no afectan permisos, usuarios ni
         datos históricos.
-      </Typography>
-      <Stack spacing={2}>
+      </p>
+      <div className="flex flex-col gap-4">
         <ClearLayoutPanel />
         <RestoreLayoutPanel />
-      </Stack>
-    </Paper>
+      </div>
+    </div>
   )
 }

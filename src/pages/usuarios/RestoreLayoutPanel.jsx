@@ -1,16 +1,10 @@
+import { RotateCcw } from 'lucide-react'
 import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Alert from '@mui/material/Alert'
-import RestoreIcon from '@mui/icons-material/Restore'
-import { getSuppressedLinePeopleIds } from '../../data/production/personnelByArea'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { restoreBaselinePlacement } from '../../data/personnel/repository'
+import { getSuppressedLinePeopleIds } from '../../data/production/personnelByArea'
 import { showToast } from '../../ui/toast'
 
 /* Inverso exacto de "Vaciar layout" (ClearLayoutPanel.jsx), a peticion
@@ -45,51 +39,49 @@ export default function RestoreLayoutPanel() {
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>
-        Restaurar layout de las WC LINEA
-      </Typography>
-      <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
+    <div className="mt-6 rounded-[20px] border border-border p-5">
+      <p className="mb-1 text-base font-extrabold">Restaurar layout de las WC LINEA</p>
+      <p className="mb-4 text-[13px] text-muted-foreground">
         Regresa, en el mapa visual, a todo el personal que quedó sin área por "Vaciar layout" a su
         línea histórica de LAYOUT FFT.xlsx (sin puesto/estación inventado dentro de la línea — el
         Excel no dice quién hace qué puesto). Nunca toca a quien ya tiene una asignación real de hoy
         hecha desde Registro de personal.
-      </Typography>
+      </p>
       {result != null && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert className="mb-4 border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]">
           {result} personas volvieron a aparecer en su WC LINEA.
         </Alert>
       )}
       <Button
-        variant="outlined"
-        color="success"
-        startIcon={<RestoreIcon fontSize="small" />}
+        variant="outline"
+        className="border-[#10B981] font-bold normal-case text-[#10B981] hover:bg-[#10B981]/10"
         onClick={() => setConfirmOpen(true)}
-        sx={{ textTransform: 'none', fontWeight: 700 }}
       >
+        <RotateCcw className="h-4 w-4" />
         Restaurar layout ahora
       </Button>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Restaurar layout de las WC LINEA</DialogTitle>
-        <DialogContent>
-          <Typography>
+      <Dialog open={confirmOpen} onOpenChange={(next) => !next && setConfirmOpen(false)}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Restaurar layout de las WC LINEA</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-2 text-sm">
             Todo el personal suprimido de las WC LINEA volverá a ubicarse por su zona histórica de
             LAYOUT FFT.xlsx, sin puesto específico asignado (queda como "—" hasta que un líder lo
             registre de verdad). No afecta a quien ya tiene una asignación real hecha hoy.
             ¿Confirmas?
-          </Typography>
+          </div>
+          <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="success" onClick={handleConfirm}>
+              Restaurar layout
+            </Button>
+          </div>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="success" variant="contained" onClick={handleConfirm}>
-            Restaurar layout
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Paper>
+    </div>
   )
 }

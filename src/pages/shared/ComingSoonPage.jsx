@@ -1,8 +1,5 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import ConstructionIcon from '@mui/icons-material/Construction'
-import { usePageStyles } from '../../ui/pageStyles'
+import { Construction } from 'lucide-react'
+import { cardClass, pageClass, pageTitleClass } from '@/lib/pageStyles'
 import EmptyState from '../../ui/EmptyState'
 
 /* Modulo "solo navegacion" (2026-08-28, a peticion explicita del usuario):
@@ -10,23 +7,25 @@ import EmptyState from '../../ui/EmptyState'
    YA, pero su contenido real todavia no se construye -- "por ahora no
    desarrollar el contenido... solo crear los modulos/rutas necesarias
    para poder acceder a ellos". Un solo componente compartido (reutiliza
-   EmptyState/usePageStyles, mismo encabezado que el resto de paginas)
+   EmptyState/pageStyles, mismo encabezado que el resto de paginas)
    para no triplicar el mismo marcado en 3 archivos -- cada pagina real
-   solo le pasa su titulo. */
+   solo le pasa su titulo.
+
+   Fase 6c: portado de MUI a Tailwind (mismo componente para los 3
+   consumidores, ninguno necesita su propio cambio). */
 export default function ComingSoonPage({ title }) {
-  const ps = usePageStyles()
   return (
-    <Box sx={ps.page}>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={ps.pageTitle}>{title}</Typography>
-      </Box>
-      <Paper elevation={0} sx={{ ...ps.card, maxWidth: 520, mx: 'auto' }}>
+    <div className={pageClass}>
+      <div className="mb-5">
+        <p className={pageTitleClass}>{title}</p>
+      </div>
+      <div className={`${cardClass} mx-auto max-w-[520px]`}>
         <EmptyState
-          icon={<ConstructionIcon />}
+          icon={<Construction />}
           title="Trabajando en ello"
           description="Este módulo se encuentra actualmente en desarrollo."
         />
-      </Paper>
-    </Box>
+      </div>
+    </div>
   )
 }

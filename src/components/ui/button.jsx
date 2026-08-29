@@ -13,6 +13,12 @@ const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Fase 6c (Usuarios): equivalentes de MUI color="success"/"warning"
+        // variant="contained" (ClearLayoutPanel/RestoreLayoutPanel) -- para
+        // el equivalente "outlined" usar variant="outline" + className con
+        // border/text de estos mismos hex, sin crecer mas la matriz cva.
+        success: 'bg-[#10B981] text-white hover:bg-[#10B981]/90',
+        warning: 'bg-[#F59E0B] text-white hover:bg-[#F59E0B]/90',
       },
       size: {
         default: 'h-10 px-4 py-2',

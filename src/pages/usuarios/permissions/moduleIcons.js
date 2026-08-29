@@ -1,27 +1,33 @@
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import FactoryIcon from '@mui/icons-material/Factory'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import GroupIcon from '@mui/icons-material/Group'
-import MapIcon from '@mui/icons-material/Map'
-import QueryStatsIcon from '@mui/icons-material/QueryStats'
-import EventAvailableIcon from '@mui/icons-material/EventAvailable'
-import FactCheckIcon from '@mui/icons-material/FactCheck'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import {
+  BarChart3,
+  CalendarCheck,
+  ClipboardCheck,
+  Factory,
+  HelpCircle,
+  LayoutDashboard,
+  Map as MapIcon,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 
 // Mapea el string `icon` de MODULE_REGISTRY (shared/moduleRegistry.js) al
-// componente MUI real -- el registro no puede importar JSX (debe ser
+// componente Lucide real -- el registro no puede importar JSX (debe ser
 // importable tambien desde Node/api), asi que la traduccion vive aqui.
+// Fase 6c: mismos iconos que ya eligio Sidebar.jsx para cada modulo
+// (Dashboard/Factory/PersonAddAlt1/Group/QueryStats/EventAvailable/
+// FactCheck), para no tener dos mapeos MUI->Lucide distintos del mismo
+// concepto en la app.
 const ICONS = {
-  Dashboard: DashboardIcon,
-  Factory: FactoryIcon,
-  PersonAddAlt1: PersonAddAlt1Icon,
-  Group: GroupIcon,
+  Dashboard: LayoutDashboard,
+  Factory: Factory,
+  PersonAddAlt1: UserPlus,
+  Group: Users,
   Map: MapIcon,
-  QueryStats: QueryStatsIcon,
-  EventAvailable: EventAvailableIcon,
-  FactCheck: FactCheckIcon,
+  QueryStats: BarChart3,
+  EventAvailable: CalendarCheck,
+  FactCheck: ClipboardCheck,
 }
 
 export function getModuleIcon(iconKey) {
-  return ICONS[iconKey] || HelpOutlineIcon
+  return ICONS[iconKey] || HelpCircle
 }

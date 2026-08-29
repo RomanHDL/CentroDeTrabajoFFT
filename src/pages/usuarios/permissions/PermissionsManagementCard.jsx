@@ -1,9 +1,5 @@
-import { forwardRef, useState, useEffect } from 'react'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Tabs from '@mui/material/Tabs'
-import Tab from '@mui/material/Tab'
-import Box from '@mui/material/Box'
+import { forwardRef, useEffect, useState } from 'react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RoleModulePermissionsCard from './RoleModulePermissionsCard'
 import UserModulePermissionsCard from './UserModulePermissionsCard'
 
@@ -30,34 +26,29 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
   }, [focusUserId, onFocusUserHandled])
 
   return (
-    <Paper
-      ref={ref}
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Gestión de permisos</Typography>
-      <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 1.5 }}>
+    <div ref={ref} className="mt-6 rounded-[20px] border border-border p-5">
+      <p className="mb-1 text-base font-extrabold">Gestión de permisos</p>
+      <p className="mb-3 text-[13px] text-muted-foreground">
         Qué módulos puede ver cada rol, y ajustes individuales por usuario.
-      </Typography>
+      </p>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, minHeight: 36 }}>
-        <Tab label="Por rol" sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
-        <Tab label="Por usuario" sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
-      </Tabs>
-
-      <Box role="tabpanel" hidden={tab !== 0}>
-        {tab === 0 && <RoleModulePermissionsCard />}
-      </Box>
-      <Box role="tabpanel" hidden={tab !== 1}>
-        {tab === 1 && (
+      <Tabs value={String(tab)} onValueChange={(v) => setTab(Number(v))}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="0">Por rol</TabsTrigger>
+          <TabsTrigger value="1">Por usuario</TabsTrigger>
+        </TabsList>
+        <TabsContent value="0">
+          <RoleModulePermissionsCard />
+        </TabsContent>
+        <TabsContent value="1">
           <UserModulePermissionsCard
             users={users}
             selectedUserId={selectedUserId}
             onSelectUser={setSelectedUserId}
           />
-        )}
-      </Box>
-    </Paper>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 })
 
