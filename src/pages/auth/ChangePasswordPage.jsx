@@ -1,12 +1,10 @@
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '../../state/auth'
 
 export default function ChangePasswordPage() {
@@ -61,82 +59,60 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '80vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 2,
-      }}
-    >
-      <Paper
-        elevation={0}
-        sx={{
-          width: '100%',
-          maxWidth: 420,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Typography sx={{ fontWeight: 800, fontSize: 17, mb: 0.5 }}>Cambiar contraseña</Typography>
+    <div className="flex min-h-[80vh] items-center justify-center px-4">
+      <div className="w-full max-w-[420px] rounded-[30px] border border-border bg-card p-6 text-foreground sm:p-8">
+        <p className="mb-1 text-[17px] font-extrabold">Cambiar contraseña</p>
         {user?.mustChangePassword && (
-          <Typography color="text.secondary" sx={{ fontSize: 13, mb: 2 }}>
+          <p className="mb-4 text-[13px] text-muted-foreground">
             Tu contraseña es temporal. Debes establecer una nueva antes de continuar.
-          </Typography>
+          </p>
         )}
 
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
-        >
+        <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-4">
           {requiresCurrent && (
-            <TextField
-              label="Contraseña actual"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              fullWidth
-              disabled={submitting}
-              autoComplete="current-password"
-            />
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="change-password-current">Contraseña actual</Label>
+              <Input
+                id="change-password-current"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={submitting}
+                autoComplete="current-password"
+              />
+            </div>
           )}
-          <TextField
-            label="Nueva contraseña"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            fullWidth
-            disabled={submitting}
-            autoComplete="new-password"
-            helperText="Mínimo 8 caracteres"
-          />
-          <TextField
-            label="Confirmar nueva contraseña"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            fullWidth
-            disabled={submitting}
-            autoComplete="new-password"
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="change-password-new">Nueva contraseña</Label>
+            <Input
+              id="change-password-new"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={submitting}
+              autoComplete="new-password"
+            />
+            <p className="text-xs text-muted-foreground">Mínimo 8 caracteres</p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="change-password-confirm">Confirmar nueva contraseña</Label>
+            <Input
+              id="change-password-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={submitting}
+              autoComplete="new-password"
+            />
+          </div>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <Alert variant="destructive">{error}</Alert>}
 
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={submitting}
-            sx={{ mt: 1, fontWeight: 700 }}
-          >
-            {submitting ? <CircularProgress size={22} color="inherit" /> : 'Guardar contraseña'}
+          <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
+            {submitting ? <Loader2 size={22} className="animate-spin" /> : 'Guardar contraseña'}
           </Button>
-        </Box>
-      </Paper>
-    </Box>
+        </form>
+      </div>
+    </div>
   )
 }
