@@ -4,7 +4,12 @@ import Typography from '@mui/material/Typography'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import ChartCard from '../ChartCard'
 
-const SHIFT_COLORS = { MATUTINO: '#F59E0B', TIEMPO_EXTRA: '#3B82F6', NOCHE: '#6366F1', SIN_TURNO: '#94A3B8' }
+const SHIFT_COLORS = {
+  MATUTINO: '#F59E0B',
+  TIEMPO_EXTRA: '#3B82F6',
+  NOCHE: '#6366F1',
+  SIN_TURNO: '#94A3B8',
+}
 
 /* "Distribución por turno" (2026-08-26) -- usa exclusivamente
    OFFICIAL_SHIFTS (catalog.js), nunca el 07:00-14:00 ya corregido en
@@ -18,9 +23,21 @@ function ChartTooltip({ active, payload, total }) {
   const row = payload[0].payload
   const pct = total > 0 ? ((row.count / total) * 100).toFixed(0) : 0
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 3 }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        px: 1.5,
+        py: 1,
+        boxShadow: 3,
+      }}
+    >
       <Box sx={{ fontWeight: 700, fontSize: 12.5 }}>{row.label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{row.count} persona{row.count === 1 ? '' : 's'} ({pct}%)</Box>
+      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+        {row.count} persona{row.count === 1 ? '' : 's'} ({pct}%)
+      </Box>
     </Box>
   )
 }
@@ -41,17 +58,37 @@ export default function ShiftDistributionDonutCard({ shifts, loading }) {
         <Box sx={{ position: 'relative', flex: '1 1 0', minWidth: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data.filter((d) => d.count > 0)} dataKey="count" nameKey="label" innerRadius="62%" outerRadius="92%" paddingAngle={1.5} stroke="none">
-                {data.filter((d) => d.count > 0).map((row) => <Cell key={row.id} fill={row.color} />)}
+              <Pie
+                data={data.filter((d) => d.count > 0)}
+                dataKey="count"
+                nameKey="label"
+                innerRadius="62%"
+                outerRadius="92%"
+                paddingAngle={1.5}
+                stroke="none"
+              >
+                {data
+                  .filter((d) => d.count > 0)
+                  .map((row) => (
+                    <Cell key={row.id} fill={row.color} />
+                  ))}
               </Pie>
               <Tooltip content={<ChartTooltip total={total} />} />
             </PieChart>
           </ResponsiveContainer>
-          <Box sx={{
-            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            textAlign: 'center', pointerEvents: 'none',
-          }}>
-            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>Total</Typography>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>
+              Total
+            </Typography>
             <Typography sx={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{total}</Typography>
           </Box>
         </Box>
@@ -59,9 +96,13 @@ export default function ShiftDistributionDonutCard({ shifts, loading }) {
         <Stack spacing={1} sx={{ flex: '0 0 48%', minWidth: 0, justifyContent: 'center' }}>
           {data.map((row) => (
             <Stack key={row.id} direction="row" alignItems="center" spacing={0.75}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }} />
+              <Box
+                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+              />
               <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.25 }} noWrap>{row.label}</Typography>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.25 }} noWrap>
+                  {row.label}
+                </Typography>
                 <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>
                   {row.count} persona{row.count === 1 ? '' : 's'}
                 </Typography>

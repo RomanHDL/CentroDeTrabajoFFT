@@ -7,8 +7,13 @@ import { getMovesCountForDate, getPendingMoves } from '../personnel/repository'
 import { usePersonnelVersion } from '../personnel/usePersonnelVersion'
 import { useAuth } from '../../state/auth'
 import {
-  getDashboardAreas, getAreaStatusCounts, getIncompleteLines, getDashboardFindings,
-  getShiftDistribution, getDailyMovementsBreakdown, getRecentActivity,
+  getDashboardAreas,
+  getAreaStatusCounts,
+  getIncompleteLines,
+  getDashboardFindings,
+  getShiftDistribution,
+  getDailyMovementsBreakdown,
+  getRecentActivity,
 } from './dashboardMetrics'
 
 /* Serie de /api/dashboard/trends -- unico fetch de red nuevo de este
@@ -46,13 +51,20 @@ function groupTrends(movements) {
     }
   })
 
-  const hourlyToday = [...hourlyCounts.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([hour, count]) => ({ hour, count }))
+  const hourlyToday = [...hourlyCounts.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([hour, count]) => ({ hour, count }))
   const dailyLast7 = [...dailyCounts.entries()].map(([date, count]) => ({ date, count }))
   return { hourlyToday, dailyLast7 }
 }
 
 function useDashboardTrends(version) {
-  const [state, setState] = useState({ loading: true, error: null, hourlyToday: [], dailyLast7: [] })
+  const [state, setState] = useState({
+    loading: true,
+    error: null,
+    hourlyToday: [],
+    dailyLast7: [],
+  })
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -77,7 +89,9 @@ function useDashboardTrends(version) {
 
     scheduleFetch()
 
-    function onVisible() { if (document.visibilityState === 'visible') fetchTrends() }
+    function onVisible() {
+      if (document.visibilityState === 'visible') fetchTrends()
+    }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', fetchTrends)
     window.addEventListener('online', fetchTrends)
@@ -105,7 +119,9 @@ export function useDashboardMetrics() {
   const trends = useDashboardTrends(version)
   const [updatedAt, setUpdatedAt] = useState(() => dayjs())
 
-  useEffect(() => { setUpdatedAt(dayjs()) }, [version, trends.hourlyToday, trends.dailyLast7])
+  useEffect(() => {
+    setUpdatedAt(dayjs())
+  }, [version, trends.hourlyToday, trends.dailyLast7])
 
   const kpis = generalKpis()
   const totals = getStaffingTotals()
@@ -120,7 +136,11 @@ export function useDashboardMetrics() {
   const recentActivity = getRecentActivity()
 
   const findings = getDashboardFindings({
-    areas, incompleteLines, pendingMovesCount, canSeeApprovals, movementsToday,
+    areas,
+    incompleteLines,
+    pendingMovesCount,
+    canSeeApprovals,
+    movementsToday,
   })
 
   return {
@@ -128,7 +148,10 @@ export function useDashboardMetrics() {
       personalActual: kpis.personalActivo,
       personalIdeal: kpis.personalIdeal,
       personalFaltante: kpis.personalFaltante,
-      faltantePct: kpis.personalIdeal > 0 ? Math.round((kpis.personalFaltante / kpis.personalIdeal) * 1000) / 10 : null,
+      faltantePct:
+        kpis.personalIdeal > 0
+          ? Math.round((kpis.personalFaltante / kpis.personalIdeal) * 1000) / 10
+          : null,
       lineasOperando: kpis.lineasOperando,
       lineasTotal: kpis.lineasTotal,
       coveragePct: totals.coveragePct,

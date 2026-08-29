@@ -40,7 +40,10 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   const ids = candidates.map((c) => c.id)
 
   if (ids.length) {
-    await prisma.employee.updateMany({ where: { id: { in: ids } }, data: { baselineSuppressed: true } })
+    await prisma.employee.updateMany({
+      where: { id: { in: ids } },
+      data: { baselineSuppressed: true },
+    })
   }
   return res.status(200).json({ suppressedCount: ids.length, employeeIds: ids })
 })

@@ -46,10 +46,16 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
   const [error, setError] = useState('')
   const [savingKey, setSavingKey] = useState(null)
 
-  const selectedUser = useMemo(() => users.find((u) => u.id === selectedUserId) || null, [users, selectedUserId])
+  const selectedUser = useMemo(
+    () => users.find((u) => u.id === selectedUserId) || null,
+    [users, selectedUserId],
+  )
 
   const loadDetail = useCallback(async (userId) => {
-    if (!userId) { setDetail(null); return }
+    if (!userId) {
+      setDetail(null)
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -62,16 +68,21 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
     }
   }, [])
 
-  useEffect(() => { loadDetail(selectedUserId) }, [selectedUserId, loadDetail])
+  useEffect(() => {
+    loadDetail(selectedUserId)
+  }, [selectedUserId, loadDetail])
 
   async function setEffect(moduleKey, effect) {
     const savingId = `${moduleKey}:${effect}`
     setSavingKey(savingId)
     try {
-      const updated = await apiRequest(`/api/users/${selectedUserId}/permissions/${encodeURIComponent(moduleKey)}`, {
-        method: 'PATCH',
-        body: { effect },
-      })
+      const updated = await apiRequest(
+        `/api/users/${selectedUserId}/permissions/${encodeURIComponent(moduleKey)}`,
+        {
+          method: 'PATCH',
+          body: { effect },
+        },
+      )
       setDetail((prev) => ({
         ...prev,
         modules: prev.modules.map((m) => (m.moduleKey === moduleKey ? { ...m, ...updated } : m)),
@@ -91,28 +102,71 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
         value={selectedUser}
         onChange={(_, value) => onSelectUser(value?.id || null)}
         getOptionLabel={(u) => `${u.employeeNumber ? `${u.employeeNumber} — ` : ''}${u.name}`}
-        renderInput={(params) => <TextField {...params} size="small" label="Buscar usuario" placeholder="Número de empleado, nombre o username" />}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            size="small"
+            label="Buscar usuario"
+            placeholder="Número de empleado, nombre o username"
+          />
+        )}
         sx={{ maxWidth: 420, mb: 2 }}
       />
 
       {!selectedUserId && (
-        <Typography sx={{ color: 'text.secondary', fontSize: 13.5 }}>Selecciona un usuario para ver y editar sus permisos individuales.</Typography>
+        <Typography sx={{ color: 'text.secondary', fontSize: 13.5 }}>
+          Selecciona un usuario para ver y editar sus permisos individuales.
+        </Typography>
       )}
 
       {selectedUserId && loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress size={24} /></Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+          <CircularProgress size={24} />
+        </Box>
       )}
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       {selectedUserId && !loading && detail && (
         <Box>
-          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>
-            <Box><Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Nombre</Typography><Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{detail.name}</Typography></Box>
-            <Box><Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Número</Typography><Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{detail.employeeNumber || '—'}</Typography></Box>
-            <Box><Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Rol</Typography><Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{ROLE_LABELS[detail.role] || detail.role}</Typography></Box>
-            <Box><Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Estado</Typography>
-              <Chip size="small" label={detail.active ? 'Activo' : 'Inactivo'} color={detail.active ? 'success' : 'default'} />
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 3,
+              flexWrap: 'wrap',
+              mb: 2,
+              p: 1.5,
+              bgcolor: 'action.hover',
+              borderRadius: 2,
+            }}
+          >
+            <Box>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Nombre</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{detail.name}</Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Número</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
+                {detail.employeeNumber || '—'}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Rol</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
+                {ROLE_LABELS[detail.role] || detail.role}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Estado</Typography>
+              <Chip
+                size="small"
+                label={detail.active ? 'Activo' : 'Inactivo'}
+                color={detail.active ? 'success' : 'default'}
+              />
             </Box>
           </Box>
 
@@ -139,23 +193,46 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip size="small" label={row.effective ? 'Permitido' : 'Sin acceso'} color={row.effective ? 'success' : 'default'} variant={row.effective ? 'filled' : 'outlined'} />
+                        <Chip
+                          size="small"
+                          label={row.effective ? 'Permitido' : 'Sin acceso'}
+                          color={row.effective ? 'success' : 'default'}
+                          variant={row.effective ? 'filled' : 'outlined'}
+                        />
                       </TableCell>
-                      <TableCell sx={{ fontSize: 12.5, color: 'text.secondary' }}>{configLabel(row, detail.role)}</TableCell>
+                      <TableCell sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                        {configLabel(row, detail.role)}
+                      </TableCell>
                       <TableCell align="right">
                         {isAdmin ? (
-                          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}>No aplica</Typography>
+                          <Typography
+                            sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}
+                          >
+                            No aplica
+                          </Typography>
                         ) : (
                           <ButtonGroup size="small" variant="outlined">
                             {['INHERIT', 'ALLOW', 'DENY'].map((effect) => {
-                              const label = effect === 'INHERIT' ? 'Heredar' : effect === 'ALLOW' ? 'Permitir' : 'Denegar'
-                              const active = (effect === 'INHERIT' && !row.override) || row.override === effect
+                              const label =
+                                effect === 'INHERIT'
+                                  ? 'Heredar'
+                                  : effect === 'ALLOW'
+                                    ? 'Permitir'
+                                    : 'Denegar'
+                              const active =
+                                (effect === 'INHERIT' && !row.override) || row.override === effect
                               const savingId = `${row.moduleKey}:${effect}`
                               return (
                                 <Button
                                   key={effect}
                                   variant={active ? 'contained' : 'outlined'}
-                                  color={effect === 'DENY' ? 'error' : effect === 'ALLOW' ? 'success' : 'primary'}
+                                  color={
+                                    effect === 'DENY'
+                                      ? 'error'
+                                      : effect === 'ALLOW'
+                                        ? 'success'
+                                        : 'primary'
+                                  }
                                   disabled={savingKey === savingId}
                                   onClick={() => setEffect(row.moduleKey, effect)}
                                   sx={{ textTransform: 'none', fontSize: 11.5 }}

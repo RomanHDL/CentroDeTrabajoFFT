@@ -38,5 +38,7 @@ for (const employeeNumber of BAJA_EMPLOYEE_NUMBERS) {
   updated += 1
 }
 
-console.log(`\nResumen: ${updated} actualizados, ${alreadyInactive} ya estaban inactivos, ${notFound} no encontrados.`)
+console.log(
+  `\nResumen: ${updated} actualizados, ${alreadyInactive} ya estaban inactivos, ${notFound} no encontrados.`,
+)
 await prisma.$disconnect()

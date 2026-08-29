@@ -50,8 +50,8 @@ export function lineSummary(workCenterId) {
   const personnel = getAreaHeadcount(workCenterId)
   const pct = cumplimientoPct(production, target)
   const workstations = getLineWorkstationsWithOccupancy(workCenterId)
-  const stationsOccupied = workstations.filter(w => w.occupants.length > 0).length
-  const stationsAvailable = workstations.filter(w => w.isAvailable).length
+  const stationsOccupied = workstations.filter((w) => w.occupants.length > 0).length
+  const stationsAvailable = workstations.filter((w) => w.isAvailable).length
   return {
     id: wc.id,
     name: wc.name,
@@ -73,7 +73,7 @@ export function lineSummary(workCenterId) {
 }
 
 export function allLineSummaries() {
-  return WORK_CENTERS.map(wc => lineSummary(wc.id))
+  return WORK_CENTERS.map((wc) => lineSummary(wc.id))
 }
 
 /* KPIs generales del dashboard — simplificado a lo que el negocio

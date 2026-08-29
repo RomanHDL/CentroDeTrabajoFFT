@@ -12,9 +12,23 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import { usePageStyles } from '../../ui/pageStyles'
-import { WORK_CENTERS, SHIFT_OPTIONS, CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
+import {
+  WORK_CENTERS,
+  SHIFT_OPTIONS,
+  CURRENT_SHIFT,
+  workCenterById,
+} from '../../data/production/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { checkInEmployee, moveEmployee, requestMove, createEmployee, getStationOccupancy, hasSkill, getPendingMoves, getCurrentAssignment } from '../../data/personnel/repository'
+import {
+  checkInEmployee,
+  moveEmployee,
+  requestMove,
+  createEmployee,
+  getStationOccupancy,
+  hasSkill,
+  getPendingMoves,
+  getCurrentAssignment,
+} from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useAuth } from '../../state/auth'
 import EmployeeSearchField from './EmployeeSearchField'
@@ -45,7 +59,12 @@ const emptyForm = (fixedAreaId) => ({
  * fixedAreaId: si se abre desde dentro de una linea, el area ya se
  * conoce y no se vuelve a pedir (menos toques en tablet).
  */
-export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, onDone, cancelLabel = 'Cancelar' }) {
+export default function RegisterPersonnelForm({
+  fixedAreaId = null,
+  onCancel,
+  onDone,
+  cancelLabel = 'Cancelar',
+}) {
   const ps = usePageStyles()
   const { user } = useAuth()
   const isLider = user?.role === 'LIDER'
@@ -69,7 +88,10 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     const stillPending = getPendingMoves().some((p) => p.id === pendingRequest.id)
     if (stillPending) return
     const current = getCurrentAssignment(pendingRequest.employeeId)
-    const approved = current && current.areaId === pendingRequest.toAreaId && current.stationId === pendingRequest.toStationId
+    const approved =
+      current &&
+      current.areaId === pendingRequest.toAreaId &&
+      current.stationId === pendingRequest.toStationId
     setResolvedOutcome(approved ? 'APPROVED' : 'REJECTED')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, step, pendingRequest])
@@ -96,16 +118,31 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     : employeeNumber.trim() && form.stationId && areaId && (!needsName || form.name.trim())
 
   const handleSearch = (selected, typedText) => {
-    setForm(f => ({ ...f, employee: selected, employeeNumberTyped: selected ? selected.employeeNumber : (typedText || '') }))
+    setForm((f) => ({
+      ...f,
+      employee: selected,
+      employeeNumberTyped: selected ? selected.employeeNumber : typedText || '',
+    }))
   }
 
   const handleToggleNoNumber = (checked) => {
-    setForm(f => ({ ...f, noNumber: checked, employee: null, employeeNumberTyped: '', name: checked ? f.name : '' }))
+    setForm((f) => ({
+      ...f,
+      noNumber: checked,
+      employee: null,
+      employeeNumberTyped: '',
+      name: checked ? f.name : '',
+    }))
   }
 
   const applyCheckInResult = (res) => {
     if (res.status === 'OK') {
-      setResult({ employee: res.employee, assignment: res.assignment, eventLabel: 'Entrada', eventTime: res.assignment.checkInAt })
+      setResult({
+        employee: res.employee,
+        assignment: res.assignment,
+        eventLabel: 'Entrada',
+        eventTime: res.assignment.checkInAt,
+      })
       setStep('SUCCESS')
       onDone && onDone()
     } else if (res.status === 'CONFLICT') {
@@ -114,10 +151,17 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       // check-in) — sin diálogo de confirmación, a peticion explicita del usuario. Cualquier otro
       // caso (otra área, o misma área con otra estación/forma de trabajo) SI es un cambio real y
       // pasa al panel de confirmación (step CONFLICT) para que quede claro que va a moverse.
-      const sameSpot = res.assignment.areaId === areaId && res.assignment.stationId === form.stationId
+      const sameSpot =
+        res.assignment.areaId === areaId && res.assignment.stationId === form.stationId
       if (sameSpot) {
         const attendanceTime = res.attendance?.checkedInAt || res.assignment.checkInAt
-        setResult({ employee: res.employee, assignment: res.assignment, eventLabel: 'Asistencia', eventTime: attendanceTime, alreadyThere: true })
+        setResult({
+          employee: res.employee,
+          assignment: res.assignment,
+          eventLabel: 'Asistencia',
+          eventTime: attendanceTime,
+          alreadyThere: true,
+        })
         setStep('SUCCESS')
         onDone && onDone()
       } else {
@@ -147,19 +191,28 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
         setSubmitting(false)
         return
       }
-      applyCheckInResult(checkInEmployee({ employeeId: employee.id, areaId, stationId: form.stationId, shift: form.shift }))
+      applyCheckInResult(
+        checkInEmployee({
+          employeeId: employee.id,
+          areaId,
+          stationId: form.stationId,
+          shift: form.shift,
+        }),
+      )
       setSubmitting(false)
       return
     }
 
-    applyCheckInResult(checkInEmployee({
-      employeeId: form.employee?.id,
-      employeeNumber,
-      name: needsName ? form.name : undefined,
-      areaId,
-      stationId: form.stationId,
-      shift: form.shift,
-    }))
+    applyCheckInResult(
+      checkInEmployee({
+        employeeId: form.employee?.id,
+        employeeNumber,
+        name: needsName ? form.name : undefined,
+        areaId,
+        stationId: form.stationId,
+        shift: form.shift,
+      }),
+    )
     setSubmitting(false)
   }
 
@@ -198,7 +251,12 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       shift: form.shift,
     })
     if (res.status === 'OK') {
-      setResult({ employee: conflict.employee, assignment: res.assignment, eventLabel: 'Movido', eventTime: res.movedAt })
+      setResult({
+        employee: conflict.employee,
+        assignment: res.assignment,
+        eventLabel: 'Movido',
+        eventTime: res.movedAt,
+      })
       setStep('SUCCESS')
       onDone && onDone()
     } else {
@@ -230,19 +288,43 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             : 'Ya está registrado hoy en otra área. Esto lo va a mover de área, no solo a contar su asistencia.'}
         </Alert>
         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Actualmente hace</Typography>
-          <Typography sx={{ fontWeight: 700 }}>
-            {workCenterById(conflict.assignment.areaId)?.name || conflict.assignment.areaId} — {conflict.assignment.stationId}
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+            }}
+          >
+            Actualmente hace
           </Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Entrada: {conflict.assignment.checkInAt}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>
+            {workCenterById(conflict.assignment.areaId)?.name || conflict.assignment.areaId} —{' '}
+            {conflict.assignment.stationId}
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+            Entrada: {conflict.assignment.checkInAt}
+          </Typography>
         </Box>
         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Va a pasar a hacer</Typography>
-          <Typography sx={{ fontWeight: 700 }}>{areaName} — {form.stationId || '—'}</Typography>
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+            }}
+          >
+            Va a pasar a hacer
+          </Typography>
+          <Typography sx={{ fontWeight: 700 }}>
+            {areaName} — {form.stationId || '—'}
+          </Typography>
         </Box>
         {isLider && (
           <Alert severity="info" sx={{ py: 0.5 }}>
-            Como líder, este movimiento se enviará a un supervisor o administrador para su aprobación — no se aplica de inmediato.
+            Como líder, este movimiento se enviará a un supervisor o administrador para su
+            aprobación — no se aplica de inmediato.
           </Alert>
         )}
         {error && <Alert severity="error">{error}</Alert>}
@@ -268,31 +350,47 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
         <Box>
           {resolved ? (
-            approved
-              ? <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
-              : <PendingActionsIcon sx={{ fontSize: 48, color: '#EF4444', mb: 1 }} />
+            approved ? (
+              <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
+            ) : (
+              <PendingActionsIcon sx={{ fontSize: 48, color: '#EF4444', mb: 1 }} />
+            )
           ) : (
             <PendingActionsIcon sx={{ fontSize: 48, color: '#F59E0B', mb: 1 }} />
           )}
           <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
-            {resolved ? (approved ? '✓ Movimiento aprobado' : '✕ Movimiento rechazado') : 'Movimiento enviado para aprobación'}
+            {resolved
+              ? approved
+                ? '✓ Movimiento aprobado'
+                : '✕ Movimiento rechazado'
+              : 'Movimiento enviado para aprobación'}
           </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
             {pendingRequest.employeeNumber} — {pendingRequest.employeeName}
           </Typography>
           <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
-            <Chip size="small" label={workCenterById(pendingRequest.toAreaId)?.name || pendingRequest.toAreaId} sx={ps.metricChip('info')} />
+            <Chip
+              size="small"
+              label={workCenterById(pendingRequest.toAreaId)?.name || pendingRequest.toAreaId}
+              sx={ps.metricChip('info')}
+            />
             <Chip size="small" label={pendingRequest.toStationId} sx={ps.metricChip('default')} />
           </Stack>
           <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
             {resolved
-              ? (approved ? 'El cambio ya se aplicó.' : 'Se mantiene en su ubicación anterior.')
+              ? approved
+                ? 'El cambio ya se aplicó.'
+                : 'Se mantiene en su ubicación anterior.'
               : 'Un supervisor o administrador debe verificarlo antes de que se aplique.'}
           </Typography>
         </Box>
         <Stack direction="row" spacing={1} justifyContent="center">
           <Button onClick={handleRegisterAnother}>Registrar otro</Button>
-          {onCancel && <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>Cerrar</Button>}
+          {onCancel && (
+            <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>
+              Cerrar
+            </Button>
+          )}
         </Stack>
       </Stack>
     )
@@ -310,7 +408,11 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             {result.employee.employeeNumber} — {result.employee.name}
           </Typography>
           <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
-            <Chip size="small" label={workCenterById(result.assignment.areaId)?.name || result.assignment.areaId} sx={ps.metricChip('info')} />
+            <Chip
+              size="small"
+              label={workCenterById(result.assignment.areaId)?.name || result.assignment.areaId}
+              sx={ps.metricChip('info')}
+            />
             <Chip size="small" label={result.assignment.stationId} sx={ps.metricChip('default')} />
           </Stack>
           <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
@@ -319,7 +421,11 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
         </Box>
         <Stack direction="row" spacing={1} justifyContent="center">
           <Button onClick={handleRegisterAnother}>Registrar otro</Button>
-          {onCancel && <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>Cerrar</Button>}
+          {onCancel && (
+            <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>
+              Cerrar
+            </Button>
+          )}
         </Stack>
       </Stack>
     )
@@ -329,10 +435,18 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
     <Stack spacing={2}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      {!form.noNumber && <EmployeeSearchField autoFocus value={form.employee} onChange={handleSearch} />}
+      {!form.noNumber && (
+        <EmployeeSearchField autoFocus value={form.employee} onChange={handleSearch} />
+      )}
 
       <FormControlLabel
-        control={<Checkbox size="small" checked={form.noNumber} onChange={(e) => handleToggleNoNumber(e.target.checked)} />}
+        control={
+          <Checkbox
+            size="small"
+            checked={form.noNumber}
+            onChange={(e) => handleToggleNoNumber(e.target.checked)}
+          />
+        }
         label="No tiene número de empleado"
       />
 
@@ -346,19 +460,21 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
             autoFocus
             label="Nombre completo"
             value={form.name}
-            onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </>
       )}
 
       {needsName && (
         <>
-          <Alert severity="warning" sx={{ py: 0.5 }}>Empleado {employeeNumber} no registrado — captura su nombre.</Alert>
+          <Alert severity="warning" sx={{ py: 0.5 }}>
+            Empleado {employeeNumber} no registrado — captura su nombre.
+          </Alert>
           <TextField
             fullWidth
             label="Nombre completo"
             value={form.name}
-            onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </>
       )}
@@ -366,30 +482,62 @@ export default function RegisterPersonnelForm({ fixedAreaId = null, onCancel, on
       {fixedAreaId ? (
         <TextField fullWidth label="Área / Línea" value={areaName} disabled sx={ps.inputSx} />
       ) : (
-        <TextField select fullWidth label="Área / Línea" value={form.areaId} onChange={(e) => setForm(f => ({ ...f, areaId: e.target.value, stationId: '' }))}>
-          {WORK_CENTERS.map(w => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
+        <TextField
+          select
+          fullWidth
+          label="Área / Línea"
+          value={form.areaId}
+          onChange={(e) => setForm((f) => ({ ...f, areaId: e.target.value, stationId: '' }))}
+        >
+          {WORK_CENTERS.map((w) => (
+            <MenuItem key={w.id} value={w.id}>
+              {w.name}
+            </MenuItem>
+          ))}
         </TextField>
       )}
 
-      <TextField select fullWidth label="Rol / Estación de hoy" value={form.stationId} onChange={(e) => setForm(f => ({ ...f, stationId: e.target.value }))}>
+      <TextField
+        select
+        fullWidth
+        label="Rol / Estación de hoy"
+        value={form.stationId}
+        onChange={(e) => setForm((f) => ({ ...f, stationId: e.target.value }))}
+      >
         {stations.map((s) => {
           const occ = getStationOccupancy(areaId, s.name)
           const compatible = form.employee ? hasSkill(form.employee.id, s.name) : false
           return (
             <MenuItem key={s.id} value={s.name} disabled={occ.isFull}>
-              {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}{compatible ? ' ✓ habilidad' : ''}
+              {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
+              {compatible ? ' ✓ habilidad' : ''}
             </MenuItem>
           )
         })}
       </TextField>
 
-      <TextField select fullWidth label="Turno" value={form.shift} onChange={(e) => setForm(f => ({ ...f, shift: e.target.value }))}>
-        {SHIFT_OPTIONS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+      <TextField
+        select
+        fullWidth
+        label="Turno"
+        value={form.shift}
+        onChange={(e) => setForm((f) => ({ ...f, shift: e.target.value }))}
+      >
+        {SHIFT_OPTIONS.map((s) => (
+          <MenuItem key={s} value={s}>
+            {s}
+          </MenuItem>
+        ))}
       </TextField>
 
       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
         {onCancel && <Button onClick={onCancel}>{cancelLabel}</Button>}
-        <Button variant="contained" onClick={handleConfirm} disabled={!canSubmit || submitting} sx={{ fontWeight: 700 }}>
+        <Button
+          variant="contained"
+          onClick={handleConfirm}
+          disabled={!canSubmit || submitting}
+          sx={{ fontWeight: 700 }}
+        >
           Confirmar registro
         </Button>
       </Stack>

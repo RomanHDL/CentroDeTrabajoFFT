@@ -1,6 +1,14 @@
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts'
 import ChartCard from '../ChartCard'
 
 /* Sustituye a "Tendencia de asistencia por hora" del mockup (2026-08-25,
@@ -18,9 +26,21 @@ import ChartCard from '../ChartCard'
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 3 }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        px: 1.5,
+        py: 1,
+        boxShadow: 3,
+      }}
+    >
       <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}</Box>
+      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+        {payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}
+      </Box>
     </Box>
   )
 }
@@ -52,10 +72,32 @@ export default function MovementsHourlyCard({ hourlyToday, loading, error, onRet
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} stroke={gridColor} />
-            <XAxis dataKey="hour" tick={{ fontSize: 11, fill: axisColor }} axisLine={{ stroke: gridColor }} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
-            <Tooltip content={<ChartTooltip />} cursor={{ stroke: lineColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
-            <Area type="monotone" dataKey="count" stroke={lineColor} strokeWidth={2} fill="url(#movementsHourlyFill)" dot={{ r: 3, fill: lineColor, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+            <XAxis
+              dataKey="hour"
+              tick={{ fontSize: 11, fill: axisColor }}
+              axisLine={{ stroke: gridColor }}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: axisColor }}
+              axisLine={false}
+              tickLine={false}
+              width={30}
+              allowDecimals={false}
+            />
+            <Tooltip
+              content={<ChartTooltip />}
+              cursor={{ stroke: lineColor, strokeWidth: 1, strokeDasharray: '3 3' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="count"
+              stroke={lineColor}
+              strokeWidth={2}
+              fill="url(#movementsHourlyFill)"
+              dot={{ r: 3, fill: lineColor, strokeWidth: 0 }}
+              activeDot={{ r: 5 }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </Box>

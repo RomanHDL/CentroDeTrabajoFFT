@@ -27,6 +27,9 @@ export default async function handler(req, res) {
 
   const token = signSessionToken(user.id)
   res.setHeader('Set-Cookie', buildSessionCookie(token))
-  const effectiveModules = await getEffectiveModulesForUser({ userId: updated.id, role: updated.role })
+  const effectiveModules = await getEffectiveModulesForUser({
+    userId: updated.id,
+    role: updated.role,
+  })
   return res.status(200).json({ user: publicUser(updated), effectiveModules })
 }

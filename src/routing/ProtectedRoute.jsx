@@ -10,7 +10,9 @@ export default function ProtectedRoute({ roles, children }) {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+      >
         <CircularProgress />
       </Box>
     )

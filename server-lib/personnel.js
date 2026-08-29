@@ -56,7 +56,10 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
 
     // BAJA real (Employee.active=false) nunca puede registrarse/asignarse/moverse, sin importar
     // el modo -- cubre checkin/move/approve-move desde un solo lugar (los 3 pasan por aqui).
-    const employee = await tx.employee.findUnique({ where: { id: employeeId }, select: { active: true } })
+    const employee = await tx.employee.findUnique({
+      where: { id: employeeId },
+      select: { active: true },
+    })
     if (!employee || !employee.active) return { status: 'INACTIVE_EMPLOYEE' }
 
     const today = todayDateOnly()
@@ -77,7 +80,11 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
       const existingAttendance = await tx.attendance.findUnique({
         where: { employeeId_date_shift: { employeeId, date: today, shift: shift || 'GENERAL' } },
       })
-      return { status: 'CONFLICT', assignment: current, existingAttendance: existingAttendance || null }
+      return {
+        status: 'CONFLICT',
+        assignment: current,
+        existingAttendance: existingAttendance || null,
+      }
     }
     if (mode === 'MOVE' && !current) return { status: 'NO_CURRENT_ASSIGNMENT' }
 
@@ -94,10 +101,16 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
     // un dia anterior dando vueltas.
     await tx.dailyAssignment.updateMany({
       where: { employeeId, status: 'ACTIVE', ...(current ? { id: { not: current.id } } : {}) },
-      data: { status: 'ENDED', endedAt: new Date(), endedByUserId: actingUserId, endReason: 'MOVED' },
+      data: {
+        status: 'ENDED',
+        endedAt: new Date(),
+        endedByUserId: actingUserId,
+        endReason: 'MOVED',
+      },
     })
 
-    if (current && current.workstationId === workstationId) return { status: 'OK', assignment: current }
+    if (current && current.workstationId === workstationId)
+      return { status: 'OK', assignment: current }
 
     const workstation = await tx.workstation.findUnique({ where: { id: workstationId } })
     // Mismo motivo que `current` arriba: sin date:today, para que un ocupante con asignacion
@@ -112,7 +125,12 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
     if (current) {
       await tx.dailyAssignment.update({
         where: { id: current.id },
-        data: { status: 'ENDED', endedAt: new Date(), endedByUserId: actingUserId, endReason: 'MOVED' },
+        data: {
+          status: 'ENDED',
+          endedAt: new Date(),
+          endedByUserId: actingUserId,
+          endReason: 'MOVED',
+        },
       })
     }
 
@@ -150,8 +168,12 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
       await tx.attendance.upsert({
         where: { employeeId_date_shift: { employeeId, date: today, shift: shift || 'GENERAL' } },
         create: {
-          employeeId, date: today, shift: shift || 'GENERAL',
-          checkInAt: new Date(), status: 'PRESENTE', registeredByUserId: actingUserId,
+          employeeId,
+          date: today,
+          shift: shift || 'GENERAL',
+          checkInAt: new Date(),
+          status: 'PRESENTE',
+          registeredByUserId: actingUserId,
         },
         update: {},
       })

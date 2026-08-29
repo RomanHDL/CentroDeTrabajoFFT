@@ -95,7 +95,11 @@ export function requireRole(roles, handler) {
 // moduleKey queda fuera de alcance de esta tarea.
 export function requireModuleAccess(moduleKey, handler) {
   return requireAuth(async (req, res) => {
-    const allowed = await canUserAccessModule({ userId: req.user.id, role: req.user.role, moduleKey })
+    const allowed = await canUserAccessModule({
+      userId: req.user.id,
+      role: req.user.role,
+      moduleKey,
+    })
     if (!allowed) return res.status(403).json({ error: 'No autorizado para este modulo' })
     return handler(req, res)
   })

@@ -27,16 +27,33 @@ import { prisma } from '../server-lib/prisma.js'
 
 async function deactivate(areaCode, name) {
   const wa = await prisma.workArea.findUnique({ where: { code: areaCode } })
-  if (!wa) { console.log(`  (omitido) WorkArea "${areaCode}" no existe`); return }
-  const w = await prisma.workstation.findUnique({ where: { workAreaId_name: { workAreaId: wa.id, name } } })
-  if (!w) { console.log(`  (omitido) ${areaCode}: "${name}" no existe`); return }
-  if (!w.active) { console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`); return }
-  const active = await prisma.dailyAssignment.count({ where: { workstationId: w.id, status: 'ACTIVE' } })
+  if (!wa) {
+    console.log(`  (omitido) WorkArea "${areaCode}" no existe`)
+    return
+  }
+  const w = await prisma.workstation.findUnique({
+    where: { workAreaId_name: { workAreaId: wa.id, name } },
+  })
+  if (!w) {
+    console.log(`  (omitido) ${areaCode}: "${name}" no existe`)
+    return
+  }
+  if (!w.active) {
+    console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`)
+    return
+  }
+  const active = await prisma.dailyAssignment.count({
+    where: { workstationId: w.id, status: 'ACTIVE' },
+  })
   await prisma.workstation.update({ where: { id: w.id }, data: { active: false } })
-  console.log(`  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`)
+  console.log(
+    `  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`,
+  )
 }
 
-console.log('--- WC LINEA 0 (PROYECTO): Montaje 3, Limpieza de TV 2, Suministro de Accesorios 2 ---')
+console.log(
+  '--- WC LINEA 0 (PROYECTO): Montaje 3, Limpieza de TV 2, Suministro de Accesorios 2 ---',
+)
 await deactivate('PROYECTO', 'Montaje 3')
 await deactivate('PROYECTO', 'Limpieza de TV 2')
 await deactivate('PROYECTO', 'Suministro de Accesorios 2')
@@ -46,7 +63,11 @@ for (const areaCode of ['LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']) {
   await deactivate(areaCode, 'Limpieza de TV 2')
 }
 
-console.log('\n(WC LINEA 1: sin cambio a proposito -- nunca tuvo "Limpieza de TV 2"; su unica posicion repetida, "Suministro de Accesorios 2", se queda por el piso minimo de 6 posiciones por linea. Ver comentario en catalog.js/workstations.js.)')
+console.log(
+  '\n(WC LINEA 1: sin cambio a proposito -- nunca tuvo "Limpieza de TV 2"; su unica posicion repetida, "Suministro de Accesorios 2", se queda por el piso minimo de 6 posiciones por linea. Ver comentario en catalog.js/workstations.js.)',
+)
 
-console.log('\nListo. Siguiente paso: npm run seed-personnel (sincroniza role/category/active de TODAS las estaciones de WC LINEA con el generador actual).')
+console.log(
+  '\nListo. Siguiente paso: npm run seed-personnel (sincroniza role/category/active de TODAS las estaciones de WC LINEA con el generador actual).',
+)
 await prisma.$disconnect()

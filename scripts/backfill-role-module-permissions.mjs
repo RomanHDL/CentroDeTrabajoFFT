@@ -20,6 +20,8 @@ for (const row of rows) {
   }
 }
 
-console.log(`\nBackfill completo: ${inserted} filas de RoleModulePermission creadas/actualizadas desde ${rows.length} filas de RoleModuleAccess.`)
+console.log(
+  `\nBackfill completo: ${inserted} filas de RoleModulePermission creadas/actualizadas desde ${rows.length} filas de RoleModuleAccess.`,
+)
 
 await prisma.$disconnect()

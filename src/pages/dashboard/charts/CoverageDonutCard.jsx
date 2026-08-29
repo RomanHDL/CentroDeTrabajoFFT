@@ -15,9 +15,21 @@ function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 3 }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        px: 1.5,
+        py: 1,
+        boxShadow: 3,
+      }}
+    >
       <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{row.name}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{row.actual} personas · {row.share.toFixed(1)}% del personal actual</Box>
+      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+        {row.actual} personas · {row.share.toFixed(1)}% del personal actual
+      </Box>
     </Box>
   )
 }
@@ -25,7 +37,11 @@ function ChartTooltip({ active, payload }) {
 export default function CoverageDonutCard({ areas, coveragePct, loading }) {
   const withPeople = areas.filter((a) => a.actual > 0).sort((a, b) => b.actual - a.actual)
   const totalActual = withPeople.reduce((sum, a) => sum + a.actual, 0)
-  const data = withPeople.map((a, i) => ({ ...a, share: totalActual > 0 ? (a.actual / totalActual) * 100 : 0, color: colorForIndex(i) }))
+  const data = withPeople.map((a, i) => ({
+    ...a,
+    share: totalActual > 0 ? (a.actual / totalActual) * 100 : 0,
+    color: colorForIndex(i),
+  }))
 
   return (
     <ChartCard
@@ -39,29 +55,53 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
         <Box sx={{ position: 'relative', flex: '1 1 0', minWidth: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="actual" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1.5} stroke="none">
-                {data.map((row) => <Cell key={row.id} fill={row.color} />)}
+              <Pie
+                data={data}
+                dataKey="actual"
+                nameKey="name"
+                innerRadius="62%"
+                outerRadius="92%"
+                paddingAngle={1.5}
+                stroke="none"
+              >
+                {data.map((row) => (
+                  <Cell key={row.id} fill={row.color} />
+                ))}
               </Pie>
               <Tooltip content={<ChartTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          <Box sx={{
-            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            textAlign: 'center', pointerEvents: 'none',
-          }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+          >
             <Typography sx={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
               {coveragePct != null ? `${coveragePct}%` : '—'}
             </Typography>
-            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>Cobertura total</Typography>
+            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>
+              Cobertura total
+            </Typography>
           </Box>
         </Box>
 
         <Stack spacing={0.6} sx={{ flex: '0 0 42%', minWidth: 0, overflow: 'auto', pr: 0.5 }}>
           {data.map((row) => (
             <Stack key={row.id} direction="row" alignItems="center" spacing={0.75}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11, flex: 1, minWidth: 0 }} noWrap title={row.name}>{row.name.replace(/^WC /, '')}</Typography>
-              <Typography sx={{ fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{row.share.toFixed(0)}%</Typography>
+              <Box
+                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+              />
+              <Typography sx={{ fontSize: 11, flex: 1, minWidth: 0 }} noWrap title={row.name}>
+                {row.name.replace(/^WC /, '')}
+              </Typography>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                {row.share.toFixed(0)}%
+              </Typography>
             </Stack>
           ))}
         </Stack>

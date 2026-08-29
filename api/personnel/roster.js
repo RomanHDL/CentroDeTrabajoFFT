@@ -37,51 +37,62 @@ export default requireAuth(async (req, res) => {
   const date = parseDateOnly(req.query.date)
   if (!date) return res.status(400).json({ error: 'Fecha invalida, usa YYYY-MM-DD.' })
 
-  const [employees, activeAssignments, assignmentsForDate, pendingMoves, resolvedMoves] = await Promise.all([
-    // active:true (2026-08-27, bug real): un empleado BAJA/inactivo (incluye los "fantasma"
-    // desactivados por colision de nombre, ver personnel.js/apiSync.js) nunca deberia competir
-    // por el mismo id local en el frontend (EMPLOYEE_DIRECTORY solo conoce un id por nombre
-    // completo para gente sin numero real, ver buildLocalIndex en apiSync.js) -- sin este filtro,
-    // el placement 'NONE' del fantasma (ya sin asignacion) pisaba en cada poll el placement
-    // 'LIVE' real de la persona activa que comparte su nombre, porque ambos se fusionaban en el
-    // mismo id local. Confirmado en vivo: "Cesar Hernandez Hernandez" desaparecia del layout de
-    // WC LINEA 2 en cada poll de 2s pese a tener una asignacion ACTIVE real.
-    prisma.employee.findMany({
-      where: { active: true },
-      select: { id: true, employeeNumber: true, fullName: true, areaZona: true, baselineSuppressed: true },
-    }),
-    // LIVE: sin filtro de fecha -- ver nota arriba.
-    prisma.dailyAssignment.findMany({
-      where: { status: 'ACTIVE' },
-      include: { workstation: { include: { workArea: true } } },
-    }),
-    // Solo para touchedToday (NONE vs SNAPSHOT) -- este SI sigue scoped a la fecha pedida.
-    prisma.dailyAssignment.findMany({
-      where: { date },
-      select: { employeeId: true },
-    }),
-    prisma.pendingMove.findMany({
-      where: { date, status: 'PENDING' },
-      include: {
-        employee: { select: { id: true, employeeNumber: true, fullName: true } },
-        requestedBy: { select: { name: true } },
-        toWorkstation: { include: { workArea: true } },
-        fromWorkstation: { include: { workArea: true } },
-      },
-    }),
-    // Resueltas (APPROVED/REJECTED) recientemente -- ventana corta de 3 minutos, suficiente para
-    // que el poll de 7s (apiSync.js) de OTRO dispositivo alcance a notificar a quien la pidio
-    // antes de que salga de la ventana. No es un endpoint nuevo, es parte del mismo roster.
-    prisma.pendingMove.findMany({
-      where: { date, status: { in: ['APPROVED', 'REJECTED'] }, resolvedAt: { gte: new Date(Date.now() - 3 * 60 * 1000) } },
-      include: {
-        employee: { select: { id: true, employeeNumber: true, fullName: true } },
-        requestedBy: { select: { name: true } },
-        toWorkstation: { include: { workArea: true } },
-        fromWorkstation: { include: { workArea: true } },
-      },
-    }),
-  ])
+  const [employees, activeAssignments, assignmentsForDate, pendingMoves, resolvedMoves] =
+    await Promise.all([
+      // active:true (2026-08-27, bug real): un empleado BAJA/inactivo (incluye los "fantasma"
+      // desactivados por colision de nombre, ver personnel.js/apiSync.js) nunca deberia competir
+      // por el mismo id local en el frontend (EMPLOYEE_DIRECTORY solo conoce un id por nombre
+      // completo para gente sin numero real, ver buildLocalIndex en apiSync.js) -- sin este filtro,
+      // el placement 'NONE' del fantasma (ya sin asignacion) pisaba en cada poll el placement
+      // 'LIVE' real de la persona activa que comparte su nombre, porque ambos se fusionaban en el
+      // mismo id local. Confirmado en vivo: "Cesar Hernandez Hernandez" desaparecia del layout de
+      // WC LINEA 2 en cada poll de 2s pese a tener una asignacion ACTIVE real.
+      prisma.employee.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          employeeNumber: true,
+          fullName: true,
+          areaZona: true,
+          baselineSuppressed: true,
+        },
+      }),
+      // LIVE: sin filtro de fecha -- ver nota arriba.
+      prisma.dailyAssignment.findMany({
+        where: { status: 'ACTIVE' },
+        include: { workstation: { include: { workArea: true } } },
+      }),
+      // Solo para touchedToday (NONE vs SNAPSHOT) -- este SI sigue scoped a la fecha pedida.
+      prisma.dailyAssignment.findMany({
+        where: { date },
+        select: { employeeId: true },
+      }),
+      prisma.pendingMove.findMany({
+        where: { date, status: 'PENDING' },
+        include: {
+          employee: { select: { id: true, employeeNumber: true, fullName: true } },
+          requestedBy: { select: { name: true } },
+          toWorkstation: { include: { workArea: true } },
+          fromWorkstation: { include: { workArea: true } },
+        },
+      }),
+      // Resueltas (APPROVED/REJECTED) recientemente -- ventana corta de 3 minutos, suficiente para
+      // que el poll de 7s (apiSync.js) de OTRO dispositivo alcance a notificar a quien la pidio
+      // antes de que salga de la ventana. No es un endpoint nuevo, es parte del mismo roster.
+      prisma.pendingMove.findMany({
+        where: {
+          date,
+          status: { in: ['APPROVED', 'REJECTED'] },
+          resolvedAt: { gte: new Date(Date.now() - 3 * 60 * 1000) },
+        },
+        include: {
+          employee: { select: { id: true, employeeNumber: true, fullName: true } },
+          requestedBy: { select: { name: true } },
+          toWorkstation: { include: { workArea: true } },
+          fromWorkstation: { include: { workArea: true } },
+        },
+      }),
+    ])
 
   const activeByEmployee = new Map()
   activeAssignments.forEach((a) => activeByEmployee.set(a.employeeId, a))

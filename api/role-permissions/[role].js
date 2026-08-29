@@ -1,5 +1,8 @@
 import { requireModuleAccess } from '../../server-lib/auth.js'
-import { setRoleModulePermission, getRoleModulePermissionsMap } from '../../server-lib/permissionService.js'
+import {
+  setRoleModulePermission,
+  getRoleModulePermissionsMap,
+} from '../../server-lib/permissionService.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 

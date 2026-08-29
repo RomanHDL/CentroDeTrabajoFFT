@@ -18,12 +18,14 @@ import { ROLE_LABELS } from './roleLabels'
 import NotificationBell from './NotificationBell'
 
 function initialsOf(name) {
-  return (name || '')
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('') || '?'
+  return (
+    (name || '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join('') || '?'
+  )
 }
 
 /* 2026-08-27 ("rediseño del header de Centro de Trabajo", a peticion
@@ -56,17 +58,31 @@ export default function HeaderUserActions({ mode, setMode }) {
           onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}
           sx={{
             transition: 'background-color 200ms ease, color 200ms ease',
-            '&:hover': { bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(96,165,250,.14)' : 'rgba(59,130,246,.10)') },
+            '&:hover': {
+              bgcolor: (t) =>
+                t.palette.mode === 'dark' ? 'rgba(96,165,250,.14)' : 'rgba(59,130,246,.10)',
+            },
           }}
         >
-          {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
+          {mode === 'light' ? (
+            <DarkModeIcon fontSize="small" />
+          ) : (
+            <LightModeIcon fontSize="small" />
+          )}
         </IconButton>
       </Tooltip>
 
       <Box
         onClick={(e) => setMenuAnchor(e.currentTarget)}
         sx={{
-          display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', ml: 0.5, px: 1, py: 0.5, borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          cursor: 'pointer',
+          ml: 0.5,
+          px: 1,
+          py: 0.5,
+          borderRadius: 2,
           transition: 'background-color 200ms ease',
           '&:hover': { bgcolor: 'action.hover' },
         }}
@@ -83,17 +99,28 @@ export default function HeaderUserActions({ mode, setMode }) {
       <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
         <Box sx={{ px: 2, py: 1 }}>
           <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{user?.name}</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{roleLabel} · Mi cuenta</Typography>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+            {roleLabel} · Mi cuenta
+          </Typography>
         </Box>
         <Divider />
         {user?.role === 'ADMINISTRADOR' && (
-          <MenuItem onClick={() => { setMenuAnchor(null); navigate('/cambiar-contrasena') }}>
-            <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null)
+              navigate('/cambiar-contrasena')
+            }}
+          >
+            <ListItemIcon>
+              <LockResetIcon fontSize="small" />
+            </ListItemIcon>
             Cambiar contraseña
           </MenuItem>
         )}
         <MenuItem onClick={handleLogout}>
-          <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
           Cerrar sesión
         </MenuItem>
       </Menu>

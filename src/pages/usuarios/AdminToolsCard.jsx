@@ -12,10 +12,16 @@ import RestoreLayoutPanel from './RestoreLayoutPanel'
    restoreBaselinePlacement) NO se toca -- solo cambia el contenedor visual. */
 export default function AdminToolsCard() {
   return (
-    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Herramientas administrativas</Typography>
+    <Paper
+      elevation={0}
+      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
+    >
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>
+        Herramientas administrativas
+      </Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-        Acciones de mantenimiento del layout visual de planta -- no afectan permisos, usuarios ni datos históricos.
+        Acciones de mantenimiento del layout visual de planta -- no afectan permisos, usuarios ni
+        datos históricos.
       </Typography>
       <Stack spacing={2}>
         <ClearLayoutPanel />

@@ -10,7 +10,11 @@ export async function apiRequest(path, options = {}) {
     credentials: 'include',
   })
   let data = null
-  try { data = await res.json() } catch { /* respuesta sin body */ }
+  try {
+    data = await res.json()
+  } catch {
+    /* respuesta sin body */
+  }
   if (!res.ok) {
     const error = new Error(data?.error || `Error ${res.status}`)
     error.status = res.status
@@ -46,32 +50,52 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const login = useCallback(async (identifier, password) => {
-    const data = await apiRequest('/api/auth/login', { method: 'POST', body: { identifier, password } })
+    const data = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: { identifier, password },
+    })
     setUser(data.user)
     setEffectiveModules(data.effectiveModules ?? [])
     return data.user
   }, [])
 
   const logout = useCallback(async () => {
-    try { await apiRequest('/api/auth/logout', { method: 'POST' }) } catch { /* ignore */ }
+    try {
+      await apiRequest('/api/auth/logout', { method: 'POST' })
+    } catch {
+      /* ignore */
+    }
     setUser(null)
     setEffectiveModules(null)
   }, [])
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
-    const data = await apiRequest('/api/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } })
+    const data = await apiRequest('/api/auth/change-password', {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    })
     setUser(data.user)
     return data.user
   }, [])
 
   return (
-    <AuthContext.Provider value={{
-      user, loading, login, logout, changePassword, refresh,
-      effectiveModules, effectiveModulesLoading: loading,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        changePassword,
+        refresh,
+        effectiveModules,
+        effectiveModulesLoading: loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

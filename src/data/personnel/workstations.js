@@ -67,7 +67,13 @@
    en los <Select> de esos 4 archivos (value duplicado) -- nunca podia
    pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
 
-import { WORK_CENTERS, LINE_FAMILY_AREA_IDS, LINE_LIKE_AREA_IDS, CUSTOM_STATION_PLANS, operationalGroupMembers } from '../production/catalog'
+import {
+  WORK_CENTERS,
+  LINE_FAMILY_AREA_IDS,
+  LINE_LIKE_AREA_IDS,
+  CUSTOM_STATION_PLANS,
+  operationalGroupMembers,
+} from '../production/catalog'
 import { getCachedLineStationConfig } from './lineStationConfig'
 
 /* Etiqueta de rol legible para cada estacion de LINEA -- solo texto
@@ -81,21 +87,27 @@ import { getCachedLineStationConfig } from './lineStationConfig'
 // Ayudante General -- "Limpieza de TV" es una de las excepciones
 // explicitas de la normalizacion, ver rankSystem.js/lineVisualType.js).
 const ROLE_LABELS = {
-  'Montaje': 'Operador de Montaje',
+  Montaje: 'Operador de Montaje',
   'Prueba eléctrica': 'Técnico eléctrico',
   'Limpieza de TV': 'Auxiliar de Limpieza',
-  'Etiquetado': 'Etiquetador',
+  Etiquetado: 'Etiquetador',
   'Suministro de Accesorios': 'Auxiliar de Accesorios',
-  'Empaque': 'Empacador',
-  'Calidad': 'Inspector de Calidad',
-  'Supervisión': 'Supervisor de Línea',
-  'Capacitación': 'Instructor',
+  Empaque: 'Empacador',
+  Calidad: 'Inspector de Calidad',
+  Supervisión: 'Supervisor de Línea',
+  Capacitación: 'Instructor',
 }
 
 /* Los 5 roles base reales de una CT LINEA (Parte "REGLA MAS IMPORTANTE"
    del pedido, 2026-08-26) -- orden = orden de aparicion en la
    distribucion cuando NO hay repeticiones. */
-export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza de TV', 'Etiquetado', 'Suministro de Accesorios']
+export const LINE_BASE_ROLES = [
+  'Montaje',
+  'Prueba eléctrica',
+  'Limpieza de TV',
+  'Etiquetado',
+  'Suministro de Accesorios',
+]
 
 /* Orden en que se repiten roles cuando idealHeadcount > 5 (min 6, max 10
    personas por linea) -- POR DEFECTO para cualquier linea sin
@@ -108,7 +120,12 @@ export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza de TV'
    lineas"): "Prueba eléctrica" se quita del pool de repeticion en TODAS
    las lineas (antes solo se excluia en LINEA1) -- nunca debe existir
    "Prueba eléctrica 2" en ninguna WC LINEA. */
-export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV']
+export const DEFAULT_REPEAT_ORDER = [
+  'Montaje',
+  'Etiquetado',
+  'Suministro de Accesorios',
+  'Limpieza de TV',
+]
 
 /* Configuracion explicita por linea (Parte "CONFIGURACION DE PUESTOS
    REPETIDOS" del pedido original: "Si existe una configuracion guardada
@@ -134,12 +151,25 @@ export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Suministro de Acc
    2", aparece en "Personal sin estación" (o se reconcilia solo a la
    estacion libre nueva, mismo mecanismo ya probado). LINEA2-5 (extra=1) no
    cambian su resultado (ya repetian solo Etiquetado). */
-const LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO = ['LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
+const LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO = [
+  'LINEA2',
+  'LINEA3',
+  'LINEA4',
+  'LINEA5',
+  'LINEA6',
+  'LINEA7',
+  'LINEA8',
+  'LINEA9',
+  'LINEA10',
+]
 const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Limpieza de TV']
 
 export const LINE_STATION_OVERRIDES = {
   ...Object.fromEntries(
-    LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [lineId, { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO }])
+    LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [
+      lineId,
+      { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO },
+    ]),
   ),
   // LINEA1 (2026-08-28, a peticion explicita del usuario -- "debe existir
   // solamente 1 Montaje" / "1 Etiquetado"): excluye Montaje Y Etiquetado.
@@ -171,7 +201,9 @@ export const LINE_STATION_OVERRIDES = {
   // Accesorios" y "Limpieza de TV" (3o y 4o de la lista) y la 3a vuelta a
   // "Montaje" ya no se alcanzan. Se deja la lista completa documentada
   // (mismo motivo que LINEA1: soporta que idealHeadcount vuelva a subir).
-  PROYECTO: { repeatOrder: ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV'] },
+  PROYECTO: {
+    repeatOrder: ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV'],
+  },
 }
 
 /* Empaque en WC LINEA 0-10 (2026-08-28, "ajustes controlados", a peticion
@@ -192,7 +224,16 @@ export const LINE_STATION_OVERRIDES = {
    repeticion en Etiquetado -- eso no cambia con este ajuste. */
 export const EMPAQUE_COUNT_BY_LINE = {
   PROYECTO: 2,
-  LINEA1: 1, LINEA2: 1, LINEA3: 1, LINEA4: 1, LINEA5: 1, LINEA6: 1, LINEA7: 1, LINEA8: 1, LINEA9: 1, LINEA10: 1,
+  LINEA1: 1,
+  LINEA2: 1,
+  LINEA3: 1,
+  LINEA4: 1,
+  LINEA5: 1,
+  LINEA6: 1,
+  LINEA7: 1,
+  LINEA8: 1,
+  LINEA9: 1,
+  LINEA10: 1,
 }
 
 /* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para
@@ -204,7 +245,9 @@ export function buildLineRolePlan(lineId, idealHeadcount) {
   const repeatOrder = LINE_STATION_OVERRIDES[lineId]?.repeatOrder || DEFAULT_REPEAT_ORDER
 
   const counts = {}
-  LINE_BASE_ROLES.forEach((role) => { counts[role] = 1 })
+  LINE_BASE_ROLES.forEach((role) => {
+    counts[role] = 1
+  })
   let extra = target - LINE_BASE_ROLES.length
   let i = 0
   while (extra > 0) {
@@ -235,12 +278,12 @@ export function buildLineRolePlan(lineId, idealHeadcount) {
    puesto de posicion individual"). */
 export function buildCustomRolePlan(rolePlan) {
   const counts = {}
-  return rolePlan.flatMap(({ role, count }) => (
+  return rolePlan.flatMap(({ role, count }) =>
     Array.from({ length: count }, () => {
       counts[role] = (counts[role] || 0) + 1
       return { role, name: count > 1 ? `${role} ${counts[role]}` : role }
-    })
-  ))
+    }),
+  )
 }
 
 function buildWorkstations() {
@@ -343,7 +386,10 @@ function buildWorkstations() {
       // controlados") ya NO usa esta rama -- se fusiono dentro de PALETIZADO
       // (CUSTOM_STATION_PLANS), sus 2 puestos reales salen de ahi, nunca de
       // este generador generico.
-      const total = operationalGroupMembers(wc.id).reduce((sum, id) => sum + (WORK_CENTERS.find((w) => w.id === id)?.idealHeadcount || 0), 0)
+      const total = operationalGroupMembers(wc.id).reduce(
+        (sum, id) => sum + (WORK_CENTERS.find((w) => w.id === id)?.idealHeadcount || 0),
+        0,
+      )
       map[wc.id] = Array.from({ length: total }, (_, i) => ({
         id: `${wc.id}-${i + 1}`,
         lineId: wc.id,
@@ -364,16 +410,18 @@ function buildWorkstations() {
       // tecnico que deba bloquear una asignacion. Un numero alto fijo
       // evita que checkInEmployee/moveEmployee rechacen a la persona
       // 21 en un area con ideal=20.
-      map[wc.id] = [{
-        id: `${wc.id}-GENERAL`,
-        lineId: wc.id,
-        name: wc.name,
-        role: wc.name,
-        requiredRole: wc.name,
-        capacity: 999,
-        order: 1,
-        status: 'ACTIVA',
-      }]
+      map[wc.id] = [
+        {
+          id: `${wc.id}-GENERAL`,
+          lineId: wc.id,
+          name: wc.name,
+          role: wc.name,
+          requiredRole: wc.name,
+          capacity: 999,
+          order: 1,
+          status: 'ACTIVA',
+        },
+      ]
     }
   })
   return map
@@ -407,7 +455,7 @@ export function hasMultipleStations(areaId) {
 }
 
 export function getWorkstation(lineId, stationName) {
-  return getWorkstationsForLine(lineId).find(w => w.name === stationName) || null
+  return getWorkstationsForLine(lineId).find((w) => w.name === stationName) || null
 }
 
 export function getLineCapacity(lineId) {

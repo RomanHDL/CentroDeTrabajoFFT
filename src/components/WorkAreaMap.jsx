@@ -12,8 +12,19 @@ import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong'
 import OpenInFullIcon from '@mui/icons-material/OpenInFull'
 import PersonIcon from '@mui/icons-material/Person'
 import { alpha } from '@mui/material/styles'
-import { PHYSICAL_ZONES, FFT_LINE_IDS, COLOR_GROUPS, getAuxiliaryAreas, colorForArea } from '../data/production/layoutZones'
-import { getAreaHeadcount, getPeopleByArea, hasAnyPersonnelToday, getAreaStaffing } from '../data/production/personnelByArea'
+import {
+  PHYSICAL_ZONES,
+  FFT_LINE_IDS,
+  COLOR_GROUPS,
+  getAuxiliaryAreas,
+  colorForArea,
+} from '../data/production/layoutZones'
+import {
+  getAreaHeadcount,
+  getPeopleByArea,
+  hasAnyPersonnelToday,
+  getAreaStaffing,
+} from '../data/production/personnelByArea'
 import { workCenterById } from '../data/production/catalog'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
 import { useEmployeeDropTarget } from '../ui/dnd'
@@ -97,7 +108,9 @@ const TAG_SAMPLE_LIMIT = 8
 
 /* L10..L2 de izquierda a derecha (descendente), igual que el
    pizarron real — Linea 1 se dibuja aparte (ver HorizontalAreaBar). */
-const VERTICAL_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1').slice().reverse()
+const VERTICAL_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
+  .slice()
+  .reverse()
 
 function headcountForZone(zone) {
   return zone.areaIds.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
@@ -149,7 +162,11 @@ function isZoneSelected(zone, selection) {
    texto en alguna parte del padre). */
 function dropHighlightSx(isOver) {
   if (!isOver) return {}
-  return { borderColor: '#3B82F6 !important', bgcolor: (t) => `${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.22 : 0.14)} !important`, boxShadow: '0 0 0 3px rgba(59,130,246,.25) !important' }
+  return {
+    borderColor: '#3B82F6 !important',
+    bgcolor: (t) => `${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.22 : 0.14)} !important`,
+    boxShadow: '0 0 0 3px rgba(59,130,246,.25) !important',
+  }
 }
 
 /* Cada linea (2..10) se dibuja como una barra fisica vertical (no un
@@ -170,25 +187,64 @@ function LineBar({ lineId, selected, onClick, readOnly }) {
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); onClick(lineId) }}
+      onClick={
+        readOnly
+          ? undefined
+          : (e) => {
+              e.stopPropagation()
+              onClick(lineId)
+            }
+      }
       sx={{
-        flex: '1 1 0', minWidth: 58, height: '100%',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-        borderRadius: 1.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', py: 1, px: 0.25,
-        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
+        flex: '1 1 0',
+        minWidth: 58,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 1.5,
+        cursor: readOnly ? 'default' : 'pointer',
+        userSelect: 'none',
+        py: 1,
+        px: 0.25,
+        border: '1.5px solid',
+        borderColor: selected ? color : alpha(color, 0.3),
+        bgcolor: (t) =>
+          alpha(
+            color,
+            selected
+              ? t.palette.mode === 'dark'
+                ? 0.3
+                : 0.18
+              : t.palette.mode === 'dark'
+                ? 0.1
+                : 0.06,
+          ),
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
+        '&:hover': {
+          borderColor: color,
+          bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11),
+        },
         ...dropHighlightSx(isOver),
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: 11, lineHeight: 1.1, whiteSpace: 'nowrap' }}>{label}</Typography>
-      <Box sx={{
-        width: 6, flex: 1, borderRadius: 999, my: 0.5,
-        bgcolor: hasPeople ? color : alpha(color, 0.18),
-      }} />
-      <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary' }}>
+      <Typography sx={{ fontWeight: 800, fontSize: 11, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          width: 6,
+          flex: 1,
+          borderRadius: 999,
+          my: 0.5,
+          bgcolor: hasPeople ? color : alpha(color, 0.18),
+        }}
+      />
+      <Typography
+        sx={{ fontSize: 10.5, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary' }}
+      >
         {tone ? tone.chipLabel : count}
       </Typography>
     </Box>
@@ -211,26 +267,73 @@ function HorizontalAreaBar({ areaId, selected, onClick, sx, readOnly }) {
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); onClick(areaId) }}
+      onClick={
+        readOnly
+          ? undefined
+          : (e) => {
+              e.stopPropagation()
+              onClick(areaId)
+            }
+      }
       sx={{
-        display: 'flex', alignItems: 'center', gap: 1, width: '100%', minHeight: 52,
-        borderRadius: 1.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', px: 1.25, py: 1,
-        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.3),
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.3 : 0.18) : (t.palette.mode === 'dark' ? 0.1 : 0.06)),
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        width: '100%',
+        minHeight: 52,
+        borderRadius: 1.5,
+        cursor: readOnly ? 'default' : 'pointer',
+        userSelect: 'none',
+        px: 1.25,
+        py: 1,
+        border: '1.5px solid',
+        borderColor: selected ? color : alpha(color, 0.3),
+        bgcolor: (t) =>
+          alpha(
+            color,
+            selected
+              ? t.palette.mode === 'dark'
+                ? 0.3
+                : 0.18
+              : t.palette.mode === 'dark'
+                ? 0.1
+                : 0.06,
+          ),
         boxShadow: selected ? `0 0 0 2px ${alpha(color, 0.25)}` : 'none',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11) },
+        '&:hover': {
+          borderColor: color,
+          bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.11),
+        },
         ...dropHighlightSx(isOver),
         ...sx,
       }}
     >
-      <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.2, flexShrink: 0 }}>{area?.name || areaId}</Typography>
-      <Box sx={{ flex: 1, height: 6, borderRadius: 999, bgcolor: hasPeople ? color : alpha(color, 0.18) }} />
-      <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: tone ? tone.chipColor : 'text.secondary', flexShrink: 0 }}>
+      <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.2, flexShrink: 0 }}>
+        {area?.name || areaId}
+      </Typography>
+      <Box
+        sx={{
+          flex: 1,
+          height: 6,
+          borderRadius: 999,
+          bgcolor: hasPeople ? color : alpha(color, 0.18),
+        }}
+      />
+      <Typography
+        sx={{
+          fontSize: 11.5,
+          fontWeight: 800,
+          color: tone ? tone.chipColor : 'text.secondary',
+          flexShrink: 0,
+        }}
+      >
         {tone ? tone.chipLabel : count}
       </Typography>
       {tone && (
-        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor, flexShrink: 0 }}>{tone.statusLabel}</Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor, flexShrink: 0 }}>
+          {tone.statusLabel}
+        </Typography>
       )}
     </Box>
   )
@@ -246,7 +349,14 @@ function PersonTag({ id, name, readOnly }) {
       size="small"
       icon={<PersonIcon sx={{ fontSize: 13 }} />}
       label={name}
-      sx={{ height: 22, fontSize: 10.5, fontWeight: 700, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
+      sx={{
+        height: 22,
+        fontSize: 10.5,
+        fontWeight: 700,
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
     />
   )
   if (!id || readOnly) return chip
@@ -258,9 +368,26 @@ function PersonTag({ id, name, readOnly }) {
    presencia a zonas pequenas como Midea/High Value. */
 function MiniGridDecoration({ color, rows = 2, cols = 5 }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 0.4, width: '100%', alignContent: 'center' }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: 0.4,
+        width: '100%',
+        alignContent: 'center',
+      }}
+    >
       {Array.from({ length: rows * cols }).map((_, i) => (
-        <Box key={i} sx={{ aspectRatio: '1', borderRadius: 0.5, bgcolor: alpha(color, 0.22), border: '1px solid', borderColor: alpha(color, 0.4) }} />
+        <Box
+          key={i}
+          sx={{
+            aspectRatio: '1',
+            borderRadius: 0.5,
+            bgcolor: alpha(color, 0.22),
+            border: '1px solid',
+            borderColor: alpha(color, 0.4),
+          }}
+        />
       ))}
     </Box>
   )
@@ -274,8 +401,18 @@ function PersonTagSample({ areaId, readOnly }) {
   const people = getPeopleByArea()[areaId] || []
   if (people.length === 0) return null
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignContent: 'flex-start', width: '100%' }}>
-      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => <PersonTag key={p.id} id={p.id} name={p.name} readOnly={readOnly} />)}
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 0.5,
+        alignContent: 'flex-start',
+        width: '100%',
+      }}
+    >
+      {people.slice(0, TAG_SAMPLE_LIMIT).map((p) => (
+        <PersonTag key={p.id} id={p.id} name={p.name} readOnly={readOnly} />
+      ))}
     </Box>
   )
 }
@@ -293,13 +430,34 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children, readOnly })
       {...(readOnly ? {} : dropProps)}
       onClick={readOnly ? undefined : () => onClick(zone)}
       sx={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.5,
-        borderRadius: 2.5, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none', p: 1.5, minHeight,
-        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32),
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        borderRadius: 2.5,
+        cursor: readOnly ? 'default' : 'pointer',
+        userSelect: 'none',
+        p: 1.5,
+        minHeight,
+        border: '1.5px solid',
+        borderColor: selected ? color : alpha(color, 0.32),
+        bgcolor: (t) =>
+          alpha(
+            color,
+            selected
+              ? t.palette.mode === 'dark'
+                ? 0.2
+                : 0.12
+              : t.palette.mode === 'dark'
+                ? 0.07
+                : 0.045,
+          ),
         boxShadow: selected ? `0 0 0 3px ${alpha(color, 0.2)}` : 'none',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08) },
+        '&:hover': {
+          borderColor: color,
+          bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08),
+        },
         ...sx,
         ...dropHighlightSx(isOver),
       }}
@@ -309,20 +467,47 @@ function ZoneBox({ zone, selected, onClick, minHeight, sx, children, readOnly })
           {zone.label}
         </Typography>
         {!hasData ? (
-          <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontStyle: 'italic', flexShrink: 0 }}>Sin datos</Typography>
+          <Typography
+            sx={{ fontSize: 10.5, color: 'text.secondary', fontStyle: 'italic', flexShrink: 0 }}
+          >
+            Sin datos
+          </Typography>
         ) : tone ? (
-          <Chip size="small" label={tone.chipLabel} sx={{ height: 20, fontSize: 10.5, fontWeight: 800, flexShrink: 0, bgcolor: tone.chipBg, color: tone.chipColor }} />
+          <Chip
+            size="small"
+            label={tone.chipLabel}
+            sx={{
+              height: 20,
+              fontSize: 10.5,
+              fontWeight: 800,
+              flexShrink: 0,
+              bgcolor: tone.chipBg,
+              color: tone.chipColor,
+            }}
+          />
         ) : (
-          <Chip size="small" label={`${count} persona${count === 1 ? '' : 's'}`} sx={{ height: 20, fontSize: 10.5, fontWeight: 700, flexShrink: 0 }} />
+          <Chip
+            size="small"
+            label={`${count} persona${count === 1 ? '' : 's'}`}
+            sx={{ height: 20, fontSize: 10.5, fontWeight: 700, flexShrink: 0 }}
+          />
         )}
       </Stack>
       {tone && (
-        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor }}>{tone.statusLabel}</Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: tone.statusColor }}>
+          {tone.statusLabel}
+        </Typography>
       )}
       {isOver && dropAreaId && (
-        <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#3B82F6' }}>Soltar para asignar a {zone.label}</Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#3B82F6' }}>
+          Soltar para asignar a {zone.label}
+        </Typography>
       )}
-      {children && <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'flex-start' }}>{children}</Box>}
+      {children && (
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'flex-start' }}>
+          {children}
+        </Box>
+      )}
     </Box>
   )
 }
@@ -346,9 +531,23 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={1} sx={{ mb: 1.5 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        flexWrap="wrap"
+        spacing={1}
+        sx={{ mb: 1.5 }}
+      >
         <Stack direction="row" spacing={0.75} alignItems="center">
-          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: operating ? '#10B981' : '#94A3B8' }} />
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              bgcolor: operating ? '#10B981' : '#94A3B8',
+            }}
+          />
           <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.secondary' }}>
             {operating ? 'Área operando' : 'Sin actividad hoy'}
           </Typography>
@@ -363,7 +562,10 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
             Ajustar vista
           </Button>
           <Tooltip title="Alejar">
-            <IconButton sx={{ width: 40, height: 40 }} onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2)))}>
+            <IconButton
+              sx={{ width: 40, height: 40 }}
+              onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2)))}
+            >
               <RemoveIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -371,7 +573,10 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
             {Math.round(zoom * 100)}%
           </Typography>
           <Tooltip title="Acercar">
-            <IconButton sx={{ width: 40, height: 40 }} onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}>
+            <IconButton
+              sx={{ width: 40, height: 40 }}
+              onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}
+            >
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -384,17 +589,28 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
       </Stack>
 
       <Box sx={{ overflow: 'auto' }}>
-        <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <Box sx={{
-            display: 'grid', gap: 1.5, minWidth: 960,
-            gridTemplateColumns: GRID_COLUMNS,
-            gridTemplateRows: 'auto 480px auto',
-            gridTemplateAreas: `
+        <Box
+          sx={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+            transition: 'transform .15s ease',
+            width: `${100 / zoom}%`,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 1.5,
+              minWidth: 960,
+              gridTemplateColumns: GRID_COLUMNS,
+              gridTemplateRows: 'auto 480px auto',
+              gridTemplateAreas: `
               "palletizing acc        insumos    suministro"
               "palletizing midea      fft        side"
               "sellado     sellado    sellado    sellado"
             `,
-          }}>
+            }}
+          >
             <Box sx={{ gridArea: 'acc' }}>
               <ZoneBox
                 zone={PHYSICAL_ZONES.ACCESSORIES}
@@ -438,11 +654,18 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
                 readOnly={readOnly}
               >
                 <Stack direction="row" spacing={1.25} sx={{ width: '100%', height: '100%' }}>
-                  <Box sx={{
-                    width: '32%', minWidth: 60, borderRadius: 1.5, alignSelf: 'stretch',
-                    bgcolor: (t) => alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
-                    border: '1px dashed', borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
-                  }} />
+                  <Box
+                    sx={{
+                      width: '32%',
+                      minWidth: 60,
+                      borderRadius: 1.5,
+                      alignSelf: 'stretch',
+                      bgcolor: (t) =>
+                        alpha(ZONE_COLORS.PALLETIZING, t.palette.mode === 'dark' ? 0.12 : 0.09),
+                      border: '1px dashed',
+                      borderColor: alpha(ZONE_COLORS.PALLETIZING, 0.4),
+                    }}
+                  />
                   <Box sx={{ flex: 1 }}>
                     <PersonTagSample areaId="PALETIZADO" readOnly={readOnly} />
                   </Box>
@@ -484,7 +707,15 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
               </ZoneBox>
             </Box>
 
-            <Box sx={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 1.5, height: '100%' }}>
+            <Box
+              sx={{
+                gridArea: 'side',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                height: '100%',
+              }}
+            >
               <HorizontalAreaBar
                 areaId="PROYECTO"
                 selected={selection?.type === 'area' && selection.id === 'PROYECTO'}
@@ -526,7 +757,13 @@ export default function WorkAreaMap({ selection, onSelect, readOnly = false }) {
         </Box>
       </Box>
 
-      <Stack direction="row" flexWrap="wrap" useFlexGap spacing={2} sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        useFlexGap
+        spacing={2}
+        sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}
+      >
         {Object.values(COLOR_GROUPS).map((g) => (
           <Stack key={g.label} direction="row" spacing={0.75} alignItems="center">
             <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: g.color }} />
@@ -559,27 +796,73 @@ function AuxAreaBox({ area, selected, onClick, readOnly }) {
       {...(readOnly ? {} : dropProps)}
       onClick={readOnly ? undefined : () => onClick(area.id)}
       sx={{
-        flex: '1 1 150px', minWidth: 150, maxWidth: 210, borderRadius: 2, cursor: readOnly ? 'default' : 'pointer', userSelect: 'none',
-        border: '1.5px solid', borderColor: selected ? color : alpha(color, 0.32), p: 1.25,
-        bgcolor: (t) => alpha(color, selected ? (t.palette.mode === 'dark' ? 0.2 : 0.12) : (t.palette.mode === 'dark' ? 0.07 : 0.045)),
+        flex: '1 1 150px',
+        minWidth: 150,
+        maxWidth: 210,
+        borderRadius: 2,
+        cursor: readOnly ? 'default' : 'pointer',
+        userSelect: 'none',
+        border: '1.5px solid',
+        borderColor: selected ? color : alpha(color, 0.32),
+        p: 1.25,
+        bgcolor: (t) =>
+          alpha(
+            color,
+            selected
+              ? t.palette.mode === 'dark'
+                ? 0.2
+                : 0.12
+              : t.palette.mode === 'dark'
+                ? 0.07
+                : 0.045,
+          ),
         boxShadow: selected ? `0 0 0 3px ${alpha(color, 0.2)}` : 'none',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: color, bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08) },
+        '&:hover': {
+          borderColor: color,
+          bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.14 : 0.08),
+        },
         ...dropHighlightSx(isOver),
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: 12.5,
+            color: 'text.primary',
+            textTransform: 'uppercase',
+            letterSpacing: 0.3,
+          }}
+        >
           {area.name}
         </Typography>
         {tone ? (
-          <Chip size="small" label={tone.chipLabel} sx={{ height: 18, fontSize: 9.5, fontWeight: 800, bgcolor: tone.chipBg, color: tone.chipColor }} />
+          <Chip
+            size="small"
+            label={tone.chipLabel}
+            sx={{
+              height: 18,
+              fontSize: 9.5,
+              fontWeight: 800,
+              bgcolor: tone.chipBg,
+              color: tone.chipColor,
+            }}
+          />
         ) : (
-          <Chip size="small" label={`${people.length} persona${people.length === 1 ? '' : 's'}`} sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }} />
+          <Chip
+            size="small"
+            label={`${people.length} persona${people.length === 1 ? '' : 's'}`}
+            sx={{ height: 18, fontSize: 9.5, fontWeight: 700 }}
+          />
         )}
       </Stack>
       {tone && (
-        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: tone.statusColor, mb: showNames ? 0.75 : 0 }}>{tone.statusLabel}</Typography>
+        <Typography
+          sx={{ fontSize: 9.5, fontWeight: 700, color: tone.statusColor, mb: showNames ? 0.75 : 0 }}
+        >
+          {tone.statusLabel}
+        </Typography>
       )}
       {showNames && (
         <Stack spacing={0.5}>
@@ -587,12 +870,18 @@ function AuxAreaBox({ area, selected, onClick, readOnly }) {
             const row = (
               <Stack direction="row" spacing={0.6} alignItems="center">
                 <EmployeeAvatar employee={{ name: p.name }} size={18} />
-                <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.primary' }}>{p.name}</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.primary' }}>
+                  {p.name}
+                </Typography>
               </Stack>
             )
-            return readOnly
-              ? <Box key={p.id}>{row}</Box>
-              : <DraggablePersonChip key={p.id} employeeId={p.id}>{row}</DraggablePersonChip>
+            return readOnly ? (
+              <Box key={p.id}>{row}</Box>
+            ) : (
+              <DraggablePersonChip key={p.id} employeeId={p.id}>
+                {row}
+              </DraggablePersonChip>
+            )
           })}
         </Stack>
       )}

@@ -45,15 +45,27 @@ export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => 
       data: { status: 'PENDING', resolvedByUserId: null, resolvedAt: null },
     })
     if (result.status === 'INACTIVE_EMPLOYEE') {
-      return res.status(409).json({ error: 'El empleado quedó marcado como baja; la solicitud sigue pendiente.' })
+      return res
+        .status(409)
+        .json({ error: 'El empleado quedó marcado como baja; la solicitud sigue pendiente.' })
     }
     if (result.status === 'NO_CURRENT_ASSIGNMENT') {
-      return res.status(409).json({ error: 'El empleado ya no tiene una asignación activa hoy; la solicitud sigue pendiente.' })
+      return res
+        .status(409)
+        .json({
+          error: 'El empleado ya no tiene una asignación activa hoy; la solicitud sigue pendiente.',
+        })
     }
     if (result.status === 'STATION_FULL') {
-      return res.status(409).json({ error: `La estación destino ya está completa (${result.occupiedCount}/${result.capacity}); la solicitud sigue pendiente.` })
+      return res
+        .status(409)
+        .json({
+          error: `La estación destino ya está completa (${result.occupiedCount}/${result.capacity}); la solicitud sigue pendiente.`,
+        })
     }
-    return res.status(409).json({ error: 'No se pudo aplicar el movimiento; la solicitud sigue pendiente.' })
+    return res
+      .status(409)
+      .json({ error: 'No se pudo aplicar el movimiento; la solicitud sigue pendiente.' })
   }
 
   const updated = await prisma.pendingMove.findUnique({ where: { id: pendingMoveId } })

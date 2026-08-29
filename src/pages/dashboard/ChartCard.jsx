@@ -15,10 +15,23 @@ import { EmptyState } from '../../ui'
    nunca pantalla en blanco), error (mensaje + Reintentar, sin tumbar el
    resto del Dashboard) y empty state especifico (nunca ceros
    engañosos). */
-export default function ChartCard({ title, subtitle, height = 280, loading, error, onRetry, empty, emptyMessage, children }) {
+export default function ChartCard({
+  title,
+  subtitle,
+  height = 280,
+  loading,
+  error,
+  onRetry,
+  empty,
+  emptyMessage,
+  children,
+}) {
   const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper
+      elevation={0}
+      sx={{ ...ps.card, height: '100%', display: 'flex', flexDirection: 'column' }}
+    >
       <Box sx={ps.cardHeader}>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={ps.cardHeaderTitle}>{title}</Typography>
@@ -31,10 +44,22 @@ export default function ChartCard({ title, subtitle, height = 280, loading, erro
             <Skeleton variant="rounded" height="100%" />
           </Stack>
         ) : error ? (
-          <Stack spacing={1.5} alignItems="center" justifyContent="center" sx={{ height, textAlign: 'center' }}>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>No se pudieron cargar estos datos.</Typography>
+          <Stack
+            spacing={1.5}
+            alignItems="center"
+            justifyContent="center"
+            sx={{ height, textAlign: 'center' }}
+          >
+            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+              No se pudieron cargar estos datos.
+            </Typography>
             {onRetry && (
-              <Button size="small" startIcon={<RefreshIcon fontSize="small" />} onClick={onRetry} sx={{ textTransform: 'none', fontWeight: 700 }}>
+              <Button
+                size="small"
+                startIcon={<RefreshIcon fontSize="small" />}
+                onClick={onRetry}
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              >
                 Reintentar
               </Button>
             )}

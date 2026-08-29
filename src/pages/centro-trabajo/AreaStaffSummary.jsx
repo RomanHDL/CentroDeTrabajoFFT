@@ -17,13 +17,21 @@ export default function AreaStaffSummary({ groups, total, ideal, diff }) {
   const ps = usePageStyles()
   return (
     <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-      <Typography sx={{ ...ps.sectionTitle, fontSize: 13.5, mb: 1.25 }}>Resumen del área</Typography>
+      <Typography sx={{ ...ps.sectionTitle, fontSize: 13.5, mb: 1.25 }}>
+        Resumen del área
+      </Typography>
       <Stack spacing={0.85}>
         {groups.map((g) => (
           <Stack key={g.key} direction="row" alignItems="center" spacing={1}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: g.color, flexShrink: 0 }} />
-            <Typography sx={{ fontSize: 12.5, flex: 1 }} noWrap>{g.label}</Typography>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{g.occupied} / {g.total}</Typography>
+            <Box
+              sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: g.color, flexShrink: 0 }}
+            />
+            <Typography sx={{ fontSize: 12.5, flex: 1 }} noWrap>
+              {g.label}
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>
+              {g.occupied} / {g.total}
+            </Typography>
           </Stack>
         ))}
       </Stack>
@@ -31,13 +39,21 @@ export default function AreaStaffSummary({ groups, total, ideal, diff }) {
         <>
           <Divider sx={{ my: 1.25 }} />
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 800, flex: 1 }}>Total asignado</Typography>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{total} / {ideal}</Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 800, flex: 1 }}>
+              Total asignado
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>
+              {total} / {ideal}
+            </Typography>
           </Stack>
           {diff < 0 && (
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
-              <Typography sx={{ fontSize: 12, color: '#EF4444', flex: 1 }}>Faltan por cubrir</Typography>
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#EF4444' }}>{Math.abs(diff)}</Typography>
+              <Typography sx={{ fontSize: 12, color: '#EF4444', flex: 1 }}>
+                Faltan por cubrir
+              </Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#EF4444' }}>
+                {Math.abs(diff)}
+              </Typography>
             </Stack>
           )}
         </>

@@ -34,20 +34,82 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
 
-              <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppLayout mode={mode} setMode={setMode} />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<DefaultRedirect />} />
-                <Route path="/dashboard" element={<RequireModuleAccess><DashboardPage /></RequireModuleAccess>} />
-                <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
-                <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
-                <Route path="/usuarios" element={<RequireModuleAccess><UsuariosPage /></RequireModuleAccess>} />
-                <Route path="/kpis" element={<RequireModuleAccess><KpisPage /></RequireModuleAccess>} />
-                <Route path="/asistencia" element={<RequireModuleAccess><AsistenciaPage /></RequireModuleAccess>} />
-                <Route path="/auditoria" element={<RequireModuleAccess><AuditoriaPage /></RequireModuleAccess>} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <RequireModuleAccess>
+                      <DashboardPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/centro-trabajo"
+                  element={
+                    <RequireModuleAccess>
+                      <CentroTrabajoPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/registro-personal"
+                  element={
+                    <RequireModuleAccess>
+                      <RegistroPersonalPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/usuarios"
+                  element={
+                    <RequireModuleAccess>
+                      <UsuariosPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/kpis"
+                  element={
+                    <RequireModuleAccess>
+                      <KpisPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/asistencia"
+                  element={
+                    <RequireModuleAccess>
+                      <AsistenciaPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/auditoria"
+                  element={
+                    <RequireModuleAccess>
+                      <AuditoriaPage />
+                    </RequireModuleAccess>
+                  }
+                />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
                   usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
-              <Route path="/cambiar-contrasena" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
+              <Route
+                path="/cambiar-contrasena"
+                element={
+                  <ProtectedRoute>
+                    <ChangePasswordPage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
             <ToastHost />
           </DndAssignProvider>

@@ -44,7 +44,11 @@ import EmployeeAvailableDetailDialog from './EmployeeAvailableDetailDialog'
    Scroll horizontal LOCAL de esta lista unicamente; la pagina nunca
    scrollea horizontal por esto.
    ───────────────────────────────────────────── */
-export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal disponible para asignar', hideTitle = false }) {
+export default function AvailablePersonnelTray({
+  scopedAreaId,
+  title = 'Personal disponible para asignar',
+  hideTitle = false,
+}) {
   const version = usePersonnelVersion()
   const dnd = useDndAssign()
   const people = getAvailablePersonnelToday()
@@ -55,25 +59,41 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
   const q = query.trim().toLowerCase()
   const filtered = q
     ? people.filter((p) => {
-      const numberLabel = formatEmployeeNumber(p.employeeNumber)
-      return (p.name || '').toLowerCase().includes(q)
-        || String(p.employeeNumber || '').toLowerCase().includes(q)
-        || numberLabel.toLowerCase().includes(q)
-    })
+        const numberLabel = formatEmployeeNumber(p.employeeNumber)
+        return (
+          (p.name || '').toLowerCase().includes(q) ||
+          String(p.employeeNumber || '')
+            .toLowerCase()
+            .includes(q) ||
+          numberLabel.toLowerCase().includes(q)
+        )
+      })
     : people
 
   return (
     <Box
       {...dropProps}
       sx={{
-        p: 1, borderRadius: 2, border: '1.5px dashed', borderColor: isOver ? '#3B82F6' : 'transparent',
-        bgcolor: (t) => (isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent'),
+        p: 1,
+        borderRadius: 2,
+        border: '1.5px dashed',
+        borderColor: isOver ? '#3B82F6' : 'transparent',
+        bgcolor: (t) =>
+          isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent',
         transition: 'all .15s ease',
       }}
     >
       {!hideTitle && (
         <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mb: 1 }} flexWrap="wrap">
-          <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Typography
+            sx={{
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
             {title} ({people.length})
           </Typography>
           {q && (
@@ -84,7 +104,9 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
         </Stack>
       )}
       {isOver && (
-        <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', mb: 1 }}>Soltar aquí para quitar la asignación</Typography>
+        <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', mb: 1 }}>
+          Soltar aquí para quitar la asignación
+        </Typography>
       )}
 
       {people.length > 0 && (
@@ -94,12 +116,21 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre o número de empleado..."
-          sx={{ mb: 1.25, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' } }}
+          sx={{
+            mb: 1.25,
+            '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' },
+          }}
           InputProps={{
-            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, opacity: 0.5 }} /></InputAdornment>,
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ fontSize: 18, opacity: 0.5 }} />
+              </InputAdornment>
+            ),
             endAdornment: query && (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setQuery('')}><CloseIcon sx={{ fontSize: 16 }} /></IconButton>
+                <IconButton size="small" onClick={() => setQuery('')}>
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
               </InputAdornment>
             ),
           }}
@@ -107,11 +138,27 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
       )}
 
       {people.length === 0 ? (
-        <EmptyState compact title="No hay personal disponible sin asignación." description="Todo el personal activo ya tiene ubicación asignada hoy." />
+        <EmptyState
+          compact
+          title="No hay personal disponible sin asignación."
+          description="Todo el personal activo ya tiene ubicación asignada hoy."
+        />
       ) : filtered.length === 0 ? (
-        <EmptyState compact title="No se encontraron empleados" description="Prueba con otro nombre o número." />
+        <EmptyState
+          compact
+          title="No se encontraron empleados"
+          description="Prueba con otro nombre o número."
+        />
       ) : (
-        <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { height: 6 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            overflowX: 'auto',
+            pb: 0.5,
+            '&::-webkit-scrollbar': { height: 6 },
+          }}
+        >
           {filtered.map((p) => (
             <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ flexShrink: 0 }}>
               <Stack
@@ -120,15 +167,28 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
                 alignItems="center"
                 onClick={() => setDetailPerson(p)}
                 sx={{
-                  p: 0.75, pl: 1, borderRadius: 2, border: '1px solid', borderColor: 'divider',
-                  bgcolor: 'background.paper', minWidth: 0, cursor: 'pointer',
-                  '&:hover': { borderColor: '#3B82F6', bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05) },
+                  p: 0.75,
+                  pl: 1,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  minWidth: 0,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    borderColor: '#3B82F6',
+                    bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05),
+                  },
                 }}
               >
                 <EmployeeAvatar employee={p} size={30} />
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{p.name}</Typography>
-                  <Typography sx={{ fontSize: 10, color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatEmployeeNumber(p.employeeNumber)}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {p.name}
+                  </Typography>
+                  <Typography sx={{ fontSize: 10, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                    {formatEmployeeNumber(p.employeeNumber)}
+                  </Typography>
                 </Box>
                 <DragIndicatorIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
               </Stack>
@@ -141,11 +201,15 @@ export default function AvailablePersonnelTray({ scopedAreaId, title = 'Personal
         employee={detailPerson}
         open={Boolean(detailPerson)}
         onClose={() => setDetailPerson(null)}
-        onAssign={scopedAreaId ? () => {
-          const person = detailPerson
-          setDetailPerson(null)
-          dnd.requestAssign(person.id, scopedAreaId)
-        } : undefined}
+        onAssign={
+          scopedAreaId
+            ? () => {
+                const person = detailPerson
+                setDetailPerson(null)
+                dnd.requestAssign(person.id, scopedAreaId)
+              }
+            : undefined
+        }
       />
     </Box>
   )

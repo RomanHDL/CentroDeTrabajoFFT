@@ -11,7 +11,9 @@ export default function DraggablePersonChip({ employeeId, children, sx }) {
     <Box
       {...dragProps}
       sx={{
-        cursor: 'grab', opacity: dragging ? 0.4 : 1, transition: 'opacity .15s ease',
+        cursor: 'grab',
+        opacity: dragging ? 0.4 : 1,
+        transition: 'opacity .15s ease',
         '&:active': { cursor: 'grabbing' },
         ...sx,
       }}

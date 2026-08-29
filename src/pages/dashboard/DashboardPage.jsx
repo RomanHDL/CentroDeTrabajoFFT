@@ -60,12 +60,14 @@ export default function DashboardPage() {
     <Box sx={ps.page}>
       {/* Header */}
       <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-        <Box sx={{
-          ...ps.cardHeader,
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'flex-start', md: 'center' },
-          gap: 1.5,
-        }}>
+        <Box
+          sx={{
+            ...ps.cardHeader,
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'flex-start', md: 'center' },
+            gap: 1.5,
+          }}
+        >
           <Box sx={{ flex: 1 }}>
             <Typography sx={ps.pageTitle}>Dashboard</Typography>
             <Typography sx={ps.pageSubtitle}>Resumen general del centro de trabajo</Typography>
@@ -89,36 +91,60 @@ export default function DashboardPage() {
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
-            icon={<PeopleAltIcon />} accent="#3B82F6" title="Personal actual"
-            value={metrics.kpis.personalActual} unit="personas en turno"
-            footerLabel="Ideal" footerValue={metrics.kpis.personalIdeal}
+            icon={<PeopleAltIcon />}
+            accent="#3B82F6"
+            title="Personal actual"
+            value={metrics.kpis.personalActual}
+            unit="personas en turno"
+            footerLabel="Ideal"
+            footerValue={metrics.kpis.personalIdeal}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
-            icon={<PersonOffIcon />} accent="#EF4444" title="Personal faltante"
-            value={metrics.kpis.personalFaltante} unit="personas faltantes"
-            footerLabel={metrics.kpis.faltantePct != null ? `${metrics.kpis.faltantePct}% del ideal` : 'Sin plantilla ideal'}
+            icon={<PersonOffIcon />}
+            accent="#EF4444"
+            title="Personal faltante"
+            value={metrics.kpis.personalFaltante}
+            unit="personas faltantes"
+            footerLabel={
+              metrics.kpis.faltantePct != null
+                ? `${metrics.kpis.faltantePct}% del ideal`
+                : 'Sin plantilla ideal'
+            }
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
-            icon={<TrackChangesIcon />} accent="#A855F7" title="Plantilla ideal"
-            value={metrics.kpis.personalIdeal} unit="personas"
+            icon={<TrackChangesIcon />}
+            accent="#A855F7"
+            title="Plantilla ideal"
+            value={metrics.kpis.personalIdeal}
+            unit="personas"
             footerLabel="Total ideal definida"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
-            icon={<PrecisionManufacturingIcon />} accent="#06B6D4" title="Líneas operando"
-            value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`} unit="líneas operativas"
-            footerLabel={metrics.kpis.lineasTotal > 0 ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas` : ''}
+            icon={<PrecisionManufacturingIcon />}
+            accent="#06B6D4"
+            title="Líneas operando"
+            value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`}
+            unit="líneas operativas"
+            footerLabel={
+              metrics.kpis.lineasTotal > 0
+                ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas`
+                : ''
+            }
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
           <DashboardExecKpiCard
-            icon={<ShieldIcon />} accent="#10B981" title="Cobertura total"
-            value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'} unit="de cobertura general"
+            icon={<ShieldIcon />}
+            accent="#10B981"
+            title="Cobertura total"
+            value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'}
+            unit="de cobertura general"
             progressPct={metrics.kpis.coverageBarPct}
             footerLabel={`${metrics.totals.realTotal} / ${metrics.totals.idealTotal} del ideal`}
           />
@@ -165,9 +191,17 @@ export default function DashboardPage() {
       <DashboardQuickSummaryStrip metrics={metrics} />
 
       {/* Ultima actualizacion -- discreto, nunca una card grande */}
-      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end" sx={{ opacity: 0.65, mt: 1.5 }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        alignItems="center"
+        justifyContent="flex-end"
+        sx={{ opacity: 0.65, mt: 1.5 }}
+      >
         <RefreshIcon sx={{ fontSize: 13 }} />
-        <Typography sx={{ fontSize: 11 }}>Última actualización: {metrics.updatedAt.format('hh:mm A')}</Typography>
+        <Typography sx={{ fontSize: 11 }}>
+          Última actualización: {metrics.updatedAt.format('hh:mm A')}
+        </Typography>
       </Stack>
     </Box>
   )

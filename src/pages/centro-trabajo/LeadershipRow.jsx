@@ -20,7 +20,14 @@ import { RankIcon } from './HierarchyLegend'
    getPersonnelRank) -- mismo sistema que ya usa LineStationCard.jsx/
    HierarchyLegend.jsx en este archivo, nunca lineVisualType.js (ese es
    exclusivo de WC LINEA, sistema visual deliberadamente separado). */
-export default function LeadershipRow({ workAreaId, workstation, selected, onSelect, onEmployeeClick, rank }) {
+export default function LeadershipRow({
+  workAreaId,
+  workstation,
+  selected,
+  onSelect,
+  onEmployeeClick,
+  rank,
+}) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
@@ -35,39 +42,81 @@ export default function LeadershipRow({ workAreaId, workstation, selected, onSel
       {...dropProps}
       onClick={() => onSelect(workstation)}
       sx={{
-        p: 1.5, borderRadius: 3, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: 1.5,
+        p: 1.5,
+        borderRadius: 3,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
         border: '1.5px solid',
         borderStyle: available && !occupant ? 'dashed' : 'solid',
-        borderColor: isOver || selected ? '#3B82F6' : occupant ? alpha('#10B981', d ? 0.4 : 0.35) : alpha('#F59E0B', d ? 0.4 : 0.35),
+        borderColor:
+          isOver || selected
+            ? '#3B82F6'
+            : occupant
+              ? alpha('#10B981', d ? 0.4 : 0.35)
+              : alpha('#F59E0B', d ? 0.4 : 0.35),
         bgcolor: isOver
           ? alpha('#3B82F6', d ? 0.18 : 0.08)
-          : occupant ? (d ? alpha('#10B981', 0.06) : '#F7FEFB') : (d ? alpha('#F59E0B', 0.05) : '#FFFCF5'),
+          : occupant
+            ? d
+              ? alpha('#10B981', 0.06)
+              : '#F7FEFB'
+            : d
+              ? alpha('#F59E0B', 0.05)
+              : '#FFFCF5',
         transition: 'all .15s ease',
-        '&:hover': { borderColor: '#3B82F6', boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)' },
+        '&:hover': {
+          borderColor: '#3B82F6',
+          boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)',
+        },
       }}
     >
-      <Box sx={{
-        width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-        display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800,
-        bgcolor: alpha(accent, d ? 0.22 : 0.14), color: accent,
-      }}>
+      <Box
+        sx={{
+          width: 26,
+          height: 26,
+          borderRadius: '50%',
+          flexShrink: 0,
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: 11,
+          fontWeight: 800,
+          bgcolor: alpha(accent, d ? 0.22 : 0.14),
+          color: accent,
+        }}
+      >
         {workstation.order}
       </Box>
 
       {occupant ? (
         <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ flex: 1, minWidth: 0 }}>
           <Stack
-            direction="row" spacing={1.5} alignItems="center"
-            onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEmployeeClick(occupant.employee)
+            }}
           >
             <EmployeeAvatar employee={occupant.employee} size={42} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 15 }} noWrap>{occupant.employee?.name}</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: 15 }} noWrap>
+                {occupant.employee?.name}
+              </Typography>
               {rank && (
                 <Stack direction="row" spacing={0.4} alignItems="center" sx={{ mt: 0.25 }}>
                   <RankIcon rank={rank} size={12} />
-                  <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.4, color: rank.color, textTransform: 'uppercase' }}>
+                  <Typography
+                    sx={{
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      letterSpacing: 0.4,
+                      color: rank.color,
+                      textTransform: 'uppercase',
+                    }}
+                  >
                     {rank.label}
                   </Typography>
                 </Stack>
@@ -77,15 +126,24 @@ export default function LeadershipRow({ workAreaId, workstation, selected, onSel
         </DraggablePersonChip>
       ) : (
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: 'text.secondary' }}>Sin asignar</Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.disabled' }} noWrap>{workstation.requiredRole}</Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: 'text.secondary' }}>
+            Sin asignar
+          </Typography>
+          <Typography sx={{ fontSize: 11, color: 'text.disabled' }} noWrap>
+            {workstation.requiredRole}
+          </Typography>
         </Box>
       )}
 
-      <Typography sx={{
-        fontSize: 10, fontWeight: 800, letterSpacing: 0.3, flexShrink: 0,
-        color: occupant ? '#059669' : '#B45309',
-      }}>
+      <Typography
+        sx={{
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: 0.3,
+          flexShrink: 0,
+          color: occupant ? '#059669' : '#B45309',
+        }}
+      >
         {occupant ? 'OCUPADO' : 'DISPONIBLE'}
       </Typography>
     </Paper>
