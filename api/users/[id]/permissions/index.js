@@ -1,18 +1,20 @@
-import { prisma } from '../../../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, user } from '../../../../server-lib/db/client.ts'
 import { requireModuleAccess } from '../../../../server-lib/auth.js'
 import { listPermissionProtectedModules } from '../../../../shared/moduleRegistry.js'
 import { resolveEffectiveAccess } from '../../../../shared/permissions.js'
 import {
   getRoleModulePermissionsMap,
   getUserOverrides,
-} from '../../../../server-lib/permissionService.js'
+} from '../../../../server-lib/permissionService.ts'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const id = req.query.id ?? req.params?.id
-  const user = await prisma.user.findUnique({ where: { id } })
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' })
+  // `foundUser` (no `user`) para no chocar con la tabla `user` importada de db/client.ts.
+  const [foundUser] = await db.select().from(user).where(eq(user.id, id)).limit(1)
+  if (!foundUser) return res.status(404).json({ error: 'Usuario no encontrado' })
 
   const [roleMap, overrides] = await Promise.all([
     getRoleModulePermissionsMap(),
@@ -20,9 +22,14 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   ])
 
   const modules = listPermissionProtectedModules().map((m) => {
-    const roleAllowed = !!roleMap[user.role]?.[m.key]
+    const roleAllowed = !!roleMap[foundUser.role]?.[m.key]
     const override = overrides[m.key] ?? null
-    const effective = resolveEffectiveAccess({ role: user.role, module: m, roleAllowed, override })
+    const effective = resolveEffectiveAccess({
+      role: foundUser.role,
+      module: m,
+      roleAllowed,
+      override,
+    })
     return {
       moduleKey: m.key,
       name: m.name,
@@ -35,10 +42,10 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   })
 
   return res.status(200).json({
-    role: user.role,
-    active: user.active,
-    name: user.name,
-    employeeNumber: user.employeeNumber,
+    role: foundUser.role,
+    active: foundUser.active,
+    name: foundUser.name,
+    employeeNumber: foundUser.employeeNumber,
     modules,
   })
 })

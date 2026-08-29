@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
 import { stringifySetCookie, parseCookie } from 'cookie'
-import { prisma } from './prisma.js'
-import { canUserAccessModule } from './permissionService.js'
+import { eq } from 'drizzle-orm'
+import { db, user as userTable } from './db/client.ts'
+import { canUserAccessModule } from './permissionService.ts'
 import { captureException } from './sentry.js'
 
 const COOKIE_NAME = 'fft_session'
@@ -59,7 +60,7 @@ export async function getSessionUser(req) {
     return null
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } })
+  const [user] = await db.select().from(userTable).where(eq(userTable.id, payload.sub)).limit(1)
   if (!user || !user.active) return null
   return user
 }

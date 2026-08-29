@@ -1,7 +1,8 @@
 // Equivalente real de moveEmployee (repository.js). Requiere que el empleado YA tenga una
 // asignacion ACTIVE hoy (para eso esta /checkin) -- termina esa fila (endReason MOVED) y crea
 // una nueva, nunca sobreescribe/borra la anterior.
-import { prisma } from '../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, employee as employeeTable } from '../../server-lib/db/client.ts'
 import { requireAuth } from '../../server-lib/auth.js'
 import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
 
@@ -13,7 +14,11 @@ export default requireAuth(async (req, res) => {
   if (!workAreaId) return res.status(400).json({ error: 'Selecciona el área/línea destino.' })
   if (!stationName) return res.status(400).json({ error: 'Selecciona el rol/estación destino.' })
 
-  const employee = await prisma.employee.findUnique({ where: { id: employeeId } })
+  const [employee] = await db
+    .select()
+    .from(employeeTable)
+    .where(eq(employeeTable.id, employeeId))
+    .limit(1)
   if (!employee) return res.status(404).json({ error: 'Empleado no encontrado.' })
 
   const workstation = await resolveWorkstation(workAreaId, stationName)

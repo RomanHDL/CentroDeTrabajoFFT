@@ -2,19 +2,21 @@
 // RoleModulePermission (tabla nueva, una fila por rol+modulo) -- migra los
 // valores REALES que ya estaban en la DB, sin inventar defaults nuevos. No
 // borra RoleModuleAccess ni inserta filas allowed:false (ausencia de fila ya
-// significa false por convencion, ver server-lib/permissionService.js).
-import { prisma } from '../server-lib/prisma.js'
+// significa false por convencion, ver server-lib/permissionService.ts).
+import { db, roleModuleAccess, roleModulePermission } from '../server-lib/db/client.ts'
 
-const rows = await prisma.roleModuleAccess.findMany()
+const rows = await db.select().from(roleModuleAccess)
 
 let inserted = 0
 for (const row of rows) {
   for (const moduleKey of row.modules) {
-    await prisma.roleModulePermission.upsert({
-      where: { role_moduleKey: { role: row.role, moduleKey } },
-      create: { role: row.role, moduleKey, allowed: true },
-      update: { allowed: true },
-    })
+    await db
+      .insert(roleModulePermission)
+      .values({ role: row.role, moduleKey, allowed: true, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [roleModulePermission.role, roleModulePermission.moduleKey],
+        set: { allowed: true, updatedAt: new Date() },
+      })
     inserted += 1
     console.log(`OK ${row.role} -> ${moduleKey}`)
   }
@@ -24,4 +26,4 @@ console.log(
   `\nBackfill completo: ${inserted} filas de RoleModulePermission creadas/actualizadas desde ${rows.length} filas de RoleModuleAccess.`,
 )
 
-await prisma.$disconnect()
+await db.$client.end()

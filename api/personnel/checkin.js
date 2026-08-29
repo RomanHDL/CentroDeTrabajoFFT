@@ -1,5 +1,6 @@
 // Equivalente real de checkInEmployee (repository.js).
-import { prisma } from '../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, employee as employeeTable } from '../../server-lib/db/client.ts'
 import { requireAuth } from '../../server-lib/auth.js'
 import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
 
@@ -18,20 +19,28 @@ export default requireAuth(async (req, res) => {
   let employee = null
 
   if (employeeId) {
-    employee = await prisma.employee.findUnique({ where: { id: employeeId } })
+    employee = (
+      await db.select().from(employeeTable).where(eq(employeeTable.id, employeeId)).limit(1)
+    )[0]
     if (!employee) return res.status(404).json({ error: 'Empleado no encontrado.' })
   } else if (number) {
-    employee = await prisma.employee.findUnique({ where: { employeeNumber: number } })
+    employee = (
+      await db.select().from(employeeTable).where(eq(employeeTable.employeeNumber, number)).limit(1)
+    )[0]
     if (!employee) {
       if (!name || !name.trim()) {
         return res.status(200).json({ status: 'NEEDS_NAME', employeeNumber: number })
       }
       try {
-        employee = await prisma.employee.create({
-          data: { employeeNumber: number, fullName: name.trim() },
-        })
+        employee = (
+          await db
+            .insert(employeeTable)
+            .values({ employeeNumber: number, fullName: name.trim(), updatedAt: new Date() })
+            .returning()
+        )[0]
       } catch (e) {
-        if (e.code === 'P2002') {
+        // Fase 3 (Prisma -> Drizzle): P2002 (Prisma) -> 23505 unique_violation (pg nativo).
+        if (e.code === '23505') {
           return res
             .status(409)
             .json({ error: `El número de empleado ${number} ya está en uso por otra persona.` })
@@ -43,9 +52,12 @@ export default requireAuth(async (req, res) => {
     // Sin numero de empleado -- alta tipo "PROYECTO" (persona real sin numero confirmado
     // todavia), identificada por nombre. employeeNumber se guarda null, NUNCA el literal
     // 'PROYECTO'/'PENDIENTE' (esos son solo etiquetas de presentacion del frontend).
-    employee = await prisma.employee.create({
-      data: { employeeNumber: null, fullName: name.trim() },
-    })
+    employee = (
+      await db
+        .insert(employeeTable)
+        .values({ employeeNumber: null, fullName: name.trim(), updatedAt: new Date() })
+        .returning()
+    )[0]
   }
 
   const workstation = await resolveWorkstation(workAreaId, stationName)

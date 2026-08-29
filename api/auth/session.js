@@ -1,5 +1,5 @@
 import { getSessionUser, publicUser } from '../../server-lib/auth.js'
-import { getEffectiveModulesForUser } from '../../server-lib/permissionService.js'
+import { getEffectiveModulesForUser } from '../../server-lib/permissionService.ts'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })

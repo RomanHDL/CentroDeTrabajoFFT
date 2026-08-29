@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, user } from '../../../server-lib/db/client.ts'
 import { requireModuleAccess } from '../../../server-lib/auth.js'
 
 // POST body opcional { password?: string }. Sin password: comportamiento de
@@ -18,28 +19,26 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
     }
     const passwordHash = await bcrypt.hash(password, 12)
-    try {
-      await prisma.user.update({ where: { id }, data: { passwordHash, mustChangePassword: false } })
-      return res.status(200).json({ ok: true, mode: 'manual' })
-    } catch (e) {
-      if (e.code === 'P2025') return res.status(404).json({ error: 'Usuario no encontrado' })
-      throw e
-    }
+    // Fase 3 (Prisma -> Drizzle): P2025 -> 0 filas de `.returning()`, se checa a mano.
+    const [updated] = await db
+      .update(user)
+      .set({ passwordHash, mustChangePassword: false, updatedAt: new Date() })
+      .where(eq(user.id, id))
+      .returning()
+    if (!updated) return res.status(404).json({ error: 'Usuario no encontrado' })
+    return res.status(200).json({ ok: true, mode: 'manual' })
   }
 
   const temporaryPassword = crypto.randomBytes(9).toString('base64url')
   const passwordHash = await bcrypt.hash(temporaryPassword, 12)
 
-  try {
-    await prisma.user.update({
-      where: { id },
-      data: { passwordHash, mustChangePassword: true },
-    })
-    // Se devuelve UNA sola vez para que el admin se la entregue al usuario. Nunca se
-    // vuelve a poder consultar despues (no se guarda en texto plano en ningun lado).
-    return res.status(200).json({ temporaryPassword, mode: 'random' })
-  } catch (e) {
-    if (e.code === 'P2025') return res.status(404).json({ error: 'Usuario no encontrado' })
-    throw e
-  }
+  const [updated] = await db
+    .update(user)
+    .set({ passwordHash, mustChangePassword: true, updatedAt: new Date() })
+    .where(eq(user.id, id))
+    .returning()
+  if (!updated) return res.status(404).json({ error: 'Usuario no encontrado' })
+  // Se devuelve UNA sola vez para que el admin se la entregue al usuario. Nunca se
+  // vuelve a poder consultar despues (no se guarda en texto plano en ningun lado).
+  return res.status(200).json({ temporaryPassword, mode: 'random' })
 })

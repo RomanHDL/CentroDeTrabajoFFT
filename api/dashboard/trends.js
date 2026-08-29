@@ -9,18 +9,19 @@
 // esta el navegador de quien pide esto, y agrupar server-side con la hora UTC del proceso producia
 // un bug real (dias/horas desalineados con la tarde/noche real de Mexico) -- se detecto y corrigio
 // en la primera verificacion visual de este rediseño.
-import { prisma } from '../../server-lib/prisma.js'
+import { asc, gte } from 'drizzle-orm'
+import { db, employeeMovement } from '../../server-lib/db/client.ts'
 import { requireAuth } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const windowStart = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)
-  const movements = await prisma.employeeMovement.findMany({
-    where: { movedAt: { gte: windowStart } },
-    select: { movedAt: true },
-    orderBy: { movedAt: 'asc' },
-  })
+  const movements = await db
+    .select({ movedAt: employeeMovement.movedAt })
+    .from(employeeMovement)
+    .where(gte(employeeMovement.movedAt, windowStart))
+    .orderBy(asc(employeeMovement.movedAt))
 
   return res.status(200).json({
     movements: movements.map((m) => m.movedAt.toISOString()),

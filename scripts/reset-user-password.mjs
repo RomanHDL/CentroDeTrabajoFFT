@@ -7,7 +7,8 @@
 //
 import readline from 'node:readline'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, user } from '../server-lib/db/client.ts'
 
 function ask(query) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -49,8 +50,12 @@ async function main() {
     process.exit(1)
   }
 
-  const user = await prisma.user.findUnique({ where: { employeeNumber } })
-  if (!user) {
+  const [existingUser] = await db
+    .select()
+    .from(user)
+    .where(eq(user.employeeNumber, employeeNumber))
+    .limit(1)
+  if (!existingUser) {
     console.error(
       `\nError: no existe ningun usuario con employeeNumber=${employeeNumber}. No se creo nada.`,
     )
@@ -58,7 +63,7 @@ async function main() {
   }
 
   console.log(
-    `\nUsuario localizado: "${user.name}" (rol ${user.role}, activo=${user.active}). Se le va a restablecer SOLO la contraseña.\n`,
+    `\nUsuario localizado: "${existingUser.name}" (rol ${existingUser.role}, activo=${existingUser.active}). Se le va a restablecer SOLO la contraseña.\n`,
   )
 
   const password = await askHidden('Nueva contraseña temporal (minimo 8 caracteres): ')
@@ -74,22 +79,25 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 12)
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
+  await db
+    .update(user)
+    .set({
       passwordHash,
       mustChangePassword: true,
+      updatedAt: new Date(),
       // role, employeeNumber, username, name y active NO se tocan.
-    },
-  })
+    })
+    .where(eq(user.id, existingUser.id))
 
-  console.log(`\nListo. Se restableció la contraseña de "${user.name}" (${user.employeeNumber}).`)
+  console.log(
+    `\nListo. Se restableció la contraseña de "${existingUser.name}" (${existingUser.employeeNumber}).`,
+  )
   console.log('mustChangePassword = true -> debera cambiarla en su proximo login.')
-  await prisma.$disconnect()
+  await db.$client.end()
 }
 
 main().catch(async (e) => {
   console.error('\nError inesperado:', e.message)
-  await prisma.$disconnect()
+  await db.$client.end()
   process.exit(1)
 })

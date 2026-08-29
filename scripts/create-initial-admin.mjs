@@ -9,7 +9,8 @@
 //
 import readline from 'node:readline'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../server-lib/prisma.js'
+import { or, eq } from 'drizzle-orm'
+import { db, user } from '../server-lib/db/client.ts'
 
 function ask(query) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -72,14 +73,15 @@ async function main() {
     process.exit(1)
   }
 
-  const existing = await prisma.user.findFirst({
-    where: {
-      OR: [
-        employeeNumber ? { employeeNumber } : undefined,
-        username ? { username } : undefined,
-      ].filter(Boolean),
-    },
-  })
+  const orConditions = [
+    employeeNumber ? eq(user.employeeNumber, employeeNumber) : undefined,
+    username ? eq(user.username, username) : undefined,
+  ].filter(Boolean)
+  const [existing] = await db
+    .select()
+    .from(user)
+    .where(or(...orConditions))
+    .limit(1)
   if (existing) {
     console.error(
       `\nError: ya existe un usuario con ese ${existing.employeeNumber === employeeNumber ? 'numero de empleado' : 'username'}. No se creo nada.`,
@@ -88,8 +90,9 @@ async function main() {
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
-  const user = await prisma.user.create({
-    data: {
+  const [createdUser] = await db
+    .insert(user)
+    .values({
       employeeNumber,
       username,
       name,
@@ -97,18 +100,19 @@ async function main() {
       passwordHash,
       active: true,
       mustChangePassword: true,
-    },
-  })
+      updatedAt: new Date(),
+    })
+    .returning()
 
   console.log(
-    `\nListo. Administrador creado: "${user.name}" (${user.username || user.employeeNumber}).`,
+    `\nListo. Administrador creado: "${createdUser.name}" (${createdUser.username || createdUser.employeeNumber}).`,
   )
   console.log('mustChangePassword = true -> debera cambiar la contraseña en su primer login.')
-  await prisma.$disconnect()
+  await db.$client.end()
 }
 
 main().catch(async (e) => {
   console.error('\nError inesperado:', e.message)
-  await prisma.$disconnect()
+  await db.$client.end()
   process.exit(1)
 })

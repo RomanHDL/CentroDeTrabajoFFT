@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, user } from '../../server-lib/db/client.ts'
 import { requireAuth, publicUser } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {
@@ -29,10 +30,11 @@ export default requireAuth(async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12)
-  const updated = await prisma.user.update({
-    where: { id: req.user.id },
-    data: { passwordHash, mustChangePassword: false },
-  })
+  const [updated] = await db
+    .update(user)
+    .set({ passwordHash, mustChangePassword: false, updatedAt: new Date() })
+    .where(eq(user.id, req.user.id))
+    .returning()
 
   return res.status(200).json({ user: publicUser(updated) })
 })

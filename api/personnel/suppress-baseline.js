@@ -14,7 +14,8 @@
 // linea. Reparado a mano en la base de datos real y AHORA reparado aqui: solo se suprime a quien
 // tenga areaZona "LINEA N" (cualquier numero) o "PRODUCCION" (generico, sin linea especifica
 // confirmada) -- exactamente el mismo alcance que el cliente.
-import { prisma } from '../../server-lib/prisma.js'
+import { and, eq, inArray, like, notInArray, or } from 'drizzle-orm'
+import { db, dailyAssignment, employee } from '../../server-lib/db/client.ts'
 import { requireModuleAccess } from '../../server-lib/auth.js'
 import { todayDateOnly } from '../../server-lib/personnel.ts'
 
@@ -22,28 +23,29 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const today = todayDateOnly()
-  const touchedToday = await prisma.dailyAssignment.findMany({
-    where: { date: today },
-    select: { employeeId: true },
-    distinct: ['employeeId'],
-  })
+  const touchedToday = await db
+    .selectDistinctOn([dailyAssignment.employeeId], { employeeId: dailyAssignment.employeeId })
+    .from(dailyAssignment)
+    .where(eq(dailyAssignment.date, today))
   const touchedIds = touchedToday.map((a) => a.employeeId)
 
-  const candidates = await prisma.employee.findMany({
-    where: {
-      baselineSuppressed: false,
-      OR: [{ areaZona: { startsWith: 'LINEA ' } }, { areaZona: 'PRODUCCION' }],
-      id: { notIn: touchedIds.length ? touchedIds : ['__none__'] },
-    },
-    select: { id: true },
-  })
+  const candidates = await db
+    .select({ id: employee.id })
+    .from(employee)
+    .where(
+      and(
+        eq(employee.baselineSuppressed, false),
+        or(like(employee.areaZona, 'LINEA %'), eq(employee.areaZona, 'PRODUCCION')),
+        notInArray(employee.id, touchedIds.length ? touchedIds : ['__none__']),
+      ),
+    )
   const ids = candidates.map((c) => c.id)
 
   if (ids.length) {
-    await prisma.employee.updateMany({
-      where: { id: { in: ids } },
-      data: { baselineSuppressed: true },
-    })
+    await db
+      .update(employee)
+      .set({ baselineSuppressed: true, updatedAt: new Date() })
+      .where(inArray(employee.id, ids))
   }
   return res.status(200).json({ suppressedCount: ids.length, employeeIds: ids })
 })

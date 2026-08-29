@@ -2,7 +2,7 @@
 // Reference, sección 14d, HARD RULE). Contenido separado de la
 // presentación (DeveloperManualPage.jsx) para que la migración a
 // Tailwind (fase futura) solo toque el renderer, nunca este contenido.
-// Fuente de verdad: prisma/schema.prisma -- si el schema cambia, este
+// Fuente de verdad: server-lib/db/schema.ts -- si el schema cambia, este
 // archivo debe actualizarse en el mismo PR (no hay generación automática
 // todavía).
 
@@ -13,10 +13,18 @@ movimientos, asistencia, importación de la plantilla oficial (Excel) y
 permisos por rol/módulo.
 
 Stack actual: React 18 + Vite (JS, tsconfig permisivo desde la Fase 1 de
-compliance) + MUI + Prisma ORM sobre Postgres (Neon) + autenticación
+compliance) + MUI + Drizzle ORM sobre Postgres (Neon) + autenticación
 propia por cookie firmada (JWT) + despliegue automático en Vercel
 (GitHub → Preview en cada push a desarrollo-personal, Producción en cada
 push a main).
+
+Capa de datos (server-lib/db/): schema.ts + relations.ts se generaron con
+"drizzle-kit introspect" directo contra la base real (nunca escritos a
+mano) -- 18 tablas/12 enums. client.ts exporta "db" (singleton, mismo
+patrón que el antiguo cliente Prisma) más cada tabla, para import directo
+desde cualquier archivo del servidor. Migrado desde Prisma en la Fase 3 de
+compliance (ver CHANGELOG.md) -- mismo comportamiento de negocio,
+verificado archivo por archivo.
 
 Frontend (src/): páginas por módulo en src/pages/<modulo>/, estado de
 sesión en src/state/auth.jsx, capa de datos de personal en

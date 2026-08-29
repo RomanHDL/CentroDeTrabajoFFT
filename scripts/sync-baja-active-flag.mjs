@@ -8,7 +8,8 @@
 // BAJA en checkin/move/approve-move (ver server-lib/personnel.ts, placeEmployee). Es seguro
 // volver a correrlo despues (upsert idempotente vía update simple, no falla si ya esta en
 // active=false).
-import { prisma } from '../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, employee } from '../server-lib/db/client.ts'
 
 // Copiados a mano de realPersonnelSnapshot.js (grep de "status": "BAJA" con employeeNumber
 // presente) -- NO son un numero inventado, son los 5 de los 10 registros BAJA del snapshot que
@@ -22,23 +23,30 @@ let alreadyInactive = 0
 let notFound = 0
 
 for (const employeeNumber of BAJA_EMPLOYEE_NUMBERS) {
-  const employee = await prisma.employee.findUnique({ where: { employeeNumber } })
-  if (!employee) {
+  const [emp] = await db
+    .select()
+    .from(employee)
+    .where(eq(employee.employeeNumber, employeeNumber))
+    .limit(1)
+  if (!emp) {
     console.log(`OMITIDO ${employeeNumber} -- no existe todavia como Employee en la base real.`)
     notFound += 1
     continue
   }
-  if (!employee.active) {
-    console.log(`YA INACTIVO ${employeeNumber} -- ${employee.fullName}`)
+  if (!emp.active) {
+    console.log(`YA INACTIVO ${employeeNumber} -- ${emp.fullName}`)
     alreadyInactive += 1
     continue
   }
-  await prisma.employee.update({ where: { employeeNumber }, data: { active: false } })
-  console.log(`ACTUALIZADO ${employeeNumber} -- ${employee.fullName} -> active=false`)
+  await db
+    .update(employee)
+    .set({ active: false, updatedAt: new Date() })
+    .where(eq(employee.employeeNumber, employeeNumber))
+  console.log(`ACTUALIZADO ${employeeNumber} -- ${emp.fullName} -> active=false`)
   updated += 1
 }
 
 console.log(
   `\nResumen: ${updated} actualizados, ${alreadyInactive} ya estaban inactivos, ${notFound} no encontrados.`,
 )
-await prisma.$disconnect()
+await db.$client.end()
