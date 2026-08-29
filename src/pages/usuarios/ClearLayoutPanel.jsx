@@ -47,40 +47,26 @@ export default function ClearLayoutPanel() {
     // Supervisor, Accesorios, Paletizado -- ver getBaselineOnlyPeopleIds).
     const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
-      showToast(
-        'No hay nadie por snapshot en las WC LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.',
-        'info',
-      )
+      showToast('No hay nadie por snapshot en las WC LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.', 'info')
       return
     }
     suppressBaselinePlacement(ids)
     setResult(ids.length)
-    showToast(
-      `Layout vaciado: ${ids.length} personas quedaron sin área hasta que se les reasigne.`,
-      'success',
-    )
+    showToast(`Layout vaciado: ${ids.length} personas quedaron sin área hasta que se les reasigne.`, 'success')
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>
-        Vaciar layout de las WC LINEA
-      </Typography>
+    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Vaciar layout de las WC LINEA</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-        Deja sin área asignada, en el mapa visual, solo al personal de las WC LINEA (líneas de
-        producción + WC LINEA 0) para que los líderes los vayan ubicando desde Registro de personal.
-        Calidad, Capacitación, Team Leader, Soporte, Limpieza, Gerente, Supervisor, Accesorios y
-        Paletizado nunca se ven afectados por este botón. No borra a nadie ni los quita de
-        Personal/buscadores — solo del layout. A diferencia de liberar por hoy, esto no se revierte
-        al cambiar de día.
+        Deja sin área asignada, en el mapa visual, solo al personal de las WC LINEA (líneas de producción + WC LINEA 0)
+        para que los líderes los vayan ubicando desde Registro de personal. Calidad, Capacitación, Team Leader,
+        Soporte, Limpieza, Gerente, Supervisor, Accesorios y Paletizado nunca se ven afectados por este botón. No
+        borra a nadie ni los quita de Personal/buscadores — solo del layout. A diferencia de liberar por hoy, esto no
+        se revierte al cambiar de día.
       </Typography>
       {result != null && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {result} personas quedaron sin ubicación en el layout.
-        </Alert>
+        <Alert severity="success" sx={{ mb: 2 }}>{result} personas quedaron sin ubicación en el layout.</Alert>
       )}
       <Button
         variant="outlined"
@@ -96,17 +82,15 @@ export default function ClearLayoutPanel() {
         <DialogTitle sx={{ fontWeight: 800 }}>Vaciar layout de las WC LINEA</DialogTitle>
         <DialogContent>
           <Typography>
-            Todo el personal ubicado hoy por el snapshot histórico en una WC LINEA quedará sin área
-            en el mapa visual, de forma permanente hasta que alguien lo reasigne. Calidad,
-            Capacitación, Team Leader, Soporte, Limpieza, Gerente, Supervisor, Accesorios y
-            Paletizado no se tocan. Esto no afecta el módulo de Personal ni la búsqueda. ¿Confirmas?
+            Todo el personal ubicado hoy por el snapshot histórico en una WC LINEA quedará sin área en el mapa visual,
+            de forma permanente hasta que alguien lo reasigne. Calidad, Capacitación, Team Leader, Soporte, Limpieza,
+            Gerente, Supervisor, Accesorios y Paletizado no se tocan. Esto no afecta el módulo de Personal ni la
+            búsqueda. ¿Confirmas?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="warning" variant="contained" onClick={handleConfirm}>
-            Vaciar layout
-          </Button>
+          <Button color="warning" variant="contained" onClick={handleConfirm}>Vaciar layout</Button>
         </DialogActions>
       </Dialog>
     </Paper>

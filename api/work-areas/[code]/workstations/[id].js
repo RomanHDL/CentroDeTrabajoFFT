@@ -1,9 +1,5 @@
 import { requireRole } from '../../../../server-lib/auth.js'
-import {
-  updateWorkstation,
-  deactivateWorkstation,
-  serializeWorkstation,
-} from '../../../../server-lib/workstationConfig.js'
+import { updateWorkstation, deactivateWorkstation, serializeWorkstation } from '../../../../server-lib/workstationConfig.js'
 
 const VALID_CATEGORIES = ['LIDERAZGO', 'CALIDAD', 'PRODUCCION', 'TECNICO', 'SUMINISTRO', 'APOYO']
 
@@ -27,19 +23,11 @@ export default requireRole(['ADMINISTRADOR'], async (req, res) => {
       const w = await deactivateWorkstation(id)
       return res.status(200).json({ workstation: serializeWorkstation(w) })
     }
-    const w = await updateWorkstation(id, {
-      name,
-      requiredRoleLabel,
-      category,
-      capacity,
-      displayOrder,
-    })
+    const w = await updateWorkstation(id, { name, requiredRoleLabel, category, capacity, displayOrder })
     return res.status(200).json({ workstation: serializeWorkstation(w) })
   } catch (e) {
-    if (e.code === 'OCCUPIED' || e.code === 'CAPACITY_BELOW_OCCUPANCY')
-      return res.status(409).json({ error: e.message })
-    if (e.code === 'P2002')
-      return res.status(409).json({ error: 'Ya existe una estacion con ese nombre en esta linea' })
+    if (e.code === 'OCCUPIED' || e.code === 'CAPACITY_BELOW_OCCUPANCY') return res.status(409).json({ error: e.message })
+    if (e.code === 'P2002') return res.status(409).json({ error: 'Ya existe una estacion con ese nombre en esta linea' })
     if (e.code === 'P2025') return res.status(404).json({ error: 'Puesto no encontrado' })
     throw e
   }

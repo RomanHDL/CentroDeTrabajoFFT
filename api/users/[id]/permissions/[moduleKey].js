@@ -2,10 +2,7 @@ import { prisma } from '../../../../server-lib/prisma.js'
 import { requireModuleAccess } from '../../../../server-lib/auth.js'
 import { getModule } from '../../../../shared/moduleRegistry.js'
 import { resolveEffectiveAccess } from '../../../../shared/permissions.js'
-import {
-  setUserOverride,
-  getRoleModulePermissionsMap,
-} from '../../../../server-lib/permissionService.js'
+import { setUserOverride, getRoleModulePermissionsMap } from '../../../../server-lib/permissionService.js'
 
 // moduleKey viaja URL-encoded (ej. "/dashboard" -> "%2Fdashboard") porque
 // contiene una barra -- un solo segmento de ruta dinamica, decodificado

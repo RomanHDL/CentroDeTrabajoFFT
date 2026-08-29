@@ -27,29 +27,18 @@ export default function ProduccionDiariaTab() {
 
   const lines = useMemo(() => dailyLineBreakdown(dateISO), [dateISO])
   const hourly = useMemo(() => dailyHourlyTotal(dateISO), [dateISO])
-  const personalUtilizado = useMemo(
-    () => getPersonnelCountForDate(dateISO),
-    [dateISO, personnelVersion],
-  )
+  const personalUtilizado = useMemo(() => getPersonnelCountForDate(dateISO), [dateISO, personnelVersion])
 
-  const totals = lines.reduce(
-    (acc, r) => ({
-      production: acc.production + r.production,
-      target: acc.target + r.target,
-    }),
-    { production: 0, target: 0 },
-  )
+  const totals = lines.reduce((acc, r) => ({
+    production: acc.production + r.production,
+    target: acc.target + r.target,
+  }), { production: 0, target: 0 })
   const cumplimiento = totals.target > 0 ? Math.round((totals.production / totals.target) * 100) : 0
   const diferencia = totals.production - totals.target
 
   return (
     <Box>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 3 }}
-      >
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 3 }}>
         <Typography sx={ps.sectionTitle}>Producción diaria</Typography>
         <Box sx={{ flex: 1 }} />
         <TextField
@@ -66,71 +55,26 @@ export default function ProduccionDiariaTab() {
       <Grid container spacing={1.5} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={3}>
           <Paper elevation={0} sx={ps.kpiCard('blue')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Producción total
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {totals.production.toLocaleString('es-MX')}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Producción total</Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{totals.production.toLocaleString('es-MX')}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper elevation={0} sx={ps.kpiCard('cyan')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Meta
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {totals.target.toLocaleString('es-MX')}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Meta</Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{totals.target.toLocaleString('es-MX')}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper elevation={0} sx={ps.kpiCard(diferencia >= 0 ? 'green' : 'red')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Diferencia
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {diferencia >= 0 ? '+' : ''}
-              {diferencia.toLocaleString('es-MX')}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Diferencia</Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{diferencia >= 0 ? '+' : ''}{diferencia.toLocaleString('es-MX')}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper elevation={0} sx={ps.kpiCard('purple')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Personal utilizado
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {personalUtilizado}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Personal utilizado</Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{personalUtilizado}</Typography>
           </Paper>
         </Grid>
       </Grid>
@@ -140,9 +84,7 @@ export default function ProduccionDiariaTab() {
           <Paper elevation={0} sx={ps.card}>
             <Box sx={ps.cardHeader}>
               <Typography sx={ps.cardHeaderTitle}>Producción por línea</Typography>
-              <Typography sx={ps.cardHeaderSubtitle}>
-                {dayjs(dateISO).format('DD/MM/YYYY')}
-              </Typography>
+              <Typography sx={ps.cardHeaderSubtitle}>{dayjs(dateISO).format('DD/MM/YYYY')}</Typography>
             </Box>
             <TableContainer sx={{ maxHeight: 420 }}>
               <Table size="small" stickyHeader>
@@ -160,18 +102,10 @@ export default function ProduccionDiariaTab() {
                     return (
                       <TableRow key={r.id} sx={ps.tableRow(idx)}>
                         <TableCell sx={{ ...ps.cellText, fontWeight: 600 }}>{r.name}</TableCell>
-                        <TableCell align="right" sx={ps.cellText}>
-                          {r.production.toLocaleString('es-MX')}
-                        </TableCell>
-                        <TableCell align="right" sx={ps.cellTextSecondary}>
-                          {r.target.toLocaleString('es-MX')}
-                        </TableCell>
+                        <TableCell align="right" sx={ps.cellText}>{r.production.toLocaleString('es-MX')}</TableCell>
+                        <TableCell align="right" sx={ps.cellTextSecondary}>{r.target.toLocaleString('es-MX')}</TableCell>
                         <TableCell align="right">
-                          <Chip
-                            size="small"
-                            label={`${r.cumplimiento}%`}
-                            sx={ps.metricChip(tone.tone)}
-                          />
+                          <Chip size="small" label={`${r.cumplimiento}%`} sx={ps.metricChip(tone.tone)} />
                         </TableCell>
                       </TableRow>
                     )

@@ -19,7 +19,7 @@ export const HAS_PRODUCTION_SOURCE = false
 const WEEKDAY_LABELS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
 
 function emptyHourlySeries() {
-  return SHIFT_HOURS.map((hour) => ({ hour, quantity: 0 }))
+  return SHIFT_HOURS.map(hour => ({ hour, quantity: 0 }))
 }
 
 export function hourlySeriesFor() {
@@ -37,11 +37,11 @@ export function stationBreakdown() {
 }
 
 export function weeklyProductionFor() {
-  return WEEKDAY_LABELS.map((day) => ({ day, production: 0, target: 0, cumplimiento: 0 }))
+  return WEEKDAY_LABELS.map(day => ({ day, production: 0, target: 0, cumplimiento: 0 }))
 }
 
 export function weeklyTotals() {
-  return WEEKDAY_LABELS.map((day) => ({ day, production: 0, target: 0, cumplimiento: 0 }))
+  return WEEKDAY_LABELS.map(day => ({ day, production: 0, target: 0, cumplimiento: 0 }))
 }
 
 /* Tendencia por hora agregada de TODAS las lineas/areas —

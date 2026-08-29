@@ -31,7 +31,7 @@ export default function SuggestedEmployeeCard({ candidate, onAssign, disabled })
             {candidate.employee.employeeNumber} — {candidate.employee.name}
           </Typography>
           <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.25 }}>
-            {skills.map((s) => s.stationName).join(' · ')}
+            {skills.map(s => s.stationName).join(' · ')}
           </Typography>
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.75 }}>
             <Chip size="small" label={statusLabel} sx={ps.metricChip(statusTone)} />

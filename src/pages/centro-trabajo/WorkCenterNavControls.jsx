@@ -28,39 +28,21 @@ import { alpha } from '@mui/material/styles'
 export default function WorkCenterNavControls({ previous, next, onNavigate }) {
   useEffect(() => {
     function onKeyDown(e) {
-      if (!e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
+      if (!e.altKey || e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
       const tag = document.activeElement?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return
-      if (e.key === 'ArrowLeft' && previous) {
-        e.preventDefault()
-        onNavigate(previous.id)
-      }
-      if (e.key === 'ArrowRight' && next) {
-        e.preventDefault()
-        onNavigate(next.id)
-      }
+      if (e.key === 'ArrowLeft' && previous) { e.preventDefault(); onNavigate(previous.id) }
+      if (e.key === 'ArrowRight' && next) { e.preventDefault(); onNavigate(next.id) }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [previous, next, onNavigate])
 
   const btnSx = {
-    textTransform: 'none',
-    fontWeight: 700,
-    fontSize: 12.5,
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    color: 'text.primary',
-    bgcolor: 'background.paper',
-    px: 1.1,
-    py: 0.5,
-    minWidth: 0,
-    lineHeight: 1.3,
-    '&:hover': {
-      borderColor: '#3B82F6',
-      bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.14 : 0.06),
-    },
+    textTransform: 'none', fontWeight: 700, fontSize: 12.5, borderRadius: 2,
+    border: '1px solid', borderColor: 'divider', color: 'text.primary',
+    bgcolor: 'background.paper', px: 1.1, py: 0.5, minWidth: 0, lineHeight: 1.3,
+    '&:hover': { borderColor: '#3B82F6', bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.14 : 0.06) },
     '&.Mui-disabled': { opacity: 0.35, borderColor: 'divider' },
   }
 
@@ -69,36 +51,22 @@ export default function WorkCenterNavControls({ previous, next, onNavigate }) {
       <Tooltip title={previous ? previous.name : 'No hay área anterior'}>
         <span>
           <Button
-            size="small"
-            disabled={!previous}
-            onClick={() => previous && onNavigate(previous.id)}
-            startIcon={<ChevronLeftIcon sx={{ fontSize: 17 }} />}
-            sx={btnSx}
+            size="small" disabled={!previous} onClick={() => previous && onNavigate(previous.id)}
+            startIcon={<ChevronLeftIcon sx={{ fontSize: 17 }} />} sx={btnSx}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              {previous?.name || 'Anterior'}
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              Anterior
-            </Box>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{previous?.name || 'Anterior'}</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Anterior</Box>
           </Button>
         </span>
       </Tooltip>
       <Tooltip title={next ? next.name : 'No hay área siguiente'}>
         <span>
           <Button
-            size="small"
-            disabled={!next}
-            onClick={() => next && onNavigate(next.id)}
-            endIcon={<ChevronRightIcon sx={{ fontSize: 17 }} />}
-            sx={btnSx}
+            size="small" disabled={!next} onClick={() => next && onNavigate(next.id)}
+            endIcon={<ChevronRightIcon sx={{ fontSize: 17 }} />} sx={btnSx}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              {next?.name || 'Siguiente'}
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              Siguiente
-            </Box>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{next?.name || 'Siguiente'}</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Siguiente</Box>
           </Button>
         </span>
       </Tooltip>

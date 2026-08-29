@@ -16,22 +16,12 @@ import EmployeeAvatar from './EmployeeAvatar'
 function DetailRow({ label, value }) {
   return (
     <Box>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.4,
-        }}
-      >
+      <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
         {label}
       </Typography>
-      {typeof value === 'string' ? (
-        <Typography sx={{ fontSize: 14, fontWeight: 600, mt: 0.25 }}>{value}</Typography>
-      ) : (
-        <Box sx={{ mt: 0.4 }}>{value}</Box>
-      )}
+      {typeof value === 'string'
+        ? <Typography sx={{ fontSize: 14, fontWeight: 600, mt: 0.25 }}>{value}</Typography>
+        : <Box sx={{ mt: 0.4 }}>{value}</Box>}
     </Box>
   )
 }
@@ -53,49 +43,22 @@ export default function EmployeeAvailableDetailDialog({ employee, open, onClose,
   const actividad = getActividadForEmployee(employee.id)
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontWeight: 800,
-          fontSize: 16,
-        }}
-      >
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800, fontSize: 16 }}>
         Detalle del empleado
-        <IconButton size="small" onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        <IconButton size="small" onClick={onClose}><CloseIcon fontSize="small" /></IconButton>
       </DialogTitle>
       <DialogContent>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
           <EmployeeAvatar employee={employee} size={52} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>
-            {employee.name}
-          </Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>{employee.name}</Typography>
         </Stack>
         <Stack spacing={1.75}>
           <DetailRow label="No. empleado" value={numberLabel} />
           <DetailRow
             label="Estado"
             value={
-              <Chip
-                size="small"
-                label="Disponible"
-                sx={{
-                  fontWeight: 700,
-                  bgcolor: '#10B98122',
-                  color: '#047857',
-                  border: '1px solid #10B98155',
-                }}
-              />
+              <Chip size="small" label="Disponible" sx={{ fontWeight: 700, bgcolor: '#10B98122', color: '#047857', border: '1px solid #10B98155' }} />
             }
           />
           <DetailRow label="Área actual" value="Sin área asignada" />
@@ -104,15 +67,9 @@ export default function EmployeeAvailableDetailDialog({ employee, open, onClose,
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Cancelar
-        </Button>
+        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 700 }}>Cancelar</Button>
         {onAssign && (
-          <Button
-            variant="contained"
-            onClick={onAssign}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-          >
+          <Button variant="contained" onClick={onAssign} sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
             Asignar
           </Button>
         )}

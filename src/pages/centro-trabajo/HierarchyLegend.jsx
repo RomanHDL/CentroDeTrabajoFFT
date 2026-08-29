@@ -44,23 +44,13 @@ export default function HierarchyLegend({ expanded = false }) {
   if (!expanded) {
     return (
       <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+        <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
           Jerarquía / Rango
         </Typography>
         {PERSONNEL_RANK_ORDER.map((rank) => (
           <Stack key={rank.key} direction="row" spacing={0.5} alignItems="center">
             <RankIcon rank={rank} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {rank.label}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>{rank.label}</Typography>
           </Stack>
         ))}
       </Stack>
@@ -68,40 +58,20 @@ export default function HierarchyLegend({ expanded = false }) {
   }
   return (
     <Stack spacing={1}>
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.4,
-          mb: 0.5,
-        }}
-      >
+      <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4, mb: 0.5 }}>
         Leyenda de jerarquía / rango
       </Typography>
       {PERSONNEL_RANK_ORDER.map((rank) => (
         <Stack key={rank.key} direction="row" spacing={1} alignItems="center">
-          <Box
-            sx={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              flexShrink: 0,
-              display: 'grid',
-              placeItems: 'center',
-              bgcolor: alpha(rank.color, 0.12),
-            }}
-          >
+          <Box sx={{
+            width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+            display: 'grid', placeItems: 'center', bgcolor: alpha(rank.color, 0.12),
+          }}>
             <RankIcon rank={rank} size={13} />
           </Box>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 12, fontWeight: 700, color: rank.color, lineHeight: 1.25 }}>
-              {rank.label}
-            </Typography>
-            <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>
-              {rank.description}
-            </Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: rank.color, lineHeight: 1.25 }}>{rank.label}</Typography>
+            <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>{rank.description}</Typography>
           </Box>
         </Stack>
       ))}

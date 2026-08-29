@@ -46,10 +46,7 @@ export async function listWorkstations(workAreaId) {
 }
 
 export async function nextDisplayOrder(workAreaId) {
-  const agg = await prisma.workstation.aggregate({
-    where: { workAreaId },
-    _max: { displayOrder: true },
-  })
+  const agg = await prisma.workstation.aggregate({ where: { workAreaId }, _max: { displayOrder: true } })
   return (agg._max.displayOrder || 0) + 1
 }
 
@@ -58,15 +55,7 @@ export async function nextDisplayOrder(workAreaId) {
    conserva el nombre plano ("Montaje"), solo las repeticiones llevan sufijo ("Montaje 2", ...) --
    asi una linea configurada a mano queda indistinguible de una generada por el codigo. `role`
    (rol base, para agrupar/clasificar) es SIEMPRE el mismo string en las N posiciones creadas. */
-export async function createWorkstations({
-  workAreaId,
-  baseName,
-  requiredRoleLabel,
-  category,
-  capacity,
-  quantity,
-  displayOrderStart,
-}) {
+export async function createWorkstations({ workAreaId, baseName, requiredRoleLabel, category, capacity, quantity, displayOrderStart }) {
   const qty = Math.max(1, Math.min(20, Number(quantity) || 1))
   const cap = Math.max(1, Number(capacity) || 1)
   const rows = Array.from({ length: qty }, (_, i) => ({
@@ -86,10 +75,7 @@ async function activeOccupancy(workstationId) {
   return prisma.dailyAssignment.count({ where: { workstationId, status: 'ACTIVE' } })
 }
 
-export async function updateWorkstation(
-  id,
-  { name, requiredRoleLabel, category, capacity, displayOrder },
-) {
+export async function updateWorkstation(id, { name, requiredRoleLabel, category, capacity, displayOrder }) {
   const data = {}
   if (requiredRoleLabel !== undefined) data.requiredRoleLabel = requiredRoleLabel || null
   if (category !== undefined) data.category = category || null
@@ -100,9 +86,7 @@ export async function updateWorkstation(
     if (current && current.name !== name) {
       const occupied = await activeOccupancy(id)
       if (occupied > 0) {
-        const err = new Error(
-          'No se puede renombrar un puesto que actualmente tiene personal asignado. Reasigna primero.',
-        )
+        const err = new Error('No se puede renombrar un puesto que actualmente tiene personal asignado. Reasigna primero.')
         err.code = 'OCCUPIED'
         throw err
       }
@@ -113,9 +97,7 @@ export async function updateWorkstation(
   if (capacity !== undefined) {
     const occupied = await activeOccupancy(id)
     if (capacity < occupied) {
-      const err = new Error(
-        `No se puede reducir la capacidad por debajo del personal actualmente asignado (${occupied}).`,
-      )
+      const err = new Error(`No se puede reducir la capacidad por debajo del personal actualmente asignado (${occupied}).`)
       err.code = 'CAPACITY_BELOW_OCCUPANCY'
       throw err
     }
@@ -130,19 +112,12 @@ export async function deactivateWorkstation(id) {
 }
 
 export async function reorderWorkstations(workAreaId, orderedIds) {
-  const rows = await prisma.workstation.findMany({
-    where: { id: { in: orderedIds } },
-    select: { id: true, workAreaId: true },
-  })
+  const rows = await prisma.workstation.findMany({ where: { id: { in: orderedIds } }, select: { id: true, workAreaId: true } })
   if (rows.length !== orderedIds.length || rows.some((r) => r.workAreaId !== workAreaId)) {
     const err = new Error('IDs de estacion invalidos para esta linea.')
     err.code = 'INVALID_IDS'
     throw err
   }
-  await prisma.$transaction(
-    orderedIds.map((id, i) =>
-      prisma.workstation.update({ where: { id }, data: { displayOrder: i + 1 } }),
-    ),
-  )
+  await prisma.$transaction(orderedIds.map((id, i) => prisma.workstation.update({ where: { id }, data: { displayOrder: i + 1 } })))
   return listWorkstations(workAreaId)
 }

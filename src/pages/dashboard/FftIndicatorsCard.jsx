@@ -28,30 +28,15 @@ function IndicatorRow({ indicator }) {
   const Icon = ICONS[indicator.id] || SpeedIcon
   return (
     <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 1 }}>
-      <Box
-        sx={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          bgcolor: 'action.hover',
-          color: 'text.secondary',
-          display: 'grid',
-          placeItems: 'center',
-          flexShrink: 0,
-        }}
-      >
+      <Box sx={{ width: 34, height: 34, borderRadius: '50%', bgcolor: 'action.hover', color: 'text.secondary', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
         <Icon sx={{ fontSize: 18 }} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>
-          {indicator.order}. {indicator.label}
-        </Typography>
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{indicator.order}. {indicator.label}</Typography>
         {indicator.hasSource ? (
           <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{indicator.value}</Typography>
         ) : (
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}>
-            Sin fuente de datos configurada
-          </Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}>Sin fuente de datos configurada</Typography>
         )}
       </Box>
     </Stack>
@@ -65,16 +50,12 @@ export default function FftIndicatorsCard() {
       <Box sx={ps.cardHeader}>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={ps.cardHeaderTitle}>Indicadores FFT</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
-            Eficiencia, demoras, producción y cumplimiento de programas del área
-          </Typography>
+          <Typography sx={ps.cardHeaderSubtitle}>Eficiencia, demoras, producción y cumplimiento de programas del área</Typography>
         </Box>
       </Box>
       <Box sx={{ p: 2, pt: 0.5 }}>
         <Stack divider={<Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }} />}>
-          {FFT_INDICATORS.map((i) => (
-            <IndicatorRow key={i.id} indicator={i} />
-          ))}
+          {FFT_INDICATORS.map((i) => <IndicatorRow key={i.id} indicator={i} />)}
         </Stack>
       </Box>
     </Paper>

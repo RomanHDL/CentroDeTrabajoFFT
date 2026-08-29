@@ -14,10 +14,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import dayjs from 'dayjs'
 import { workCenterById } from '../data/production/catalog'
 import { getPendingMoves } from '../data/personnel/repository'
-import {
-  approvePendingMoveWithToast,
-  rejectPendingMoveWithToast,
-} from '../data/personnel/moveApprovalActions'
+import { approvePendingMoveWithToast, rejectPendingMoveWithToast } from '../data/personnel/moveApprovalActions'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 
@@ -35,18 +32,9 @@ function timeAgo(iso) {
 
 function MoveRow({ move, userId, onResolved, compact }) {
   return (
-    <Box
-      sx={{
-        p: compact ? 0 : 1.25,
-        borderRadius: 2,
-        ...(compact ? {} : { bgcolor: 'action.hover' }),
-      }}
-    >
+    <Box sx={{ p: compact ? 0 : 1.25, borderRadius: 2, ...(compact ? {} : { bgcolor: 'action.hover' }) }}>
       <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
-        {move.employeeNumber && move.employeeNumber !== 'PROYECTO'
-          ? `${move.employeeNumber} — `
-          : ''}
-        {move.employeeName}
+        {move.employeeNumber && move.employeeNumber !== 'PROYECTO' ? `${move.employeeNumber} — ` : ''}{move.employeeName}
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
         {areaName(move.fromAreaId)} → {areaName(move.toAreaId)}
@@ -56,25 +44,15 @@ function MoveRow({ move, userId, onResolved, compact }) {
       </Typography>
       <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
         <Button
-          size="small"
-          color="error"
-          variant="outlined"
-          onClick={() => {
-            rejectPendingMoveWithToast(move.id, userId)
-            onResolved && onResolved(move.id)
-          }}
+          size="small" color="error" variant="outlined"
+          onClick={() => { rejectPendingMoveWithToast(move.id, userId); onResolved && onResolved(move.id) }}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
           Rechazar
         </Button>
         <Button
-          size="small"
-          color="success"
-          variant="contained"
-          onClick={() => {
-            approvePendingMoveWithToast(move.id, userId)
-            onResolved && onResolved(move.id)
-          }}
+          size="small" color="success" variant="contained"
+          onClick={() => { approvePendingMoveWithToast(move.id, userId); onResolved && onResolved(move.id) }}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
           Aprobar
@@ -148,13 +126,9 @@ export default function NotificationBell({ userId }) {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Box sx={{ width: 320, maxHeight: 420, overflowY: 'auto', p: 1.5 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 14, mb: 1 }}>
-            Aprobaciones pendientes
-          </Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 14, mb: 1 }}>Aprobaciones pendientes</Typography>
           {pendingMoves.length === 0 ? (
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', py: 1 }}>
-              No hay solicitudes pendientes.
-            </Typography>
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', py: 1 }}>No hay solicitudes pendientes.</Typography>
           ) : (
             <Stack spacing={1} divider={<Divider />}>
               {pendingMoves.map((m) => (
@@ -180,24 +154,10 @@ export default function NotificationBell({ userId }) {
           }}
         >
           <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: 13.5,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
+            <Typography sx={{ fontWeight: 800, fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
               🔔 Solicitud de cambio de área
             </Typography>
-            <IconButton
-              size="small"
-              onClick={() => {
-                dismissedIds.current.add(floating.move.id)
-                setFloating(null)
-              }}
-            >
+            <IconButton size="small" onClick={() => { dismissedIds.current.add(floating.move.id); setFloating(null) }}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </Stack>
@@ -206,8 +166,7 @@ export default function NotificationBell({ userId }) {
           </Box>
           {floating.extraCount > 0 && (
             <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 1 }}>
-              +{floating.extraCount} solicitud{floating.extraCount > 1 ? 'es' : ''} más en la
-              campana.
+              +{floating.extraCount} solicitud{floating.extraCount > 1 ? 'es' : ''} más en la campana.
             </Typography>
           )}
         </Paper>

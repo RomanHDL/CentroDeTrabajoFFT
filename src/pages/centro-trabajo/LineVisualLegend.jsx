@@ -42,44 +42,24 @@ export default function LineVisualLegend() {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 }, alignItems: 'center' }}>
       <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+        <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
           Jerarquía / Tipo de puesto
         </Typography>
         {LINE_VISUAL_TYPE_ORDER.map((type) => (
           <Stack key={type.key} direction="row" spacing={0.5} alignItems="center">
             <LineTypeIcon type={type} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {type.label}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>{type.label}</Typography>
           </Stack>
         ))}
       </Stack>
       <Stack direction="row" spacing={1.5} alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+        <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
           Estado de estación
         </Typography>
         {STATION_STATES.map((s) => (
           <Stack key={s.label} direction="row" spacing={0.5} alignItems="center">
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.color }} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {s.label}
-            </Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>{s.label}</Typography>
           </Stack>
         ))}
       </Stack>

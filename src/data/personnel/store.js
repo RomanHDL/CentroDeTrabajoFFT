@@ -84,9 +84,7 @@ export const writeBaselineSuppressed = (rows) => writeList(KEYS.baselineSuppress
    apiSync.js pueda llamar notify() sin crear un import circular con
    repository.js. ── */
 const listeners = new Set()
-export function notify() {
-  listeners.forEach((fn) => fn())
-}
+export function notify() { listeners.forEach(fn => fn()) }
 export function subscribe(fn) {
   listeners.add(fn)
   return () => listeners.delete(fn)

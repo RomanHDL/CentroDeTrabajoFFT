@@ -45,31 +45,14 @@ export default function UnassignedPersonnelCard({ people }) {
   const extra = Math.max(people.length - PREVIEW_LIMIT, 0)
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ mb: people.length ? 1.5 : 0 }}
-      >
+    <Paper elevation={0} sx={{ p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: people.length ? 1.5 : 0 }}>
         <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-            Personal sin área asignada ({people.length})
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-            Personas activas sin ubicación asignada en el centro de trabajo
-          </Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 14 }}>Personal sin área asignada ({people.length})</Typography>
+          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Personas activas sin ubicación asignada en el centro de trabajo</Typography>
         </Box>
         {people.length > 0 && (
-          <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
-            onClick={() => setOpen(true)}
-            sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
-          >
+          <Button size="small" endIcon={<ChevronRightIcon fontSize="small" />} onClick={() => setOpen(true)} sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}>
             Ver lista
           </Button>
         )}
@@ -86,22 +69,11 @@ export default function UnassignedPersonnelCard({ people }) {
             return (
               <Stack key={p.id} alignItems="center" spacing={0.4} sx={{ width: 56 }}>
                 <EmployeeAvatar employee={p} size={40} />
-                <Typography
-                  sx={{ fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }}
-                  noWrap
-                >
+                <Typography sx={{ fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }} noWrap>
                   {shortName(p.name)}
                 </Typography>
                 {tag && (
-                  <Typography
-                    sx={{
-                      fontSize: 8.5,
-                      color: 'text.secondary',
-                      textAlign: 'center',
-                      lineHeight: 1,
-                    }}
-                    noWrap
-                  >
+                  <Typography sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1 }} noWrap>
                     {tag}
                   </Typography>
                 )}
@@ -110,19 +82,10 @@ export default function UnassignedPersonnelCard({ people }) {
           })}
           {extra > 0 && (
             <Stack alignItems="center" justifyContent="center" spacing={0.4} sx={{ width: 56 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  bgcolor: 'action.hover',
-                  color: 'text.secondary',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 12,
-                  fontWeight: 800,
-                }}
-              >
+              <Box sx={{
+                width: 40, height: 40, borderRadius: '50%', bgcolor: 'action.hover', color: 'text.secondary',
+                display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800,
+              }}>
                 +{extra}
               </Box>
               <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>más</Typography>
@@ -132,18 +95,9 @@ export default function UnassignedPersonnelCard({ people }) {
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontWeight: 800,
-          }}
-        >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800 }}>
           Personal sin área asignada ({people.length})
-          <IconButton size="small" onClick={() => setOpen(false)}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          <IconButton size="small" onClick={() => setOpen(false)}><CloseIcon fontSize="small" /></IconButton>
         </DialogTitle>
         <DialogContent>
           <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ pb: 1 }}>

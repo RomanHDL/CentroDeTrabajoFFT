@@ -37,11 +37,7 @@ const TABS = [
 export default function CentroTrabajoPage() {
   const ps = usePageStyles()
   const [tab, setTab] = useState('areas')
-  const {
-    workCenterId: selectedLine,
-    openWorkCenter: setSelectedLine,
-    closeWorkCenter,
-  } = useSelectedWorkCenter()
+  const { workCenterId: selectedLine, openWorkCenter: setSelectedLine, closeWorkCenter } = useSelectedWorkCenter()
   /* 2026-08-27 ("rediseño del header de Centro de Trabajo", a peticion
      explicita del usuario): mode/setMode + apertura del sidebar movil
      vienen de AppLayout.jsx via <Outlet context={...}> -- esta pagina es
@@ -54,16 +50,10 @@ export default function CentroTrabajoPage() {
   return (
     <Box sx={ps.page}>
       <Paper elevation={0} sx={{ ...ps.card, mb: 2, borderRadius: '20px' }}>
-        <Box
-          sx={{
-            px: { xs: 1.75, md: 3 },
-            py: { xs: 1.5, md: 2 },
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            flexWrap: 'wrap',
-          }}
-        >
+        <Box sx={{
+          px: { xs: 1.75, md: 3 }, py: { xs: 1.5, md: 2 },
+          display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
+        }}>
           {showMobileMenuButton && (
             <IconButton size="small" onClick={onOpenMobileSidebar} sx={{ flexShrink: 0 }}>
               <MenuIcon fontSize="small" />
@@ -75,49 +65,24 @@ export default function CentroTrabajoPage() {
               mas grande aqui para darle identidad al nuevo header
               principal. Hover sutil (seccion "EFECTO DEL LOGO + TITULO" del
               pedido) -- puramente decorativo, sin navegacion asociada. */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.25,
-              px: 1,
-              py: 0.5,
-              borderRadius: 2.5,
-              transition: 'background-color 200ms ease',
-              '&:hover': {
-                bgcolor: (t) =>
-                  t.palette.mode === 'dark' ? 'rgba(59,130,246,.10)' : 'rgba(59,130,246,.06)',
-                '& .ct-header-icon': {
-                  transform: 'scale(1.05)',
-                  filter: 'drop-shadow(0 0 6px rgba(59,130,246,.45))',
-                },
-                '& .ct-header-title': { color: '#3B82F6' },
-              },
-            }}
-          >
+          <Box sx={{
+            display: 'flex', alignItems: 'center', gap: 1.25, px: 1, py: 0.5, borderRadius: 2.5,
+            transition: 'background-color 200ms ease',
+            '&:hover': {
+              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.10)' : 'rgba(59,130,246,.06)'),
+              '& .ct-header-icon': { transform: 'scale(1.05)', filter: 'drop-shadow(0 0 6px rgba(59,130,246,.45))' },
+              '& .ct-header-title': { color: '#3B82F6' },
+            },
+          }}>
             <PrecisionManufacturingIcon
               className="ct-header-icon"
-              sx={{
-                color: '#3B82F6',
-                fontSize: 30,
-                transition: 'transform 200ms ease, filter 200ms ease',
-                flexShrink: 0,
-              }}
+              sx={{ color: '#3B82F6', fontSize: 30, transition: 'transform 200ms ease, filter 200ms ease', flexShrink: 0 }}
             />
             <Box sx={{ minWidth: 0 }}>
-              <Typography
-                className="ct-header-title"
-                sx={{
-                  ...ps.pageTitle,
-                  fontSize: { xs: '1.15rem', sm: '1.4rem' },
-                  transition: 'color 200ms ease',
-                }}
-              >
+              <Typography className="ct-header-title" sx={{ ...ps.pageTitle, fontSize: { xs: '1.15rem', sm: '1.4rem' }, transition: 'color 200ms ease' }}>
                 Centro de Trabajo
               </Typography>
-              <Typography sx={ps.pageSubtitle}>
-                Organización operativa por áreas, líneas, estaciones y personal
-              </Typography>
+              <Typography sx={ps.pageSubtitle}>Organización operativa por áreas, líneas, estaciones y personal</Typography>
             </Box>
           </Box>
 
@@ -130,21 +95,13 @@ export default function CentroTrabajoPage() {
                 (2026-08-24, mockup de la pestaña Lineas). Misma ruta/handler
                 de siempre (setTab('areas')), solo se le agrega hover. */}
             <Button
-              variant="outlined"
-              size="small"
-              startIcon={<GridViewIcon sx={{ fontSize: 17 }} />}
+              variant="outlined" size="small" startIcon={<GridViewIcon sx={{ fontSize: 17 }} />}
               onClick={() => setTab('areas')}
               sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                flexShrink: 0,
-                ml: 1,
-                borderRadius: 2.5,
-                transition:
-                  'background-color 200ms ease, border-color 200ms ease, transform 200ms ease',
+                textTransform: 'none', fontWeight: 700, flexShrink: 0, ml: 1, borderRadius: 2.5,
+                transition: 'background-color 200ms ease, border-color 200ms ease, transform 200ms ease',
                 '&:hover': {
-                  bgcolor: (t) =>
-                    t.palette.mode === 'dark' ? 'rgba(59,130,246,.14)' : 'rgba(59,130,246,.06)',
+                  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.14)' : 'rgba(59,130,246,.06)'),
                   transform: 'translateY(-1px)',
                 },
               }}
@@ -162,17 +119,10 @@ export default function CentroTrabajoPage() {
             scrollButtons="auto"
             sx={{
               minHeight: 46,
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: 13.5,
-                minHeight: 46,
-              },
+              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontSize: 13.5, minHeight: 46 },
             }}
           >
-            {TABS.map((t) => (
-              <Tab key={t.key} value={t.key} label={t.label} />
-            ))}
+            {TABS.map((t) => <Tab key={t.key} value={t.key} label={t.label} />)}
           </Tabs>
         </Box>
       </Paper>
@@ -188,20 +138,11 @@ export default function CentroTrabajoPage() {
         </>
       )}
       {tab === 'lineas' && <LineasTab onOpenLine={setSelectedLine} />}
-      {tab === 'estaciones' && (
-        <EstacionesTab onOpenLine={setSelectedLine} onGoToLineas={() => setTab('lineas')} />
-      )}
-      {tab === 'personal' && (
-        <PersonalDeHoyTab onGoToBajas={() => setTab('bajas')} onGoToAreas={() => setTab('areas')} />
-      )}
+      {tab === 'estaciones' && <EstacionesTab onOpenLine={setSelectedLine} onGoToLineas={() => setTab('lineas')} />}
+      {tab === 'personal' && <PersonalDeHoyTab onGoToBajas={() => setTab('bajas')} onGoToAreas={() => setTab('areas')} />}
       {tab === 'bajas' && <BajasTab />}
 
-      <AreaDetail
-        workCenterId={selectedLine}
-        open={Boolean(selectedLine)}
-        onClose={closeWorkCenter}
-        onNavigate={setSelectedLine}
-      />
+      <AreaDetail workCenterId={selectedLine} open={Boolean(selectedLine)} onClose={closeWorkCenter} onNavigate={setSelectedLine} />
     </Box>
   )
 }

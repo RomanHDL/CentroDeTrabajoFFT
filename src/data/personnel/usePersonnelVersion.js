@@ -6,6 +6,6 @@ import { subscribe } from './repository'
    originó la escritura. Usar como dependencia de useMemo. */
 export function usePersonnelVersion() {
   const [version, setVersion] = useState(0)
-  useEffect(() => subscribe(() => setVersion((v) => v + 1)), [])
+  useEffect(() => subscribe(() => setVersion(v => v + 1)), [])
   return version
 }

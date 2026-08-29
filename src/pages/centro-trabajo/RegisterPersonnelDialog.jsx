@@ -11,18 +11,10 @@ import RegisterPersonnelForm from './RegisterPersonnelForm'
  */
 export default function RegisterPersonnelDialog({ open, onClose, fixedAreaId = null, onDone }) {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ fontWeight: 800 }}>+ Registrar personal</DialogTitle>
       <DialogContent sx={{ pb: 3 }}>
-        {open && (
-          <RegisterPersonnelForm fixedAreaId={fixedAreaId} onCancel={onClose} onDone={onDone} />
-        )}
+        {open && <RegisterPersonnelForm fixedAreaId={fixedAreaId} onCancel={onClose} onDone={onDone} />}
       </DialogContent>
     </Dialog>
   )

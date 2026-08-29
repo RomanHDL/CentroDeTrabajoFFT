@@ -19,9 +19,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  function set(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
-  }
+  function set(field, value) { setForm((f) => ({ ...f, [field]: value })) }
 
   async function handleSubmit() {
     setError('')
@@ -29,14 +27,8 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
       setError('Indica al menos número de empleado o username.')
       return
     }
-    if (!form.name.trim()) {
-      setError('El nombre es requerido.')
-      return
-    }
-    if (form.password.length < 8) {
-      setError('La contraseña temporal debe tener al menos 8 caracteres.')
-      return
-    }
+    if (!form.name.trim()) { setError('El nombre es requerido.'); return }
+    if (form.password.length < 8) { setError('La contraseña temporal debe tener al menos 8 caracteres.'); return }
 
     setSubmitting(true)
     try {
@@ -64,52 +56,24 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
       <DialogTitle sx={{ fontWeight: 800 }}>Agregar usuario</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-          <TextField
-            label="Número de empleado"
-            value={form.employeeNumber}
-            onChange={(e) => set('employeeNumber', e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Username"
-            value={form.username}
-            onChange={(e) => set('username', e.target.value)}
-            fullWidth
-          />
+          <TextField label="Número de empleado" value={form.employeeNumber} onChange={(e) => set('employeeNumber', e.target.value)} fullWidth />
+          <TextField label="Username" value={form.username} onChange={(e) => set('username', e.target.value)} fullWidth />
         </Box>
-        <TextField
-          label="Nombre completo"
-          value={form.name}
-          onChange={(e) => set('name', e.target.value)}
-          fullWidth
-        />
-        <TextField
-          select
-          label="Rol"
-          value={form.role}
-          onChange={(e) => set('role', e.target.value)}
-          fullWidth
-        >
+        <TextField label="Nombre completo" value={form.name} onChange={(e) => set('name', e.target.value)} fullWidth />
+        <TextField select label="Rol" value={form.role} onChange={(e) => set('role', e.target.value)} fullWidth>
           {Object.entries(ROLE_LABELS).map(([value, label]) => (
-            <MenuItem key={value} value={value}>
-              {label}
-            </MenuItem>
+            <MenuItem key={value} value={value}>{label}</MenuItem>
           ))}
         </TextField>
         <TextField
-          label="Contraseña temporal"
-          type="text"
-          value={form.password}
-          onChange={(e) => set('password', e.target.value)}
-          fullWidth
+          label="Contraseña temporal" type="text" value={form.password}
+          onChange={(e) => set('password', e.target.value)} fullWidth
           helperText="Mínimo 8 caracteres. El usuario deberá cambiarla en su primer inicio de sesión."
         />
         {error && <Alert severity="error">{error}</Alert>}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancelar
-        </Button>
+        <Button onClick={onClose} disabled={submitting}>Cancelar</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
           {submitting ? <CircularProgress size={20} /> : 'Crear usuario'}
         </Button>

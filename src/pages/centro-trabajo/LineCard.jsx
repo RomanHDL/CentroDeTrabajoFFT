@@ -8,13 +8,7 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 
-const ACCENT_HEX = {
-  blue: '#3B82F6',
-  green: '#10B981',
-  amber: '#F59E0B',
-  red: '#EF4444',
-  slate: '#64748B',
-}
+const ACCENT_HEX = { blue: '#3B82F6', green: '#10B981', amber: '#F59E0B', red: '#EF4444', slate: '#64748B' }
 
 export default function LineCard({ summary, onOpen }) {
   const ps = usePageStyles()
@@ -36,22 +30,14 @@ export default function LineCard({ summary, onOpen }) {
       }}
     >
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-        <Typography
-          sx={{ fontWeight: 800, fontSize: 17, color: 'text.primary', letterSpacing: -0.3 }}
-        >
+        <Typography sx={{ fontWeight: 800, fontSize: 17, color: 'text.primary', letterSpacing: -0.3 }}>
           {summary.name}
         </Typography>
-        <Box
-          sx={{
-            width: 9,
-            height: 9,
-            borderRadius: '50%',
-            mt: 0.6,
-            flexShrink: 0,
-            bgcolor: summary.status.dot,
-            boxShadow: `0 0 0 3px ${alpha(summary.status.dot, 0.18)}`,
-          }}
-        />
+        <Box sx={{
+          width: 9, height: 9, borderRadius: '50%', mt: 0.6, flexShrink: 0,
+          bgcolor: summary.status.dot,
+          boxShadow: `0 0 0 3px ${alpha(summary.status.dot, 0.18)}`,
+        }} />
       </Stack>
 
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={0.5}>
@@ -63,10 +49,8 @@ export default function LineCard({ summary, onOpen }) {
           size="small"
           label={summary.status.label}
           sx={{
-            height: 20,
-            fontSize: 10.5,
-            fontWeight: 700,
-            bgcolor: alpha(summary.status.dot, 0.1),
+            height: 20, fontSize: 10.5, fontWeight: 700,
+            bgcolor: alpha(summary.status.dot, 0.10),
             color: summary.status.dot,
             border: `1px solid ${alpha(summary.status.dot, 0.22)}`,
           }}
@@ -75,8 +59,7 @@ export default function LineCard({ summary, onOpen }) {
 
       {summary.stationsAvailable > 0 && (
         <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#B45309' }}>
-          ⚠ {summary.stationsAvailable} estación{summary.stationsAvailable !== 1 ? 'es' : ''}{' '}
-          disponible{summary.stationsAvailable !== 1 ? 's' : ''}
+          ⚠ {summary.stationsAvailable} estación{summary.stationsAvailable !== 1 ? 'es' : ''} disponible{summary.stationsAvailable !== 1 ? 's' : ''}
         </Typography>
       )}
 
@@ -89,9 +72,7 @@ export default function LineCard({ summary, onOpen }) {
       ) : (
         <Box sx={{ mt: 0.5 }}>
           <Stack direction="row" alignItems="baseline" spacing={0.75}>
-            <Typography
-              sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}
-            >
+            <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
               {summary.production.toLocaleString('es-MX')}
             </Typography>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>

@@ -30,38 +30,24 @@ export default function RestoreLayoutPanel() {
     setConfirmOpen(false)
     const ids = getSuppressedLinePeopleIds()
     if (ids.length === 0) {
-      showToast(
-        'No hay nadie suprimido en las WC LINEA ahorita — no hace falta restaurar nada.',
-        'info',
-      )
+      showToast('No hay nadie suprimido en las WC LINEA ahorita — no hace falta restaurar nada.', 'info')
       return
     }
     restoreBaselinePlacement(ids)
     setResult(ids.length)
-    showToast(
-      `Layout restaurado: ${ids.length} personas volvieron a su área de las WC LINEA.`,
-      'success',
-    )
+    showToast(`Layout restaurado: ${ids.length} personas volvieron a su área de las WC LINEA.`, 'success')
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>
-        Restaurar layout de las WC LINEA
-      </Typography>
+    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
+      <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Restaurar layout de las WC LINEA</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
-        Regresa, en el mapa visual, a todo el personal que quedó sin área por "Vaciar layout" a su
-        línea histórica de LAYOUT FFT.xlsx (sin puesto/estación inventado dentro de la línea — el
-        Excel no dice quién hace qué puesto). Nunca toca a quien ya tiene una asignación real de hoy
-        hecha desde Registro de personal.
+        Regresa, en el mapa visual, a todo el personal que quedó sin área por "Vaciar layout" a su línea histórica
+        de LAYOUT FFT.xlsx (sin puesto/estación inventado dentro de la línea — el Excel no dice quién hace qué
+        puesto). Nunca toca a quien ya tiene una asignación real de hoy hecha desde Registro de personal.
       </Typography>
       {result != null && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {result} personas volvieron a aparecer en su WC LINEA.
-        </Alert>
+        <Alert severity="success" sx={{ mb: 2 }}>{result} personas volvieron a aparecer en su WC LINEA.</Alert>
       )}
       <Button
         variant="outlined"
@@ -77,17 +63,14 @@ export default function RestoreLayoutPanel() {
         <DialogTitle sx={{ fontWeight: 800 }}>Restaurar layout de las WC LINEA</DialogTitle>
         <DialogContent>
           <Typography>
-            Todo el personal suprimido de las WC LINEA volverá a ubicarse por su zona histórica de
-            LAYOUT FFT.xlsx, sin puesto específico asignado (queda como "—" hasta que un líder lo
-            registre de verdad). No afecta a quien ya tiene una asignación real hecha hoy.
-            ¿Confirmas?
+            Todo el personal suprimido de las WC LINEA volverá a ubicarse por su zona histórica de LAYOUT FFT.xlsx,
+            sin puesto específico asignado (queda como "—" hasta que un líder lo registre de verdad). No afecta a
+            quien ya tiene una asignación real hecha hoy. ¿Confirmas?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="success" variant="contained" onClick={handleConfirm}>
-            Restaurar layout
-          </Button>
+          <Button color="success" variant="contained" onClick={handleConfirm}>Restaurar layout</Button>
         </DialogActions>
       </Dialog>
     </Paper>

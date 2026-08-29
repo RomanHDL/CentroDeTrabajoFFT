@@ -55,8 +55,7 @@ export default function LoginPage() {
       navigate(from, { replace: true })
     } catch (err) {
       if (err.status === 401) setError('Credenciales incorrectas.')
-      else if (err.status === 403)
-        setError('Tu usuario está inactivo. Contacta a un administrador.')
+      else if (err.status === 403) setError('Tu usuario está inactivo. Contacta a un administrador.')
       else setError('No se pudo iniciar sesión. Intenta de nuevo.')
     } finally {
       setSubmitting(false)
@@ -64,25 +63,15 @@ export default function LoginPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        px: 2,
-      }}
-    >
+    <Box sx={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      bgcolor: 'background.default', px: 2,
+    }}>
       <Paper
         elevation={0}
         sx={{
-          width: '100%',
-          maxWidth: 400,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
+          width: '100%', maxWidth: 400, p: { xs: 3, sm: 4 }, borderRadius: 3,
+          border: '1px solid', borderColor: 'divider',
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, mb: 3 }}>
@@ -95,11 +84,7 @@ export default function LoginPage() {
           </Typography>
         </Box>
 
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-        >
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             label="Número de empleado / Usuario"
             value={identifier}

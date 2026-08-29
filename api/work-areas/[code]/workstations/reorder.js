@@ -1,9 +1,5 @@
 import { requireRole } from '../../../../server-lib/auth.js'
-import {
-  resolveWorkArea,
-  reorderWorkstations,
-  serializeWorkstation,
-} from '../../../../server-lib/workstationConfig.js'
+import { resolveWorkArea, reorderWorkstations, serializeWorkstation } from '../../../../server-lib/workstationConfig.js'
 
 // Reordena en bloque (drag/flechas en el drawer de configuracion) -- solo ADMINISTRADOR.
 export default requireRole(['ADMINISTRADOR'], async (req, res) => {

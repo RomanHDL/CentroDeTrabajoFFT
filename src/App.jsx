@@ -19,8 +19,6 @@ import UsuariosPage from './pages/usuarios/UsuariosPage'
 import KpisPage from './pages/kpis/KpisPage'
 import AsistenciaPage from './pages/asistencia/AsistenciaPage'
 import AuditoriaPage from './pages/auditoria/AuditoriaPage'
-import DeveloperManualPage from './pages/docs/DeveloperManualPage'
-import UserManualPage from './pages/docs/UserManualPage'
 import ToastHost from './ui/ToastHost'
 
 export default function App() {
@@ -36,88 +34,20 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
 
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <AppLayout mode={mode} setMode={setMode} />
-                  </ProtectedRoute>
-                }
-              >
+              <Route element={<ProtectedRoute><AppLayout mode={mode} setMode={setMode} /></ProtectedRoute>}>
                 <Route index element={<DefaultRedirect />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <RequireModuleAccess>
-                      <DashboardPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/centro-trabajo"
-                  element={
-                    <RequireModuleAccess>
-                      <CentroTrabajoPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/registro-personal"
-                  element={
-                    <RequireModuleAccess>
-                      <RegistroPersonalPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/usuarios"
-                  element={
-                    <RequireModuleAccess>
-                      <UsuariosPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/kpis"
-                  element={
-                    <RequireModuleAccess>
-                      <KpisPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/asistencia"
-                  element={
-                    <RequireModuleAccess>
-                      <AsistenciaPage />
-                    </RequireModuleAccess>
-                  }
-                />
-                <Route
-                  path="/auditoria"
-                  element={
-                    <RequireModuleAccess>
-                      <AuditoriaPage />
-                    </RequireModuleAccess>
-                  }
-                />
-
-                {/* Documentación (MI Stack Reference, secciones 14d/17a) -- accesible a
-                    cualquier usuario autenticado, sin gate por módulo (no son una
-                    funcionalidad de negocio, son ayuda/referencia). */}
-                <Route path="/developer-manual" element={<DeveloperManualPage />} />
-                <Route path="/manual" element={<UserManualPage />} />
+                <Route path="/dashboard" element={<RequireModuleAccess><DashboardPage /></RequireModuleAccess>} />
+                <Route path="/centro-trabajo" element={<RequireModuleAccess><CentroTrabajoPage /></RequireModuleAccess>} />
+                <Route path="/registro-personal" element={<RequireModuleAccess><RegistroPersonalPage /></RequireModuleAccess>} />
+                <Route path="/usuarios" element={<RequireModuleAccess><UsuariosPage /></RequireModuleAccess>} />
+                <Route path="/kpis" element={<RequireModuleAccess><KpisPage /></RequireModuleAccess>} />
+                <Route path="/asistencia" element={<RequireModuleAccess><AsistenciaPage /></RequireModuleAccess>} />
+                <Route path="/auditoria" element={<RequireModuleAccess><AuditoriaPage /></RequireModuleAccess>} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
                   usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
-              <Route
-                path="/cambiar-contrasena"
-                element={
-                  <ProtectedRoute>
-                    <ChangePasswordPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/cambiar-contrasena" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
             </Routes>
             <ToastHost />
           </DndAssignProvider>

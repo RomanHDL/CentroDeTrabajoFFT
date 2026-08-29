@@ -19,10 +19,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import { alpha } from '@mui/material/styles'
 import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
 import {
-  createLineStation,
-  updateLineStation,
-  deactivateLineStation,
-  reorderLineStations,
+  createLineStation, updateLineStation, deactivateLineStation, reorderLineStations,
 } from '../../data/personnel/lineStationConfig'
 
 const EMPTY_FORM = { name: '', requiredRoleLabel: '', category: '', quantity: 1, capacity: 1 }
@@ -36,15 +33,7 @@ const EMPTY_FORM = { name: '', requiredRoleLabel: '', category: '', quantity: 1,
    tablero (getLineWorkstationsWithOccupancy), para poder bloquear
    eliminar/renombrar un puesto ocupado tambien en el cliente (el backend
    es quien realmente lo impide). */
-export default function LineStationConfigDrawer({
-  open,
-  onClose,
-  lineId,
-  areaName,
-  workstations,
-  editStationId,
-  onChanged,
-}) {
+export default function LineStationConfigDrawer({ open, onClose, lineId, areaName, workstations, editStationId, onChanged }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingDbId, setEditingDbId] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -59,13 +48,7 @@ export default function LineStationConfigDrawer({
   const [confirmTarget, setConfirmTarget] = useState(null)
 
   useEffect(() => {
-    if (!open) {
-      setCreating(false)
-      setEditingDbId(null)
-      setForm(EMPTY_FORM)
-      setError('')
-      setConfirmTarget(null)
-    }
+    if (!open) { setCreating(false); setEditingDbId(null); setForm(EMPTY_FORM); setError(''); setConfirmTarget(null) }
   }, [open])
 
   useEffect(() => {
@@ -75,10 +58,7 @@ export default function LineStationConfigDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editStationId])
 
-  const sorted = useMemo(
-    () => workstations.slice().sort((a, b) => a.order - b.order),
-    [workstations],
-  )
+  const sorted = useMemo(() => workstations.slice().sort((a, b) => a.order - b.order), [workstations])
 
   function startCreate() {
     setEditingDbId(null)
@@ -90,13 +70,7 @@ export default function LineStationConfigDrawer({
   function startEdit(w) {
     setCreating(false)
     setEditingDbId(w.id)
-    setForm({
-      name: w.name,
-      requiredRoleLabel: w.requiredRole || '',
-      category: w.category || '',
-      quantity: 1,
-      capacity: w.capacity || 1,
-    })
+    setForm({ name: w.name, requiredRoleLabel: w.requiredRole || '', category: w.category || '', quantity: 1, capacity: w.capacity || 1 })
     setError('')
   }
 
@@ -108,10 +82,7 @@ export default function LineStationConfigDrawer({
   }
 
   async function submitCreate() {
-    if (!form.name.trim()) {
-      setError('El nombre de la estación es obligatorio.')
-      return
-    }
+    if (!form.name.trim()) { setError('El nombre de la estación es obligatorio.'); return }
     setBusy(true)
     setError('')
     try {
@@ -132,10 +103,7 @@ export default function LineStationConfigDrawer({
   }
 
   async function submitEdit() {
-    if (!form.name.trim()) {
-      setError('El nombre de la estación es obligatorio.')
-      return
-    }
+    if (!form.name.trim()) { setError('El nombre de la estación es obligatorio.'); return }
     setBusy(true)
     setError('')
     try {
@@ -182,10 +150,7 @@ export default function LineStationConfigDrawer({
     setBusy(true)
     setError('')
     try {
-      await reorderLineStations(
-        lineId,
-        next.map((w) => w.id),
-      )
+      await reorderLineStations(lineId, next.map((w) => w.id))
       onChanged?.()
     } catch (e) {
       setError(e.message || 'No se pudo reordenar.')
@@ -197,66 +162,34 @@ export default function LineStationConfigDrawer({
   const formOpen = creating || !!editingDbId
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 460 } } }}
-    >
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+    <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 460 } } }}>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 800, fontSize: 16 }}>Configuración de puestos</Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }} noWrap>
-            {areaName}
-          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }} noWrap>{areaName}</Typography>
         </Box>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
+        <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </Box>
 
       <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError('')}>{error}</Alert>}
 
         {confirmTarget && (
           <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-              Eliminar "{confirmTarget.name}"
-            </Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>Eliminar "{confirmTarget.name}"</Typography>
             {confirmTarget.occupants?.length > 0 ? (
               <Alert severity="warning">
                 <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 0.5 }}>
-                  Este puesto tiene a{' '}
-                  {confirmTarget.occupants.length === 1
-                    ? '1 persona asignada'
-                    : `${confirmTarget.occupants.length} personas asignadas`}
-                  :
+                  Este puesto tiene a {confirmTarget.occupants.length === 1 ? '1 persona asignada' : `${confirmTarget.occupants.length} personas asignadas`}:
                 </Typography>
                 <Stack spacing={0.25} sx={{ mb: 0.75 }}>
                   {confirmTarget.occupants.map((o) => (
-                    <Typography key={o.id} sx={{ fontSize: 12.5 }}>
-                      • {o.employee?.name || 'Empleado'}
-                    </Typography>
+                    <Typography key={o.id} sx={{ fontSize: 12.5 }}>• {o.employee?.name || 'Empleado'}</Typography>
                   ))}
                 </Stack>
                 <Typography sx={{ fontSize: 12.5 }}>
-                  Al eliminar este puesto,{' '}
-                  {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a{' '}
-                  <b>Personal sin estación</b> dentro de esta línea, sin perder su asignación real
-                  ni su historial.
+                  Al eliminar este puesto, {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a <b>Personal sin estación</b> dentro
+                  de esta línea, sin perder su asignación real ni su historial.
                 </Typography>
               </Alert>
             ) : (
@@ -266,23 +199,10 @@ export default function LineStationConfigDrawer({
             )}
             <Divider />
             <Stack direction="row" spacing={1}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => setConfirmTarget(null)}
-                disabled={busy}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
+              <Button fullWidth variant="outlined" onClick={() => setConfirmTarget(null)} disabled={busy} sx={{ textTransform: 'none', fontWeight: 700 }}>
                 Cancelar
               </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                color="error"
-                disabled={busy}
-                onClick={confirmDeactivate}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
+              <Button fullWidth variant="contained" color="error" disabled={busy} onClick={confirmDeactivate} sx={{ textTransform: 'none', fontWeight: 700 }}>
                 Eliminar puesto
               </Button>
             </Stack>
@@ -293,49 +213,22 @@ export default function LineStationConfigDrawer({
           <>
             <Stack spacing={1} sx={{ mb: 2 }}>
               {sorted.map((w, i) => (
-                <Box
-                  key={w.id}
-                  sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-                >
+                <Box key={w.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography
-                      sx={{ fontSize: 11, fontWeight: 800, color: 'text.disabled', flexShrink: 0 }}
-                    >
-                      {i + 1}.
-                    </Typography>
+                    <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'text.disabled', flexShrink: 0 }}>{i + 1}.</Typography>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontWeight: 700, fontSize: 13.5 }} noWrap>
-                        {w.name}
-                      </Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: 13.5 }} noWrap>{w.name}</Typography>
                       <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }} noWrap>
                         Rol requerido: {w.requiredRole || '—'}
                       </Typography>
                       {w.category && (
-                        <Chip
-                          size="small"
-                          label={w.category}
-                          sx={{ mt: 0.5, fontSize: 10, height: 18 }}
-                        />
+                        <Chip size="small" label={w.category} sx={{ mt: 0.5, fontSize: 10, height: 18 }} />
                       )}
                     </Box>
                     <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
-                      <IconButton
-                        size="small"
-                        disabled={i === 0 || busy}
-                        onClick={() => moveStation(i, -1)}
-                      >
-                        <ArrowUpwardIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        disabled={i === sorted.length - 1 || busy}
-                        onClick={() => moveStation(i, 1)}
-                      >
-                        <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => startEdit(w)}>
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
+                      <IconButton size="small" disabled={i === 0 || busy} onClick={() => moveStation(i, -1)}><ArrowUpwardIcon sx={{ fontSize: 16 }} /></IconButton>
+                      <IconButton size="small" disabled={i === sorted.length - 1 || busy} onClick={() => moveStation(i, 1)}><ArrowDownwardIcon sx={{ fontSize: 16 }} /></IconButton>
+                      <IconButton size="small" onClick={() => startEdit(w)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" color="error" onClick={() => requestDeactivate(w)}>
                         <DeleteIcon sx={{ fontSize: 16 }} />
                       </IconButton>
@@ -344,20 +237,12 @@ export default function LineStationConfigDrawer({
                 </Box>
               ))}
               {sorted.length === 0 && (
-                <Typography
-                  sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', py: 2 }}
-                >
+                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', py: 2 }}>
                   Esta línea todavía no tiene puestos configurados.
                 </Typography>
               )}
             </Stack>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={startCreate}
-              sx={{ textTransform: 'none', fontWeight: 700 }}
-            >
+            <Button fullWidth variant="outlined" startIcon={<AddIcon />} onClick={startCreate} sx={{ textTransform: 'none', fontWeight: 700 }}>
               Crear nuevo puesto
             </Button>
           </>
@@ -365,44 +250,25 @@ export default function LineStationConfigDrawer({
 
         {formOpen && (
           <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-              {creating ? 'Nuevo puesto' : 'Editar puesto'}
-            </Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{creating ? 'Nuevo puesto' : 'Editar puesto'}</Typography>
             <TextField
-              label="Nombre de la estación"
-              size="small"
-              fullWidth
-              value={form.name}
+              label="Nombre de la estación" size="small" fullWidth value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
             <TextField
-              label="Rol requerido"
-              size="small"
-              fullWidth
-              value={form.requiredRoleLabel}
+              label="Rol requerido" size="small" fullWidth value={form.requiredRoleLabel}
               onChange={(e) => setForm((f) => ({ ...f, requiredRoleLabel: e.target.value }))}
             />
             <TextField
-              select
-              label="Categoría"
-              size="small"
-              fullWidth
-              value={form.category}
+              select label="Categoría" size="small" fullWidth value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
             >
               <MenuItem value="">Sin categoría</MenuItem>
-              {LINE_VISUAL_TYPE_ORDER.map((t) => (
-                <MenuItem key={t.key} value={t.key}>
-                  {t.label}
-                </MenuItem>
-              ))}
+              {LINE_VISUAL_TYPE_ORDER.map((t) => <MenuItem key={t.key} value={t.key}>{t.label}</MenuItem>)}
             </TextField>
             {creating ? (
               <TextField
-                label="Cantidad de posiciones"
-                size="small"
-                type="number"
-                fullWidth
+                label="Cantidad de posiciones" size="small" type="number" fullWidth
                 inputProps={{ min: 1, max: 20 }}
                 value={form.quantity}
                 onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
@@ -410,10 +276,7 @@ export default function LineStationConfigDrawer({
               />
             ) : (
               <TextField
-                label="Capacidad (personas simultáneas)"
-                size="small"
-                type="number"
-                fullWidth
+                label="Capacidad (personas simultáneas)" size="small" type="number" fullWidth
                 inputProps={{ min: 1 }}
                 value={form.capacity}
                 onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
@@ -421,19 +284,11 @@ export default function LineStationConfigDrawer({
             )}
             <Divider />
             <Stack direction="row" spacing={1}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={cancelForm}
-                disabled={busy}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
+              <Button fullWidth variant="outlined" onClick={cancelForm} disabled={busy} sx={{ textTransform: 'none', fontWeight: 700 }}>
                 Cancelar
               </Button>
               <Button
-                fullWidth
-                variant="contained"
-                disabled={busy}
+                fullWidth variant="contained" disabled={busy}
                 onClick={creating ? submitCreate : submitEdit}
                 sx={{ textTransform: 'none', fontWeight: 700 }}
               >

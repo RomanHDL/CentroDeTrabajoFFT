@@ -69,9 +69,7 @@ export default function AppLayout({ mode, setMode }) {
 
   // apiSync.js necesita saber a quien avisarle cuando SU solicitud se resuelve (ver Cambio 4,
   // pollOnce) -- se fija aqui porque este es el componente que ya consume la sesion real.
-  useEffect(() => {
-    setCurrentUserId(user?.id || null)
-  }, [user?.id])
+  useEffect(() => { setCurrentUserId(user?.id || null) }, [user?.id])
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', overflowX: 'hidden' }}>
@@ -84,16 +82,9 @@ export default function AppLayout({ mode, setMode }) {
           El resto de rutas (Dashboard, Registro de personal, Usuarios)
           conserva la barra superior tal cual, sin ningun cambio. */}
       {!isWideLayoutRoute && (
-        <AppBar
-          position="sticky"
-          elevation={0}
-          sx={{
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            color: 'text.primary',
-          }}
-        >
+        <AppBar position="sticky" elevation={0} sx={{
+          bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary',
+        }}>
           <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
             {!hasFineHover && (
               <IconButton size="small" onClick={() => setMobileOpen(true)}>
@@ -118,11 +109,7 @@ export default function AppLayout({ mode, setMode }) {
         <Box
           onMouseEnter={openOnHover}
           sx={{
-            position: 'fixed',
-            left: 0,
-            top: isWideLayoutRoute ? 0 : 56,
-            bottom: 0,
-            width: HOTSPOT_WIDTH,
+            position: 'fixed', left: 0, top: isWideLayoutRoute ? 0 : 56, bottom: 0, width: HOTSPOT_WIDTH,
             zIndex: (t) => t.zIndex.drawer + 1,
           }}
         />
@@ -139,27 +126,15 @@ export default function AppLayout({ mode, setMode }) {
         onMouseLeave={hasFineHover ? scheduleClose : undefined}
       />
 
-      <Box
-        sx={{
-          px: { xs: 1.5, sm: 2, md: isWideLayoutRoute ? 2 : 3 },
-          py: { xs: 2, md: 2.5 },
-          maxWidth: isWideLayoutRoute ? 1920 : 1600,
-          mx: 'auto',
-          width: '100%',
-        }}
-      >
+      <Box sx={{
+        px: { xs: 1.5, sm: 2, md: isWideLayoutRoute ? 2 : 3 }, py: { xs: 2, md: 2.5 },
+        maxWidth: isWideLayoutRoute ? 1920 : 1600, mx: 'auto', width: '100%',
+      }}>
         {/* mode/setMode + apertura del sidebar movil: SOLO los consume
             CentroTrabajoPage.jsx (via useOutletContext) para construir su
             propio header cuando la barra superior global esta oculta arriba
             -- el resto de paginas no llama useOutletContext, no les afecta. */}
-        <Outlet
-          context={{
-            mode,
-            setMode,
-            onOpenMobileSidebar: () => setMobileOpen(true),
-            showMobileMenuButton: !hasFineHover,
-          }}
-        />
+        <Outlet context={{ mode, setMode, onOpenMobileSidebar: () => setMobileOpen(true), showMobileMenuButton: !hasFineHover }} />
       </Box>
     </Box>
   )

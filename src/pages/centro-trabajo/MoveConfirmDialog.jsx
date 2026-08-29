@@ -27,19 +27,10 @@ function areaLabel(id) {
  * concreta) y solo se pide confirmar; si no, deja elegir
  * linea+estacion (respetando capacidad).
  */
-export default function MoveConfirmDialog({
-  open,
-  onClose,
-  employee,
-  currentAssignment,
-  presetTo,
-  onDone,
-}) {
+export default function MoveConfirmDialog({ open, onClose, employee, currentAssignment, presetTo, onDone }) {
   const { user } = useAuth()
   const isLider = user?.role === 'LIDER'
-  const [toAreaId, setToAreaId] = useState(
-    presetTo?.areaId || currentAssignment?.areaId || WORK_CENTERS[0].id,
-  )
+  const [toAreaId, setToAreaId] = useState(presetTo?.areaId || currentAssignment?.areaId || WORK_CENTERS[0].id)
   const [toStationId, setToStationId] = useState(presetTo?.stationId || '')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -59,12 +50,8 @@ export default function MoveConfirmDialog({
 
     if (isLider) {
       const res = requestMove({
-        employeeId: employee.id,
-        toAreaId,
-        toStationId,
-        shift: currentAssignment.shift,
-        requestedByUserId: user?.id,
-        requestedByName: user?.name,
+        employeeId: employee.id, toAreaId, toStationId, shift: currentAssignment.shift,
+        requestedByUserId: user?.id, requestedByName: user?.name,
       })
       setSubmitting(false)
       if (res.status === 'PENDING') {
@@ -76,12 +63,7 @@ export default function MoveConfirmDialog({
       return
     }
 
-    const res = moveEmployee({
-      employeeId: employee.id,
-      toAreaId,
-      toStationId,
-      shift: currentAssignment.shift,
-    })
+    const res = moveEmployee({ employeeId: employee.id, toAreaId, toStationId, shift: currentAssignment.shift })
     setSubmitting(false)
     if (res.status === 'OK') {
       onDone && onDone(res)
@@ -92,90 +74,32 @@ export default function MoveConfirmDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ fontWeight: 800 }}>Mover empleado</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 0.5 }}>
-          <Typography sx={{ fontWeight: 800 }}>
-            {employee.employeeNumber} — {employee.name}
-          </Typography>
+          <Typography sx={{ fontWeight: 800 }}>{employee.employeeNumber} — {employee.name}</Typography>
 
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}
-          >
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
             <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Origen
-              </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                {areaLabel(currentAssignment.areaId)}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                {currentAssignment.stationId}
-              </Typography>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Origen</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{areaLabel(currentAssignment.areaId)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{currentAssignment.stationId}</Typography>
             </Box>
             <ArrowForwardIcon sx={{ color: 'text.secondary' }} />
             <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Destino
-              </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                {areaLabel(toAreaId)}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                {toStationId || '—'}
-              </Typography>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Destino</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{areaLabel(toAreaId)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{toStationId || '—'}</Typography>
             </Box>
           </Stack>
 
           {!presetTo && (
             <>
-              <TextField
-                select
-                fullWidth
-                label="Línea destino"
-                value={toAreaId}
-                onChange={(e) => {
-                  setToAreaId(e.target.value)
-                  setToStationId('')
-                }}
-              >
-                {WORK_CENTERS.map((w) => (
-                  <MenuItem key={w.id} value={w.id}>
-                    {w.name}
-                  </MenuItem>
-                ))}
+              <TextField select fullWidth label="Línea destino" value={toAreaId} onChange={(e) => { setToAreaId(e.target.value); setToStationId('') }}>
+                {WORK_CENTERS.map(w => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
               </TextField>
-              <TextField
-                select
-                fullWidth
-                label="Estación destino"
-                value={toStationId}
-                onChange={(e) => setToStationId(e.target.value)}
-              >
+              <TextField select fullWidth label="Estación destino" value={toStationId} onChange={(e) => setToStationId(e.target.value)}>
                 {stations.map((s) => {
                   const occ = getStationOccupancy(toAreaId, s.name, undefined, employee.id)
                   return (
@@ -190,8 +114,7 @@ export default function MoveConfirmDialog({
 
           {isLider && (
             <Alert severity="info" sx={{ py: 0.5 }}>
-              Como líder, este movimiento se enviará a un supervisor o administrador para su
-              aprobación — no se aplica de inmediato.
+              Como líder, este movimiento se enviará a un supervisor o administrador para su aprobación — no se aplica de inmediato.
             </Alert>
           )}
           {error && <Alert severity="error">{error}</Alert>}
@@ -199,12 +122,7 @@ export default function MoveConfirmDialog({
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={!toStationId || submitting}
-          sx={{ fontWeight: 700 }}
-        >
+        <Button variant="contained" onClick={handleConfirm} disabled={!toStationId || submitting} sx={{ fontWeight: 700 }}>
           {isLider ? 'Solicitar cambio' : 'Confirmar movimiento'}
         </Button>
       </DialogActions>

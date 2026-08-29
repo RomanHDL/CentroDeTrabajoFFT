@@ -25,14 +25,7 @@ import { getPersonnelRank } from '../../data/personnel/rankSystem'
    estacion podia liberar a alguien por accidente -- inaceptable en una
    herramienta de produccion real. Quitar/mover sigue disponible por la
    tabla ("Quitar") y por el panel lateral (click en el ocupante). */
-export default function LineStationCard({
-  workAreaId,
-  workstation,
-  selected,
-  onSelect,
-  onEmployeeClick,
-  lineLike = false,
-}) {
+export default function LineStationCard({ workAreaId, workstation, selected, onSelect, onEmployeeClick, lineLike = false }) {
   const theme = useTheme()
   const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
@@ -63,36 +56,18 @@ export default function LineStationCard({
       {...dropProps}
       onClick={() => onSelect(workstation)}
       sx={{
-        position: 'relative',
-        p: 1.5,
-        borderRadius: 3,
-        cursor: 'pointer',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.75,
+        position: 'relative', p: 1.5, borderRadius: 3, cursor: 'pointer', height: '100%',
+        display: 'flex', flexDirection: 'column', gap: 0.75,
         border: '1.5px solid',
         borderStyle: available && !occupant ? 'dashed' : 'solid',
-        borderColor:
-          isOver || selected
-            ? '#3B82F6'
-            : occupant
-              ? alpha('#10B981', d ? 0.4 : 0.35)
-              : alpha('#F59E0B', d ? 0.4 : 0.35),
+        borderColor: isOver || selected ? '#3B82F6' : occupant ? alpha('#10B981', d ? 0.4 : 0.35) : alpha('#F59E0B', d ? 0.4 : 0.35),
         bgcolor: isOver
           ? alpha('#3B82F6', d ? 0.18 : 0.08)
           : occupant
-            ? d
-              ? alpha('#10B981', 0.06)
-              : '#F7FEFB'
-            : d
-              ? alpha('#F59E0B', 0.05)
-              : '#FFFCF5',
+            ? (d ? alpha('#10B981', 0.06) : '#F7FEFB')
+            : (d ? alpha('#F59E0B', 0.05) : '#FFFCF5'),
         transition: 'all .15s ease',
-        '&:hover': {
-          borderColor: '#3B82F6',
-          boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)',
-        },
+        '&:hover': { borderColor: '#3B82F6', boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)' },
       }}
     >
       {/* 2026-08-28, a peticion explicita del usuario ("hay mucho de Ayudante
@@ -101,49 +76,25 @@ export default function LineStationCard({
           era -- Paletizador/Conveyor/Flejado/Escaneador). Ahora se permite
           hasta 2 lineas completas antes de recortar. */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 20,
-            height: 20,
-            borderRadius: '50%',
-            flexShrink: 0,
-            display: 'grid',
-            placeItems: 'center',
-            fontSize: 10.5,
-            fontWeight: 800,
-            bgcolor: alpha(accent, d ? 0.22 : 0.14),
-            color: accent,
-          }}
-        >
+        <Box sx={{
+          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+          display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 800,
+          bgcolor: alpha(accent, d ? 0.22 : 0.14), color: accent,
+        }}>
           {workstation.order}
         </Box>
         <Typography
           sx={{
-            fontWeight: 800,
-            fontSize: 11.5,
-            lineHeight: 1.2,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word',
+            fontWeight: 800, fontSize: 11.5, lineHeight: 1.2,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word',
           }}
         >
           {workstation.name}
         </Typography>
       </Box>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 0.5,
-        }}
-      >
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 0.5 }}>
         {occupant ? (
           // 2026-08-27, a peticion explicita del usuario ("quiero arrastrarlos
           // entre ahí y que se cambien"): antes solo la fila de la tabla de
@@ -152,53 +103,29 @@ export default function LineStationCard({
           // origen de drag (DraggablePersonChip, mismo hook que ya usa toda
           // la app), para poder arrastrar directo de un puesto a otro dentro
           // de la cuadrícula y disparar el intercambio real (dndAssign.jsx).
-          <DraggablePersonChip
-            employeeId={occupant.employee?.id}
-            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
-          >
+          <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
             <Box
-              onClick={(e) => {
-                e.stopPropagation()
-                onEmployeeClick(occupant.employee)
-              }}
+              onClick={(e) => { e.stopPropagation(); onEmployeeClick(occupant.employee) }}
               sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
             >
               <Box sx={{ position: 'relative' }}>
                 <EmployeeAvatar employee={occupant.employee} size={40} />
                 {rank && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: -2,
-                      borderRadius: '50%',
-                      border: '2px solid',
-                      borderColor: rank.color,
-                      pointerEvents: 'none',
-                    }}
-                  />
+                  <Box sx={{
+                    position: 'absolute', inset: -2, borderRadius: '50%',
+                    border: '2px solid', borderColor: rank.color, pointerEvents: 'none',
+                  }} />
                 )}
               </Box>
-              <Typography
-                sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }}
-                noWrap
-              >
+              <Typography sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }} noWrap>
                 {occupant.employee?.name || '—'}
               </Typography>
               {rank && (
-                <Typography
-                  sx={{
-                    fontSize: 8.5,
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.3,
-                    px: 0.75,
-                    py: 0.15,
-                    borderRadius: 5,
-                    bgcolor: alpha(rank.color, d ? 0.22 : 0.12),
-                    color: rank.color,
-                  }}
-                  noWrap
-                >
+                <Typography sx={{
+                  fontSize: 8.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3,
+                  px: 0.75, py: 0.15, borderRadius: 5,
+                  bgcolor: alpha(rank.color, d ? 0.22 : 0.12), color: rank.color,
+                }} noWrap>
                   {rank.label}
                 </Typography>
               )}
@@ -209,15 +136,7 @@ export default function LineStationCard({
                   es la unica forma de saber QUE hace realmente esta persona. Nunca reemplaza al
                   badge de rango, se muestra debajo. */}
               {rank && workstation.role && (
-                <Typography
-                  sx={{
-                    fontSize: 10,
-                    color: 'text.secondary',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                  }}
-                  noWrap
-                >
+                <Typography sx={{ fontSize: 10, color: 'text.secondary', textAlign: 'center', lineHeight: 1.2 }} noWrap>
                   {workstation.role}
                 </Typography>
               )}
@@ -226,25 +145,17 @@ export default function LineStationCard({
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
             <PersonOffIcon sx={{ fontSize: 26, color: alpha('#F59E0B', d ? 0.7 : 0.55) }} />
-            <Typography
-              sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.3, textAlign: 'center' }}
-              noWrap
-            >
+            <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.3, textAlign: 'center' }} noWrap>
               {workstation.requiredRole}
             </Typography>
           </Box>
         )}
       </Box>
 
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          textAlign: 'center',
-          letterSpacing: 0.3,
-          color: occupant ? '#059669' : '#B45309',
-        }}
-      >
+      <Typography sx={{
+        fontSize: 10, fontWeight: 800, textAlign: 'center', letterSpacing: 0.3,
+        color: occupant ? '#059669' : '#B45309',
+      }}>
         {occupant ? 'OCUPADA' : 'DISPONIBLE'}
       </Typography>
     </Paper>

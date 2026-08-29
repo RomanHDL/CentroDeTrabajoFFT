@@ -15,9 +15,7 @@
 const configByLine = new Map()
 const listeners = new Set()
 
-function notify() {
-  listeners.forEach((fn) => fn())
-}
+function notify() { listeners.forEach((fn) => fn()) }
 export function subscribeLineStationConfig(fn) {
   listeners.add(fn)
   return () => listeners.delete(fn)
@@ -62,13 +60,10 @@ export async function createLineStation(lineId, payload) {
 }
 
 export async function updateLineStation(lineId, stationDbId, payload) {
-  await apiFetch(
-    `/api/work-areas/${encodeURIComponent(lineId)}/workstations/${encodeURIComponent(stationDbId)}`,
-    {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    },
-  )
+  await apiFetch(`/api/work-areas/${encodeURIComponent(lineId)}/workstations/${encodeURIComponent(stationDbId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
   return fetchLineStationConfig(lineId)
 }
 

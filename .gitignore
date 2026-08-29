@@ -39,7 +39,3 @@ prisma/_preview-sql/
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
-
-# Configuración local de Claude Code (permisos de sesión, específicos del
-# equipo de cada dev) -- nunca compartida en el repo.
-.claude/

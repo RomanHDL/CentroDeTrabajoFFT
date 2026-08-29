@@ -1,10 +1,6 @@
 import { requireAuth } from '../../../../server-lib/auth.js'
 import {
-  resolveWorkArea,
-  listWorkstations,
-  createWorkstations,
-  nextDisplayOrder,
-  serializeWorkstation,
+  resolveWorkArea, listWorkstations, createWorkstations, nextDisplayOrder, serializeWorkstation,
 } from '../../../../server-lib/workstationConfig.js'
 
 const VALID_CATEGORIES = ['LIDERAZGO', 'CALIDAD', 'PRODUCCION', 'TECNICO', 'SUMINISTRO', 'APOYO']
@@ -23,14 +19,11 @@ export default requireAuth(async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    if (req.user.role !== 'ADMINISTRADOR')
-      return res.status(403).json({ error: 'No autorizado para esta accion' })
+    if (req.user.role !== 'ADMINISTRADOR') return res.status(403).json({ error: 'No autorizado para esta accion' })
 
     const { name, requiredRoleLabel, category, capacity, quantity } = req.body || {}
-    if (!name || !String(name).trim())
-      return res.status(400).json({ error: 'Nombre de estacion requerido' })
-    if (category && !VALID_CATEGORIES.includes(category))
-      return res.status(400).json({ error: 'Categoria invalida' })
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'Nombre de estacion requerido' })
+    if (category && !VALID_CATEGORIES.includes(category)) return res.status(400).json({ error: 'Categoria invalida' })
 
     try {
       const displayOrderStart = await nextDisplayOrder(workArea.id)
@@ -45,10 +38,7 @@ export default requireAuth(async (req, res) => {
       })
       return res.status(201).json({ workstations: rows.map(serializeWorkstation) })
     } catch (e) {
-      if (e.code === 'P2002')
-        return res
-          .status(409)
-          .json({ error: 'Ya existe una estacion con ese nombre en esta linea' })
+      if (e.code === 'P2002') return res.status(409).json({ error: 'Ya existe una estacion con ese nombre en esta linea' })
       throw e
     }
   }

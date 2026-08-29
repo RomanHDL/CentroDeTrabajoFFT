@@ -2,7 +2,6 @@ import jwt from 'jsonwebtoken'
 import { stringifySetCookie, parseCookie } from 'cookie'
 import { prisma } from './prisma.js'
 import { canUserAccessModule } from './permissionService.js'
-import { captureException } from './sentry.js'
 
 const COOKIE_NAME = 'fft_session'
 const SESSION_TTL_SECONDS = 60 * 60 * 8 // 8 horas
@@ -70,23 +69,12 @@ export function publicUser(user) {
   return safe
 }
 
-// Sentry se reporta AQUI (no en cada api/**/*.js por separado) porque
-// requireAuth ya envuelve casi todos los handlers reales -- un solo punto
-// de captura para toda la API, sin tocar 25 archivos que de todas formas
-// se reescriben en la migracion a Drizzle (ver plan). Los pocos endpoints
-// sin auth (login/logout/session) quedan fuera por ahora; se cubren al
-// tocarlos en la Fase 5 (OIDC).
 export function requireAuth(handler) {
   return async (req, res) => {
     const user = await getSessionUser(req)
     if (!user) return res.status(401).json({ error: 'No autenticado' })
     req.user = user
-    try {
-      return await handler(req, res)
-    } catch (error) {
-      captureException(error, { path: req.url, method: req.method, userId: user.id })
-      throw error
-    }
+    return handler(req, res)
   }
 }
 
@@ -107,11 +95,7 @@ export function requireRole(roles, handler) {
 // moduleKey queda fuera de alcance de esta tarea.
 export function requireModuleAccess(moduleKey, handler) {
   return requireAuth(async (req, res) => {
-    const allowed = await canUserAccessModule({
-      userId: req.user.id,
-      role: req.user.role,
-      moduleKey,
-    })
+    const allowed = await canUserAccessModule({ userId: req.user.id, role: req.user.role, moduleKey })
     if (!allowed) return res.status(403).json({ error: 'No autorizado para este modulo' })
     return handler(req, res)
   })

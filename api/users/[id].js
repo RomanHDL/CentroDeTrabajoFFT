@@ -25,9 +25,7 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
     return res.status(200).json({ user: publicUser(user) })
   } catch (e) {
     if (e.code === 'P2002') {
-      return res
-        .status(409)
-        .json({ error: `Ya existe un usuario con ese ${e.meta?.target?.[0] ?? 'valor unico'}` })
+      return res.status(409).json({ error: `Ya existe un usuario con ese ${e.meta?.target?.[0] ?? 'valor unico'}` })
     }
     if (e.code === 'P2025') return res.status(404).json({ error: 'Usuario no encontrado' })
     throw e

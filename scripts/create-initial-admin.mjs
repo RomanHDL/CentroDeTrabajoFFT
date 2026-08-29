@@ -13,12 +13,7 @@ import { prisma } from '../server-lib/prisma.js'
 
 function ask(query) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  return new Promise((resolve) =>
-    rl.question(query, (answer) => {
-      rl.close()
-      resolve(answer.trim())
-    }),
-  )
+  return new Promise((resolve) => rl.question(query, (answer) => { rl.close(); resolve(answer.trim()) }))
 }
 
 function askHidden(query) {
@@ -41,17 +36,13 @@ function askHidden(query) {
 
 async function main() {
   console.log('=== Crear el primer ADMINISTRADOR de Centro de Trabajo FFT ===')
-  console.log(
-    '(Ctrl+C para cancelar en cualquier momento. La contraseña no se muestra en pantalla ni se guarda en logs.)\n',
-  )
+  console.log('(Ctrl+C para cancelar en cualquier momento. La contraseña no se muestra en pantalla ni se guarda en logs.)\n')
 
   const employeeNumber = (await ask('Numero de empleado (opcional, Enter para omitir): ')) || null
   const username = (await ask('Username (opcional, Enter para omitir): ')) || null
 
   if (!employeeNumber && !username) {
-    console.error(
-      '\nError: debes indicar al menos numero de empleado o username para poder iniciar sesion.',
-    )
+    console.error('\nError: debes indicar al menos numero de empleado o username para poder iniciar sesion.')
     process.exit(1)
   }
 
@@ -81,9 +72,7 @@ async function main() {
     },
   })
   if (existing) {
-    console.error(
-      `\nError: ya existe un usuario con ese ${existing.employeeNumber === employeeNumber ? 'numero de empleado' : 'username'}. No se creo nada.`,
-    )
+    console.error(`\nError: ya existe un usuario con ese ${existing.employeeNumber === employeeNumber ? 'numero de empleado' : 'username'}. No se creo nada.`)
     process.exit(1)
   }
 
@@ -100,9 +89,7 @@ async function main() {
     },
   })
 
-  console.log(
-    `\nListo. Administrador creado: "${user.name}" (${user.username || user.employeeNumber}).`,
-  )
+  console.log(`\nListo. Administrador creado: "${user.name}" (${user.username || user.employeeNumber}).`)
   console.log('mustChangePassword = true -> debera cambiar la contraseña en su primer login.')
   await prisma.$disconnect()
 }

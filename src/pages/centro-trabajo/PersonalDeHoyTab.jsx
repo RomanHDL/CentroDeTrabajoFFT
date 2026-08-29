@@ -37,26 +37,13 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
-import {
-  getEffectiveTodayRoster,
-  getEffectiveAreaForEmployee,
-  AUTO_ACTIVE_AREAS,
-} from '../../data/production/personnelByArea'
+import { getEffectiveTodayRoster, getEffectiveAreaForEmployee, AUTO_ACTIVE_AREAS } from '../../data/production/personnelByArea'
 import { exportPersonalExcel } from '../../data/production/excelExport'
 import {
-  getMovesCountForDate,
-  getPendingMoves,
-  getAllEmployees,
-  searchEmployees,
-  getCurrentAssignment,
-  getMovementsForEmployee,
-  getUnassignedPresentToday,
-  todayISO,
+  getMovesCountForDate, getPendingMoves, getAllEmployees,
+  searchEmployees, getCurrentAssignment, getMovementsForEmployee, getUnassignedPresentToday, todayISO,
 } from '../../data/personnel/repository'
-import {
-  approvePendingMoveWithToast,
-  rejectPendingMoveWithToast,
-} from '../../data/personnel/moveApprovalActions'
+import { approvePendingMoveWithToast, rejectPendingMoveWithToast } from '../../data/personnel/moveApprovalActions'
 import { isEmployeeEligible } from '../../data/personnel/directory'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { useRoleMode } from '../../state/roleMode'
@@ -151,10 +138,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const [showAllRoster, setShowAllRoster] = useState(false)
   const [showAllDirectory, setShowAllDirectory] = useState(false)
 
-  const pendingMoves = useMemo(
-    () => (canApproveMoves ? getPendingMoves() : []),
-    [version, canApproveMoves],
-  )
+  const pendingMoves = useMemo(() => (canApproveMoves ? getPendingMoves() : []), [version, canApproveMoves])
 
   function handleApproveMove(id) {
     approvePendingMoveWithToast(id, user?.id)
@@ -178,29 +162,22 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   // desincronicen con las tabs de abajo.
   const directoryAll = useMemo(() => getAllEmployees().filter(isEmployeeEligible), [version])
   const directoryWithNumber = useMemo(
-    () =>
-      directoryAll
-        .filter((e) => hasRealNumber(e.employeeNumber))
-        .sort((a, b) => a.employeeNumber.localeCompare(b.employeeNumber, 'es', { numeric: true })),
+    () => directoryAll.filter((e) => hasRealNumber(e.employeeNumber)).sort((a, b) => a.employeeNumber.localeCompare(b.employeeNumber, 'es', { numeric: true })),
     [directoryAll],
   )
   const directoryProyectos = useMemo(
-    () =>
-      directoryAll
-        .filter((e) => !hasRealNumber(e.employeeNumber))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    () => directoryAll.filter((e) => !hasRealNumber(e.employeeNumber)).sort((a, b) => a.name.localeCompare(b.name, 'es')),
     [directoryAll],
   )
   // % "respecto al personal correspondiente" (misma poblacion en
   // numerador y denominador, a proposito -- ver nota en el reporte al
   // usuario sobre por que NO se usa "personal presente hoy" aqui).
-  const pctConNumero =
-    directoryAll.length > 0 ? (directoryWithNumber.length / directoryAll.length) * 100 : 0
+  const pctConNumero = directoryAll.length > 0 ? (directoryWithNumber.length / directoryAll.length) * 100 : 0
 
   const searchResults = useMemo(() => searchEmployees(query), [query, version])
   const bestMatch = useMemo(() => {
     if (!query.trim()) return null
-    const exact = searchResults.find((e) => e.employeeNumber === query.trim())
+    const exact = searchResults.find(e => e.employeeNumber === query.trim())
     return exact || searchResults[0] || null
   }, [query, searchResults])
 
@@ -208,22 +185,15 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
     if (!bestMatch) return null
     const assignment = getCurrentAssignment(bestMatch.id)
     const movements = getMovementsForEmployee(bestMatch.id, todayISO())
-    const lastMove = movements.filter((m) => m.type === 'MOVE').slice(-1)[0]
+    const lastMove = movements.filter(m => m.type === 'MOVE').slice(-1)[0]
     return { employee: bestMatch, assignment, lastMove }
   }, [bestMatch, version])
 
   const rosterRows = useMemo(() => {
     if (estadoFilter === 'SIN_ASIGNACION') {
       return unassigned.map((u) => ({
-        id: u.id,
-        employeeId: u.employeeId,
-        employeeNumber: u.employeeNumber,
-        employee: u.employee,
-        areaId: null,
-        stationId: null,
-        checkInAt: u.checkedInAt || null,
-        shift: u.shift || null,
-        source: 'SIN_ASIGNACION',
+        id: u.id, employeeId: u.employeeId, employeeNumber: u.employeeNumber, employee: u.employee,
+        areaId: null, stationId: null, checkInAt: u.checkedInAt || null, shift: u.shift || null, source: 'SIN_ASIGNACION',
       }))
     }
     return roster.filter((r) => {
@@ -235,39 +205,27 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   }, [roster, unassigned, estadoFilter])
 
   const queryNorm = query.trim().toLowerCase()
-  const filteredRoster = useMemo(
-    () =>
-      rosterRows.filter((r) => {
-        if (areaFilter !== 'TODAS' && r.areaId !== areaFilter) return false
-        if (shiftFilter !== 'TODOS' && r.shift !== shiftFilter) return false
-        if (queryNorm) {
-          const num = (r.employeeNumber || '').toLowerCase()
-          const name = (r.employee?.name || '').toLowerCase()
-          if (!num.includes(queryNorm) && !name.includes(queryNorm)) return false
-        }
-        return true
-      }),
-    [rosterRows, areaFilter, shiftFilter, queryNorm],
-  )
+  const filteredRoster = useMemo(() => rosterRows.filter((r) => {
+    if (areaFilter !== 'TODAS' && r.areaId !== areaFilter) return false
+    if (shiftFilter !== 'TODOS' && r.shift !== shiftFilter) return false
+    if (queryNorm) {
+      const num = (r.employeeNumber || '').toLowerCase()
+      const name = (r.employee?.name || '').toLowerCase()
+      if (!num.includes(queryNorm) && !name.includes(queryNorm)) return false
+    }
+    return true
+  }), [rosterRows, areaFilter, shiftFilter, queryNorm])
 
   const visibleRoster = showAllRoster ? filteredRoster : filteredRoster.slice(0, ROSTER_PAGE_SIZE)
 
   const directoryQueryNorm = directoryQuery.trim().toLowerCase()
   const filterDirectory = (list) => {
     if (!directoryQueryNorm) return list
-    return list.filter(
-      (e) =>
-        e.name.toLowerCase().includes(directoryQueryNorm) ||
-        e.employeeNumber.toLowerCase().includes(directoryQueryNorm),
-    )
+    return list.filter((e) =>
+      e.name.toLowerCase().includes(directoryQueryNorm) || e.employeeNumber.toLowerCase().includes(directoryQueryNorm))
   }
-  const directoryList =
-    directoryTab === 'CON_NUMERO'
-      ? filterDirectory(directoryWithNumber)
-      : filterDirectory(directoryProyectos)
-  const visibleDirectory = showAllDirectory
-    ? directoryList
-    : directoryList.slice(0, DIRECTORY_PAGE_SIZE)
+  const directoryList = directoryTab === 'CON_NUMERO' ? filterDirectory(directoryWithNumber) : filterDirectory(directoryProyectos)
+  const visibleDirectory = showAllDirectory ? directoryList : directoryList.slice(0, DIRECTORY_PAGE_SIZE)
 
   // Resumen por area -- Top N por personal presente hoy (roster
   // completo, sin filtros de la barra, para que sea una foto general
@@ -275,15 +233,9 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   // totalPresente * 100, nunca hardcodeada.
   const areaSummary = useMemo(() => {
     const counts = {}
-    roster.forEach((r) => {
-      counts[r.areaId] = (counts[r.areaId] || 0) + 1
-    })
+    roster.forEach((r) => { counts[r.areaId] = (counts[r.areaId] || 0) + 1 })
     return Object.entries(counts)
-      .map(([areaId, count]) => ({
-        areaId,
-        count,
-        pct: presentToday > 0 ? (count / presentToday) * 100 : 0,
-      }))
+      .map(([areaId, count]) => ({ areaId, count, pct: presentToday > 0 ? (count / presentToday) * 100 : 0 }))
       .sort((a, b) => b.count - a.count)
       .slice(0, AREA_SUMMARY_TOP_N)
   }, [roster, presentToday])
@@ -299,38 +251,30 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
       <Grid container spacing={2} sx={{ mb: 2.5 }}>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardKpiCard
-            icon={<PeopleAltIcon />}
-            accent="#3B82F6"
-            title="Personal presente hoy"
-            subtitle="Registrados en la fecha"
+            icon={<PeopleAltIcon />} accent="#3B82F6"
+            title="Personal presente hoy" subtitle="Registrados en la fecha"
             value={presentToday}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardKpiCard
-            icon={<BadgeIcon />}
-            accent="#06B6D4"
-            title="Con número de empleado"
-            subtitle="Personal activo identificado"
+            icon={<BadgeIcon />} accent="#06B6D4"
+            title="Con número de empleado" subtitle="Personal activo identificado"
             value={directoryWithNumber.length}
             unit={`· ${pctConNumero.toFixed(1)}% del personal activo`}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardKpiCard
-            icon={<WorkOutlineIcon />}
-            accent="#A855F7"
-            title="Personal por proyecto"
-            subtitle="Asignados a proyectos"
+            icon={<WorkOutlineIcon />} accent="#A855F7"
+            title="Personal por proyecto" subtitle="Asignados a proyectos"
             value={directoryProyectos.length}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardKpiCard
-            icon={<SwapHorizIcon />}
-            accent="#F59E0B"
-            title="Movimientos hoy"
-            subtitle="Altas, traslados o cambios"
+            icon={<SwapHorizIcon />} accent="#F59E0B"
+            title="Movimientos hoy" subtitle="Altas, traslados o cambios"
             value={movesToday}
           />
         </Grid>
@@ -344,54 +288,19 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             placeholder="Buscar empleado por nombre o número..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} />,
-            }}
+            InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
             sx={{ ...ps.inputSx, minWidth: 260, flex: 1 }}
           />
-          <TextField
-            select
-            size="small"
-            label="Área"
-            value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 150 }}
-          >
+          <TextField select size="small" label="Área" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} sx={{ ...ps.inputSx, minWidth: 150 }}>
             <MenuItem value="TODAS">Todas</MenuItem>
-            {WORK_CENTERS.map((w) => (
-              <MenuItem key={w.id} value={w.id}>
-                {w.name}
-              </MenuItem>
-            ))}
+            {WORK_CENTERS.map(w => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
           </TextField>
-          <TextField
-            select
-            size="small"
-            label="Turno"
-            value={shiftFilter}
-            onChange={(e) => setShiftFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 130 }}
-          >
+          <TextField select size="small" label="Turno" value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value)} sx={{ ...ps.inputSx, minWidth: 130 }}>
             <MenuItem value="TODOS">Todos</MenuItem>
-            {SHIFT_OPTIONS.map((s) => (
-              <MenuItem key={s} value={s}>
-                {s}
-              </MenuItem>
-            ))}
+            {SHIFT_OPTIONS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
-          <TextField
-            select
-            size="small"
-            label="Estado"
-            value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 150 }}
-          >
-            {ESTADO_OPTIONS.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
+          <TextField select size="small" label="Estado" value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} sx={{ ...ps.inputSx, minWidth: 150 }}>
+            {ESTADO_OPTIONS.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </TextField>
           <Box sx={{ flex: 1, minWidth: 0 }} />
           <Button
@@ -417,31 +326,18 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
         <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: 2.5 }}>
           {bestMatchDetail ? (
             <Stack spacing={1.5}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                alignItems={{ sm: 'center' }}
-                justifyContent="space-between"
-              >
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
                 <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
                   {bestMatchDetail.employee.employeeNumber} — {bestMatchDetail.employee.name}
                 </Typography>
-                <Button
-                  size="small"
-                  startIcon={<HistoryIcon />}
-                  onClick={() => setHistoryEmployee(bestMatchDetail.employee)}
-                  sx={{ textTransform: 'none', fontWeight: 700 }}
-                >
+                <Button size="small" startIcon={<HistoryIcon />} onClick={() => setHistoryEmployee(bestMatchDetail.employee)} sx={{ textTransform: 'none', fontWeight: 700 }}>
                   Ver historial de hoy
                 </Button>
               </Stack>
               {bestMatchDetail.assignment ? (
                 <Stack direction="row" spacing={3} flexWrap="wrap" rowGap={1.5}>
                   <InfoField label="Estado" value="Presente" />
-                  <InfoField
-                    label="Ubicación actual"
-                    value={areaLabel(bestMatchDetail.assignment.areaId)}
-                  />
+                  <InfoField label="Ubicación actual" value={areaLabel(bestMatchDetail.assignment.areaId)} />
                   <InfoField label="Rol actual" value={bestMatchDetail.assignment.stationId} />
                   <InfoField label="Entrada" value={bestMatchDetail.assignment.checkInAt} />
                   {bestMatchDetail.lastMove && (
@@ -456,9 +352,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
               )}
             </Stack>
           ) : (
-            <Typography sx={ps.emptyText}>
-              No se encontró ningún empleado para "{query}".
-            </Typography>
+            <Typography sx={ps.emptyText}>No se encontró ningún empleado para "{query}".</Typography>
           )}
         </Paper>
       )}
@@ -470,49 +364,27 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
       {canApproveMoves && pendingMoves.length > 0 && (
         <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
           <Box sx={ps.cardHeader}>
-            <Typography sx={ps.cardHeaderTitle}>
-              Movimientos pendientes de aprobación ({pendingMoves.length})
-            </Typography>
-            <Typography sx={ps.cardHeaderSubtitle}>
-              Pedidos por líderes — verifica antes de aplicarlos
-            </Typography>
+            <Typography sx={ps.cardHeaderTitle}>Movimientos pendientes de aprobación ({pendingMoves.length})</Typography>
+            <Typography sx={ps.cardHeaderSubtitle}>Pedidos por líderes — verifica antes de aplicarlos</Typography>
           </Box>
           <Stack spacing={1} sx={{ p: 2 }}>
             {pendingMoves.map((m) => (
               <Stack
-                key={m.id}
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.5}
-                alignItems={{ sm: 'center' }}
-                justifyContent="space-between"
+                key={m.id} direction={{ xs: 'column', sm: 'row' }} spacing={1.5}
+                alignItems={{ sm: 'center' }} justifyContent="space-between"
                 sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
               >
                 <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                    {m.employeeNumber} — {m.employeeName}
-                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{m.employeeNumber} — {m.employeeName}</Typography>
                   <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                    {areaLabel(m.fromAreaId)} → {areaLabel(m.toAreaId)} · {m.toStationId} · pedido
-                    por {m.requestedByName || 'un líder'}
+                    {areaLabel(m.fromAreaId)} → {areaLabel(m.toAreaId)} · {m.toStationId} · pedido por {m.requestedByName || 'un líder'}
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    color="error"
-                    startIcon={<CloseIcon fontSize="small" />}
-                    onClick={() => handleRejectMove(m.id)}
-                    sx={{ textTransform: 'none', fontWeight: 700 }}
-                  >
+                  <Button size="small" color="error" startIcon={<CloseIcon fontSize="small" />} onClick={() => handleRejectMove(m.id)} sx={{ textTransform: 'none', fontWeight: 700 }}>
                     Rechazar
                   </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<CheckIcon fontSize="small" />}
-                    onClick={() => handleApproveMove(m.id)}
-                    sx={{ textTransform: 'none', fontWeight: 700 }}
-                  >
+                  <Button size="small" variant="contained" startIcon={<CheckIcon fontSize="small" />} onClick={() => handleApproveMove(m.id)} sx={{ textTransform: 'none', fontWeight: 700 }}>
                     Aprobar
                   </Button>
                 </Stack>
@@ -534,27 +406,18 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             onRowClick={setHistoryEmployee}
           />
           <DirectorioCard
-            tab={directoryTab}
-            onTabChange={setDirectoryTab}
-            withNumberCount={directoryWithNumber.length}
-            proyectosCount={directoryProyectos.length}
-            query={directoryQuery}
-            onQueryChange={setDirectoryQuery}
-            rows={visibleDirectory}
-            total={directoryList.length}
-            showAll={showAllDirectory}
-            onToggleShowAll={() => setShowAllDirectory((v) => !v)}
+            tab={directoryTab} onTabChange={setDirectoryTab}
+            withNumberCount={directoryWithNumber.length} proyectosCount={directoryProyectos.length}
+            query={directoryQuery} onQueryChange={setDirectoryQuery}
+            rows={visibleDirectory} total={directoryList.length}
+            showAll={showAllDirectory} onToggleShowAll={() => setShowAllDirectory((v) => !v)}
             onRowClick={setHistoryEmployee}
           />
         </Grid>
 
         <Grid item xs={12} md={4} lg={3.6} sx={{ minWidth: 0 }}>
           <Stack spacing={2}>
-            <ResumenPorAreaCard
-              areas={areaSummary}
-              totalPresente={presentToday}
-              onAreaClick={(id) => setAreaFilter(id)}
-            />
+            <ResumenPorAreaCard areas={areaSummary} totalPresente={presentToday} onAreaClick={(id) => setAreaFilter(id)} />
             <AlertasCard
               sinEstacion={rosterSinEstacion.length}
               snapshot={rosterSnapshot.length}
@@ -573,22 +436,9 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
         </Grid>
       </Grid>
 
-      <RegisterPersonnelDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        onDone={() => {}}
-      />
-      <SelfAssignDialog
-        open={selfAssignOpen}
-        onClose={() => setSelfAssignOpen(false)}
-        onDone={() => {}}
-      />
-      <EmployeeHistoryDialog
-        employee={historyEmployee}
-        open={Boolean(historyEmployee)}
-        onClose={() => setHistoryEmployee(null)}
-        onChanged={() => {}}
-      />
+      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} onDone={() => {}} />
+      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} onDone={() => {}} />
+      <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />
     </Box>
   )
 }
@@ -596,17 +446,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
 function InfoField({ label, value }) {
   return (
     <Box>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-        }}
-      >
-        {label}
-      </Typography>
+      <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Typography>
       <Typography sx={{ fontSize: 14, fontWeight: 700, mt: 0.25 }}>{value}</Typography>
     </Box>
   )
@@ -626,16 +466,10 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
           <CalendarTodayIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
           <Box>
             <Typography sx={ps.cardHeaderTitle}>Registro de hoy</Typography>
-            <Typography sx={ps.cardHeaderSubtitle}>
-              Pase de lista efectivo — snapshot histórico + asignaciones reales del día
-            </Typography>
+            <Typography sx={ps.cardHeaderSubtitle}>Pase de lista efectivo — snapshot histórico + asignaciones reales del día</Typography>
           </Box>
         </Stack>
-        <Chip
-          size="small"
-          label={`${allCount} registrados hoy`}
-          sx={{ ...ps.metricChip('info'), flexShrink: 0 }}
-        />
+        <Chip size="small" label={`${allCount} registrados hoy`} sx={{ ...ps.metricChip('info'), flexShrink: 0 }} />
       </Box>
       <TableContainer sx={{ maxHeight: showAll ? 480 : 'none', overflowX: 'auto' }}>
         <Table size="small" stickyHeader={showAll}>
@@ -657,20 +491,11 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
               // explicita del usuario 2026-08-24): se muestran ya activas a
               // las 7am aunque nadie las haya registrado hoy a mano. Es
               // puramente visual -- no crea ningun checkin/asignacion real.
-              const showAsAutoActive =
-                r.source === 'SNAPSHOT' && AUTO_ACTIVE_AREAS.includes(r.areaId)
-              const displayCheckIn = showAsAutoActive ? '07:00' : r.checkInAt || '—'
+              const showAsAutoActive = r.source === 'SNAPSHOT' && AUTO_ACTIVE_AREAS.includes(r.areaId)
+              const displayCheckIn = showAsAutoActive ? '07:00' : (r.checkInAt || '—')
               return (
-                <TableRow
-                  key={r.id}
-                  sx={ps.tableRow(idx)}
-                  hover
-                  onClick={() => onRowClick(r.employee)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
-                    {r.employeeNumber}
-                  </TableCell>
+                <TableRow key={r.id} sx={ps.tableRow(idx)} hover onClick={() => onRowClick(r.employee)} style={{ cursor: 'pointer' }}>
+                  <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{r.employeeNumber}</TableCell>
                   <TableCell sx={ps.cellText}>{r.employee?.name || '—'}</TableCell>
                   <TableCell sx={ps.cellTextSecondary}>{areaLabel(r.areaId) || '—'}</TableCell>
                   <TableCell sx={ps.cellTextSecondary}>{r.stationId || 'Sin estación'}</TableCell>
@@ -691,11 +516,7 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7}>
-                  <EmptyState
-                    compact
-                    title="Nadie coincide con los filtros actuales"
-                    description="Ajusta la búsqueda, área, turno o estado."
-                  />
+                  <EmptyState compact title="Nadie coincide con los filtros actuales" description="Ajusta la búsqueda, área, turno o estado." />
                 </TableCell>
               </TableRow>
             )}
@@ -704,12 +525,7 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
       </TableContainer>
       {total > 0 && (
         <Box sx={{ p: 1.25, textAlign: 'right', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
-            onClick={onToggleShowAll}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
+          <Button size="small" endIcon={<ChevronRightIcon fontSize="small" />} onClick={onToggleShowAll} sx={{ textTransform: 'none', fontWeight: 700 }}>
             {showAll ? 'Ver menos' : `Ver todos los registros (${total})`}
           </Button>
         </Box>
@@ -721,19 +537,7 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
 /* Card "Directorio completo de personal" -- mismas 2 tabs/datos de
    siempre (Con número de empleado / Proyectos), ahora con altura
    controlada + "Ver directorio completo" para expandir. */
-function DirectorioCard({
-  tab,
-  onTabChange,
-  withNumberCount,
-  proyectosCount,
-  query,
-  onQueryChange,
-  rows,
-  total,
-  showAll,
-  onToggleShowAll,
-  onRowClick,
-}) {
+function DirectorioCard({ tab, onTabChange, withNumberCount, proyectosCount, query, onQueryChange, rows, total, showAll, onToggleShowAll, onRowClick }) {
   const ps = usePageStyles()
   return (
     <Paper elevation={0} sx={{ ...ps.card }}>
@@ -741,32 +545,19 @@ function DirectorioCard({
         <ContactsIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
         <Box>
           <Typography sx={ps.cardHeaderTitle}>Directorio completo de personal</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
-            Todo el personal, persona por persona — con número de empleado o como Proyecto
-          </Typography>
+          <Typography sx={ps.cardHeaderSubtitle}>Todo el personal, persona por persona — con número de empleado o como Proyecto</Typography>
         </Box>
       </Box>
       <Box sx={{ px: 2.5, pt: 2 }}>
         <Tabs value={tab} onChange={(_, v) => onTabChange(v)} sx={{ minHeight: 36 }}>
-          <Tab
-            value="CON_NUMERO"
-            label={`Con número de empleado (${withNumberCount})`}
-            sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }}
-          />
-          <Tab
-            value="PROYECTOS"
-            label={`Proyectos (${proyectosCount})`}
-            sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }}
-          />
+          <Tab value="CON_NUMERO" label={`Con número de empleado (${withNumberCount})`} sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
+          <Tab value="PROYECTOS" label={`Proyectos (${proyectosCount})`} sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }} />
         </Tabs>
       </Box>
       <Box sx={{ px: 2.5, pt: 2 }}>
         <TextField
-          size="small"
-          fullWidth
-          placeholder="Buscar por nombre o número..."
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
+          size="small" fullWidth placeholder="Buscar por nombre o número..."
+          value={query} onChange={(e) => onQueryChange(e.target.value)}
           InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
           sx={ps.inputSx}
         />
@@ -784,30 +575,18 @@ function DirectorioCard({
           </TableHead>
           <TableBody>
             {rows.map((e, idx) => (
-              <TableRow
-                key={e.id}
-                sx={ps.tableRow(idx)}
-                hover
-                onClick={() => onRowClick(e)}
-                style={{ cursor: 'pointer' }}
-              >
+              <TableRow key={e.id} sx={ps.tableRow(idx)} hover onClick={() => onRowClick(e)} style={{ cursor: 'pointer' }}>
                 <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
                   {hasRealNumber(e.employeeNumber) ? e.employeeNumber : '—'}
                 </TableCell>
                 <TableCell sx={ps.cellText}>{e.name}</TableCell>
-                <TableCell sx={ps.cellTextSecondary}>
-                  {areaLabel(getEffectiveAreaForEmployee(e.id)) || '—'}
-                </TableCell>
+                <TableCell sx={ps.cellTextSecondary}>{areaLabel(getEffectiveAreaForEmployee(e.id)) || '—'}</TableCell>
                 <TableCell sx={ps.cellTextSecondary}>{e.fechaIngreso || '—'}</TableCell>
                 {tab === 'PROYECTOS' && (
                   <TableCell>
                     <Chip
                       size="small"
-                      label={
-                        e.employeeNumber === 'PROYECTO'
-                          ? 'Registrado como Proyecto'
-                          : 'Sin número confirmado'
-                      }
+                      label={e.employeeNumber === 'PROYECTO' ? 'Registrado como Proyecto' : 'Sin número confirmado'}
                       sx={ps.statusChip('PENDIENTE')}
                     />
                   </TableCell>
@@ -817,11 +596,7 @@ function DirectorioCard({
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={tab === 'PROYECTOS' ? 5 : 4}>
-                  <EmptyState
-                    compact
-                    title="Sin resultados"
-                    description="Nadie coincide con esta búsqueda."
-                  />
+                  <EmptyState compact title="Sin resultados" description="Nadie coincide con esta búsqueda." />
                 </TableCell>
               </TableRow>
             )}
@@ -830,12 +605,7 @@ function DirectorioCard({
       </TableContainer>
       {total > 0 && (
         <Box sx={{ p: 1.25, textAlign: 'right', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
-            onClick={onToggleShowAll}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
+          <Button size="small" endIcon={<ChevronRightIcon fontSize="small" />} onClick={onToggleShowAll} sx={{ textTransform: 'none', fontWeight: 700 }}>
             {showAll ? 'Ver menos' : `Ver directorio completo (${total})`}
           </Button>
         </Box>
@@ -863,58 +633,24 @@ function ResumenPorAreaCard({ areas, totalPresente, onAreaClick }) {
           <Stack spacing={1.25}>
             {areas.map((a) => (
               <Box
-                key={a.areaId}
-                onClick={() => onAreaClick(a.areaId)}
+                key={a.areaId} onClick={() => onAreaClick(a.areaId)}
                 sx={{ cursor: 'pointer', '&:hover .bar-fill': { opacity: 0.85 } }}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-                  <Typography sx={{ fontSize: 12.5, fontWeight: 700 }} noWrap>
-                    {areaLabel(a.areaId)}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: 'text.secondary',
-                      flexShrink: 0,
-                      ml: 1,
-                    }}
-                  >
+                  <Typography sx={{ fontSize: 12.5, fontWeight: 700 }} noWrap>{areaLabel(a.areaId)}</Typography>
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', flexShrink: 0, ml: 1 }}>
                     {a.count} · {a.pct.toFixed(1)}%
                   </Typography>
                 </Stack>
-                <Box
-                  sx={{
-                    mt: 0.4,
-                    height: 6,
-                    borderRadius: 999,
-                    bgcolor: 'action.hover',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Box
-                    className="bar-fill"
-                    sx={{
-                      width: `${Math.min(a.pct, 100)}%`,
-                      height: '100%',
-                      bgcolor: '#3B82F6',
-                      borderRadius: 999,
-                      transition: 'opacity .15s ease',
-                    }}
-                  />
+                <Box sx={{ mt: 0.4, height: 6, borderRadius: 999, bgcolor: 'action.hover', overflow: 'hidden' }}>
+                  <Box className="bar-fill" sx={{ width: `${Math.min(a.pct, 100)}%`, height: '100%', bgcolor: '#3B82F6', borderRadius: 999, transition: 'opacity .15s ease' }} />
                 </Box>
               </Box>
             ))}
           </Stack>
         )}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}
-        >
-          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
-            Total presente
-          </Typography>
+        <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>Total presente</Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{totalPresente}</Typography>
         </Stack>
       </Box>
@@ -927,34 +663,12 @@ function ResumenPorAreaCard({ areas, totalPresente, onAreaClick }) {
    la tabla principal (Registro de hoy) -- nunca inventa un numero, si
    algo no aplica se veria en 0, no "Sin datos" ficticio (aqui las 3
    metricas siempre son calculables desde el roster real). */
-function AlertasCard({
-  sinEstacion,
-  snapshot,
-  movimientos,
-  onClickSinEstacion,
-  onClickSnapshot,
-  onClickMovimientos,
-}) {
+function AlertasCard({ sinEstacion, snapshot, movimientos, onClickSinEstacion, onClickSnapshot, onClickMovimientos }) {
   const ps = usePageStyles()
   const rows = [
-    {
-      label: 'Empleados sin estación asignada',
-      value: sinEstacion,
-      onClick: onClickSinEstacion,
-      color: '#F59E0B',
-    },
-    {
-      label: 'Pendientes por registrar (snapshot)',
-      value: snapshot,
-      onClick: onClickSnapshot,
-      color: '#F59E0B',
-    },
-    {
-      label: 'Movimientos recientes hoy',
-      value: movimientos,
-      onClick: onClickMovimientos,
-      color: '#3B82F6',
-    },
+    { label: 'Empleados sin estación asignada', value: sinEstacion, onClick: onClickSinEstacion, color: '#F59E0B' },
+    { label: 'Pendientes por registrar (snapshot)', value: snapshot, onClick: onClickSnapshot, color: '#F59E0B' },
+    { label: 'Movimientos recientes hoy', value: movimientos, onClick: onClickMovimientos, color: '#3B82F6' },
   ]
   return (
     <Paper elevation={0} sx={ps.card}>
@@ -965,25 +679,15 @@ function AlertasCard({
       <Stack sx={{ p: 1 }}>
         {rows.map((row) => (
           <Stack
-            key={row.label}
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            onClick={row.onClick}
-            sx={{
-              p: 1.25,
-              borderRadius: 2,
-              cursor: 'pointer',
+            key={row.label} direction="row" alignItems="center" justifyContent="space-between"
+            onClick={row.onClick} sx={{
+              p: 1.25, borderRadius: 2, cursor: 'pointer',
               '&:hover': { bgcolor: 'action.hover' },
             }}
           >
-            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.secondary' }}>
-              {row.label}
-            </Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.secondary' }}>{row.label}</Typography>
             <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography sx={{ fontSize: 14, fontWeight: 800, color: row.color }}>
-                {row.value}
-              </Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 800, color: row.color }}>{row.value}</Typography>
               <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
             </Stack>
           </Stack>
@@ -1014,46 +718,19 @@ function AccionesRapidasCard({ onAsignar, onMover, onVerBajas, onVerLayout }) {
       <Box sx={{ p: 1.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25 }}>
         {actions.map((a) => (
           <Box
-            key={a.label}
-            onClick={a.onClick}
+            key={a.label} onClick={a.onClick}
             sx={{
-              p: 1.5,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: a.onClick ? 'pointer' : 'default',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.75,
-              alignItems: 'flex-start',
+              p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', cursor: a.onClick ? 'pointer' : 'default',
+              display: 'flex', flexDirection: 'column', gap: 0.75, alignItems: 'flex-start',
               bgcolor: (t) => alpha(a.color, t.palette.mode === 'dark' ? 0.05 : 0.03),
               transition: 'all .15s ease',
-              '&:hover': a.onClick
-                ? {
-                    borderColor: a.color,
-                    transform: 'translateY(-1px)',
-                    boxShadow: `0 4px 12px ${alpha(a.color, 0.15)}`,
-                  }
-                : {},
+              '&:hover': a.onClick ? { borderColor: a.color, transform: 'translateY(-1px)', boxShadow: `0 4px 12px ${alpha(a.color, 0.15)}` } : {},
             }}
           >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                bgcolor: alpha(a.color, 0.14),
-                color: a.color,
-                display: 'grid',
-                placeItems: 'center',
-                '& .MuiSvgIcon-root': { fontSize: 17 },
-              }}
-            >
+            <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: alpha(a.color, 0.14), color: a.color, display: 'grid', placeItems: 'center', '& .MuiSvgIcon-root': { fontSize: 17 } }}>
               {a.icon}
             </Box>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2 }}>
-              {a.label}
-            </Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2 }}>{a.label}</Typography>
           </Box>
         ))}
       </Box>

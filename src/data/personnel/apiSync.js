@@ -18,16 +18,9 @@
    SHARED_PLACEHOLDER_NUMBERS en repository.js). ── */
 import dayjs from 'dayjs'
 import {
-  readAssignments,
-  writeAssignments,
-  readEmployees,
-  writeEmployees,
-  readMovements,
-  writeMovements,
-  readBaselineSuppressed,
-  writeBaselineSuppressed,
-  readPendingMoves,
-  writePendingMoves,
+  readAssignments, writeAssignments, readEmployees, writeEmployees,
+  readMovements, writeMovements, readBaselineSuppressed, writeBaselineSuppressed,
+  readPendingMoves, writePendingMoves,
   notify,
 } from './store'
 import { EMPLOYEE_DIRECTORY } from './directory'
@@ -64,9 +57,7 @@ const serverPendingIdByLocalId = new Map()
    toast "tu solicitud fue aprobada/rechazada" en pollOnce() (requestedByUserId ya es ese mismo id
    real, tal como lo guarda request-move.js server-side -- no requiere traduccion). */
 let currentUserId = null
-export function setCurrentUserId(id) {
-  currentUserId = id
-}
+export function setCurrentUserId(id) { currentUserId = id }
 /* Evita repetir el toast de resolucion en cada poll de 7s mientras la fila siga dentro de la
    ventana de 3 minutos que devuelve /api/personnel/roster (resolvedMoves). */
 const notifiedResolutions = new Set()
@@ -105,21 +96,11 @@ function isPlaceholderNumber(number) {
    serverId Y no es alguien genuinamente nuevo, se omite el POST -- el siguiente poll de
    pollOnce() resuelve el serverId real (por numero de empleado si lo tiene) sin arriesgarse a
    crear un fantasma. */
-export function syncCheckIn({
-  employeeId,
-  employeeNumber,
-  name,
-  areaId,
-  stationId,
-  shift,
-  isNewEmployee = false,
-}) {
+export function syncCheckIn({ employeeId, employeeNumber, name, areaId, stationId, shift, isNewEmployee = false }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)
   if (!serverId && !isNewEmployee) {
-    console.warn(
-      '[personnel-sync] checkin: sin serverId todavia y no es alta nueva, se omite (el siguiente poll lo resuelve)',
-    )
+    console.warn('[personnel-sync] checkin: sin serverId todavia y no es alta nueva, se omite (el siguiente poll lo resuelve)')
     return
   }
   const placeholder = isPlaceholderNumber(employeeNumber)
@@ -133,40 +114,25 @@ export function syncCheckIn({
       stationName: stationId,
       shift,
     }),
-  })
-    .then((data) => {
-      if (data?.employee?.id) serverIdByLocalId.set(employeeId, data.employee.id)
-    })
-    .catch((e) => console.error('[personnel-sync] checkin', e))
+  }).then((data) => {
+    if (data?.employee?.id) serverIdByLocalId.set(employeeId, data.employee.id)
+  }).catch((e) => console.error('[personnel-sync] checkin', e))
 }
 
 export function syncMove({ employeeId, toAreaId, toStationId, shift }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)
-  if (!serverId) {
-    console.warn(
-      '[personnel-sync] move: sin serverId todavia, se omite (el siguiente poll lo resuelve)',
-    )
-    return
-  }
+  if (!serverId) { console.warn('[personnel-sync] move: sin serverId todavia, se omite (el siguiente poll lo resuelve)'); return }
   apiFetch('/api/personnel/move', {
     method: 'POST',
-    body: JSON.stringify({
-      employeeId: serverId,
-      workAreaId: toAreaId,
-      stationName: toStationId,
-      shift,
-    }),
+    body: JSON.stringify({ employeeId: serverId, workAreaId: toAreaId, stationName: toStationId, shift }),
   }).catch((e) => console.error('[personnel-sync] move', e))
 }
 
 export function syncRelease({ employeeId }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)
-  if (!serverId) {
-    console.warn('[personnel-sync] release: sin serverId todavia, se omite')
-    return
-  }
+  if (!serverId) { console.warn('[personnel-sync] release: sin serverId todavia, se omite'); return }
   apiFetch('/api/personnel/release', {
     method: 'POST',
     body: JSON.stringify({ employeeId: serverId }),
@@ -174,45 +140,30 @@ export function syncRelease({ employeeId }) {
 }
 
 export function syncSuppressBaseline() {
-  apiFetch('/api/personnel/suppress-baseline', { method: 'POST' }).catch((e) =>
-    console.error('[personnel-sync] suppress-baseline', e),
-  )
+  apiFetch('/api/personnel/suppress-baseline', { method: 'POST' })
+    .catch((e) => console.error('[personnel-sync] suppress-baseline', e))
 }
 
 export function syncRestoreBaseline() {
-  apiFetch('/api/personnel/restore-baseline', { method: 'POST' }).catch((e) =>
-    console.error('[personnel-sync] restore-baseline', e),
-  )
+  apiFetch('/api/personnel/restore-baseline', { method: 'POST' })
+    .catch((e) => console.error('[personnel-sync] restore-baseline', e))
 }
 
 export function syncRequestMove({ localRequestId, employeeId, toAreaId, toStationId, shift }) {
   const serverId = serverIdByLocalId.get(employeeId)
-  if (!serverId) {
-    console.warn('[personnel-sync] request-move: sin serverId todavia, se omite')
-    return
-  }
+  if (!serverId) { console.warn('[personnel-sync] request-move: sin serverId todavia, se omite'); return }
   apiFetch('/api/personnel/request-move', {
     method: 'POST',
-    body: JSON.stringify({
-      employeeId: serverId,
-      workAreaId: toAreaId,
-      stationName: toStationId,
-      shift,
-    }),
-  })
-    .then((data) => {
-      if (data?.pendingMove?.id) serverPendingIdByLocalId.set(localRequestId, data.pendingMove.id)
-    })
-    .catch((e) => console.error('[personnel-sync] request-move', e))
+    body: JSON.stringify({ employeeId: serverId, workAreaId: toAreaId, stationName: toStationId, shift }),
+  }).then((data) => {
+    if (data?.pendingMove?.id) serverPendingIdByLocalId.set(localRequestId, data.pendingMove.id)
+  }).catch((e) => console.error('[personnel-sync] request-move', e))
 }
 
 export function syncApproveMove({ localRequestId, employeeId }) {
   if (employeeId) markRecentWrite(employeeId)
   const serverId = serverPendingIdByLocalId.get(localRequestId)
-  if (!serverId) {
-    console.warn('[personnel-sync] approve-move: solicitud no sincronizada todavia, se omite')
-    return
-  }
+  if (!serverId) { console.warn('[personnel-sync] approve-move: solicitud no sincronizada todavia, se omite'); return }
   apiFetch('/api/personnel/approve-move', {
     method: 'POST',
     body: JSON.stringify({ pendingMoveId: serverId }),
@@ -221,10 +172,7 @@ export function syncApproveMove({ localRequestId, employeeId }) {
 
 export function syncRejectMove({ localRequestId, reason }) {
   const serverId = serverPendingIdByLocalId.get(localRequestId)
-  if (!serverId) {
-    console.warn('[personnel-sync] reject-move: solicitud no sincronizada todavia, se omite')
-    return
-  }
+  if (!serverId) { console.warn('[personnel-sync] reject-move: solicitud no sincronizada todavia, se omite'); return }
   apiFetch('/api/personnel/reject-move', {
     method: 'POST',
     body: JSON.stringify({ pendingMoveId: serverId, reason }),
@@ -271,13 +219,7 @@ async function pollOnce() {
     if (!localId) {
       // Empleado que no existe localmente todavia (dado de alta desde otro dispositivo).
       localId = row.employeeId
-      newDynamicEmployees.push({
-        id: localId,
-        employeeNumber: row.employeeNumber || 'PROYECTO',
-        name: row.fullName,
-        status: 'Activo',
-        createdAt: null,
-      })
+      newDynamicEmployees.push({ id: localId, employeeNumber: row.employeeNumber || 'PROYECTO', name: row.fullName, status: 'Activo', createdAt: null })
       if (placeholder) byName.set(row.fullName, localId)
       else byNumber.set(row.employeeNumber, localId)
     }
@@ -296,12 +238,7 @@ async function pollOnce() {
       const p = row.placement
       const checkInAt = p.assignedAt ? dayjs(p.assignedAt).format('HH:mm') : dayjs().format('HH:mm')
       const prev = existingIdx !== -1 ? assignments[existingIdx] : null
-      if (
-        !prev ||
-        prev.areaId !== p.workAreaCode ||
-        prev.stationId !== p.stationName ||
-        prev.shift !== p.shift
-      ) {
+      if (!prev || prev.areaId !== p.workAreaCode || prev.stationId !== p.stationName || prev.shift !== p.shift) {
         const next = {
           id: prev ? prev.id : `sync-${localId}-${today}`,
           employeeId: localId,
@@ -312,7 +249,7 @@ async function pollOnce() {
           stationId: p.stationName,
           checkInAt,
           status: 'PRESENTE',
-          createdAt: prev ? prev.createdAt : p.assignedAt || dayjs().toISOString(),
+          createdAt: prev ? prev.createdAt : (p.assignedAt || dayjs().toISOString()),
           updatedAt: p.assignedAt || dayjs().toISOString(),
         }
         if (existingIdx !== -1) assignments[existingIdx] = next
@@ -320,20 +257,7 @@ async function pollOnce() {
         changed = true
       }
       if (!touchedIds.has(localId)) {
-        movements.push({
-          id: `sync-mov-${localId}-${today}`,
-          employeeId: localId,
-          employeeNumber: row.employeeNumber || 'PROYECTO',
-          date: today,
-          fromAreaId: null,
-          fromStationId: null,
-          toAreaId: p.workAreaCode,
-          toStationId: p.stationName,
-          movedAt: checkInAt,
-          shift: p.shift,
-          movedBy: null,
-          type: 'MOVE',
-        })
+        movements.push({ id: `sync-mov-${localId}-${today}`, employeeId: localId, employeeNumber: row.employeeNumber || 'PROYECTO', date: today, fromAreaId: null, fromStationId: null, toAreaId: p.workAreaCode, toStationId: p.stationName, movedAt: checkInAt, shift: p.shift, movedBy: null, type: 'MOVE' })
         touchedIds.add(localId)
         changed = true
       }
@@ -343,20 +267,7 @@ async function pollOnce() {
         changed = true
       }
       if (!touchedIds.has(localId)) {
-        movements.push({
-          id: `sync-mov-${localId}-${today}`,
-          employeeId: localId,
-          employeeNumber: row.employeeNumber || 'PROYECTO',
-          date: today,
-          fromAreaId: null,
-          fromStationId: null,
-          toAreaId: null,
-          toStationId: null,
-          movedAt: dayjs().format('HH:mm'),
-          shift: null,
-          movedBy: null,
-          type: 'RELEASE',
-        })
+        movements.push({ id: `sync-mov-${localId}-${today}`, employeeId: localId, employeeNumber: row.employeeNumber || 'PROYECTO', date: today, fromAreaId: null, fromStationId: null, toAreaId: null, toStationId: null, movedAt: dayjs().format('HH:mm'), shift: null, movedBy: null, type: 'RELEASE' })
         touchedIds.add(localId)
         changed = true
       }
@@ -375,9 +286,7 @@ async function pollOnce() {
   // solicitud creada en la tablet de un lider nunca le aparecia al supervisor en otra tablet sin
   // recargar (Cambio 4, 2026-08-25). ──
   const localIdByServerPendingId = new Map()
-  serverPendingIdByLocalId.forEach((serverId, localId) =>
-    localIdByServerPendingId.set(serverId, localId),
-  )
+  serverPendingIdByLocalId.forEach((serverId, localId) => localIdByServerPendingId.set(serverId, localId))
 
   let pending = readPendingMoves()
   let pendingChanged = false
@@ -385,9 +294,7 @@ async function pollOnce() {
   pendingMoves.forEach((row) => {
     if (localIdByServerPendingId.has(row.id)) return // ya lo tenemos local (lo creamos aqui o un poll anterior ya lo agrego)
     const placeholder = isPlaceholderNumber(row.employee.employeeNumber)
-    const employeeLocalId = placeholder
-      ? byName.get(row.employee.fullName)
-      : byNumber.get(row.employee.employeeNumber)
+    const employeeLocalId = placeholder ? byName.get(row.employee.fullName) : byNumber.get(row.employee.employeeNumber)
     if (!employeeLocalId) return // empleado que este dispositivo todavia no conoce; el siguiente poll lo resuelve
 
     const to = resolveWorkAreaLabel(row.toWorkstation)
@@ -425,19 +332,12 @@ async function pollOnce() {
     }
     // Avisar solo a quien la pidio, y solo una vez por solicitud resuelta (la ventana de
     // resolvedMoves dura 3 minutos -- sin este Set el toast se repetiria en cada poll de 7s).
-    if (
-      currentUserId &&
-      row.requestedByUserId === currentUserId &&
-      !notifiedResolutions.has(row.id)
-    ) {
+    if (currentUserId && row.requestedByUserId === currentUserId && !notifiedResolutions.has(row.id)) {
       notifiedResolutions.add(row.id)
       const toAreaId = row.toWorkstation ? resolveWorkAreaLabel(row.toWorkstation).areaId : null
-      const toName = toAreaId ? workCenterById(toAreaId)?.name || toAreaId : null
+      const toName = toAreaId ? (workCenterById(toAreaId)?.name || toAreaId) : null
       if (row.status === 'APPROVED') {
-        showToast(
-          `Movimiento aprobado${toName ? ` — ${row.employee.fullName} ahora en ${toName}` : ''}.`,
-          'success',
-        )
+        showToast(`Movimiento aprobado${toName ? ` — ${row.employee.fullName} ahora en ${toName}` : ''}.`, 'success')
       } else if (row.status === 'REJECTED') {
         showToast(`Movimiento de ${row.employee.fullName} rechazado.`, 'error')
       }
@@ -463,11 +363,7 @@ export function startPersonnelSync() {
   const tick = () => {
     if (document.visibilityState !== 'visible' || polling) return
     polling = true
-    pollOnce()
-      .catch((e) => console.error('[personnel-sync] poll', e))
-      .finally(() => {
-        polling = false
-      })
+    pollOnce().catch((e) => console.error('[personnel-sync] poll', e)).finally(() => { polling = false })
   }
 
   tick()
@@ -476,9 +372,7 @@ export function startPersonnelSync() {
   // Refetch inmediato (fuera del intervalo normal) al recuperar
   // visibilidad/foco/conexion -- cubre el caso real de una tablet que se
   // bloqueo o cambio de app y vuelve mostrando datos de hace rato.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') tick()
-  })
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick() })
   window.addEventListener('focus', tick)
   window.addEventListener('online', tick)
 }

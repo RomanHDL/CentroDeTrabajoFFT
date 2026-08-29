@@ -12,12 +12,7 @@ import EmployeeAvatar from './EmployeeAvatar'
  * libre): escribes "3647" o "Román" y ambos funcionan. No
  * exige conocer el numero de memoria.
  */
-export default function EmployeeSearchField({
-  label = 'Número o nombre de empleado',
-  value,
-  onChange,
-  autoFocus,
-}) {
+export default function EmployeeSearchField({ label = 'Número o nombre de empleado', value, onChange, autoFocus }) {
   const [inputValue, setInputValue] = useState(value?.employeeNumber || '')
   const options = useMemo(() => searchEmployees(inputValue), [inputValue])
 
@@ -29,9 +24,7 @@ export default function EmployeeSearchField({
       value={value || null}
       inputValue={inputValue}
       filterOptions={(x) => x}
-      getOptionLabel={(opt) =>
-        typeof opt === 'string' ? opt : `${opt.employeeNumber} — ${opt.name}`
-      }
+      getOptionLabel={(opt) => (typeof opt === 'string' ? opt : `${opt.employeeNumber} — ${opt.name}`)}
       isOptionEqualToValue={(opt, val) => opt.id === val?.id}
       onInputChange={(_, newValue, reason) => {
         setInputValue(newValue)
@@ -44,21 +37,12 @@ export default function EmployeeSearchField({
         }
       }}
       renderOption={(props, option) => (
-        <Box
-          component="li"
-          {...props}
-          key={option.id}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
-        >
+        <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
           <EmployeeAvatar employee={option} size={32} />
           <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-              {option.employeeNumber} — {option.name}
-            </Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{option.employeeNumber} — {option.name}</Typography>
             {option.fechaIngreso && (
-              <Typography sx={{ fontSize: 11.5, opacity: 0.6 }}>
-                Ingreso: {option.fechaIngreso}
-              </Typography>
+              <Typography sx={{ fontSize: 11.5, opacity: 0.6 }}>Ingreso: {option.fechaIngreso}</Typography>
             )}
           </Box>
         </Box>
@@ -69,10 +53,7 @@ export default function EmployeeSearchField({
           autoFocus={autoFocus}
           label={label}
           placeholder="3647 o Román"
-          InputProps={{
-            ...params.InputProps,
-            startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} />,
-          }}
+          InputProps={{ ...params.InputProps, startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
         />
       )}
     />

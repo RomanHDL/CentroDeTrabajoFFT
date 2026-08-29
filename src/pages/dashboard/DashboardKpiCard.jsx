@@ -29,92 +29,45 @@ import { alpha } from '@mui/material/styles'
    total de empleados del sistema.") -- ahora vive en un Tooltip sobre
    secondaryNote, nunca ocupa espacio fijo. */
 export default function DashboardKpiCard({
-  icon,
-  accent,
-  title,
-  subtitle,
-  value,
-  unit,
-  secondaryLabel,
-  secondaryValue,
-  secondaryNote,
-  tooltipNote,
+  icon, accent, title, subtitle, value, unit,
+  secondaryLabel, secondaryValue, secondaryNote, tooltipNote,
 }) {
   return (
     <Paper
       elevation={0}
       sx={{
-        height: '100%',
-        minHeight: 112,
-        borderRadius: '16px',
-        p: 1.75,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: alpha(accent, 0.14),
+        height: '100%', minHeight: 112, borderRadius: '16px', p: 1.75,
+        display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden',
+        border: '1px solid', borderColor: alpha(accent, 0.14),
         borderLeft: `3px solid ${accent}`,
         bgcolor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.05 : 0.03),
       }}
     >
-      <Box
-        sx={{
-          width: 52,
-          height: 52,
-          borderRadius: '50%',
-          flexShrink: 0,
-          bgcolor: alpha(accent, 0.12),
-          display: 'grid',
-          placeItems: 'center',
-          color: accent,
-          border: '1px solid',
-          borderColor: alpha(accent, 0.18),
-          '& .MuiSvgIcon-root': { fontSize: 24 },
-        }}
-      >
+      <Box sx={{
+        width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+        bgcolor: alpha(accent, 0.12), display: 'grid', placeItems: 'center', color: accent,
+        border: '1px solid', borderColor: alpha(accent, 0.18),
+        '& .MuiSvgIcon-root': { fontSize: 24 },
+      }}>
         {icon}
       </Box>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-          <Typography
-            sx={{
-              fontSize: 13.5,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: 0.4,
-              lineHeight: 1.2,
-            }}
-          >
+          <Typography sx={{ fontSize: 13.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.2 }}>
             {title}
           </Typography>
-          <IconButton
-            size="small"
-            disableRipple
-            sx={{ p: 0, mt: -0.25, color: 'text.disabled', cursor: 'default' }}
-          >
+          <IconButton size="small" disableRipple sx={{ p: 0, mt: -0.25, color: 'text.disabled', cursor: 'default' }}>
             <MoreVertIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Stack>
-        <Typography
-          sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500, mb: 0.5, lineHeight: 1.2 }}
-          noWrap
-        >
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500, mb: 0.5, lineHeight: 1.2 }} noWrap>
           {subtitle}
         </Typography>
 
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Stack direction="row" alignItems="baseline" spacing={0.5}>
-            <Typography
-              sx={{
-                fontSize: 30,
-                fontWeight: 800,
-                color: accent,
-                lineHeight: 1,
-                letterSpacing: -0.5,
-              }}
-            >
+            <Typography sx={{ fontSize: 30, fontWeight: 800, color: accent, lineHeight: 1, letterSpacing: -0.5 }}>
               {value}
             </Typography>
             {unit && (
@@ -126,45 +79,17 @@ export default function DashboardKpiCard({
 
           {secondaryValue != null && (
             <>
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{ borderColor: alpha(accent, 0.2), my: 0.25 }}
-              />
+              <Divider orientation="vertical" flexItem sx={{ borderColor: alpha(accent, 0.2), my: 0.25 }} />
               <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.3,
-                    lineHeight: 1.2,
-                  }}
-                >
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.2 }}>
                   {secondaryLabel}
                 </Typography>
-                <Typography
-                  sx={{ fontSize: 16, fontWeight: 700, color: 'text.secondary', lineHeight: 1.2 }}
-                >
+                <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'text.secondary', lineHeight: 1.2 }}>
                   {secondaryValue}
                 </Typography>
                 {secondaryNote && (
-                  <Tooltip
-                    title={tooltipNote || ''}
-                    disableHoverListener={!tooltipNote}
-                    arrow
-                    placement="bottom-start"
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: 9,
-                        color: 'text.disabled',
-                        lineHeight: 1.2,
-                        cursor: tooltipNote ? 'help' : 'default',
-                      }}
-                      noWrap
-                    >
+                  <Tooltip title={tooltipNote || ''} disableHoverListener={!tooltipNote} arrow placement="bottom-start">
+                    <Typography sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1.2, cursor: tooltipNote ? 'help' : 'default' }} noWrap>
                       {secondaryNote}
                     </Typography>
                   </Tooltip>

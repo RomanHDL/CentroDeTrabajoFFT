@@ -1,40 +1,16 @@
 import dayjs from 'dayjs'
 import {
-  readEmployees,
-  writeEmployees,
-  readAssignments,
-  writeAssignments,
-  readMovements,
-  writeMovements,
-  readAttendance,
-  writeAttendance,
-  readSkills,
-  writeSkills,
-  readPendingMoves,
-  writePendingMoves,
-  readBaselineSuppressed,
-  writeBaselineSuppressed,
-  subscribe,
-  notify,
+  readEmployees, writeEmployees, readAssignments, writeAssignments, readMovements, writeMovements,
+  readAttendance, writeAttendance, readSkills, writeSkills, readPendingMoves, writePendingMoves,
+  readBaselineSuppressed, writeBaselineSuppressed, subscribe, notify,
 } from './store'
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import { getWorkstationsForLine, getWorkstation } from './workstations'
+import { CURRENT_SHIFT, DEFAULT_LINE_ENTRY_TIME, operationalGroupMembers } from '../production/catalog'
 import {
-  CURRENT_SHIFT,
-  DEFAULT_LINE_ENTRY_TIME,
-  operationalGroupMembers,
-} from '../production/catalog'
-import {
-  startPersonnelSync,
-  syncCheckIn,
-  syncMove,
-  syncRelease,
-  syncSuppressBaseline,
-  syncRestoreBaseline,
-  syncRequestMove,
-  syncApproveMove,
-  syncRejectMove,
+  startPersonnelSync, syncCheckIn, syncMove, syncRelease, syncSuppressBaseline, syncRestoreBaseline,
+  syncRequestMove, syncApproveMove, syncRejectMove,
 } from './apiSync'
 
 /* ─────────────────────────────────────────────
@@ -73,20 +49,20 @@ startPersonnelSync()
 
 export function getAllEmployees() {
   const dynamic = readEmployees()
-  const known = new Set(dynamic.map((e) => e.employeeNumber))
-  return [...dynamic, ...EMPLOYEE_DIRECTORY.filter((e) => !known.has(e.employeeNumber))]
+  const known = new Set(dynamic.map(e => e.employeeNumber))
+  return [...dynamic, ...EMPLOYEE_DIRECTORY.filter(e => !known.has(e.employeeNumber))]
 }
 
 export function getEmployeeByNumber(employeeNumber) {
   const number = String(employeeNumber || '').trim()
   if (!number) return null
-  const dynamic = readEmployees().find((e) => e.employeeNumber === number)
+  const dynamic = readEmployees().find(e => e.employeeNumber === number)
   if (dynamic) return dynamic
-  return EMPLOYEE_DIRECTORY.find((e) => e.employeeNumber === number) || null
+  return EMPLOYEE_DIRECTORY.find(e => e.employeeNumber === number) || null
 }
 
 export function getEmployeeById(employeeId) {
-  return getAllEmployees().find((e) => e.id === employeeId) || null
+  return getAllEmployees().find(e => e.id === employeeId) || null
 }
 
 /* Unico selector centralizado de "personal que puede aparecer en
@@ -107,7 +83,7 @@ export function getAssignableEmployees() {
    pantalla propia de solo lectura (BajasTab.jsx) en vez de estar
    simplemente ausentes de todo. */
 export function getBajaEmployees() {
-  return getAllEmployees().filter((e) => e.status === 'BAJA')
+  return getAllEmployees().filter(e => e.status === 'BAJA')
 }
 
 /* 'PROYECTO' (sin numero real todavia) y 'PENDIENTE' (placeholder de
@@ -120,7 +96,7 @@ const SHARED_PLACEHOLDER_NUMBERS = new Set(['PROYECTO', 'PENDIENTE'])
 
 function isEmployeeNumberTaken(number, excludeEmployeeId = null) {
   if (SHARED_PLACEHOLDER_NUMBERS.has(number)) return false
-  return getAllEmployees().some((e) => e.employeeNumber === number && e.id !== excludeEmployeeId)
+  return getAllEmployees().some(e => e.employeeNumber === number && e.id !== excludeEmployeeId)
 }
 
 export function createEmployee({ employeeNumber, name }) {
@@ -143,12 +119,10 @@ export function createEmployee({ employeeNumber, name }) {
 }
 
 export function searchEmployees(query, limit = 20) {
-  const q = String(query || '')
-    .trim()
-    .toLowerCase()
+  const q = String(query || '').trim().toLowerCase()
   if (!q) return []
   return getAssignableEmployees()
-    .filter((e) => e.employeeNumber.includes(q) || e.name.toLowerCase().includes(q))
+    .filter(e => e.employeeNumber.includes(q) || e.name.toLowerCase().includes(q))
     .slice(0, limit)
 }
 
@@ -156,28 +130,19 @@ export function searchEmployees(query, limit = 20) {
    donde esta asignado hoy. ── */
 
 export function getSkillsForEmployee(employeeId) {
-  const dynamic = readSkills().filter((s) => s.employeeId === employeeId)
-  const seenStations = new Set(dynamic.map((s) => s.stationName))
-  const seeded = SEED_SKILLS.filter(
-    (s) => s.employeeId === employeeId && !seenStations.has(s.stationName),
-  )
-  return [...dynamic, ...seeded].filter((s) => s.active !== false)
+  const dynamic = readSkills().filter(s => s.employeeId === employeeId)
+  const seenStations = new Set(dynamic.map(s => s.stationName))
+  const seeded = SEED_SKILLS.filter(s => s.employeeId === employeeId && !seenStations.has(s.stationName))
+  return [...dynamic, ...seeded].filter(s => s.active !== false)
 }
 
 export function hasSkill(employeeId, stationName) {
-  return getSkillsForEmployee(employeeId).some((s) => s.stationName === stationName)
+  return getSkillsForEmployee(employeeId).some(s => s.stationName === stationName)
 }
 
 export function addSkill({ employeeId, stationName, level = 'PUEDE_CUBRIR' }) {
   const skills = readSkills()
-  const skill = {
-    id: makeId('skl'),
-    employeeId,
-    stationName,
-    level,
-    active: true,
-    createdAt: nowISO(),
-  }
+  const skill = { id: makeId('skl'), employeeId, stationName, level, active: true, createdAt: nowISO() }
   skills.push(skill)
   writeSkills(skills)
   notify()
@@ -189,16 +154,16 @@ export function addSkill({ employeeId, stationName, level = 'PUEDE_CUBRIR' }) {
    no tener puesto. ── */
 
 export function getAttendanceForDate(date = todayISO()) {
-  return readAttendance().filter((a) => a.date === date)
+  return readAttendance().filter(a => a.date === date)
 }
 
 export function isPresentToday(employeeId, date = todayISO()) {
-  return getAttendanceForDate(date).some((a) => a.employeeId === employeeId)
+  return getAttendanceForDate(date).some(a => a.employeeId === employeeId)
 }
 
 function ensureAttendance(employee, date, shift, checkedInAt = nowTime()) {
   const attendance = readAttendance()
-  const existing = attendance.find((a) => a.employeeId === employee.id && a.date === date)
+  const existing = attendance.find(a => a.employeeId === employee.id && a.date === date)
   if (existing) return existing
   const record = {
     id: makeId('att'),
@@ -243,43 +208,41 @@ export function markPresentOnly({ employeeNumber, name, shift }) {
 /* ── Daily assignment (ubicacion vigente por dia) ── */
 
 export function getCurrentAssignment(employeeId, date = todayISO()) {
-  return readAssignments().find((a) => a.employeeId === employeeId && a.date === date) || null
+  return readAssignments().find(a => a.employeeId === employeeId && a.date === date) || null
 }
 
 export function getAssignmentsForDate(date = todayISO()) {
-  return readAssignments().filter((a) => a.date === date)
+  return readAssignments().filter(a => a.date === date)
 }
 
 export function getAssignmentsForArea(areaId, date = todayISO()) {
-  return getAssignmentsForDate(date).filter((a) => a.areaId === areaId)
+  return getAssignmentsForDate(date).filter(a => a.areaId === areaId)
 }
 
 export function getAssignmentHistory(employeeId) {
   return readAssignments()
-    .filter((a) => a.employeeId === employeeId)
+    .filter(a => a.employeeId === employeeId)
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
 }
 
 /* Roster de HOY, ya con el empleado resuelto — listo para
    tablas de "Personal de la linea" / "Personal de hoy". */
 export function getTodayRoster(date = todayISO()) {
-  const employeesById = new Map(getAllEmployees().map((e) => [e.id, e]))
+  const employeesById = new Map(getAllEmployees().map(e => [e.id, e]))
   return getAssignmentsForDate(date)
-    .map((a) => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
+    .map(a => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
     .sort((a, b) => (a.checkInAt > b.checkInAt ? -1 : 1))
 }
 
 export function getRosterForArea(areaId, date = todayISO()) {
-  return getTodayRoster(date).filter((r) => r.areaId === areaId)
+  return getTodayRoster(date).filter(r => r.areaId === areaId)
 }
 
 /* ── Contadores (personal REAL, no mock) ── */
 
 export function getAreaCountsForDate(date = todayISO()) {
   const counts = {}
-  getAssignmentsForDate(date).forEach((a) => {
-    counts[a.areaId] = (counts[a.areaId] || 0) + 1
-  })
+  getAssignmentsForDate(date).forEach((a) => { counts[a.areaId] = (counts[a.areaId] || 0) + 1 })
   return counts
 }
 
@@ -294,26 +257,26 @@ export function getAreaCountToday(areaId) {
    fila de asignacion por empleado por dia, por construccion). */
 export function getPersonnelPresentToday(date = todayISO()) {
   const ids = new Set()
-  getAttendanceForDate(date).forEach((a) => ids.add(a.employeeId))
-  getAssignmentsForDate(date).forEach((a) => ids.add(a.employeeId))
+  getAttendanceForDate(date).forEach(a => ids.add(a.employeeId))
+  getAssignmentsForDate(date).forEach(a => ids.add(a.employeeId))
   return ids.size
 }
 
 export function getPersonnelCountForDate(date) {
   const ids = new Set()
-  getAttendanceForDate(date).forEach((a) => ids.add(a.employeeId))
-  getAssignmentsForDate(date).forEach((a) => ids.add(a.employeeId))
+  getAttendanceForDate(date).forEach(a => ids.add(a.employeeId))
+  getAssignmentsForDate(date).forEach(a => ids.add(a.employeeId))
   return ids.size
 }
 
 /* Presentes hoy sin estacion asignada todavia — para la
    seccion "Personal sin asignacion hoy". */
 export function getUnassignedPresentToday(date = todayISO()) {
-  const assignedIds = new Set(getAssignmentsForDate(date).map((a) => a.employeeId))
-  const employeesById = new Map(getAllEmployees().map((e) => [e.id, e]))
+  const assignedIds = new Set(getAssignmentsForDate(date).map(a => a.employeeId))
+  const employeesById = new Map(getAllEmployees().map(e => [e.id, e]))
   return getAttendanceForDate(date)
-    .filter((a) => !assignedIds.has(a.employeeId))
-    .map((a) => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
+    .filter(a => !assignedIds.has(a.employeeId))
+    .map(a => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
 }
 
 export function getLinesWithPersonnelToday() {
@@ -322,58 +285,40 @@ export function getLinesWithPersonnelToday() {
 
 /* ── Capacidad / ocupacion por estacion (evita sobrecupo) ── */
 
-export function getStationOccupancy(
-  areaId,
-  stationName,
-  date = todayISO(),
-  excludeEmployeeId = null,
-) {
+export function getStationOccupancy(areaId, stationName, date = todayISO(), excludeEmployeeId = null) {
   const workstation = getWorkstation(areaId, stationName)
   const capacity = workstation ? workstation.capacity : 1
-  const count = getAssignmentsForArea(areaId, date).filter(
-    (a) => a.stationId === stationName && a.employeeId !== excludeEmployeeId,
-  ).length
+  const count = getAssignmentsForArea(areaId, date)
+    .filter(a => a.stationId === stationName && a.employeeId !== excludeEmployeeId).length
   return { count, capacity, isFull: count >= capacity }
 }
 
 export function getLineCapacitySummary(lineId, date = todayISO()) {
   const capacityTotal = getWorkstationsForLine(lineId).reduce((sum, w) => sum + w.capacity, 0)
   const occupied = getAssignmentsForArea(lineId, date).length
-  return {
-    capacityTotal,
-    occupied,
-    available: Math.max(0, capacityTotal - occupied),
-    isFull: occupied >= capacityTotal,
-  }
+  return { capacityTotal, occupied, available: Math.max(0, capacityTotal - occupied), isFull: occupied >= capacityTotal }
 }
 
 /* Estaciones de una linea ya combinadas con quien las ocupa
    hoy — listo para pintar la distribucion visual. */
 export function getLineWorkstationsWithOccupancy(lineId, date = todayISO()) {
   const assignments = getAssignmentsForArea(lineId, date)
-  const employeesById = new Map(getAllEmployees().map((e) => [e.id, e]))
+  const employeesById = new Map(getAllEmployees().map(e => [e.id, e]))
   return getWorkstationsForLine(lineId)
     .slice()
     .sort((a, b) => a.order - b.order)
     .map((w) => {
       const occupants = assignments
-        .filter((a) => a.stationId === w.name)
-        .map((a) => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
-      return {
-        ...w,
-        occupants,
-        isFull: occupants.length >= w.capacity,
-        isAvailable: occupants.length < w.capacity,
-      }
+        .filter(a => a.stationId === w.name)
+        .map(a => ({ ...a, employee: employeesById.get(a.employeeId) || null }))
+      return { ...w, occupants, isFull: occupants.length >= w.capacity, isAvailable: occupants.length < w.capacity }
     })
 }
 
 export function getLastAssignment(employeeId, excludeDate = todayISO()) {
-  return (
-    readAssignments()
-      .filter((a) => a.employeeId === employeeId && a.date !== excludeDate)
-      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))[0] || null
-  )
+  return readAssignments()
+    .filter(a => a.employeeId === employeeId && a.date !== excludeDate)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))[0] || null
 }
 
 /**
@@ -383,46 +328,33 @@ export function getLastAssignment(employeeId, excludeDate = todayISO()) {
  * piden explicitamente. Nunca inventa nombres: solo empleados
  * reales con la habilidad registrada.
  */
-export function getSuggestedCandidates(
-  lineId,
-  stationName,
-  { includeAbsent = false, limit = 20 } = {},
-) {
+export function getSuggestedCandidates(lineId, stationName, { includeAbsent = false, limit = 20 } = {}) {
   const date = todayISO()
   const presentIds = new Set()
-  getAttendanceForDate(date).forEach((a) => presentIds.add(a.employeeId))
-  getAssignmentsForDate(date).forEach((a) => presentIds.add(a.employeeId))
-  const assignmentByEmployee = new Map(getAssignmentsForDate(date).map((a) => [a.employeeId, a]))
+  getAttendanceForDate(date).forEach(a => presentIds.add(a.employeeId))
+  getAssignmentsForDate(date).forEach(a => presentIds.add(a.employeeId))
+  const assignmentByEmployee = new Map(getAssignmentsForDate(date).map(a => [a.employeeId, a]))
 
   const candidates = getAssignableEmployees()
-    .filter((e) => hasSkill(e.id, stationName))
+    .filter(e => hasSkill(e.id, stationName))
     .map((e) => {
       const present = presentIds.has(e.id)
       const assignment = assignmentByEmployee.get(e.id) || null
       const priority = present && !assignment ? 1 : present && assignment ? 2 : 3
       return { employee: e, present, assignment, priority }
     })
-    .filter(
-      (c) =>
-        !(c.assignment && c.assignment.areaId === lineId && c.assignment.stationId === stationName),
-    )
-    .filter((c) => includeAbsent || c.priority <= 2)
-    .sort(
-      (a, b) =>
-        a.priority - b.priority ||
-        a.employee.employeeNumber.localeCompare(b.employee.employeeNumber),
-    )
+    .filter(c => !(c.assignment && c.assignment.areaId === lineId && c.assignment.stationId === stationName))
+    .filter(c => includeAbsent || c.priority <= 2)
+    .sort((a, b) => a.priority - b.priority || a.employee.employeeNumber.localeCompare(b.employee.employeeNumber))
 
   return candidates.slice(0, limit)
 }
 
 export function getAverageHeadcountForArea(areaId) {
-  const assignments = readAssignments().filter((a) => a.areaId === areaId)
+  const assignments = readAssignments().filter(a => a.areaId === areaId)
   if (!assignments.length) return 0
   const byDate = {}
-  assignments.forEach((a) => {
-    byDate[a.date] = (byDate[a.date] || 0) + 1
-  })
+  assignments.forEach((a) => { byDate[a.date] = (byDate[a.date] || 0) + 1 })
   const days = Object.values(byDate)
   return Math.round((days.reduce((s, c) => s + c, 0) / days.length) * 10) / 10
 }
@@ -431,16 +363,16 @@ export function getAverageHeadcountForArea(areaId) {
 
 export function getMovementsForEmployee(employeeId, date) {
   return readMovements()
-    .filter((m) => m.employeeId === employeeId && (!date || m.date === date))
+    .filter(m => m.employeeId === employeeId && (!date || m.date === date))
     .sort((a, b) => (a.movedAt < b.movedAt ? -1 : a.movedAt > b.movedAt ? 1 : 0))
 }
 
 export function getMovementsForDate(date = todayISO()) {
-  return readMovements().filter((m) => m.date === date)
+  return readMovements().filter(m => m.date === date)
 }
 
 export function getMovesCountForDate(date = todayISO()) {
-  return getMovementsForDate(date).filter((m) => m.type === 'MOVE').length
+  return getMovementsForDate(date).filter(m => m.type === 'MOVE').length
 }
 
 /* ── Acciones (unico lugar que escribe asignaciones/movimientos) ── */
@@ -485,20 +417,15 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
 
   const date = todayISO()
   const assignments = readAssignments()
-  const existing = assignments.find((a) => a.employeeId === employee.id && a.date === date)
+  const existing = assignments.find(a => a.employeeId === employee.id && a.date === date)
   if (existing) {
-    const attendance =
-      readAttendance().find((a) => a.employeeId === employee.id && a.date === date) || null
+    const attendance = readAttendance().find(a => a.employeeId === employee.id && a.date === date) || null
     return { status: 'CONFLICT', employee, assignment: existing, attendance }
   }
 
   const occupancy = getStationOccupancy(areaId, stationId, date)
   if (occupancy.isFull) {
-    return {
-      status: 'STATION_FULL',
-      message: `${stationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`,
-      occupancy,
-    }
+    return { status: 'STATION_FULL', message: `${stationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`, occupancy }
   }
 
   const checkInAt = nowTime()
@@ -537,15 +464,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   })
   writeMovements(movements)
 
-  syncCheckIn({
-    employeeId: employee.id,
-    employeeNumber: employee.employeeNumber,
-    name: employee.name,
-    areaId,
-    stationId,
-    shift,
-    isNewEmployee: wasJustCreated,
-  })
+  syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId, shift, isNewEmployee: wasJustCreated })
   notify()
   return { status: 'OK', employee, assignment }
 }
@@ -599,38 +518,30 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
  * comportamiento es identico al de antes (operationalGroupMembers
  * devuelve solo [areaId]).
  */
-export function reconcileLineAssignments(
-  areaId,
-  snapshotEmployeeIds = [],
-  { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {},
-) {
+export function reconcileLineAssignments(areaId, snapshotEmployeeIds = [], { shift = CURRENT_SHIFT, checkInAt = DEFAULT_LINE_ENTRY_TIME } = {}) {
   if (!areaId) return { fixedCount: 0, filledCount: 0 }
 
   const date = todayISO()
   const assignments = readAssignments()
   const movements = readMovements()
-  const stationNamesForLine = new Set(getWorkstationsForLine(areaId).map((s) => s.name))
-  const orderedStations = getWorkstationsForLine(areaId)
-    .slice()
-    .sort((a, b) => a.order - b.order)
+  const stationNamesForLine = new Set(getWorkstationsForLine(areaId).map(s => s.name))
+  const orderedStations = getWorkstationsForLine(areaId).slice().sort((a, b) => a.order - b.order)
   const groupMemberIds = new Set(operationalGroupMembers(areaId))
-  const lineAssignmentsToday = assignments.filter(
-    (a) => a.date === date && groupMemberIds.has(a.areaId),
-  )
+  const lineAssignmentsToday = assignments.filter(a => a.date === date && groupMemberIds.has(a.areaId))
 
   // Quien conserva su estacion (valida y sin duplicar) vs quien necesita reasignacion (estacion
   // invalida, o duplicada -- solo la mas antigua por createdAt conserva el station valido).
   const stationClaimedBy = new Map()
   const needsReassignment = []
   lineAssignmentsToday
-    .filter((a) => a.areaId === areaId && stationNamesForLine.has(a.stationId))
+    .filter(a => a.areaId === areaId && stationNamesForLine.has(a.stationId))
     .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
     .forEach((a) => {
       if (stationClaimedBy.has(a.stationId)) needsReassignment.push(a)
       else stationClaimedBy.set(a.stationId, a)
     })
   lineAssignmentsToday
-    .filter((a) => !(a.areaId === areaId && stationNamesForLine.has(a.stationId)))
+    .filter(a => !(a.areaId === areaId && stationNamesForLine.has(a.stationId)))
     .forEach((a) => needsReassignment.push(a))
   needsReassignment.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
 
@@ -642,9 +553,7 @@ export function reconcileLineAssignments(
   // estacion libre en orden -- exactamente lo que la Decision D2 del plan prohibe ("nunca se
   // inventa ni se mueve automaticamente a nadie"). Team Leader solo se llena por una asignacion
   // deliberada (StationAssignDialog, drag&drop, o el drawer de configuracion de ADMINISTRADOR).
-  const freeStations = orderedStations.filter(
-    (s) => !stationClaimedBy.has(s.name) && s.role !== 'Team Leader',
-  )
+  const freeStations = orderedStations.filter(s => !stationClaimedBy.has(s.name) && s.role !== 'Team Leader')
   let cursor = 0
   let fixedCount = 0
   let changed = false
@@ -656,7 +565,7 @@ export function reconcileLineAssignments(
     if (!station) return // no quedan estaciones libres -- se deja tal cual, se reporta como excepcion
     cursor += 1
 
-    const idx = assignments.findIndex((a) => a.id === existing.id)
+    const idx = assignments.findIndex(a => a.id === existing.id)
     assignments[idx] = { ...existing, areaId, stationId: station.name, updatedAt: nowISO() }
     movements.push({
       id: makeId('mov'),
@@ -672,20 +581,13 @@ export function reconcileLineAssignments(
       movedBy: null,
       type: 'MOVE',
     })
-    syncMove({
-      employeeId: existing.employeeId,
-      toAreaId: areaId,
-      toStationId: station.name,
-      shift: existing.shift,
-    })
+    syncMove({ employeeId: existing.employeeId, toAreaId: areaId, toStationId: station.name, shift: existing.shift })
     fixedCount += 1
     changed = true
   })
 
   // Caso B -- gente efectivamente en la linea sin NINGUNA asignacion real hoy (en esta ni otra area).
-  const alreadyAssignedTodayAnywhere = new Set(
-    assignments.filter((a) => a.date === date).map((a) => a.employeeId),
-  )
+  const alreadyAssignedTodayAnywhere = new Set(assignments.filter(a => a.date === date).map(a => a.employeeId))
   let filledCount = 0
 
   snapshotEmployeeIds.forEach((employeeId) => {
@@ -726,14 +628,7 @@ export function reconcileLineAssignments(
     })
     ensureAttendance(employee, date, shift, checkInAt)
     unsuppressBaselinePlacement(employee.id)
-    syncCheckIn({
-      employeeId: employee.id,
-      employeeNumber: employee.employeeNumber,
-      name: employee.name,
-      areaId,
-      stationId: station.name,
-      shift,
-    })
+    syncCheckIn({ employeeId: employee.id, employeeNumber: employee.employeeNumber, name: employee.name, areaId, stationId: station.name, shift })
     filledCount += 1
     changed = true
   })
@@ -758,7 +653,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
 
   const date = todayISO()
   const assignments = readAssignments()
-  const idx = assignments.findIndex((a) => a.employeeId === employeeId && a.date === date)
+  const idx = assignments.findIndex(a => a.employeeId === employeeId && a.date === date)
   if (idx === -1) {
     return { status: 'ERROR', message: 'El empleado no tiene una asignación activa hoy.' }
   }
@@ -767,11 +662,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
 
   const occupancy = getStationOccupancy(toAreaId, toStationId, date, employeeId)
   if (occupancy.isFull) {
-    return {
-      status: 'STATION_FULL',
-      message: `${toStationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`,
-      occupancy,
-    }
+    return { status: 'STATION_FULL', message: `${toStationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`, occupancy }
   }
 
   const movedAt = nowTime()
@@ -793,13 +684,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   })
   writeMovements(movements)
 
-  const updated = {
-    ...current,
-    areaId: toAreaId,
-    stationId: toStationId,
-    shift: shift || current.shift,
-    updatedAt: nowISO(),
-  }
+  const updated = { ...current, areaId: toAreaId, stationId: toStationId, shift: shift || current.shift, updatedAt: nowISO() }
   assignments[idx] = updated
   writeAssignments(assignments)
   unsuppressBaselinePlacement(employeeId)
@@ -828,133 +713,63 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
 export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
   const date = todayISO()
   const assignments = readAssignments()
-  const idxB = assignments.findIndex(
-    (a) => a.date === date && a.areaId === toAreaId && a.stationId === toStationId,
-  )
+  const idxB = assignments.findIndex(a => a.date === date && a.areaId === toAreaId && a.stationId === toStationId)
   if (idxB === -1) return { status: 'ERROR', message: 'La estación ya no está ocupada.' }
   const assignmentB = assignments[idxB]
-  if (assignmentB.employeeId === employeeIdA)
-    return { status: 'ERROR', message: 'Ya está en esa estación.' }
+  if (assignmentB.employeeId === employeeIdA) return { status: 'ERROR', message: 'Ya está en esa estación.' }
 
   const movedAt = nowTime()
   const movements = readMovements()
-  const idxA = assignments.findIndex((a) => a.employeeId === employeeIdA && a.date === date)
+  const idxA = assignments.findIndex(a => a.employeeId === employeeIdA && a.date === date)
 
   if (idxA === -1) {
     const employeeA = getEmployeeById(employeeIdA)
     if (!employeeA) return { status: 'ERROR', message: 'Empleado no encontrado.' }
 
     movements.push({
-      id: makeId('mov'),
-      employeeId: assignmentB.employeeId,
-      employeeNumber: assignmentB.employeeNumber,
-      date,
-      fromAreaId: assignmentB.areaId,
-      fromStationId: assignmentB.stationId,
-      toAreaId: null,
-      toStationId: null,
-      movedAt,
-      shift: assignmentB.shift,
-      movedBy: null,
-      type: 'RELEASE',
+      id: makeId('mov'), employeeId: assignmentB.employeeId, employeeNumber: assignmentB.employeeNumber, date,
+      fromAreaId: assignmentB.areaId, fromStationId: assignmentB.stationId, toAreaId: null, toStationId: null,
+      movedAt, shift: assignmentB.shift, movedBy: null, type: 'RELEASE',
     })
     const bumpedShift = assignmentB.shift
     assignments[idxB] = {
-      ...assignmentB,
-      employeeId: employeeA.id,
-      employeeNumber: employeeA.employeeNumber,
-      checkInAt: movedAt,
-      updatedAt: nowISO(),
+      ...assignmentB, employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, checkInAt: movedAt, updatedAt: nowISO(),
     }
     movements.push({
-      id: makeId('mov'),
-      employeeId: employeeA.id,
-      employeeNumber: employeeA.employeeNumber,
-      date,
-      fromAreaId: null,
-      fromStationId: null,
-      toAreaId,
-      toStationId,
-      movedAt,
-      shift: bumpedShift,
-      movedBy: null,
-      type: 'CHECK_IN',
+      id: makeId('mov'), employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, date,
+      fromAreaId: null, fromStationId: null, toAreaId, toStationId,
+      movedAt, shift: bumpedShift, movedBy: null, type: 'CHECK_IN',
     })
     writeAssignments(assignments)
     writeMovements(movements)
     ensureAttendance(employeeA, date, bumpedShift, movedAt)
     unsuppressBaselinePlacement(employeeA.id)
     syncRelease({ employeeId: assignmentB.employeeId })
-    syncCheckIn({
-      employeeId: employeeA.id,
-      employeeNumber: employeeA.employeeNumber,
-      name: employeeA.name,
-      areaId: toAreaId,
-      stationId: toStationId,
-      shift: bumpedShift,
-    })
+    syncCheckIn({ employeeId: employeeA.id, employeeNumber: employeeA.employeeNumber, name: employeeA.name, areaId: toAreaId, stationId: toStationId, shift: bumpedShift })
     notify()
     return { status: 'OK', bumpedEmployeeId: assignmentB.employeeId }
   }
 
   const assignmentA = assignments[idxA]
   const fromA = { areaId: assignmentA.areaId, stationId: assignmentA.stationId }
-  assignments[idxA] = {
-    ...assignmentA,
-    areaId: assignmentB.areaId,
-    stationId: assignmentB.stationId,
-    updatedAt: nowISO(),
-  }
-  assignments[idxB] = {
-    ...assignmentB,
-    areaId: fromA.areaId,
-    stationId: fromA.stationId,
-    updatedAt: nowISO(),
-  }
+  assignments[idxA] = { ...assignmentA, areaId: assignmentB.areaId, stationId: assignmentB.stationId, updatedAt: nowISO() }
+  assignments[idxB] = { ...assignmentB, areaId: fromA.areaId, stationId: fromA.stationId, updatedAt: nowISO() }
   movements.push({
-    id: makeId('mov'),
-    employeeId: assignmentA.employeeId,
-    employeeNumber: assignmentA.employeeNumber,
-    date,
-    fromAreaId: fromA.areaId,
-    fromStationId: fromA.stationId,
-    toAreaId: assignmentB.areaId,
-    toStationId: assignmentB.stationId,
-    movedAt,
-    shift: assignmentA.shift,
-    movedBy: null,
-    type: 'MOVE',
+    id: makeId('mov'), employeeId: assignmentA.employeeId, employeeNumber: assignmentA.employeeNumber, date,
+    fromAreaId: fromA.areaId, fromStationId: fromA.stationId, toAreaId: assignmentB.areaId, toStationId: assignmentB.stationId,
+    movedAt, shift: assignmentA.shift, movedBy: null, type: 'MOVE',
   })
   movements.push({
-    id: makeId('mov'),
-    employeeId: assignmentB.employeeId,
-    employeeNumber: assignmentB.employeeNumber,
-    date,
-    fromAreaId: assignmentB.areaId,
-    fromStationId: assignmentB.stationId,
-    toAreaId: fromA.areaId,
-    toStationId: fromA.stationId,
-    movedAt,
-    shift: assignmentB.shift,
-    movedBy: null,
-    type: 'MOVE',
+    id: makeId('mov'), employeeId: assignmentB.employeeId, employeeNumber: assignmentB.employeeNumber, date,
+    fromAreaId: assignmentB.areaId, fromStationId: assignmentB.stationId, toAreaId: fromA.areaId, toStationId: fromA.stationId,
+    movedAt, shift: assignmentB.shift, movedBy: null, type: 'MOVE',
   })
   writeAssignments(assignments)
   writeMovements(movements)
   unsuppressBaselinePlacement(assignmentA.employeeId)
   unsuppressBaselinePlacement(assignmentB.employeeId)
-  syncMove({
-    employeeId: assignmentA.employeeId,
-    toAreaId: assignmentB.areaId,
-    toStationId: assignmentB.stationId,
-    shift: assignmentA.shift,
-  })
-  syncMove({
-    employeeId: assignmentB.employeeId,
-    toAreaId: fromA.areaId,
-    toStationId: fromA.stationId,
-    shift: assignmentB.shift,
-  })
+  syncMove({ employeeId: assignmentA.employeeId, toAreaId: assignmentB.areaId, toStationId: assignmentB.stationId, shift: assignmentA.shift })
+  syncMove({ employeeId: assignmentB.employeeId, toAreaId: fromA.areaId, toStationId: fromA.stationId, shift: assignmentB.shift })
   notify()
   return { status: 'OK', swappedEmployeeIds: [assignmentA.employeeId, assignmentB.employeeId] }
 }
@@ -977,7 +792,7 @@ export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
   const date = todayISO()
   const employee = getEmployeeById(employeeId)
   const assignments = readAssignments()
-  const idx = assignments.findIndex((a) => a.employeeId === employeeId && a.date === date)
+  const idx = assignments.findIndex(a => a.employeeId === employeeId && a.date === date)
 
   let fromAreaId = fallbackFromAreaId
   let fromStationId = null
@@ -1075,14 +890,7 @@ export function getPendingMoves() {
  * mismo que moveEmployee (area/estacion destino) para no guardar una
  * solicitud invalida que despues no se pueda aprobar.
  */
-export function requestMove({
-  employeeId,
-  toAreaId,
-  toStationId,
-  shift,
-  requestedByUserId,
-  requestedByName,
-}) {
+export function requestMove({ employeeId, toAreaId, toStationId, shift, requestedByUserId, requestedByName }) {
   if (!toAreaId) return { status: 'ERROR', message: 'Selecciona el área/línea destino.' }
   if (!toStationId) return { status: 'ERROR', message: 'Selecciona el rol/estación destino.' }
 
@@ -1090,7 +898,7 @@ export function requestMove({
   const employee = getEmployeeById(employeeId)
   if (!employee) return { status: 'ERROR', message: 'Empleado no encontrado.' }
 
-  const current = readAssignments().find((a) => a.employeeId === employeeId && a.date === date)
+  const current = readAssignments().find(a => a.employeeId === employeeId && a.date === date)
 
   const pending = readPendingMoves()
   const request = {
@@ -1112,13 +920,7 @@ export function requestMove({
   pending.push(request)
   writePendingMoves(pending)
 
-  syncRequestMove({
-    localRequestId: request.id,
-    employeeId,
-    toAreaId,
-    toStationId,
-    shift: request.shift,
-  })
+  syncRequestMove({ localRequestId: request.id, employeeId, toAreaId, toStationId, shift: request.shift })
   notify()
   return { status: 'PENDING', request }
 }
@@ -1131,16 +933,11 @@ export function requestMove({
  */
 export function approveMove(pendingMoveId, approvedByUserId) {
   const pending = readPendingMoves()
-  const idx = pending.findIndex((p) => p.id === pendingMoveId)
+  const idx = pending.findIndex(p => p.id === pendingMoveId)
   if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
 
   const request = pending[idx]
-  const result = moveEmployee({
-    employeeId: request.employeeId,
-    toAreaId: request.toAreaId,
-    toStationId: request.toStationId,
-    shift: request.shift,
-  })
+  const result = moveEmployee({ employeeId: request.employeeId, toAreaId: request.toAreaId, toStationId: request.toStationId, shift: request.shift })
   if (result.status !== 'OK') return result
 
   pending.splice(idx, 1)
@@ -1154,7 +951,7 @@ export function approveMove(pendingMoveId, approvedByUserId) {
 /** Rechaza la solicitud sin mover a nadie — se retira de la cola. */
 export function rejectMove(pendingMoveId, rejectedByUserId, reason) {
   const pending = readPendingMoves()
-  const idx = pending.findIndex((p) => p.id === pendingMoveId)
+  const idx = pending.findIndex(p => p.id === pendingMoveId)
   if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
 
   pending.splice(idx, 1)

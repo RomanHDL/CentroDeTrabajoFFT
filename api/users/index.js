@@ -23,9 +23,7 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
       return res.status(400).json({ error: 'Rol invalido' })
     }
     if (password.length < 8) {
-      return res
-        .status(400)
-        .json({ error: 'La contraseña temporal debe tener al menos 8 caracteres' })
+      return res.status(400).json({ error: 'La contraseña temporal debe tener al menos 8 caracteres' })
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
@@ -45,9 +43,7 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
       return res.status(201).json({ user: publicUser(user) })
     } catch (e) {
       if (e.code === 'P2002') {
-        return res
-          .status(409)
-          .json({ error: `Ya existe un usuario con ese ${e.meta?.target?.[0] ?? 'valor unico'}` })
+        return res.status(409).json({ error: `Ya existe un usuario con ese ${e.meta?.target?.[0] ?? 'valor unico'}` })
       }
       throw e
     }

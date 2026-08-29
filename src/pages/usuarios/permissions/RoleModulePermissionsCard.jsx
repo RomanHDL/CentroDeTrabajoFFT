@@ -47,20 +47,14 @@ export default function RoleModulePermissionsCard() {
         apiRequest('/api/modules'),
         apiRequest('/api/role-permissions'),
       ])
-      const protectedModules = modulesData.modules.filter(
-        (m) => m.permissionProtected && !m.systemReserved,
-      )
+      const protectedModules = modulesData.modules.filter((m) => m.permissionProtected && !m.systemReserved)
       setModules(protectedModules)
 
       const map = {}
-      ROLES.forEach((role) => {
-        map[role] = {}
-      })
+      ROLES.forEach((role) => { map[role] = {} })
       Object.entries(permsData.rolePermissions || {}).forEach(([role, keys]) => {
         if (!map[role]) map[role] = {}
-        keys.forEach((key) => {
-          map[role][key] = true
-        })
+        keys.forEach((key) => { map[role][key] = true })
       })
       setPermissions(map)
     } catch (err) {
@@ -70,9 +64,7 @@ export default function RoleModulePermissionsCard() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   async function toggle(role, moduleKey, checked) {
     const savingId = `${role}:${moduleKey}`
@@ -80,10 +72,7 @@ export default function RoleModulePermissionsCard() {
     setPermissions((prev) => ({ ...prev, [role]: { ...prev[role], [moduleKey]: checked } }))
     setSavingKey(savingId)
     try {
-      const data = await apiRequest(`/api/role-permissions/${role}`, {
-        method: 'PATCH',
-        body: { moduleKey, allowed: checked },
-      })
+      const data = await apiRequest(`/api/role-permissions/${role}`, { method: 'PATCH', body: { moduleKey, allowed: checked } })
       setPermissions((prev) => ({ ...prev, [role]: data.modules }))
       showToast('Permiso actualizado', 'success')
     } catch (err) {
@@ -97,9 +86,7 @@ export default function RoleModulePermissionsCard() {
   async function openUsersDialog(module) {
     setUsersDialog({ module, users: [], loading: true })
     try {
-      const data = await apiRequest(
-        `/api/permissions/modules/${encodeURIComponent(module.key)}/users`,
-      )
+      const data = await apiRequest(`/api/permissions/modules/${encodeURIComponent(module.key)}/users`)
       setUsersDialog({ module, users: data.users, loading: false })
     } catch (err) {
       setUsersDialog({ module, users: [], loading: false, error: err.message })
@@ -107,30 +94,18 @@ export default function RoleModulePermissionsCard() {
   }
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-        <CircularProgress size={24} />
-      </Box>
-    )
+    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress size={24} /></Box>
   }
 
   return (
     <Box>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Box sx={{ overflowX: 'auto' }}>
         <Table size="small" sx={{ minWidth: 640 }}>
           <TableHead>
             <TableRow>
               <TableCell>Módulos del sistema</TableCell>
-              {ROLES.map((role) => (
-                <TableCell key={role} align="center">
-                  {ROLE_LABELS[role]}
-                </TableCell>
-              ))}
+              {ROLES.map((role) => <TableCell key={role} align="center">{ROLE_LABELS[role]}</TableCell>)}
               <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
@@ -144,9 +119,7 @@ export default function RoleModulePermissionsCard() {
                       <Icon fontSize="small" sx={{ color: 'text.secondary' }} />
                       <Box>
                         <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{m.name}</Typography>
-                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                          {m.description}
-                        </Typography>
+                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>{m.description}</Typography>
                       </Box>
                     </Box>
                   </TableCell>
@@ -170,18 +143,12 @@ export default function RoleModulePermissionsCard() {
                           <Tooltip title="El rol Administrador tiene acceso completo.">
                             <span>{checkbox}</span>
                           </Tooltip>
-                        ) : (
-                          checkbox
-                        )}
+                        ) : checkbox}
                       </TableCell>
                     )
                   })}
                   <TableCell align="right">
-                    <Button
-                      size="small"
-                      onClick={() => openUsersDialog(m)}
-                      sx={{ textTransform: 'none', fontWeight: 700 }}
-                    >
+                    <Button size="small" onClick={() => openUsersDialog(m)} sx={{ textTransform: 'none', fontWeight: 700 }}>
                       Usuarios con acceso
                     </Button>
                   </TableCell>
@@ -198,15 +165,11 @@ export default function RoleModulePermissionsCard() {
         </DialogTitle>
         <DialogContent>
           {usersDialog?.loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={20} />
-            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}><CircularProgress size={20} /></Box>
           ) : usersDialog?.error ? (
             <Alert severity="error">{usersDialog.error}</Alert>
           ) : usersDialog?.users.length === 0 ? (
-            <Typography sx={{ color: 'text.secondary', fontSize: 13.5 }}>
-              Nadie tiene acceso a este módulo actualmente.
-            </Typography>
+            <Typography sx={{ color: 'text.secondary', fontSize: 13.5 }}>Nadie tiene acceso a este módulo actualmente.</Typography>
           ) : (
             <List dense>
               {usersDialog?.users.map((u) => (

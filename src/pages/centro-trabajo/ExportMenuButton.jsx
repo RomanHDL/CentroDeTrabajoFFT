@@ -10,10 +10,7 @@ import DateRangeIcon from '@mui/icons-material/DateRange'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import AllInboxIcon from '@mui/icons-material/AllInbox'
 import {
-  exportDailyExcel,
-  exportWeeklyExcel,
-  exportLineComparisonExcel,
-  exportCompleteExcel,
+  exportDailyExcel, exportWeeklyExcel, exportLineComparisonExcel, exportCompleteExcel,
 } from '../../data/production/excelExport'
 
 export default function ExportMenuButton({ dateISO }) {
@@ -35,34 +32,21 @@ export default function ExportMenuButton({ dateISO }) {
       >
         Descargar Excel
       </Button>
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => setAnchorEl(null)}
-        PaperProps={{ sx: { minWidth: 240, borderRadius: 2 } }}
-      >
+      <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { minWidth: 240, borderRadius: 2 } }}>
         <MenuItem onClick={() => handle(exportDailyExcel)}>
-          <ListItemIcon>
-            <TodayIcon fontSize="small" />
-          </ListItemIcon>
+          <ListItemIcon><TodayIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="Producción del día" />
         </MenuItem>
         <MenuItem onClick={() => handle(exportWeeklyExcel)}>
-          <ListItemIcon>
-            <DateRangeIcon fontSize="small" />
-          </ListItemIcon>
+          <ListItemIcon><DateRangeIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="Producción semanal" />
         </MenuItem>
         <MenuItem onClick={() => handle(exportLineComparisonExcel)}>
-          <ListItemIcon>
-            <BarChartIcon fontSize="small" />
-          </ListItemIcon>
+          <ListItemIcon><BarChartIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="Producción por línea" />
         </MenuItem>
         <MenuItem onClick={() => handle(exportCompleteExcel)}>
-          <ListItemIcon>
-            <AllInboxIcon fontSize="small" />
-          </ListItemIcon>
+          <ListItemIcon><AllInboxIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="Producción completa" />
         </MenuItem>
       </Menu>

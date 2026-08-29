@@ -93,28 +93,15 @@ export default function LineasTab({ onOpenLine }) {
 
   const lineas = useMemo(() => WORK_CENTERS.filter((w) => hasLineStations(w.id)), [])
 
-  const rows = useMemo(
-    () =>
-      lineas.map((linea) => {
-        const staffing = getAreaStaffing(linea.id)
-        const ideal = staffing.ideal || 0
-        const real = staffing.real || 0
-        const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
-        const missing = Math.max(ideal - real, 0)
-        const stationsCount = getWorkstationsForLine(linea.id).length
-        return {
-          linea,
-          staffing,
-          real,
-          ideal,
-          pct,
-          missing,
-          complete: real >= ideal && ideal > 0,
-          stationsCount,
-        }
-      }),
-    [lineas],
-  )
+  const rows = useMemo(() => lineas.map((linea) => {
+    const staffing = getAreaStaffing(linea.id)
+    const ideal = staffing.ideal || 0
+    const real = staffing.real || 0
+    const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
+    const missing = Math.max(ideal - real, 0)
+    const stationsCount = getWorkstationsForLine(linea.id).length
+    return { linea, staffing, real, ideal, pct, missing, complete: real >= ideal && ideal > 0, stationsCount }
+  }), [lineas])
 
   const filteredRows = useMemo(
     () => rows.filter((r) => matchesQuery(r.linea, query)),
@@ -132,11 +119,7 @@ export default function LineasTab({ onOpenLine }) {
   return (
     <Box>
       <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        flexWrap="wrap"
-        spacing={1.5}
+        direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={1.5}
         sx={{ mb: 2 }}
       >
         <Stack direction="row" alignItems="center" spacing={0.75}>
@@ -164,17 +147,11 @@ export default function LineasTab({ onOpenLine }) {
             }}
           />
           <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={view}
+            size="small" exclusive value={view}
             onChange={(_, v) => v && setView(v)}
           >
-            <ToggleButton value="grid" aria-label="Vista de cuadrícula">
-              <GridViewIcon sx={{ fontSize: 18 }} />
-            </ToggleButton>
-            <ToggleButton value="lista" aria-label="Vista de lista">
-              <ViewListIcon sx={{ fontSize: 18 }} />
-            </ToggleButton>
+            <ToggleButton value="grid" aria-label="Vista de cuadrícula"><GridViewIcon sx={{ fontSize: 18 }} /></ToggleButton>
+            <ToggleButton value="lista" aria-label="Vista de lista"><ViewListIcon sx={{ fontSize: 18 }} /></ToggleButton>
           </ToggleButtonGroup>
         </Stack>
       </Stack>
@@ -182,15 +159,8 @@ export default function LineasTab({ onOpenLine }) {
       {view === 'grid' ? (
         <Box
           sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-              xl: 'repeat(5, 1fr)',
-            },
+            display: 'grid', gap: 2,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(5, 1fr)' },
           }}
         >
           {filteredRows.map((row) => (
@@ -210,9 +180,8 @@ export default function LineasTab({ onOpenLine }) {
       <SummaryPanel totals={totals} />
 
       <Typography sx={{ fontSize: 11, color: 'text.disabled', textAlign: 'center', mt: 1.5 }}>
-        Los datos se actualizan según las asignaciones del día actual (snapshot histórico mientras
-        nadie registre a alguien hoy; en cuanto se registra o mueve, esa asignación real siempre
-        gana).
+        Los datos se actualizan según las asignaciones del día actual (snapshot histórico mientras nadie
+        registre a alguien hoy; en cuanto se registra o mueve, esa asignación real siempre gana).
       </Typography>
     </Box>
   )
@@ -230,31 +199,18 @@ function LineaCard({ row, onOpenLine }) {
       elevation={0}
       onClick={() => onOpenLine?.(linea.id)}
       sx={{
-        p: 1.75,
-        borderRadius: '16px',
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : 'divider',
+        p: 1.75, borderRadius: '16px', cursor: 'pointer', userSelect: 'none',
+        border: '1px solid', borderColor: isOver ? '#3B82F6' : 'divider',
         boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
-        bgcolor: (t) =>
-          isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.06) : 'background.paper',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
+        bgcolor: (t) => (isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.06) : 'background.paper'),
+        display: 'flex', flexDirection: 'column', gap: 1,
         transition: 'transform .18s ease, box-shadow .18s ease, border-color .18s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 16px rgba(16,24,40,0.08)',
-          borderColor: alpha('#3B82F6', 0.4),
-        },
+        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(16,24,40,0.08)', borderColor: alpha('#3B82F6', 0.4) },
       }}
     >
       <Stack direction="row" alignItems="center" spacing={0.75}>
         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
-        <Typography sx={{ fontWeight: 800, fontSize: 14.5, flex: 1 }} noWrap>
-          {linea.name}
-        </Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 14.5, flex: 1 }} noWrap>{linea.name}</Typography>
       </Stack>
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
@@ -265,9 +221,7 @@ function LineaCard({ row, onOpenLine }) {
           size="small"
           label={complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
           sx={{
-            height: 20,
-            fontSize: 10.5,
-            fontWeight: 700,
+            height: 20, fontSize: 10.5, fontWeight: 700,
             bgcolor: complete ? alpha('#10B981', 0.14) : alpha('#EF4444', 0.12),
             color: complete ? '#10B981' : '#EF4444',
           }}
@@ -275,30 +229,15 @@ function LineaCard({ row, onOpenLine }) {
       </Stack>
 
       <Stack direction="row" alignItems="center" spacing={1}>
-        <Box
-          sx={{
-            flex: 1,
-            height: 6,
-            borderRadius: 999,
-            bgcolor: 'action.hover',
-            overflow: 'hidden',
-          }}
-        >
+        <Box sx={{ flex: 1, height: 6, borderRadius: 999, bgcolor: 'action.hover', overflow: 'hidden' }}>
           <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
         </Box>
-        <Typography
-          sx={{ fontSize: 11.5, fontWeight: 700, color, minWidth: 34, textAlign: 'right' }}
-        >
+        <Typography sx={{ fontSize: 11.5, fontWeight: 700, color, minWidth: 34, textAlign: 'right' }}>
           {Math.round(pct)}%
         </Typography>
       </Stack>
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ pt: 0.5, mt: 'auto', borderTop: '1px dashed', borderColor: 'divider' }}
-      >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 0.5, mt: 'auto', borderTop: '1px dashed', borderColor: 'divider' }}>
         <Stack direction="row" alignItems="center" spacing={0.6}>
           <PrecisionManufacturingIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
           <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600 }}>
@@ -309,9 +248,7 @@ function LineaCard({ row, onOpenLine }) {
       </Stack>
 
       {isOver && (
-        <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#3B82F6' }}>
-          Soltar para elegir estación
-        </Typography>
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#3B82F6' }}>Soltar para elegir estación</Typography>
       )}
     </Paper>
   )
@@ -319,63 +256,15 @@ function LineaCard({ row, onOpenLine }) {
 
 function LineasListView({ rows, onOpenLine }) {
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'auto' }}
-    >
+    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'auto' }}>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Línea
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Personal
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Estado
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Cobertura
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Estaciones
-            </TableCell>
+            <TableCell sx={{ fontWeight: 800, fontSize: 11.5, textTransform: 'uppercase', color: 'text.secondary' }}>Línea</TableCell>
+            <TableCell sx={{ fontWeight: 800, fontSize: 11.5, textTransform: 'uppercase', color: 'text.secondary' }}>Personal</TableCell>
+            <TableCell sx={{ fontWeight: 800, fontSize: 11.5, textTransform: 'uppercase', color: 'text.secondary' }}>Estado</TableCell>
+            <TableCell sx={{ fontWeight: 800, fontSize: 11.5, textTransform: 'uppercase', color: 'text.secondary' }}>Cobertura</TableCell>
+            <TableCell sx={{ fontWeight: 800, fontSize: 11.5, textTransform: 'uppercase', color: 'text.secondary' }}>Estaciones</TableCell>
             <TableCell />
           </TableRow>
         </TableHead>
@@ -392,41 +281,25 @@ function LineasListView({ rows, onOpenLine }) {
               >
                 <TableCell>
                   <Stack direction="row" alignItems="center" spacing={0.75}>
-                    <Box
-                      sx={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: '50%',
-                        bgcolor: color,
-                        flexShrink: 0,
-                      }}
-                    />
+                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
                     <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{linea.name}</Typography>
                   </Stack>
                 </TableCell>
-                <TableCell sx={{ fontSize: 13, fontWeight: 600 }}>
-                  {real} / {ideal}
-                </TableCell>
+                <TableCell sx={{ fontSize: 13, fontWeight: 600 }}>{real} / {ideal}</TableCell>
                 <TableCell>
                   <Chip
                     size="small"
                     label={complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
                     sx={{
-                      height: 20,
-                      fontSize: 10.5,
-                      fontWeight: 700,
+                      height: 20, fontSize: 10.5, fontWeight: 700,
                       bgcolor: complete ? alpha('#10B981', 0.14) : alpha('#EF4444', 0.12),
                       color: complete ? '#10B981' : '#EF4444',
                     }}
                   />
                 </TableCell>
-                <TableCell sx={{ fontSize: 13, fontWeight: 700, color }}>
-                  {Math.round(pct)}%
-                </TableCell>
+                <TableCell sx={{ fontSize: 13, fontWeight: 700, color }}>{Math.round(pct)}%</TableCell>
                 <TableCell sx={{ fontSize: 13 }}>{stationsCount}</TableCell>
-                <TableCell align="right">
-                  <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                </TableCell>
+                <TableCell align="right"><ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} /></TableCell>
               </TableRow>
             )
           })}
@@ -439,56 +312,22 @@ function LineasListView({ rows, onOpenLine }) {
 function SummaryPanel({ totals }) {
   const items = [
     { label: 'Líneas totales', value: totals.count, icon: <PeopleAltIcon />, color: '#3B82F6' },
-    {
-      label: 'Personal asignado',
-      value: `${totals.totalReal} / ${totals.totalIdeal}`,
-      icon: <GroupsIcon />,
-      color: '#10B981',
-    },
-    {
-      label: 'Personal faltante',
-      value: totals.faltante,
-      icon: <PersonOffIcon />,
-      color: '#EF4444',
-    },
-    {
-      label: 'Cobertura general',
-      value: `${totals.coverage.toFixed(1)}%`,
-      icon: <DonutLargeIcon />,
-      color: '#A855F7',
-    },
+    { label: 'Personal asignado', value: `${totals.totalReal} / ${totals.totalIdeal}`, icon: <GroupsIcon />, color: '#10B981' },
+    { label: 'Personal faltante', value: totals.faltante, icon: <PersonOffIcon />, color: '#EF4444' },
+    { label: 'Cobertura general', value: `${totals.coverage.toFixed(1)}%`, icon: <DonutLargeIcon />, color: '#A855F7' },
   ]
   return (
-    <Paper
-      elevation={0}
-      sx={{ mt: 2.5, p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        justifyContent="space-between"
-      >
+    <Paper elevation={0} sx={{ mt: 2.5, p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
         <Box>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              letterSpacing: 0.4,
-              mb: 0.75,
-            }}
-          >
+          <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4, mb: 0.75 }}>
             Leyenda de estado
           </Typography>
           <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
             {Object.values(VISUAL_STATUS).map((meta) => (
               <Stack key={meta.label} direction="row" spacing={0.6} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: meta.color }} />
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600 }}>
-                  {meta.label}
-                </Typography>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600 }}>{meta.label}</Typography>
               </Stack>
             ))}
           </Stack>
@@ -498,41 +337,23 @@ function SummaryPanel({ totals }) {
           {items.map((item) => (
             <Stack
               key={item.label}
-              direction="row"
-              alignItems="center"
-              spacing={1}
+              direction="row" alignItems="center" spacing={1}
               sx={{
-                px: 1.5,
-                py: 1,
-                borderRadius: 2,
-                minWidth: 150,
-                border: '1px solid',
-                borderColor: alpha(item.color, 0.2),
+                px: 1.5, py: 1, borderRadius: 2, minWidth: 150,
+                border: '1px solid', borderColor: alpha(item.color, 0.2),
                 bgcolor: (t) => alpha(item.color, t.palette.mode === 'dark' ? 0.08 : 0.05),
               }}
             >
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  bgcolor: alpha(item.color, 0.14),
-                  color: item.color,
-                  display: 'grid',
-                  placeItems: 'center',
-                  '& .MuiSvgIcon-root': { fontSize: 17 },
-                }}
-              >
+              <Box sx={{
+                width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                bgcolor: alpha(item.color, 0.14), color: item.color,
+                display: 'grid', placeItems: 'center', '& .MuiSvgIcon-root': { fontSize: 17 },
+              }}>
                 {item.icon}
               </Box>
               <Box>
-                <Typography sx={{ fontSize: 16, fontWeight: 800, lineHeight: 1.15 }}>
-                  {item.value}
-                </Typography>
-                <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 600 }}>
-                  {item.label}
-                </Typography>
+                <Typography sx={{ fontSize: 16, fontWeight: 800, lineHeight: 1.15 }}>{item.value}</Typography>
+                <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 600 }}>{item.label}</Typography>
               </Box>
             </Stack>
           ))}

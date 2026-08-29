@@ -3,7 +3,7 @@
 // una nueva, nunca sobreescribe/borra la anterior.
 import { prisma } from '../../server-lib/prisma.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
+import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -20,25 +20,17 @@ export default requireAuth(async (req, res) => {
   if (!workstation) return res.status(400).json({ error: 'Área/estación inválida.' })
 
   const result = await placeEmployee({
-    employeeId,
-    workstationId: workstation.id,
-    shift,
-    actingUserId: req.user.id,
-    mode: 'MOVE',
+    employeeId, workstationId: workstation.id, shift, actingUserId: req.user.id, mode: 'MOVE',
   })
 
   if (result.status === 'INACTIVE_EMPLOYEE') {
-    return res
-      .status(400)
-      .json({ error: 'Este empleado está marcado como baja y no puede moverse.' })
+    return res.status(400).json({ error: 'Este empleado está marcado como baja y no puede moverse.' })
   }
   if (result.status === 'NO_CURRENT_ASSIGNMENT') {
     return res.status(400).json({ error: 'El empleado no tiene una asignación activa hoy.' })
   }
   if (result.status === 'STATION_FULL') {
-    return res.status(409).json({
-      error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).`,
-    })
+    return res.status(409).json({ error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).` })
   }
   return res.status(200).json({ assignment: result.assignment })
 })

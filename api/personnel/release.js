@@ -18,17 +18,11 @@ export default requireAuth(async (req, res) => {
   const current = await prisma.dailyAssignment.findFirst({
     where: { employeeId, status: 'ACTIVE' },
   })
-  if (!current)
-    return res.status(400).json({ error: 'El empleado no tiene una ubicación asignada hoy.' })
+  if (!current) return res.status(400).json({ error: 'El empleado no tiene una ubicación asignada hoy.' })
 
   const updated = await prisma.dailyAssignment.update({
     where: { id: current.id },
-    data: {
-      status: 'ENDED',
-      endedAt: new Date(),
-      endedByUserId: req.user.id,
-      endReason: 'RELEASED',
-    },
+    data: { status: 'ENDED', endedAt: new Date(), endedByUserId: req.user.id, endReason: 'RELEASED' },
   })
   return res.status(200).json({ assignment: updated })
 })
