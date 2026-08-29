@@ -101,8 +101,14 @@ export const LINE_BASE_ROLES = ['Montaje', 'Prueba eléctrica', 'Limpieza de TV'
    personas por linea) -- POR DEFECTO para cualquier linea sin
    configuracion propia. Con el maximo real (10, extra=5) cada rol se
    repite exactamente una vez -- nunca hace falta una 3a vez del mismo
-   rol, asi que nunca hay que desambiguar mas alla de "Rol"/"Rol 2". */
-export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza de TV']
+   rol, asi que nunca hay que desambiguar mas alla de "Rol"/"Rol 2".
+
+   2026-08-28 (tercera ronda, a peticion explicita del usuario -- "no son
+   tecnicos especializados... solo debe ver 1 [Prueba eléctrica] en las 11
+   lineas"): "Prueba eléctrica" se quita del pool de repeticion en TODAS
+   las lineas (antes solo se excluia en LINEA1) -- nunca debe existir
+   "Prueba eléctrica 2" en ninguna WC LINEA. */
+export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV']
 
 /* Configuracion explicita por linea (Parte "CONFIGURACION DE PUESTOS
    REPETIDOS" del pedido original: "Si existe una configuracion guardada
@@ -114,25 +120,44 @@ export const DEFAULT_REPEAT_ORDER = ['Montaje', 'Etiquetado', 'Prueba eléctrica
    instruccion explicita) ya no deben repetir "Montaje" ni "Suministro de
    Accesorios" -- si el idealHeadcount de la linea necesita mas posiciones
    de las que dan los 5 roles base, se completan repitiendo unicamente
-   Etiquetado/Prueba eléctrica/Limpieza. Si alguna de estas 9 lineas ya
-   tenia una segunda posicion real ocupada de Montaje, esa persona no se
-   pierde: al dejar de existir esa estacion en el plan, aparece sola en
-   "Personal sin estación" (getPeopleWithoutStation, personnelByArea.js). */
+   Etiquetado/Limpieza. Si alguna de estas 9 lineas ya tenia una segunda
+   posicion real ocupada de Montaje, esa persona no se pierde: al dejar de
+   existir esa estacion en el plan, aparece sola en "Personal sin estación"
+   (getPeopleWithoutStation, personnelByArea.js).
+
+   2026-08-28 (tercera ronda): "Prueba eléctrica" tambien se quita de este
+   pool (antes: ['Etiquetado', 'Prueba eléctrica', 'Limpieza de TV']) --
+   mismo motivo de arriba, aplicado aqui tambien. LINEA6-10 (extra=2) ya
+   repetian Etiquetado Y Prueba eléctrica; ahora ese 2o hueco cae en
+   "Limpieza de TV 2" en su lugar (nunca se pierde una posicion real, solo
+   cambia CUAL rol la ocupa) -- si alguien real seguia en "Prueba eléctrica
+   2", aparece en "Personal sin estación" (o se reconcilia solo a la
+   estacion libre nueva, mismo mecanismo ya probado). LINEA2-5 (extra=1) no
+   cambian su resultado (ya repetian solo Etiquetado). */
 const LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO = ['LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
-const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Prueba eléctrica', 'Limpieza de TV']
+const REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO = ['Etiquetado', 'Limpieza de TV']
 
 export const LINE_STATION_OVERRIDES = {
   ...Object.fromEntries(
     LINEAS_SIN_REPETIR_MONTAJE_SUMINISTRO.map((lineId) => [lineId, { repeatOrder: REPEAT_ORDER_SIN_MONTAJE_SUMINISTRO }])
   ),
-  // LINEA1 (2026-08-28, "ajustes controlados", a peticion explicita del
-  // usuario -- "debe existir solamente 1 Montaje" / "1 Etiquetado"): a
-  // diferencia de LINEA2-10 (excluyen Montaje/Suministro pero SI dejan
-  // repetir Etiquetado), aqui se excluyen Montaje Y Etiquetado -- el plan
-  // base nunca baja de 6 posiciones (piso ya existente), asi que sigue
-  // quedando 1 posicion repetida, pero cae en "Prueba eléctrica 2", nunca
-  // en Montaje/Etiquetado.
-  LINEA1: { repeatOrder: ['Prueba eléctrica', 'Suministro de Accesorios', 'Limpieza de TV'] },
+  // LINEA1 (2026-08-28, a peticion explicita del usuario -- "debe existir
+  // solamente 1 Montaje" / "1 Etiquetado"): excluye Montaje Y Etiquetado.
+  // Tercera ronda: tambien excluye Prueba eléctrica (regla global de
+  // arriba) -- el plan base nunca baja de 6 posiciones (piso ya
+  // existente), asi que sigue quedando 1 posicion repetida, pero ahora cae
+  // en "Suministro de Accesorios 2", nunca en Montaje/Etiquetado/Prueba
+  // eléctrica.
+  LINEA1: { repeatOrder: ['Suministro de Accesorios', 'Limpieza de TV'] },
+  // PROYECTO/WC LINEA 0 (2026-08-28, tercera ronda): antes usaba
+  // DEFAULT_REPEAT_ORDER (unica linea que todavia lo consumia) -- ahora
+  // necesita su PROPIO override explicito porque, sin Prueba eléctrica,
+  // solo quedan 4 roles repetibles para 5 posiciones extra (idealHeadcount
+  // 13 = 1 Calidad + 10 plan base + 2 Empaque, target=10, extra=5) -- el
+  // ciclo round-robin (buildLineRolePlan) inevitablemente le da una 3a
+  // posicion a "Montaje" (el 1o de esta lista) para completar las 10. Es
+  // la unica linea con 3 Montajes -- reportado explicitamente, no se oculta.
+  PROYECTO: { repeatOrder: ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV'] },
 }
 
 /* Empaque en WC LINEA 0-10 (2026-08-28, "ajustes controlados", a peticion

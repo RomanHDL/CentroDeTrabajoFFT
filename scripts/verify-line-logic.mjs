@@ -18,6 +18,7 @@ import {
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 import { ROLE_TO_CATEGORY_KEY, LINE_VISUAL_TYPES } from '../src/data/personnel/lineVisualType.js'
 import { SUPPORT_CARD_AREA_IDS } from '../src/data/production/floorPlanZones.js'
+import { getPersonnelRank, PERSONNEL_RANKS } from '../src/data/personnel/rankSystem.js'
 
 let passed = 0
 function check(name, fn) {
@@ -36,10 +37,13 @@ check('plan de 7 posiciones = 5 roles base + 2 repetidos', () => {
   const plan = buildLineRolePlan('X', 7)
   assert.equal(plan.length, 7)
 })
-check('plan de 10 posiciones = cada rol base exactamente 2 veces (maximo real)', () => {
+check('plan de 10 posiciones (DEFAULT_REPEAT_ORDER, 2026-08-28 tercera ronda: "Prueba eléctrica" ya no repite en ninguna linea) -- Prueba eléctrica se queda en 1, los 4 roles repetibles absorben los 5 extra (uno de ellos llega a 3)', () => {
   const plan = buildLineRolePlan('X', 10)
   assert.equal(plan.length, 10)
-  LINE_BASE_ROLES.forEach((r) => assert.equal(plan.filter((p) => p.role === r).length, 2))
+  assert.equal(plan.filter((p) => p.role === 'Prueba eléctrica').length, 1, 'Prueba eléctrica nunca debe repetirse')
+  const counts = LINE_BASE_ROLES.filter((r) => r !== 'Prueba eléctrica').map((r) => plan.filter((p) => p.role === r).length)
+  assert.equal(counts.reduce((a, b) => a + b, 0), 9, '4 roles repetibles deben sumar 9 (10 total - 1 de Prueba eléctrica)')
+  assert.ok(counts.includes(3), 'con solo 4 roles repetibles para 5 extra, uno de ellos llega a 3 ocurrencias (round-robin)')
 })
 check('nunca genera un rol fuera de los 5 base', () => {
   const plan = buildLineRolePlan('X', 10)
@@ -83,13 +87,34 @@ check('WC LINEA 1: exactamente 1 Montaje y 1 Etiquetado (Montaje 2/Etiquetado 2 
   assert.ok(!stations.some((s) => s.name === 'Montaje 2'))
   assert.ok(!stations.some((s) => s.name === 'Etiquetado 2'))
 })
-check('"Limpieza" en WC LINEA 0-10 ahora es "Limpieza de TV" (rol/nombre), nunca convertido a Ayudante General', () => {
+check('"Prueba eléctrica" exactamente 1 vez en las 11 WC LINEA (2026-08-28, tercera ronda, a peticion explicita del usuario)', () => {
+  ;['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10'].forEach((id) => {
+    const stations = getWorkstationsForLine(id)
+    assert.equal(stations.filter((s) => s.role === 'Prueba eléctrica').length, 1, id)
+    assert.ok(!stations.some((s) => s.name === 'Prueba eléctrica 2'), id)
+  })
+})
+check('todos los roles operativos de WC LINEA (Montaje/Etiquetado/Limpieza de TV/Suministro/Prueba eléctrica/Empaque) son "Ayudante General" -- solo Calidad queda distinto', () => {
+  ;['Montaje', 'Etiquetado', 'Limpieza de TV', 'Suministro de Accesorios', 'Prueba eléctrica', 'Empaque'].forEach((role) => {
+    assert.equal(ROLE_TO_CATEGORY_KEY[role], 'APOYO', role)
+  })
+  assert.equal(ROLE_TO_CATEGORY_KEY['Calidad'], 'CALIDAD')
+})
+check('WC LINEA 0 (PROYECTO): con Prueba eléctrica fijo en 1 y solo 4 roles repetibles, "Montaje" llega a 3 (reportado explicitamente, no oculto)', () => {
+  const stations = getWorkstationsForLine('PROYECTO')
+  assert.equal(stations.filter((s) => s.role === 'Montaje').length, 3)
+  assert.deepEqual(stations.filter((s) => s.role === 'Montaje').map((s) => s.name), ['Montaje', 'Montaje 2', 'Montaje 3'])
+})
+check('"Operador de Compatibilidad" (2026-08-28, tercera ronda) ya NO es excepcion -- cae en el fallback AYUDANTE_GENERAL, igual que cualquier otro puesto especifico de Grupo C', () => {
+  assert.equal(getPersonnelRank('Operador de Compatibilidad'), PERSONNEL_RANKS.AYUDANTE_GENERAL)
+})
+check('"Limpieza" en WC LINEA 0-10 ahora es "Limpieza de TV" (rol/nombre) -- nombre nunca revierte a "Limpieza"; rango es Ayudante General (2026-08-28, tercera ronda: "en las lineas solo hay puros ayudantes y una persona de calidad")', () => {
   ;['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA10'].forEach((id) => {
     const stations = getWorkstationsForLine(id)
     assert.ok(stations.some((s) => s.role === 'Limpieza de TV'), id)
     assert.ok(!stations.some((s) => s.role === 'Limpieza'), id)
-    stations.filter((s) => s.role === 'Limpieza de TV').forEach((s) => assert.equal(ROLE_TO_CATEGORY_KEY['Limpieza de TV'], 'PRODUCCION'))
   })
+  assert.equal(ROLE_TO_CATEGORY_KEY['Limpieza de TV'], 'APOYO')
 })
 
 // I/J/K -- los 3 turnos oficiales.

@@ -37,9 +37,16 @@ export const PERSONNEL_RANKS = {
   GERENTE_FFT: { key: 'GERENTE_FFT', order: 2, label: 'Gerente FFT', color: '#1E3A8A', iconKey: 'gerente', description: 'Nivel ejecutivo' },
   SUPERVISOR: { key: 'SUPERVISOR', order: 3, label: 'Supervisor', color: '#2563EB', iconKey: 'supervisor', description: 'Supervisión operativa' },
   TEAM_LEADER: { key: 'TEAM_LEADER', order: 4, label: 'Team Leader', color: '#0D9488', iconKey: 'teamLeader', description: 'Liderazgo de equipo' },
-  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
-  // usuario): rango propio SOLO para este puesto exacto -- unica excepcion (junto con Team
-  // Leader) al fallback nuevo de abajo (AYUDANTE_GENERAL). Nunca se le asigna a nadie mas.
+  // 2026-08-28 (tercera ronda, a peticion explicita del usuario -- "operador de
+  // compatibilidad es ayudante general operador de compatibilidad"): YA NO es
+  // excepcion -- REEMPLAZA la decision de una ronda anterior de esta misma
+  // tarea, que lo dejaba con rango propio. Se deja el rango DEFINIDO por
+  // completitud de leyenda/compatibilidad hacia atras (mismo criterio que
+  // OPERADOR_ESPECIALIZADO abajo), pero ya no hay ninguna entrada en
+  // EXACT_ROLE_TO_RANK que lo dispare -- "Operador de Compatibilidad" cae en
+  // el fallback AYUDANTE_GENERAL como cualquier otro puesto especifico: el
+  // NOMBRE del puesto (función) sigue siendo "Operador de Compatibilidad",
+  // solo cambia el rango mostrado.
   OPERADOR_DE_COMPATIBILIDAD: { key: 'OPERADOR_DE_COMPATIBILIDAD', order: 5, label: 'Operador de Compatibilidad', color: '#D97706', iconKey: 'compatibilidad', description: 'Compatibilidad de producto' },
   // OPERADOR_ESPECIALIZADO ya no tiene ningun puesto real que lo dispare (ver getPersonnelRank
   // -- el fallback ahora es AYUDANTE_GENERAL) -- se deja definido por completitud de la leyenda
@@ -61,13 +68,12 @@ const EXACT_ROLE_TO_RANK = {
   // linea -- si algun dia una area LINE_LIKE llega a tener un puesto literal "Calidad" (ej.
   // alguien de Calidad reubicado ahi conserva ese rol real), se identifica como apoyo aqui, sin
   // rastrear que la persona "viene de Calidad" -- es el ROL actual el que decide, nunca el origen.
-  // Fuera de alcance de la "CORRECCIÓN DE PUESTOS" 2026-08-28: esa peticion solo nombro Team
-  // Leader/Operador de Compatibilidad como excepciones -- Calidad ya tenia su propio rango
-  // dedicado de una tarea anterior explicita, no se toca sin que el usuario lo pida.
+  // Calidad ya tenia su propio rango dedicado de una tarea anterior explicita, no se toca
+  // sin que el usuario lo pida.
   'Calidad': PERSONNEL_RANKS.PERSONAL_DE_APOYO,
-  // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
-  // usuario): segunda excepcion al fallback AYUDANTE_GENERAL de abajo.
-  'Operador de Compatibilidad': PERSONNEL_RANKS.OPERADOR_DE_COMPATIBILIDAD,
+  // "Operador de Compatibilidad" (2026-08-28, tercera ronda) YA NO esta aqui -- dejo de ser
+  // excepcion, ver el comentario junto a PERSONNEL_RANKS.OPERADOR_DE_COMPATIBILIDAD arriba.
+  // Cae en el fallback AYUDANTE_GENERAL de getPersonnelRank, como cualquier otro puesto.
 }
 
 /* Puestos genericos sin nombre oficial todavia (ver LINE_LIKE_AREA_IDS en

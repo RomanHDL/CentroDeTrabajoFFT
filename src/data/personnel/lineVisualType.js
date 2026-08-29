@@ -58,18 +58,30 @@ export const LINE_VISUAL_TYPE_ORDER = [
 /* Rol base (sin sufijo numerico) -> categoria, para los puestos YA conocidos
    hoy (incluye "Team Leader", nuevo). Unica fuente de este mapeo -- tambien
    la usa scripts/seed-personnel.mjs para backfillear Workstation.category de
-   las estaciones generadas por el codigo, nunca se duplica en dos lugares. */
+   las estaciones generadas por el codigo, nunca se duplica en dos lugares.
+
+   2026-08-28 (tercera ronda, a peticion explicita del usuario -- "en las
+   lineas solo hay puros ayudantes y una persona de calidad y ya"): TODOS
+   los puestos operativos de WC LINEA pasan a "Ayudante General" (APOYO) --
+   Montaje/Etiquetado/Limpieza de TV/Suministro de Accesorios/Prueba
+   eléctrica ya NO son Producción/Técnico/Suministro. Calidad y Team Leader
+   son las UNICAS excepciones (conservan su propia categoria). PRODUCCION/
+   TECNICO/SUMINISTRO quedan definidas en LINE_VISUAL_TYPES por
+   completitud de leyenda (mismo criterio que OPERADOR_ESPECIALIZADO en
+   rankSystem.js), pero ya ningun `role` real las dispara. IMPORTANTE:
+   despues de este cambio hay que re-correr `npm run seed-personnel` --
+   Workstation.category ya esta explicito en la base de datos (backfill de
+   una tarea anterior) y ese campo tiene PRIORIDAD sobre este mapa
+   (getPersonnelVisualType), asi que sin re-sembrar seguiria mostrando la
+   categoria vieja. */
 export const ROLE_TO_CATEGORY_KEY = {
   'Team Leader': 'LIDERAZGO',
   'Calidad': 'CALIDAD',
-  'Montaje': 'PRODUCCION',
-  'Etiquetado': 'PRODUCCION',
-  'Limpieza de TV': 'PRODUCCION',
-  'Suministro de Accesorios': 'SUMINISTRO',
-  'Prueba eléctrica': 'TECNICO',
-  // 2026-08-28 ("ajustes controlados"): Empaque es puesto REAL nuevo en WC
-  // LINEA 0-10 -- su rango es "Ayudante General" (APOYO, ver
-  // LINE_VISUAL_TYPES arriba), nunca Producción/Técnico/otro existente.
+  'Montaje': 'APOYO',
+  'Etiquetado': 'APOYO',
+  'Limpieza de TV': 'APOYO',
+  'Suministro de Accesorios': 'APOYO',
+  'Prueba eléctrica': 'APOYO',
   'Empaque': 'APOYO',
 }
 
