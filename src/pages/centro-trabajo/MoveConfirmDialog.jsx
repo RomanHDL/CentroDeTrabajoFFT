@@ -1,19 +1,21 @@
-import React, { useMemo, useState } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
-import Alert from '@mui/material/Alert'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import { WORK_CENTERS, workCenterById } from '../../data/production/catalog'
-import { getWorkstationsForLine } from '../../data/personnel/workstations'
+import { ArrowRight } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { alertToneClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 import { getStationOccupancy, moveEmployee, requestMove } from '../../data/personnel/repository'
+import { getWorkstationsForLine } from '../../data/personnel/workstations'
+import { WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
 
 function areaLabel(id) {
@@ -68,7 +70,7 @@ export default function MoveConfirmDialog({
       })
       setSubmitting(false)
       if (res.status === 'PENDING') {
-        onDone && onDone({ pending: true, request: res.request })
+        onDone?.({ pending: true, request: res.request })
         onClose()
       } else {
         setError(res.message || 'No se pudo enviar la solicitud.')
@@ -84,7 +86,7 @@ export default function MoveConfirmDialog({
     })
     setSubmitting(false)
     if (res.status === 'OK') {
-      onDone && onDone(res)
+      onDone?.(res)
       onClose()
     } else {
       setError(res.message || 'No se pudo mover al empleado.')
@@ -92,122 +94,95 @@ export default function MoveConfirmDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      <DialogTitle sx={{ fontWeight: 800 }}>Mover empleado</DialogTitle>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 0.5 }}>
-          <Typography sx={{ fontWeight: 800 }}>
+        <DialogHeader>
+          <DialogTitle>Mover empleado</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 pb-2">
+          <p className="font-extrabold">
             {employee.employeeNumber} — {employee.name}
-          </Typography>
+          </p>
 
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Origen
-              </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                {areaLabel(currentAssignment.areaId)}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                {currentAssignment.stationId}
-              </Typography>
-            </Box>
-            <ArrowForwardIcon sx={{ color: 'text.secondary' }} />
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Destino
-              </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-                {areaLabel(toAreaId)}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                {toStationId || '—'}
-              </Typography>
-            </Box>
-          </Stack>
+          <div className="flex items-center gap-3 rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
+            <div>
+              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Origen</p>
+              <p className="text-[13.5px] font-bold">{areaLabel(currentAssignment.areaId)}</p>
+              <p className="text-[12.5px] text-muted-foreground">{currentAssignment.stationId}</p>
+            </div>
+            <ArrowRight className="text-muted-foreground" />
+            <div>
+              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Destino</p>
+              <p className="text-[13.5px] font-bold">{areaLabel(toAreaId)}</p>
+              <p className="text-[12.5px] text-muted-foreground">{toStationId || '—'}</p>
+            </div>
+          </div>
 
           {!presetTo && (
             <>
-              <TextField
-                select
-                fullWidth
-                label="Línea destino"
-                value={toAreaId}
-                onChange={(e) => {
-                  setToAreaId(e.target.value)
-                  setToStationId('')
-                }}
-              >
-                {WORK_CENTERS.map((w) => (
-                  <MenuItem key={w.id} value={w.id}>
-                    {w.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                fullWidth
-                label="Estación destino"
-                value={toStationId}
-                onChange={(e) => setToStationId(e.target.value)}
-              >
-                {stations.map((s) => {
-                  const occ = getStationOccupancy(toAreaId, s.name, undefined, employee.id)
-                  return (
-                    <MenuItem key={s.id} value={s.name} disabled={occ.isFull}>
-                      {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
-                    </MenuItem>
-                  )
-                })}
-              </TextField>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="move-to-area">Línea destino</Label>
+                <Select
+                  value={toAreaId}
+                  onValueChange={(v) => {
+                    setToAreaId(v)
+                    setToStationId('')
+                  }}
+                >
+                  <SelectTrigger id="move-to-area">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_CENTERS.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="move-to-station">Estación destino</Label>
+                <Select value={toStationId} onValueChange={setToStationId}>
+                  <SelectTrigger id="move-to-station">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stations.map((s) => {
+                      const occ = getStationOccupancy(toAreaId, s.name, undefined, employee.id)
+                      return (
+                        <SelectItem key={s.id} value={s.name} disabled={occ.isFull}>
+                          {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
             </>
           )}
 
           {isLider && (
-            <Alert severity="info" sx={{ py: 0.5 }}>
+            <Alert className={cn(alertToneClass('info'), 'py-1')}>
               Como líder, este movimiento se enviará a un supervisor o administrador para su
               aprobación — no se aplica de inmediato.
             </Alert>
           )}
-          {error && <Alert severity="error">{error}</Alert>}
-        </Stack>
+          {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
+        </div>
+        <div className="flex justify-end gap-2 px-6 pb-5">
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={!toStationId || submitting}
+            className="font-bold"
+          >
+            {isLider ? 'Solicitar cambio' : 'Confirmar movimiento'}
+          </Button>
+        </div>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={!toStationId || submitting}
-          sx={{ fontWeight: 700 }}
-        >
-          {isLider ? 'Solicitar cambio' : 'Confirmar movimiento'}
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 }

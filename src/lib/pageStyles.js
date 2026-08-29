@@ -97,3 +97,42 @@ export function statusChipClass(status) {
 // ps.sectionTitle (fontWeight 700, fontSize 15, letterSpacing -0.2,
 // color text.primary) -- mismos valores exactos, como className.
 export const sectionTitleClass = 'text-[15px] font-bold tracking-[-0.2px] text-foreground'
+
+// Fase 6c (Centro de Trabajo -- SelfAssignDialog): reemplaza <Alert
+// severity="warning|info|error"> de MUI. El tema MUI (src/ui/theme.js)
+// nunca personalizo los colores de severidad de Alert -- son los
+// default de MUI, que este repo no tenia portados a Tailwind todavia --
+// asi que se reusa el MISMO mapa de tonos warn/info/bad ya establecido
+// en METRIC_CHIP_TONES/STATUS_CHIP_TONES (el vocabulario de color
+// semantico real de esta migracion), solo con el layout base de
+// alertVariants (src/components/ui/alert.jsx: rounded-lg border px-4
+// py-3 text-sm) en vez de la forma de chip/pill. Reusable tal cual por
+// los demas archivos gigantes pendientes que tambien usan <Alert
+// severity=...>.
+const ALERT_TONES = {
+  warning: METRIC_CHIP_TONES.warn,
+  info: METRIC_CHIP_TONES.info,
+  error: METRIC_CHIP_TONES.bad,
+}
+
+export function alertToneClass(severity = 'info') {
+  return cn(
+    'relative w-full rounded-lg border px-4 py-3 text-sm',
+    ALERT_TONES[severity] || ALERT_TONES.info,
+  )
+}
+
+// Fase 6c (Centro de Trabajo -- EmployeeHistoryDialog): reemplaza ps.emptyText
+// (color text.secondary, textAlign center, py:5, fontSize 0.875rem, fontWeight
+// 500, opacity .7) -- mismos valores exactos, como className.
+export const emptyTextClass =
+  'py-10 text-center text-sm font-medium text-muted-foreground opacity-70'
+
+// Fase 6c (Centro de Trabajo -- EmployeeHistoryDialog): variante que
+// alertToneClass (arriba) no cubre todavia -- MUI Alert severity="success",
+// mismo tono verde ya establecido en METRIC_CHIP_TONES.ok. Funcion separada
+// (no se toca ALERT_TONES/alertToneClass ya escritos) para minimizar riesgo
+// de colision mientras otro agente edita este archivo en paralelo.
+export function alertSuccessClass() {
+  return cn('relative w-full rounded-lg border px-4 py-3 text-sm', METRIC_CHIP_TONES.ok)
+}

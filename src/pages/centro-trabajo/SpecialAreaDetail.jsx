@@ -1,60 +1,57 @@
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  BrushCleaning,
+  CheckCircle2,
+  Dumbbell,
+  Eye,
+  GraduationCap,
+  Info,
+  MoreVertical,
+  Network,
+  Shield,
+  TriangleAlert,
+  UserMinus,
+  UserPlus,
+  Users2,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import Dialog from '@mui/material/Dialog'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import Tooltip from '@mui/material/Tooltip'
-import CloseIcon from '@mui/icons-material/Close'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import VisibilityIcon from '@mui/icons-material/Visibility'
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
-import GroupsIcon from '@mui/icons-material/Groups'
-import SchoolIcon from '@mui/icons-material/School'
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter'
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
-import { alpha } from '@mui/material/styles'
-import { EmptyState } from '../../ui'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
-  workCenterById,
-  SUPPORT_AREA_DESCRIPTIONS,
-  LINE_FAMILY_AREA_IDS,
-} from '../../data/production/catalog'
-import {
-  getPeopleByArea,
-  getAreaStaffing,
-  AREA_STATUS_META,
-  classifyAreaStatus,
-} from '../../data/production/personnelByArea'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
 import { getCurrentAssignment } from '../../data/personnel/repository'
 import { getAllRealTeamLeaders } from '../../data/personnel/teamLeaderRegistry'
-import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { useEmployeeDropTarget } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import {
+  LINE_FAMILY_AREA_IDS,
+  SUPPORT_AREA_DESCRIPTIONS,
+  workCenterById,
+} from '../../data/production/catalog'
+import {
+  AREA_STATUS_META,
+  classifyAreaStatus,
+  getAreaStaffing,
+  getPeopleByArea,
+} from '../../data/production/personnelByArea'
+import { cn, hexToRgba } from '../../lib/utils'
 import { useDndAssign } from '../../state/dndAssign'
 import { useRoleMode } from '../../state/roleMode'
-import RegisterPersonnelDialog from './RegisterPersonnelDialog'
-import SelfAssignDialog from './SelfAssignDialog'
+import { EmptyState } from '../../ui'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTarget } from '../../ui/dnd'
+import EmployeeAvatar from './EmployeeAvatar'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
-import EmployeeAvatar from './EmployeeAvatar'
+import RegisterPersonnelDialog from './RegisterPersonnelDialog'
+import SelfAssignDialog from './SelfAssignDialog'
 import WorkCenterNavControls from './WorkCenterNavControls'
 
 /* ─────────────────────────────────────────────
@@ -72,41 +69,46 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    protagonista. WC Team Leader ademas muestra una seccion de referencia
    con TODOS los Team Leader reales del sistema (getAllRealTeamLeaders,
    teamLeaderRegistry.js) -- nunca los mueve, nunca duplica su conteo
-   (ver ese archivo para la garantia completa). ───────────────────────────────────────────── */
+   (ver ese archivo para la garantia completa).
+
+   Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. Dialog
+   fullScreen -> DialogContent con className que sobreescribe position/
+   size (tailwind-merge resuelve el conflicto con las clases centradas
+   por defecto del primitivo). */
 
 const AREA_TYPE_META = {
   CAPACITACION: {
-    Icon: SchoolIcon,
+    Icon: GraduationCap,
     roleLabel: 'Capacitación',
     category: 'Apoyo y desarrollo',
     color: '#2563EB',
   },
   TEAM_LEADER: {
-    Icon: GroupsIcon,
+    Icon: Users2,
     roleLabel: 'Team Leader',
     category: 'Liderazgo',
     color: '#16A34A',
   },
   ENTRENADOR: {
-    Icon: FitnessCenterIcon,
+    Icon: Dumbbell,
     roleLabel: 'Entrenador',
     category: 'Entrenamiento',
     color: '#D97706',
   },
   LIMPIEZA: {
-    Icon: CleaningServicesIcon,
+    Icon: BrushCleaning,
     roleLabel: 'Limpieza',
     category: 'Servicios generales',
     color: '#0891B2',
   },
   GERENTE: {
-    Icon: AccountTreeIcon,
+    Icon: Network,
     roleLabel: 'Gerencia FFT',
     category: 'Gerencia',
     color: '#7C3AED',
   },
   SUPERVISOR: {
-    Icon: VerifiedUserIcon,
+    Icon: Shield,
     roleLabel: 'Supervisor',
     category: 'Supervisión',
     color: '#DC2626',
@@ -114,116 +116,93 @@ const AREA_TYPE_META = {
 }
 
 function describeAreaState(real, ideal) {
-  if (ideal == null) return { tone: 'ok', Icon: CheckCircleIcon, label: 'Sin plantilla oficial' }
-  if (real === 0) return { tone: 'bad', Icon: WarningAmberIcon, label: 'Sin personal' }
-  if (real >= ideal) return { tone: 'ok', Icon: CheckCircleIcon, label: 'Completa' }
+  if (ideal == null) return { tone: 'ok', Icon: CheckCircle2, label: 'Sin plantilla oficial' }
+  if (real === 0) return { tone: 'bad', Icon: TriangleAlert, label: 'Sin personal' }
+  if (real >= ideal) return { tone: 'ok', Icon: CheckCircle2, label: 'Completa' }
   return {
     tone: 'warn',
-    Icon: WarningAmberIcon,
+    Icon: TriangleAlert,
     label: real / ideal >= 0.5 ? 'Parcial' : 'Falta personal',
   }
 }
 
 const TONE_COLOR = { ok: '#10B981', warn: '#F59E0B', bad: '#EF4444' }
 
+// areaId no se usa dentro del cuerpo (pre-existente en el original,
+// se conserva el mismo contrato de props de siempre).
+// biome-ignore lint/correctness/noUnusedFunctionParameters: ver comentario arriba
 function PersonRow({ person, areaId, meta, canManage }) {
   const dnd = useDndAssign()
-  const [anchorEl, setAnchorEl] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
   const assignment = getCurrentAssignment(person.id)
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack direction="row" spacing={1.5} alignItems="center">
+    <div className="rounded-2xl border border-border p-3">
+      <div className="flex items-center gap-3">
         <DraggablePersonChip employeeId={person.id}>
           <EmployeeAvatar employee={person} size={44} />
         </DraggablePersonChip>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 14 }} noWrap>
-            {person.name}
-          </Typography>
-          <Chip
-            size="small"
-            icon={<meta.Icon sx={{ fontSize: '13px !important' }} />}
-            label={meta.roleLabel.toUpperCase()}
-            sx={{
-              height: 20,
-              fontSize: 10,
-              fontWeight: 800,
-              mt: 0.35,
-              letterSpacing: 0.3,
-              bgcolor: alpha(meta.color, 0.12),
-              color: meta.color,
-            }}
-          />
-        </Box>
-        <Chip
-          size="small"
-          label={(person.status || 'Activo').toUpperCase()}
-          sx={{
-            fontWeight: 700,
-            fontSize: 10,
-            bgcolor: alpha('#10B981', 0.14),
-            color: '#10B981',
-            flexShrink: 0,
-          }}
-        />
-        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
-          <MoreVertIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-      </Stack>
-
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-        <MenuItem
-          onClick={() => {
-            setHistoryOpen(true)
-            setAnchorEl(null)
-          }}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-extrabold">{person.name}</p>
+          <span
+            className="mt-[2.8px] inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-[10px] font-extrabold tracking-[0.3px]"
+            style={{ backgroundColor: hexToRgba(meta.color, 0.12), color: meta.color }}
+          >
+            <meta.Icon className="h-[13px] w-[13px]" />
+            {meta.roleLabel.toUpperCase()}
+          </span>
+        </div>
+        <span
+          className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
+          style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
         >
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Ver detalle</ListItemText>
-        </MenuItem>
-        {canManage && (
-          <Tooltip
-            title={assignment ? '' : 'Solo disponible para asignaciones registradas hoy'}
-            placement="right"
-          >
-            <span>
-              <MenuItem
-                disabled={!assignment}
-                onClick={() => {
-                  setMoveOpen(true)
-                  setAnchorEl(null)
-                }}
-              >
-                <ListItemIcon>
-                  <SwapHorizIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Mover a otra área</ListItemText>
-              </MenuItem>
-            </span>
-          </Tooltip>
-        )}
-        {canManage && (
-          <MenuItem
-            onClick={() => {
-              dnd.requestRelease(person.id)
-              setAnchorEl(null)
-            }}
-          >
-            <ListItemIcon>
-              <PersonRemoveIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Liberar del área</ListItemText>
-          </MenuItem>
-        )}
-      </Menu>
+          {(person.status || 'Activo').toUpperCase()}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical className="h-[18px] w-[18px]" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Ver detalle
+            </DropdownMenuItem>
+            {canManage &&
+              (assignment ? (
+                <DropdownMenuItem onClick={() => setMoveOpen(true)}>
+                  <ArrowLeftRight className="mr-2 h-4 w-4" />
+                  Mover a otra área
+                </DropdownMenuItem>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DropdownMenuItem disabled>
+                        <ArrowLeftRight className="mr-2 h-4 w-4" />
+                        Mover a otra área
+                      </DropdownMenuItem>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    Solo disponible para asignaciones registradas hoy
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            {canManage && (
+              <DropdownMenuItem onClick={() => dnd.requestRelease(person.id)}>
+                <UserMinus className="mr-2 h-4 w-4" />
+                Liberar del área
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <EmployeeHistoryDialog
         employee={historyOpen ? person : null}
@@ -240,7 +219,7 @@ function PersonRow({ person, areaId, meta, canManage }) {
           onDone={() => setMoveOpen(false)}
         />
       )}
-    </Paper>
+    </div>
   )
 }
 
@@ -249,57 +228,38 @@ function TeamLeaderReferenceRow({ leader }) {
   const meta = AREA_TYPE_META.TEAM_LEADER
   return (
     <>
-      <Paper
-        elevation={0}
+      <button
+        type="button"
         onClick={() => setHistoryOpen(true)}
-        sx={{
-          p: 1.5,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          transition: 'border-color .15s ease',
-          '&:hover': { borderColor: meta.color },
-        }}
+        className="w-full rounded-2xl border border-border p-3 text-left transition-colors hover:border-[--tl-color]"
+        style={{ '--tl-color': meta.color }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <div className="flex items-center gap-3">
           <EmployeeAvatar employee={leader.employee} size={44} />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: 14 }} noWrap>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold">
               {leader.employee?.name}
               {leader.employeeNumber ? ` · #${leader.employeeNumber}` : ''}
-            </Typography>
-            <Chip
-              size="small"
-              icon={<GroupsIcon sx={{ fontSize: '13px !important' }} />}
-              label="TEAM LEADER"
-              sx={{
-                height: 20,
-                fontSize: 10,
-                fontWeight: 800,
-                mt: 0.35,
-                letterSpacing: 0.3,
-                bgcolor: alpha(meta.color, 0.12),
-                color: meta.color,
-              }}
-            />
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.35 }} noWrap>
+            </p>
+            <span
+              className="mt-[2.8px] inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-[10px] font-extrabold tracking-[0.3px]"
+              style={{ backgroundColor: hexToRgba(meta.color, 0.12), color: meta.color }}
+            >
+              <Users2 className="h-[13px] w-[13px]" />
+              TEAM LEADER
+            </span>
+            <p className="mt-[2.8px] truncate text-[11px] text-muted-foreground">
               Área actual: <b>{leader.areaName}</b>
-            </Typography>
-          </Box>
-          <Chip
-            size="small"
-            label="ACTIVO"
-            sx={{
-              fontWeight: 700,
-              fontSize: 10,
-              bgcolor: alpha('#10B981', 0.14),
-              color: '#10B981',
-              flexShrink: 0,
-            }}
-          />
-        </Stack>
-      </Paper>
+            </p>
+          </div>
+          <span
+            className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
+            style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
+          >
+            ACTIVO
+          </span>
+        </div>
+      </button>
       <EmployeeHistoryDialog
         employee={historyOpen ? leader.employee : null}
         open={historyOpen}
@@ -323,6 +283,9 @@ export default function SpecialAreaDetail({
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
 
+  // Cierra los dialogos si se navega a otra área (workCenterId cambia) --
+  // dependencia intencional aunque no se lea dentro del callback.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     setRegisterOpen(false)
     setSelfAssignOpen(false)
@@ -330,10 +293,15 @@ export default function SpecialAreaDetail({
 
   const area = workCenterId ? workCenterById(workCenterId) : null
   const meta = workCenterId ? AREA_TYPE_META[workCenterId] : null
+  // `version` fuerza recalcular staffing/people cuando cambia el estado de
+  // personal, aunque no se lea dentro del callback (mismo patron ya usado
+  // en otros archivos de este folder).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const staffing = useMemo(
     () => (workCenterId ? getAreaStaffing(workCenterId) : null),
     [workCenterId, version],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const people = useMemo(
     () => (workCenterId ? getPeopleByArea()[workCenterId] || [] : []),
     [workCenterId, version],
@@ -363,6 +331,9 @@ export default function SpecialAreaDetail({
       cancelled = true
     }
   }, [isTeamLeaderHub])
+  // version/lineConfigsReady fuerzan recalcular aunque no se lean dentro
+  // del callback -- mismo patron ya usado en otros archivos de este folder.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const allLeaders = useMemo(
     () => (isTeamLeaderHub ? getAllRealTeamLeaders() : []),
     [isTeamLeaderHub, version, lineConfigsReady],
@@ -383,348 +354,233 @@ export default function SpecialAreaDetail({
       : null
   const state = describeAreaState(staffing.real, staffing.ideal)
   const description = SUPPORT_AREA_DESCRIPTIONS[area.id] || null
+  const headerColor = statusMeta?.color || '#10B981'
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullScreen
-      PaperProps={{ sx: { bgcolor: 'background.default' } }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          px: { xs: 1.5, md: 3 },
-          py: 1.5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          flexWrap: 'wrap',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
-        <IconButton onClick={onClose}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography sx={{ fontWeight: 800, fontSize: 19, letterSpacing: -0.4 }}>
-              {area.name}
-            </Typography>
-            <Chip
-              size="small"
-              label={headerLabel}
-              sx={{
-                fontWeight: 700,
-                bgcolor: alpha(statusMeta?.color || '#10B981', 0.14),
-                color: statusMeta?.color || '#10B981',
-                border: `1px solid ${alpha(statusMeta?.color || '#10B981', 0.35)}`,
-              }}
-            />
-          </Stack>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-            {isTeamLeaderHub
-              ? 'Vista global de líderes activos'
-              : `Centro de Trabajo · Área de ${meta.category.toLowerCase()}`}
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1 }} />
-        {onNavigate && (
-          <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
-        )}
-        <Button
-          variant="contained"
-          startIcon={<PersonAddAlt1Icon />}
-          onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
-          sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-        >
-          {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
-        </Button>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="inset-0 left-0 top-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 rounded-none bg-background">
+        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-3.5 py-3 md:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[19px] font-extrabold tracking-[-0.4px]">{area.name}</p>
+              <span
+                className="inline-flex h-6 items-center rounded-full border px-2 text-xs font-bold"
+                style={{
+                  backgroundColor: hexToRgba(headerColor, 0.14),
+                  color: headerColor,
+                  borderColor: hexToRgba(headerColor, 0.35),
+                }}
+              >
+                {headerLabel}
+              </span>
+            </div>
+            <p className="text-[11.5px] text-muted-foreground">
+              {isTeamLeaderHub
+                ? 'Vista global de líderes activos'
+                : `Centro de Trabajo · Área de ${meta.category.toLowerCase()}`}
+            </p>
+          </div>
+          <div className="flex-1" />
+          {onNavigate && (
+            <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
+          )}
+          <Button
+            onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
+            className="rounded-[20px] font-bold"
+          >
+            <UserPlus className="h-4 w-4" />
+            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+          </Button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* Franja ÁREA ESPECIAL · categoría */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '14px',
-            border: '1px solid',
-            borderColor: alpha(meta.color, 0.3),
-            mb: 2,
-            px: 2,
-            py: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            bgcolor: alpha(meta.color, 0.06),
-          }}
-        >
-          <meta.Icon sx={{ fontSize: 18, color: meta.color }} />
-          <Typography
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 800,
-              color: meta.color,
-              letterSpacing: 0.4,
-              textTransform: 'uppercase',
+        <div key={workCenterId} className="overflow-y-auto p-3.5 md:p-6">
+          {/* Franja ÁREA ESPECIAL · categoría */}
+          <div
+            className="mb-4 flex items-center gap-2 rounded-[14px] border px-4 py-2.5"
+            style={{
+              borderColor: hexToRgba(meta.color, 0.3),
+              backgroundColor: hexToRgba(meta.color, 0.06),
             }}
           >
-            Área especial · {meta.category}
-          </Typography>
-        </Paper>
+            <meta.Icon className="h-[18px] w-[18px]" style={{ color: meta.color }} />
+            <p
+              className="text-[11.5px] font-extrabold uppercase tracking-[0.4px]"
+              style={{ color: meta.color }}
+            >
+              Área especial · {meta.category}
+            </p>
+          </div>
 
-        {/* Tira de metricas compacta */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: 'divider',
-            mb: 2.5,
-            overflow: 'hidden',
-          }}
-        >
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            divider={<Box sx={{ borderLeft: { md: '1px solid' }, borderColor: 'divider' }} />}
-          >
-            <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 170px' }}>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.25,
-                }}
-              >
-                {isTeamLeaderHub ? 'Líderes activos' : 'Personal mostrado'}
-              </Typography>
-              <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                {isTeamLeaderHub ? allLeaders.length : people.length}
-              </Typography>
-            </Box>
-            {isTeamLeaderHub && (
-              <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 170px' }}>
-                <Typography
-                  sx={{
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    mb: 0.25,
-                  }}
-                >
-                  Áreas de trabajo
-                </Typography>
-                <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                  {new Set(allLeaders.map((l) => l.areaId)).size}
-                </Typography>
-              </Box>
-            )}
-            <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 170px' }}>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.25,
-                }}
-              >
-                Estado del área
-              </Typography>
-              <Stack direction="row" spacing={0.6} alignItems="center">
-                <state.Icon sx={{ fontSize: 16, color: TONE_COLOR[state.tone] }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{state.label}</Typography>
-              </Stack>
-            </Box>
-            <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 150px' }}>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.25,
-                }}
-              >
-                {isTeamLeaderHub ? 'Plantilla' : 'Cobertura'}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 21,
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                  color:
+          {/* Tira de metricas compacta */}
+          <div className="mb-5 overflow-hidden rounded-2xl border border-border">
+            <div className="flex flex-col md:flex-row md:divide-x md:divide-border">
+              <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  {isTeamLeaderHub ? 'Líderes activos' : 'Personal mostrado'}
+                </p>
+                <p className="text-[22px] font-extrabold leading-none">
+                  {isTeamLeaderHub ? allLeaders.length : people.length}
+                </p>
+              </div>
+              {isTeamLeaderHub && (
+                <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
+                  <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                    Áreas de trabajo
+                  </p>
+                  <p className="text-[22px] font-extrabold leading-none">
+                    {new Set(allLeaders.map((l) => l.areaId)).size}
+                  </p>
+                </div>
+              )}
+              <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  Estado del área
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <state.Icon className="h-4 w-4" style={{ color: TONE_COLOR[state.tone] }} />
+                  <p className="text-[15px] font-extrabold">{state.label}</p>
+                </div>
+              </div>
+              <div className="flex-[1_1_150px] px-3.5 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  {isTeamLeaderHub ? 'Plantilla' : 'Cobertura'}
+                </p>
+                <p
+                  className={cn(
+                    'text-[21px] font-extrabold leading-[1.1]',
                     !isTeamLeaderHub && coveragePct != null && coveragePct >= 100
-                      ? '#10B981'
-                      : 'text.primary',
-                }}
-              >
-                {isTeamLeaderHub ? 'No afecta' : coveragePct != null ? `${coveragePct}%` : '—'}
-              </Typography>
-            </Box>
-            {!isTeamLeaderHub && (
-              <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 110px' }}>
-                <Typography
-                  sx={{
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    mb: 0.25,
-                  }}
+                      ? 'text-[#10B981]'
+                      : 'text-foreground',
+                  )}
                 >
-                  Plantilla ideal
-                </Typography>
-                <Typography sx={{ fontSize: 21, fontWeight: 800, lineHeight: 1.1 }}>
-                  {staffing.ideal ?? '—'}
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-        </Paper>
+                  {isTeamLeaderHub ? 'No afecta' : coveragePct != null ? `${coveragePct}%` : '—'}
+                </p>
+              </div>
+              {!isTeamLeaderHub && (
+                <div className="flex-[1_1_110px] px-3.5 py-2.5 md:px-[18px]">
+                  <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                    Plantilla ideal
+                  </p>
+                  <p className="text-[21px] font-extrabold leading-[1.1]">
+                    {staffing.ideal ?? '—'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Personal del área */}
-        <Paper
-          {...dropProps}
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: isOver ? '#3B82F6' : 'divider',
-            bgcolor: isOver
-              ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.12 : 0.05)
-              : 'background.paper',
-            p: 2,
-            mb: 2.5,
-            transition: 'all .15s ease',
-          }}
-        >
-          <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
-            Personal del área ({people.length})
-          </Typography>
-          {people.length === 0 ? (
-            <EmptyState
-              compact
-              title="Sin personal asignado"
-              description={`Actualmente no hay ${meta.roleLabel.toLowerCase()} asignados a esta área.`}
-            />
-          ) : (
-            <Grid container spacing={1.25}>
-              {people.map((p) => (
-                <Grid item xs={12} md={6} key={p.id}>
+          {/* Personal del área */}
+          <div
+            {...dropProps}
+            className={cn(
+              'mb-5 rounded-2xl border p-4 transition-all duration-150',
+              isOver
+                ? 'border-[#3B82F6] bg-[#3B82F6]/[0.05] dark:bg-[#3B82F6]/[0.12]'
+                : 'border-border bg-card',
+            )}
+          >
+            <p className="mb-3 text-[14.5px] font-extrabold">Personal del área ({people.length})</p>
+            {people.length === 0 ? (
+              <EmptyState
+                compact
+                title="Sin personal asignado"
+                description={`Actualmente no hay ${meta.roleLabel.toLowerCase()} asignados a esta área.`}
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+                {people.map((p) => (
                   <PersonRow
+                    key={p.id}
                     person={p}
                     areaId={workCenterId}
                     meta={meta}
                     canManage={isSupervisor}
                   />
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </Paper>
-
-        {/* Líderes activos -- SOLO WC Team Leader */}
-        {isTeamLeaderHub && (
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: '16px',
-              border: '1px solid',
-              borderColor: 'divider',
-              p: 2,
-              mb: 2.5,
-            }}
-          >
-            <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 0.25 }}>
-              Líderes activos ({allLeaders.length})
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 1.5 }}>
-              Esta vista muestra a todos los líderes reales y el área donde actualmente están
-              asignados.
-            </Typography>
-            {allLeaders.length === 0 ? (
-              <EmptyState
-                compact
-                title="Sin líderes registrados"
-                description="Actualmente no hay personal con rol de Team Leader en el sistema."
-              />
-            ) : (
-              <Grid container spacing={1.25}>
-                {allLeaders.map((leader) => (
-                  <Grid item xs={12} md={6} key={leader.employee.id}>
-                    <TeamLeaderReferenceRow leader={leader} />
-                  </Grid>
                 ))}
-              </Grid>
+              </div>
             )}
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="flex-start"
-              sx={{
-                mt: 1.5,
-                p: 1.25,
-                borderRadius: 2,
-                bgcolor: alpha('#3B82F6', 0.06),
-                border: '1px solid',
-                borderColor: alpha('#3B82F6', 0.2),
-              }}
+          </div>
+
+          {/* Líderes activos -- SOLO WC Team Leader */}
+          {isTeamLeaderHub && (
+            <div className="mb-5 rounded-2xl border border-border p-4">
+              <p className="mb-0.5 text-[14.5px] font-extrabold">
+                Líderes activos ({allLeaders.length})
+              </p>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Esta vista muestra a todos los líderes reales y el área donde actualmente están
+                asignados.
+              </p>
+              {allLeaders.length === 0 ? (
+                <EmptyState
+                  compact
+                  title="Sin líderes registrados"
+                  description="Actualmente no hay personal con rol de Team Leader en el sistema."
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+                  {allLeaders.map((leader) => (
+                    <TeamLeaderReferenceRow key={leader.employee.id} leader={leader} />
+                  ))}
+                </div>
+              )}
+              <div
+                className="mt-3 flex items-start gap-2 rounded-lg border px-3 py-2.5"
+                style={{
+                  backgroundColor: hexToRgba('#3B82F6', 0.06),
+                  borderColor: hexToRgba('#3B82F6', 0.2),
+                }}
+              >
+                <Info className="mt-px h-4 w-4 shrink-0 text-[#3B82F6]" />
+                <p className="text-[11.5px] text-muted-foreground">
+                  Los líderes siguen asignados a sus áreas de trabajo. Esta es una vista de
+                  referencia y no modifica las asignaciones actuales ni el conteo de personal de
+                  esas áreas.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {description && (
+            <div
+              className="flex items-center gap-2 rounded-2xl border border-border p-3"
+              style={{ backgroundColor: hexToRgba('#3B82F6', 0.03) }}
             >
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: '#3B82F6', mt: 0.1, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                Los líderes siguen asignados a sus áreas de trabajo. Esta es una vista de referencia
-                y no modifica las asignaciones actuales ni el conteo de personal de esas áreas.
-              </Typography>
-            </Stack>
-          </Paper>
-        )}
+              <Info className="h-[17px] w-[17px] shrink-0 text-[#3B82F6]" />
+              <p className="text-xs text-muted-foreground">{description}</p>
+            </div>
+          )}
+        </div>
 
-        {description && (
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: '16px',
-              border: '1px solid',
-              borderColor: 'divider',
-              p: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.06 : 0.03),
-            }}
-          >
-            <InfoOutlinedIcon sx={{ fontSize: 17, color: '#3B82F6', flexShrink: 0 }} />
-            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{description}</Typography>
-          </Paper>
-        )}
-      </Box>
-
-      <RegisterPersonnelDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        fixedAreaId={workCenterId}
-        onDone={() => {}}
-      />
-      <SelfAssignDialog
-        open={selfAssignOpen}
-        onClose={() => setSelfAssignOpen(false)}
-        fixedAreaId={workCenterId}
-        onDone={() => {}}
-      />
+        <RegisterPersonnelDialog
+          open={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          fixedAreaId={workCenterId}
+          onDone={() => {}}
+        />
+        <SelfAssignDialog
+          open={selfAssignOpen}
+          onClose={() => setSelfAssignOpen(false)}
+          fixedAreaId={workCenterId}
+          onDone={() => {}}
+        />
+      </DialogContent>
     </Dialog>
   )
 }
