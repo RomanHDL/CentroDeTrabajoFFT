@@ -1,58 +1,53 @@
-import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import Dialog from '@mui/material/Dialog'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import Tooltip from '@mui/material/Tooltip'
-import CloseIcon from '@mui/icons-material/Close'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import GroupsIcon from '@mui/icons-material/Groups'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import VisibilityIcon from '@mui/icons-material/Visibility'
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
-import EventIcon from '@mui/icons-material/Event'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer } from 'recharts'
-import { alpha } from '@mui/material/styles'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
-import { workCenterById, SUPPORT_AREA_DESCRIPTIONS } from '../../data/production/catalog'
 import {
-  getPeopleByArea,
-  getAreaStaffing,
-  getAvailablePersonnelToday,
+  ArrowLeft,
+  ArrowLeftRight,
+  Calendar,
+  CheckCircle2,
+  Eye,
+  GripVertical,
+  Info,
+  MoreVertical,
+  TriangleAlert,
+  UserMinus,
+  UserPlus,
+  Users2,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from 'recharts'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { getCurrentAssignment } from '../../data/personnel/repository'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { SUPPORT_AREA_DESCRIPTIONS, workCenterById } from '../../data/production/catalog'
+import {
   AREA_STATUS_META,
   classifyAreaStatus,
   getActividadForEmployee,
+  getAreaStaffing,
+  getAvailablePersonnelToday,
+  getPeopleByArea,
   getSnapshotHomeAreaId,
 } from '../../data/production/personnelByArea'
-import { getCurrentAssignment } from '../../data/personnel/repository'
-import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { useEmployeeDropTarget } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { cn, hexToRgba } from '../../lib/utils'
 import { useDndAssign } from '../../state/dndAssign'
 import { useRoleMode } from '../../state/roleMode'
-import RegisterPersonnelDialog from './RegisterPersonnelDialog'
-import SelfAssignDialog from './SelfAssignDialog'
+import { EmptyState } from '../../ui'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTarget } from '../../ui/dnd'
+import EmployeeAvatar from './EmployeeAvatar'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import MoveConfirmDialog from './MoveConfirmDialog'
-import EmployeeAvatar from './EmployeeAvatar'
+import RegisterPersonnelDialog from './RegisterPersonnelDialog'
+import SelfAssignDialog from './SelfAssignDialog'
 import WorkCenterNavControls from './WorkCenterNavControls'
 
 /* ─────────────────────────────────────────────
@@ -72,20 +67,24 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    OperationalAreaDetail (drop zone grande, "Disponibles" primero),
    aqui "Personal asignado" es la seccion protagonista y "Disponibles
    para asignar" es deliberadamente secundaria/compacta (Parte 9 del
-   pedido: "no debe sentirse como estacion de surtido"). ───────────────────────────────────────────── */
+   pedido: "no debe sentirse como estacion de surtido").
+
+   Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. La dona de
+   "Resumen del área" sigue usando recharts (PieChart/Pie/Cell), sin
+   cambios -- no es un componente MUI, no le toca conversion. */
 
 function describeAreaState(real, ideal) {
   if (ideal == null)
     return {
       tone: 'ok',
-      Icon: CheckCircleIcon,
+      Icon: CheckCircle2,
       label: 'Sin plantilla oficial',
       description: 'Esta área no tiene una plantilla ideal definida todavía.',
     }
   if (real === 0)
     return {
       tone: 'bad',
-      Icon: WarningAmberIcon,
+      Icon: TriangleAlert,
       label: 'Sin personal',
       description: 'Actualmente no hay personal asignado a esta área.',
     }
@@ -93,7 +92,7 @@ function describeAreaState(real, ideal) {
     const extra = real - ideal
     return {
       tone: 'ok',
-      Icon: CheckCircleIcon,
+      Icon: CheckCircle2,
       label: 'Completa',
       description: `Cuenta con ${extra} persona${extra === 1 ? '' : 's'} adicional${extra === 1 ? '' : 'es'} a la plantilla ideal.`,
     }
@@ -101,14 +100,14 @@ function describeAreaState(real, ideal) {
   if (real === ideal)
     return {
       tone: 'ok',
-      Icon: CheckCircleIcon,
+      Icon: CheckCircle2,
       label: 'Completa',
       description: 'Cuenta con el personal ideal asignado.',
     }
   const missing = ideal - real
   return {
     tone: 'warn',
-    Icon: WarningAmberIcon,
+    Icon: TriangleAlert,
     label: real / ideal >= 0.5 ? 'Parcial' : 'Falta personal',
     description: `Requiere ${missing} persona${missing === 1 ? '' : 's'} adicional${missing === 1 ? '' : 'es'} para alcanzar la plantilla ideal.`,
   }
@@ -129,7 +128,6 @@ function relativeTimeEs(iso) {
 
 function PersonCard({ person, areaId, canManage }) {
   const dnd = useDndAssign()
-  const [anchorEl, setAnchorEl] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
 
@@ -149,121 +147,88 @@ function PersonCard({ person, areaId, canManage }) {
   const homeArea = homeAreaId && homeAreaId !== areaId ? workCenterById(homeAreaId) : null
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack direction="row" spacing={1.5} alignItems="center">
+    <div className="rounded-2xl border border-border p-3">
+      <div className="flex items-center gap-3">
         <DraggablePersonChip employeeId={person.id}>
           <EmployeeAvatar employee={person} size={44} />
         </DraggablePersonChip>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 14 }} noWrap>
-            {person.name}
-          </Typography>
-          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-extrabold">{person.name}</p>
+          <div className="flex flex-wrap items-center gap-1">
             {actividad && (
-              <Chip
-                size="small"
-                label={actividad}
-                sx={{
-                  height: 18,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  mt: 0.25,
-                  bgcolor: alpha('#3B82F6', 0.12),
-                  color: '#3B82F6',
-                }}
-              />
+              <span
+                className="mt-0.5 inline-flex h-[18px] items-center rounded-full px-1.5 text-[10px] font-bold"
+                style={{ backgroundColor: hexToRgba('#3B82F6', 0.12), color: '#3B82F6' }}
+              >
+                {actividad}
+              </span>
             )}
             {homeArea && (
-              <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary', mt: 0.25 }}>
+              <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
                 Zona real: {homeArea.name}
-              </Typography>
+              </p>
             )}
-          </Stack>
-        </Box>
+          </div>
+        </div>
         {assignedDate && (
-          <Stack
-            direction="row"
-            spacing={0.5}
-            alignItems="center"
-            sx={{ flexShrink: 0, display: { xs: 'none', sm: 'flex' } }}
-          >
-            <EventIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-            <Box>
-              <Typography sx={{ fontSize: 9.5, color: 'text.secondary', lineHeight: 1.1 }}>
-                Fecha asignación
-              </Typography>
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.1 }}>
-                {assignedDate}
-              </Typography>
-            </Box>
-          </Stack>
+          <div className="hidden shrink-0 items-center gap-1 sm:flex">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <p className="text-[9.5px] leading-[1.1] text-muted-foreground">Fecha asignación</p>
+              <p className="text-[11.5px] font-bold leading-[1.1]">{assignedDate}</p>
+            </div>
+          </div>
         )}
-        <Chip
-          size="small"
-          label={(person.status || 'Activo').toUpperCase()}
-          sx={{
-            fontWeight: 700,
-            fontSize: 10,
-            bgcolor: alpha('#10B981', 0.14),
-            color: '#10B981',
-            flexShrink: 0,
-          }}
-        />
-        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
-          <MoreVertIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-      </Stack>
-
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-        <MenuItem
-          onClick={() => {
-            setHistoryOpen(true)
-            setAnchorEl(null)
-          }}
+        <span
+          className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
+          style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
         >
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Ver detalle</ListItemText>
-        </MenuItem>
-        {canManage && (
-          <Tooltip
-            title={assignment ? '' : 'Solo disponible para asignaciones registradas hoy'}
-            placement="right"
-          >
-            <span>
-              <MenuItem
-                disabled={!assignment}
-                onClick={() => {
-                  setMoveOpen(true)
-                  setAnchorEl(null)
-                }}
-              >
-                <ListItemIcon>
-                  <SwapHorizIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Mover a otra área</ListItemText>
-              </MenuItem>
-            </span>
-          </Tooltip>
-        )}
-        {canManage && (
-          <MenuItem
-            onClick={() => {
-              dnd.requestRelease(person.id)
-              setAnchorEl(null)
-            }}
-          >
-            <ListItemIcon>
-              <PersonRemoveIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Liberar del área</ListItemText>
-          </MenuItem>
-        )}
-      </Menu>
+          {(person.status || 'Activo').toUpperCase()}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical className="h-[18px] w-[18px]" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Ver detalle
+            </DropdownMenuItem>
+            {canManage &&
+              (assignment ? (
+                <DropdownMenuItem onClick={() => setMoveOpen(true)}>
+                  <ArrowLeftRight className="mr-2 h-4 w-4" />
+                  Mover a otra área
+                </DropdownMenuItem>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DropdownMenuItem disabled>
+                        <ArrowLeftRight className="mr-2 h-4 w-4" />
+                        Mover a otra área
+                      </DropdownMenuItem>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    Solo disponible para asignaciones registradas hoy
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            {canManage && (
+              <DropdownMenuItem onClick={() => dnd.requestRelease(person.id)}>
+                <UserMinus className="mr-2 h-4 w-4" />
+                Liberar del área
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <EmployeeHistoryDialog
         employee={historyOpen ? person : null}
@@ -280,7 +245,7 @@ function PersonCard({ person, areaId, canManage }) {
           onDone={() => setMoveOpen(false)}
         />
       )}
-    </Paper>
+    </div>
   )
 }
 
@@ -288,34 +253,18 @@ function AvailableCandidateRow({ person, areaId }) {
   const dnd = useDndAssign()
   return (
     <DraggablePersonChip employeeId={person.id} sx={{ display: 'block' }}>
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
+      <button
+        type="button"
         onClick={() => dnd.requestAssign(person.id, areaId)}
-        sx={{
-          p: 0.85,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          '&:hover': {
-            borderColor: '#3B82F6',
-            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05),
-          },
-        }}
+        className="flex w-full items-center gap-2 rounded-lg border border-border p-[6.8px] text-left hover:border-[#3B82F6] hover:bg-[#3B82F6]/5 dark:hover:bg-[#3B82F6]/10"
       >
         <EmployeeAvatar employee={person} size={30} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 12 }}>
-            {person.name}
-          </Typography>
-          <Typography noWrap sx={{ fontSize: 10, color: 'text.secondary' }}>
-            #{person.employeeNumber}
-          </Typography>
-        </Box>
-        <DragIndicatorIcon sx={{ fontSize: 16, color: 'text.disabled', flexShrink: 0 }} />
-      </Stack>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-bold">{person.name}</p>
+          <p className="truncate text-[10px] text-muted-foreground">#{person.employeeNumber}</p>
+        </div>
+        <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+      </button>
     </DraggablePersonChip>
   )
 }
@@ -328,7 +277,6 @@ export default function SupportAreaDetail({
   next,
   onNavigate,
 }) {
-  const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -340,6 +288,7 @@ export default function SupportAreaDetail({
      Siguiente, 2026-08-27) -- el Dialog ya no se desmonta entre areas.
      `history` no hace falta reiniciarlo aqui: su propio useEffect de
      abajo ya depende de [workCenterId, ...] y lo vuelve a cargar solo. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     setRegisterOpen(false)
     setSelfAssignOpen(false)
@@ -347,17 +296,27 @@ export default function SupportAreaDetail({
   }, [workCenterId])
 
   const area = workCenterId ? workCenterById(workCenterId) : null
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const staffing = useMemo(
     () => (workCenterId ? getAreaStaffing(workCenterId) : null),
     [workCenterId, version],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const people = useMemo(
     () => (workCenterId ? getPeopleByArea()[workCenterId] || [] : []),
     [workCenterId, version],
   )
+  // `version` fuerza recalcular la lista de disponibles cuando cambia el
+  // estado de personal, aunque no se lea dentro del callback -- mismo
+  // patron ya usado en otros archivos de este folder.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
   const { isOver, dropProps } = useEmployeeDropTarget(workCenterId)
 
+  // `version` fuerza refrescar el historial tras una asignacion/movimiento,
+  // aunque no se lea dentro del callback -- mismo patron ya usado en otros
+  // archivos de este folder.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     if (!open || !workCenterId) return
     let cancelled = false
@@ -398,6 +357,7 @@ export default function SupportAreaDetail({
   const state = describeAreaState(staffing.real, staffing.ideal)
   const description = SUPPORT_AREA_DESCRIPTIONS[area.id] || null
   const historyItems = showAllHistory ? history.items : history.items.slice(0, 3)
+  const headerColor = statusMeta?.color || '#10B981'
 
   const donutData =
     staffing.ideal != null
@@ -409,295 +369,173 @@ export default function SupportAreaDetail({
   const donutTotal = donutData.reduce((sum, d) => sum + d.value, 0) || 1
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullScreen
-      PaperProps={{ sx: { bgcolor: 'background.default' } }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          px: { xs: 1.5, md: 3 },
-          py: 1.5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          flexWrap: 'wrap',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
-        <IconButton onClick={onClose}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography sx={{ fontWeight: 800, fontSize: 19, letterSpacing: -0.4 }}>
-              {area.name}
-            </Typography>
-            <Chip
-              size="small"
-              label={headerLabel}
-              sx={{
-                fontWeight: 700,
-                bgcolor: alpha(statusMeta?.color || '#10B981', 0.14),
-                color: statusMeta?.color || '#10B981',
-                border: `1px solid ${alpha(statusMeta?.color || '#10B981', 0.35)}`,
-              }}
-            />
-          </Stack>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-            Centro de Trabajo · Área de soporte
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1 }} />
-        {onNavigate && (
-          <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
-        )}
-        <Button
-          variant="contained"
-          startIcon={<PersonAddAlt1Icon />}
-          onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
-          sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-        >
-          {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
-        </Button>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="inset-0 left-0 top-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 rounded-none bg-background">
+        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[19px] font-extrabold tracking-[-0.4px]">{area.name}</p>
+              <span
+                className="inline-flex h-6 items-center rounded-full px-2 text-xs font-bold"
+                style={{ backgroundColor: hexToRgba(headerColor, 0.14), color: headerColor }}
+              >
+                {headerLabel}
+              </span>
+            </div>
+            <p className="text-[11.5px] text-muted-foreground">
+              Centro de Trabajo · Área de soporte
+            </p>
+          </div>
+          <div className="flex-1" />
+          {onNavigate && (
+            <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
+          )}
+          <Button
+            onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
+            className="rounded-[20px] font-bold"
+          >
+            <UserPlus className="h-4 w-4" />
+            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+          </Button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* Fila superior de resumen */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: 'divider',
-            mb: 2.5,
-            overflow: 'hidden',
-          }}
-        >
-          <Stack direction={{ xs: 'column', md: 'row' }}>
-            <Box
-              sx={{
-                px: { xs: 1.5, md: 2.25 },
-                py: 1.25,
-                flex: '1 1 170px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.25,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: '50%',
-                  bgcolor: alpha('#3B82F6', 0.12),
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: '#3B82F6',
-                }}
-              >
-                <GroupsIcon />
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                  {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal}` : staffing.real}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                  personas asignadas
-                </Typography>
-                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
-                  <Box
-                    sx={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      bgcolor: statusMeta?.color || '#94A3B8',
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: statusMeta?.color || 'text.secondary',
-                    }}
-                  >
-                    {headerLabel}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                px: { xs: 1.5, md: 2.25 },
-                py: 1.25,
-                flex: '1 1 190px',
-                borderLeft: { md: '1px solid' },
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.5,
-                }}
-              >
-                Estado del área
-              </Typography>
-              <Stack direction="row" spacing={0.6} alignItems="center">
-                <state.Icon sx={{ fontSize: 17, color: TONE_COLOR[state.tone] }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{state.label}</Typography>
-              </Stack>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary', mt: 0.25 }}>
-                {state.description}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                px: { xs: 1.5, md: 2.25 },
-                py: 1.25,
-                flex: '1 1 150px',
-                borderLeft: { md: '1px solid' },
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.5,
-                }}
-              >
-                Cobertura
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 21,
-                  fontWeight: 800,
-                  color: coveragePct != null && coveragePct >= 100 ? '#10B981' : '#3B82F6',
-                  lineHeight: 1.1,
-                }}
-              >
-                {coveragePct != null ? `${coveragePct}%` : '—'}
-              </Typography>
-              {coveragePct != null && (
-                <>
-                  <Box
-                    sx={{
-                      height: 5,
-                      borderRadius: 999,
-                      bgcolor: 'action.hover',
-                      overflow: 'hidden',
-                      my: 0.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: `${coverageBarPct}%`,
-                        height: '100%',
-                        bgcolor: coveragePct >= 100 ? '#10B981' : '#3B82F6',
-                        borderRadius: 999,
-                      }}
+        <div key={workCenterId} className="overflow-y-auto p-3 md:p-6">
+          {/* Fila superior de resumen */}
+          <div className="mb-5 overflow-hidden rounded-2xl border border-border">
+            <div className="flex flex-col md:flex-row md:divide-x md:divide-border">
+              <div className="flex flex-[1_1_170px] items-center gap-2.5 px-3 py-2.5 md:px-[18px]">
+                <div
+                  className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full"
+                  style={{ backgroundColor: hexToRgba('#3B82F6', 0.12), color: '#3B82F6' }}
+                >
+                  <Users2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[22px] font-extrabold leading-none">
+                    {staffing.ideal != null
+                      ? `${staffing.real} / ${staffing.ideal}`
+                      : staffing.real}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">personas asignadas</p>
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <span
+                      className="h-[7px] w-[7px] rounded-full"
+                      style={{ backgroundColor: statusMeta?.color || '#94A3B8' }}
                     />
-                  </Box>
-                  <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-                    {staffing.real} de {staffing.ideal} personas
-                  </Typography>
-                </>
+                    <p
+                      className="text-[11px] font-bold"
+                      style={{ color: statusMeta?.color || undefined }}
+                    >
+                      {headerLabel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-[1_1_190px] px-3 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  Estado del área
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <state.Icon
+                    className="h-[17px] w-[17px]"
+                    style={{ color: TONE_COLOR[state.tone] }}
+                  />
+                  <p className="text-[15px] font-extrabold">{state.label}</p>
+                </div>
+                <p className="mt-0.5 text-[10.5px] text-muted-foreground">{state.description}</p>
+              </div>
+
+              <div className="flex-[1_1_150px] px-3 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  Cobertura
+                </p>
+                <p
+                  className={cn(
+                    'text-[21px] font-extrabold leading-[1.1]',
+                    coveragePct != null && coveragePct >= 100 ? 'text-[#10B981]' : 'text-[#3B82F6]',
+                  )}
+                >
+                  {coveragePct != null ? `${coveragePct}%` : '—'}
+                </p>
+                {coveragePct != null && (
+                  <>
+                    <div className="my-1 h-[5px] overflow-hidden rounded-full bg-black/[.04] dark:bg-white/[.08]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${coverageBarPct}%`,
+                          backgroundColor: coveragePct >= 100 ? '#10B981' : '#3B82F6',
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10.5px] text-muted-foreground">
+                      {staffing.real} de {staffing.ideal} personas
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="flex-[1_1_110px] px-3 py-2.5 md:px-[18px]">
+                <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
+                  Plantilla ideal
+                </p>
+                <p className="text-[21px] font-extrabold leading-[1.1]">{staffing.ideal ?? '—'}</p>
+                <p className="text-[10.5px] text-muted-foreground">personas</p>
+              </div>
+
+              {description && (
+                <div
+                  className="flex-[1.3_1_220px] px-3 py-2.5 md:px-[18px]"
+                  style={{ backgroundColor: hexToRgba('#3B82F6', 0.04) }}
+                >
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <Info className="h-[15px] w-[15px] text-[#3B82F6]" />
+                    <p className="text-[11.5px] font-extrabold text-[#3B82F6]">
+                      Información del área
+                    </p>
+                  </div>
+                  <p className="text-xs font-semibold">{description}</p>
+                  <p className="text-[10.5px] text-muted-foreground">
+                    {missing === 0
+                      ? 'No requiere cobertura adicional'
+                      : `Requiere ${missing} persona${missing === 1 ? '' : 's'} para cobertura completa`}
+                  </p>
+                </div>
               )}
-            </Box>
+            </div>
+          </div>
 
-            <Box
-              sx={{
-                px: { xs: 1.5, md: 2.25 },
-                py: 1.25,
-                flex: '1 1 110px',
-                borderLeft: { md: '1px solid' },
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.5,
-                }}
-              >
-                Plantilla ideal
-              </Typography>
-              <Typography sx={{ fontSize: 21, fontWeight: 800, lineHeight: 1.1 }}>
-                {staffing.ideal ?? '—'}
-              </Typography>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
-            </Box>
-
-            {description && (
-              <Box
-                sx={{
-                  px: { xs: 1.5, md: 2.25 },
-                  py: 1.25,
-                  flex: '1.3 1 220px',
-                  borderLeft: { md: '1px solid' },
-                  borderColor: 'divider',
-                  bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.08 : 0.04),
-                }}
-              >
-                <Stack direction="row" spacing={0.6} alignItems="center" sx={{ mb: 0.25 }}>
-                  <InfoOutlinedIcon sx={{ fontSize: 15, color: '#3B82F6' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: '#3B82F6' }}>
-                    Información del área
-                  </Typography>
-                </Stack>
-                <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{description}</Typography>
-                <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-                  {missing === 0
-                    ? 'No requiere cobertura adicional'
-                    : `Requiere ${missing} persona${missing === 1 ? '' : 's'} para cobertura completa`}
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-        </Paper>
-
-        {/* Personal asignado + Resumen del area */}
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
-          <Grid item xs={12} lg={8}>
-            <Paper
+          {/* Personal asignado + Resumen del area */}
+          <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div
               {...dropProps}
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: isOver ? '#3B82F6' : 'divider',
-                bgcolor: isOver
-                  ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.12 : 0.05)
-                  : 'background.paper',
-                p: 2,
-                height: '100%',
-                transition: 'all .15s ease',
-              }}
+              className={cn(
+                'rounded-2xl border p-4 transition-all duration-150 lg:col-span-2',
+                isOver
+                  ? 'border-[#3B82F6] bg-[#3B82F6]/[0.05] dark:bg-[#3B82F6]/[0.12]'
+                  : 'border-border bg-card',
+              )}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
+              <p className="mb-3 text-[14.5px] font-extrabold">
                 Personal asignado ({people.length})
-              </Typography>
+              </p>
               {people.length === 0 ? (
                 <EmptyState
                   compact
@@ -705,7 +543,7 @@ export default function SupportAreaDetail({
                   description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'."
                 />
               ) : (
-                <Stack spacing={1.25}>
+                <div className="flex flex-col gap-2.5">
                   {people.map((p) => (
                     <PersonCard
                       key={p.id}
@@ -714,25 +552,13 @@ export default function SupportAreaDetail({
                       canManage={isSupervisor}
                     />
                   ))}
-                </Stack>
+                </div>
               )}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
-                Resumen del área
-              </Typography>
-              <Box sx={{ position: 'relative', height: 150 }}>
+            </div>
+
+            <div className="rounded-2xl border border-border p-4">
+              <p className="mb-3 text-[14.5px] font-extrabold">Resumen del área</p>
+              <div className="relative h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -751,77 +577,49 @@ export default function SupportAreaDetail({
                     <RTooltip formatter={(v, n) => [`${v} persona${v === 1 ? '' : 's'}`, n]} />
                   </PieChart>
                 </ResponsiveContainer>
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%,-50%)',
-                    textAlign: 'center',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                    {staffing.real}
-                  </Typography>
-                  <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>personas</Typography>
-                </Box>
-              </Box>
-              <Stack spacing={0.75} sx={{ mt: 1 }}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                  <p className="text-[22px] font-extrabold leading-none">{staffing.real}</p>
+                  <p className="text-[10px] text-muted-foreground">personas</p>
+                </div>
+              </div>
+              <div className="mt-2 flex flex-col gap-1.5">
                 {donutData.map((row) => (
-                  <Stack key={row.key} direction="row" alignItems="center" spacing={0.75}>
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        bgcolor: row.color,
-                        flexShrink: 0,
-                      }}
+                  <div key={row.key} className="flex items-center gap-1.5">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: row.color }}
                     />
-                    <Typography sx={{ fontSize: 12, flex: 1 }}>{row.label}</Typography>
-                    <Typography sx={{ fontSize: 12, fontWeight: 700 }}>
+                    <p className="flex-1 text-xs">{row.label}</p>
+                    <p className="text-xs font-bold">
                       {row.value} ({Math.round((row.value / donutTotal) * 100)}%)
-                    </Typography>
-                  </Stack>
+                    </p>
+                  </div>
                 ))}
-              </Stack>
+              </div>
 
-              <Divider sx={{ my: 1.5 }} />
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="flex-start"
-                sx={{
-                  p: 1.25,
-                  borderRadius: 2,
-                  bgcolor: alpha(TONE_COLOR[state.tone], 0.1),
-                  border: `1px solid ${alpha(TONE_COLOR[state.tone], 0.25)}`,
+              <div className="my-3 border-t border-border" />
+              <div
+                className="flex items-start gap-2 rounded-lg p-2.5"
+                style={{
+                  backgroundColor: hexToRgba(TONE_COLOR[state.tone], 0.1),
+                  border: `1px solid ${hexToRgba(TONE_COLOR[state.tone], 0.25)}`,
                 }}
               >
-                <state.Icon sx={{ fontSize: 17, color: TONE_COLOR[state.tone], mt: 0.1 }} />
-                <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{state.description}</Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-        </Grid>
+                <state.Icon
+                  className="mt-px h-[17px] w-[17px] shrink-0"
+                  style={{ color: TONE_COLOR[state.tone] }}
+                />
+                <p className="text-xs font-semibold">{state.description}</p>
+              </div>
+            </div>
+          </div>
 
-        {/* Disponibles + Actividad reciente */}
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5 }}>
+          {/* Disponibles + Actividad reciente */}
+          <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-border p-4">
+              <p className="mb-3 text-[13.5px] font-extrabold">
                 Disponibles para asignar ({available.length})
-              </Typography>
+              </p>
               {available.length === 0 ? (
                 <EmptyState
                   compact
@@ -829,57 +627,44 @@ export default function SupportAreaDetail({
                   description="Actualmente no hay personal disponible para asignar a esta área."
                 />
               ) : (
-                <Stack spacing={0.85}>
+                <div className="flex flex-col gap-[6.8px]">
                   {available.slice(0, 6).map((p) => (
                     <AvailableCandidateRow key={p.id} person={p} areaId={workCenterId} />
                   ))}
-                </Stack>
+                </div>
               )}
               {available.length > 0 && isSupervisor && (
                 <Button
-                  size="small"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setRegisterOpen(true)}
-                  sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+                  className="mt-2 font-bold"
                 >
                   Ver todos los empleados
                 </Button>
               )}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-              }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 1.5 }}
-              >
-                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>Actividad reciente</Typography>
+            </div>
+
+            <div className="rounded-2xl border border-border p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[13.5px] font-extrabold">Actividad reciente</p>
                 {history.items.length > 3 && (
                   <Button
-                    size="small"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowAllHistory((v) => !v)}
-                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                    className="font-bold"
                   >
                     {showAllHistory ? 'Ver menos' : 'Ver todo'}
                   </Button>
                 )}
-              </Stack>
+              </div>
               {history.loading ? (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Cargando…</Typography>
+                <p className="text-xs text-muted-foreground">Cargando…</p>
               ) : history.error ? (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                <p className="text-xs text-muted-foreground">
                   No se pudo cargar la actividad reciente.
-                </Typography>
+                </p>
               ) : historyItems.length === 0 ? (
                 <EmptyState
                   compact
@@ -887,75 +672,57 @@ export default function SupportAreaDetail({
                   description="Todavía no hay asignaciones o movimientos registrados para esta área."
                 />
               ) : (
-                <Stack spacing={1.25}>
+                <div className="flex flex-col gap-2.5">
                   {historyItems.map((h) => (
-                    <Stack key={h.id} direction="row" spacing={1} alignItems="flex-start">
-                      <Box
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: '50%',
-                          flexShrink: 0,
-                          mt: 0.1,
-                          bgcolor: alpha('#10B981', 0.14),
-                          display: 'grid',
-                          placeItems: 'center',
-                          color: '#10B981',
-                        }}
+                    <div key={h.id} className="flex items-start gap-2">
+                      <div
+                        className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full"
+                        style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
                       >
-                        <PersonAddAlt1Icon sx={{ fontSize: 13 }} />
-                      </Box>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography sx={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3 }} noWrap>
+                        <UserPlus className="h-[13px] w-[13px]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold leading-[1.3]">
                           {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
-                        </Typography>
-                        <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+                        </p>
+                        <p className="text-[10.5px] text-muted-foreground">
                           {h.byName ? `Por ${h.byName} · ` : ''}
                           {relativeTimeEs(h.movedAt)}
-                        </Typography>
-                      </Box>
-                    </Stack>
+                        </p>
+                      </div>
+                    </div>
                   ))}
-                </Stack>
+                </div>
               )}
-            </Paper>
-          </Grid>
-        </Grid>
+            </div>
+          </div>
 
-        {/* Franja inferior de informacion */}
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: 'divider',
-            p: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.06 : 0.03),
-          }}
-        >
-          <InfoOutlinedIcon sx={{ fontSize: 17, color: '#3B82F6', flexShrink: 0 }} />
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-            {area.name} es un área de soporte. La asignación de personal se gestiona directamente
-            por los responsables autorizados.
-          </Typography>
-        </Paper>
-      </Box>
+          {/* Franja inferior de informacion */}
+          <div
+            className="flex items-center gap-2 rounded-2xl border border-border p-3"
+            style={{ backgroundColor: hexToRgba('#3B82F6', 0.03) }}
+          >
+            <Info className="h-[17px] w-[17px] shrink-0 text-[#3B82F6]" />
+            <p className="text-xs text-muted-foreground">
+              {area.name} es un área de soporte. La asignación de personal se gestiona directamente
+              por los responsables autorizados.
+            </p>
+          </div>
+        </div>
 
-      <RegisterPersonnelDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        fixedAreaId={workCenterId}
-        onDone={() => {}}
-      />
-      <SelfAssignDialog
-        open={selfAssignOpen}
-        onClose={() => setSelfAssignOpen(false)}
-        fixedAreaId={workCenterId}
-        onDone={() => {}}
-      />
+        <RegisterPersonnelDialog
+          open={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          fixedAreaId={workCenterId}
+          onDone={() => {}}
+        />
+        <SelfAssignDialog
+          open={selfAssignOpen}
+          onClose={() => setSelfAssignOpen(false)}
+          fixedAreaId={workCenterId}
+          onDone={() => {}}
+        />
+      </DialogContent>
     </Dialog>
   )
 }
