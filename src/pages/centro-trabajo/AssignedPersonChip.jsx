@@ -1,10 +1,6 @@
-import Stack from '@mui/material/Stack'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import CloseIcon from '@mui/icons-material/Close'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { X } from 'lucide-react'
 import { useDndAssign } from '../../state/dndAssign'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
@@ -24,31 +20,20 @@ export default function AssignedPersonChip({ employeeId, name, subtitle, size = 
   const dnd = useDndAssign()
   return (
     <DraggablePersonChip employeeId={employeeId} sx={{ width: '100%' }}>
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
-        sx={{ p: 1, pr: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-      >
+      <div className="flex items-center gap-2 rounded-[20px] border border-border p-2 pr-1">
         <EmployeeAvatar employee={{ name }} size={size} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>
-            {name}
-          </Typography>
-          {subtitle && (
-            <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        <IconButton
-          size="small"
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-bold">{name}</p>
+          {subtitle && <p className="truncate text-[10.5px] text-muted-foreground">{subtitle}</p>}
+        </div>
+        <button
+          type="button"
           onClick={() => dnd.requestRelease(employeeId)}
-          sx={{ color: 'text.secondary' }}
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-      </Stack>
+          <X className="h-4 w-4" />
+        </button>
+      </div>
     </DraggablePersonChip>
   )
 }
