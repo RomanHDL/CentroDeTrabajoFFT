@@ -1,19 +1,17 @@
-import React, { useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Tooltip from '@mui/material/Tooltip'
-import IconButton from '@mui/material/IconButton'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import PersonOffIcon from '@mui/icons-material/PersonOffOutlined'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { alpha, useTheme } from '@mui/material/styles'
-import { useEmployeeDropTargetStation } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
-import EmployeeAvatar from './EmployeeAvatar'
+import { MoreVertical, UserX } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn, hexToRgba } from '@/lib/utils'
 import { getPersonnelVisualType } from '../../data/personnel/lineVisualType'
 import { getActividadForEmployee } from '../../data/production/personnelByArea'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTargetStation } from '../../ui/dnd'
+import EmployeeAvatar from './EmployeeAvatar'
 import { LineTypeIcon } from './LineVisualLegend'
 
 /* ─────────────────────────────────────────────
@@ -33,7 +31,23 @@ import { LineTypeIcon } from './LineVisualLegend'
    categoria (LIDERAZGO/CALIDAD/PRODUCCION/TECNICO/SUMINISTRO/APOYO) sigue
    siendo una propiedad de la ESTACION, no del ocupante -- se calcula siempre
    (con o sin ocupante). Estado (ocupada/disponible) sigue siendo un sistema
-   de color SEPARADO (borde/fondo de la card). */
+   de color SEPARADO (borde/fondo de la card).
+
+   Fase 6c (Centro de Trabajo): convertido de MUI (Paper/Box/Typography +
+   sx + Menu/MenuItem) a Tailwind + shadcn/ui + lucide-react. Los colores de
+   acento/borde/fondo dependen del estado (isOver/selected/occupant) Y del
+   modo claro/oscuro (antes alpha(color, theme.palette.mode==='dark'?a:b) via
+   useTheme) -- se resuelven con el mismo patron de pares de variables CSS
+   --*-light/--*-dark ya establecido en LineStationCard.jsx (fijadas en
+   runtime via style, consumidas por clases estaticas bg-[var(...)]/
+   dark:bg-[var(...)]), para no perder la distincion light/dark del
+   original. El menu admin (IconButton+Menu/MenuItem de MUI) pasa a
+   DropdownMenu/DropdownMenuItem (mismo patron ya usado en
+   SpecialAreaDetail.jsx/SupportAreaDetail.jsx). El area de click del
+   ocupante sigue sin poder ser un <button> real -- esta anidada dentro de
+   la tarjeta (que ya tiene role="button", ademas de ser blanco de drop de
+   HTML5 DnD) y dentro de DraggablePersonChip (draggable=true nativo), mismo
+   criterio ya aplicado en LineStationCard.jsx/LeadershipRow.jsx. */
 export default function LineWorkstationCard({
   workAreaId,
   workstation,
@@ -44,11 +58,8 @@ export default function LineWorkstationCard({
   onEdit,
   onDeactivate,
 }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
-  const [menuAnchor, setMenuAnchor] = useState(null)
 
   const actividad = occupant?.employee?.id ? getActividadForEmployee(occupant.employee.id) : null
   const visualType = getPersonnelVisualType({
@@ -59,168 +70,91 @@ export default function LineWorkstationCard({
 
   const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
 
-  const accent = isOver ? '#3B82F6' : selected ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+  const highlighted = isOver || selected
+  const accent = highlighted ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+
+  const cardStyle = {
+    '--wc-border-light': highlighted ? accent : hexToRgba(accent, 0.35),
+    '--wc-border-dark': highlighted ? accent : hexToRgba(accent, 0.4),
+    '--wc-bg-light': isOver ? hexToRgba(accent, 0.08) : occupant ? '#F7FEFB' : '#FFFCF5',
+    '--wc-bg-dark': isOver ? hexToRgba(accent, 0.18) : hexToRgba(accent, occupant ? 0.06 : 0.05),
+    '--wc-accent-bg-light': hexToRgba(accent, 0.14),
+    '--wc-accent-bg-dark': hexToRgba(accent, 0.22),
+  }
 
   return (
-    <Paper
-      elevation={0}
+    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- es blanco de drop de HTML5 DnD (dropProps) y contiene un area interactiva anidada (click en el ocupante, mas abajo); ambos casos son incompatibles con un <button> nativo, por eso usa role/tabIndex/onKeyDown manuales (mismo criterio que LineStationCard.jsx/LeadershipRow.jsx).
+    <div
       {...dropProps}
       onClick={() => onSelect(workstation)}
-      sx={{
-        position: 'relative',
-        p: 1.75,
-        borderRadius: 3,
-        cursor: 'pointer',
-        height: 192,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.6,
-        border: '1.5px solid',
-        borderStyle: available && !occupant ? 'dashed' : 'solid',
-        borderColor:
-          isOver || selected
-            ? '#3B82F6'
-            : occupant
-              ? alpha('#10B981', d ? 0.4 : 0.35)
-              : alpha('#F59E0B', d ? 0.4 : 0.35),
-        bgcolor: isOver
-          ? alpha('#3B82F6', d ? 0.18 : 0.08)
-          : occupant
-            ? d
-              ? alpha('#10B981', 0.06)
-              : '#F7FEFB'
-            : d
-              ? alpha('#F59E0B', 0.05)
-              : '#FFFCF5',
-        transition: 'all .15s ease',
-        '&:hover': {
-          borderColor: '#3B82F6',
-          boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)',
-        },
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(workstation)
+        }
       }}
+      style={cardStyle}
+      className={cn(
+        'relative box-border flex h-48 cursor-pointer flex-col gap-[4.8px] rounded-[30px] border-[1.5px] p-[14px] transition-all duration-150',
+        'border-[color:var(--wc-border-light)] bg-[var(--wc-bg-light)] dark:border-[color:var(--wc-border-dark)] dark:bg-[var(--wc-bg-dark)]',
+        'hover:border-[#3B82F6] hover:shadow-[0_4px_16px_rgba(0,0,0,.08)] dark:hover:shadow-[0_4px_16px_rgba(0,0,0,.35)]',
+        available && !occupant ? 'border-dashed' : 'border-solid',
+      )}
     >
       {isAdmin && (
-        <>
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation()
-              setMenuAnchor(e.currentTarget)
-            }}
-            sx={{ position: 'absolute', top: 6, right: 6, p: 0.4 }}
-          >
-            <MoreVertIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-          <Menu
-            anchorEl={menuAnchor}
-            open={!!menuAnchor}
-            onClose={(e) => {
-              e?.stopPropagation?.()
-              setMenuAnchor(null)
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MenuItem
-              onClick={() => {
-                setMenuAnchor(null)
-                onEdit?.(workstation)
-              }}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded-full p-[3.2px] text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              Editar puesto
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setMenuAnchor(null)
-                onDeactivate?.(workstation)
-              }}
-              disabled={!!occupant}
-            >
+              <MoreVertical className="h-[18px] w-[18px]" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => onEdit?.(workstation)}>Editar puesto</DropdownMenuItem>
+            <DropdownMenuItem disabled={!!occupant} onClick={() => onDeactivate?.(workstation)}>
               Eliminar puesto
-            </MenuItem>
-          </Menu>
-        </>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 0.75,
-          minWidth: 0,
-          pr: isAdmin ? 3 : 0,
-        }}
-      >
-        <Box
-          sx={{
-            width: 22,
-            height: 22,
-            borderRadius: '50%',
-            flexShrink: 0,
-            mt: 0.1,
-            display: 'grid',
-            placeItems: 'center',
-            fontSize: 11,
-            fontWeight: 800,
-            bgcolor: alpha(accent, d ? 0.22 : 0.14),
-            color: accent,
-          }}
+      <div className={cn('flex min-w-0 items-start gap-1.5', isAdmin && 'pr-6')}>
+        <div
+          className="mt-[0.8px] grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-[var(--wc-accent-bg-light)] text-[11px] font-extrabold dark:bg-[var(--wc-accent-bg-dark)]"
+          style={{ color: accent }}
         >
           {workstation.order}
-        </Box>
-        <Tooltip title={workstation.name}>
-          <Typography
-            sx={{
-              fontWeight: 800,
-              fontSize: 13,
-              lineHeight: 1.25,
-              flex: 1,
-              minWidth: 0,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              wordBreak: 'break-word',
-            }}
-          >
-            {workstation.name}
-          </Typography>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p className="line-clamp-2 min-w-0 flex-1 break-words text-[13px] font-extrabold leading-[1.25]">
+              {workstation.name}
+            </p>
+          </TooltipTrigger>
+          <TooltipContent>{workstation.name}</TooltipContent>
         </Tooltip>
-      </Box>
+      </div>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minHeight: 16 }}>
+      <div className="flex min-h-4 items-center gap-1">
         {visualType && (
           <>
             <LineTypeIcon type={visualType} size={12} />
-            <Typography
-              sx={{
-                fontSize: 9.5,
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: 0.3,
-                color: visualType.color,
-              }}
-              noWrap
+            <p
+              className="truncate text-[9.5px] font-extrabold uppercase tracking-[0.3px]"
+              style={{ color: visualType.color }}
             >
               {visualType.label}
-            </Typography>
+            </p>
           </>
         )}
-      </Box>
+      </div>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 0.5,
-          minWidth: 0,
-          width: '100%',
-        }}
-      >
+      <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-1">
         {occupant ? (
           <DraggablePersonChip
             employeeId={occupant.employee?.id}
@@ -232,99 +166,63 @@ export default function LineWorkstationCard({
               width: '100%',
             }}
           >
-            <Box
+            {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya esta anidado dentro de la tarjeta que tambien tiene role="button" arriba, y dentro de DraggablePersonChip (draggable=true nativo); un <button> anidado en otro seria HTML invalido y podria alterar el drag & drop de HTML5 (mismo criterio que LineStationCard.jsx/LeadershipRow.jsx). */}
+            <div
               onClick={(e) => {
                 e.stopPropagation()
                 onEmployeeClick(occupant.employee)
               }}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 0.5,
-                width: '100%',
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onEmployeeClick(occupant.employee)
+                }
               }}
+              className="flex w-full flex-col items-center gap-1"
             >
               <EmployeeAvatar employee={occupant.employee} size={40} />
-              <Tooltip title={occupant.employee?.name || ''}>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    lineHeight: 1.2,
-                    textAlign: 'center',
-                    width: '100%',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'break-word',
-                    minHeight: '2.4em',
-                  }}
-                >
-                  {occupant.employee?.name || '—'}
-                </Typography>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="line-clamp-2 min-h-[2.4em] w-full break-words text-center text-[12.5px] font-bold leading-[1.2]">
+                    {occupant.employee?.name || '—'}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>{occupant.employee?.name || ''}</TooltipContent>
               </Tooltip>
-            </Box>
+            </div>
           </DraggablePersonChip>
         ) : (
           <>
-            <PersonOffIcon sx={{ fontSize: 30, color: alpha('#F59E0B', d ? 0.7 : 0.55) }} />
-            <Typography
-              sx={{
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textAlign: 'center',
-                minHeight: '2.4em',
-              }}
-            >
+            <UserX className="h-[30px] w-[30px] text-[#F59E0B]/[0.55] dark:text-[#F59E0B]/[0.7]" />
+            <p className="min-h-[2.4em] text-center text-[11.5px] font-bold text-muted-foreground">
               Sin asignar
-            </Typography>
+            </p>
           </>
         )}
-        <Typography
-          sx={{
-            fontSize: 10.5,
-            color: 'text.secondary',
-            textAlign: 'center',
-            lineHeight: 1.25,
-            width: '100%',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word',
-            minHeight: '2.4em',
-          }}
-        >
+        <p className="line-clamp-2 min-h-[2.4em] w-full break-words text-center text-[10.5px] leading-[1.25] text-muted-foreground">
           {workstation.requiredRole}
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6 }}>
-        <Box
-          sx={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            bgcolor: occupant ? '#10B981' : '#F59E0B',
-            flexShrink: 0,
-          }}
+      <div className="flex items-center justify-center gap-[4.8px]">
+        <div
+          className={cn(
+            'h-[7px] w-[7px] shrink-0 rounded-full',
+            occupant ? 'bg-[#10B981]' : 'bg-[#F59E0B]',
+          )}
         />
-        <Typography
-          sx={{
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: 0.3,
-            color: occupant ? '#059669' : '#B45309',
-          }}
+        <p
+          className={cn(
+            'text-[11px] font-extrabold tracking-[0.3px]',
+            occupant ? 'text-[#059669]' : 'text-[#B45309]',
+          )}
         >
           {occupant ? 'OCUPADA' : 'DISPONIBLE'}
-        </Typography>
-      </Box>
-    </Paper>
+        </p>
+      </div>
+    </div>
   )
 }
