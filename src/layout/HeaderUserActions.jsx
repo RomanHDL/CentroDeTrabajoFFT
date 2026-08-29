@@ -13,9 +13,22 @@ import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import LockResetIcon from '@mui/icons-material/LockReset'
 import LogoutIcon from '@mui/icons-material/Logout'
+import TranslateIcon from '@mui/icons-material/Translate'
+import CheckIcon from '@mui/icons-material/Check'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../state/auth'
 import { ROLE_LABELS } from './roleLabels'
 import NotificationBell from './NotificationBell'
+
+// Fase 4 (i18n, MI Stack Reference sección 10) -- nombres reales en su
+// propio idioma (nunca traducidos), convencion estandar de selectores de
+// idioma. Mismos 3 codigos que public/locales/ y src/i18n.js
+// supportedLngs.
+const LANGUAGES = [
+  { code: 'es-MX', label: 'Español' },
+  { code: 'en', label: 'English' },
+  { code: 'zh-CN', label: '中文' },
+]
 
 function initialsOf(name) {
   return (
@@ -39,6 +52,8 @@ export default function HeaderUserActions({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuAnchor, setMenuAnchor] = useState(null)
+  const [langAnchor, setLangAnchor] = useState(null)
+  const { i18n } = useTranslation()
 
   const roleLabel = ROLE_LABELS[user?.role] || user?.role
   const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
@@ -52,6 +67,38 @@ export default function HeaderUserActions({ mode, setMode }) {
   return (
     <>
       {canApproveMoves && <NotificationBell userId={user?.id} />}
+      <Tooltip title="Idioma / Language / 语言">
+        <IconButton
+          size="small"
+          onClick={(e) => setLangAnchor(e.currentTarget)}
+          sx={{
+            transition: 'background-color 200ms ease, color 200ms ease',
+            '&:hover': {
+              bgcolor: (t) =>
+                t.palette.mode === 'dark' ? 'rgba(96,165,250,.14)' : 'rgba(59,130,246,.10)',
+            },
+          }}
+        >
+          <TranslateIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Menu anchorEl={langAnchor} open={!!langAnchor} onClose={() => setLangAnchor(null)}>
+        {LANGUAGES.map((lng) => (
+          <MenuItem
+            key={lng.code}
+            selected={i18n.resolvedLanguage === lng.code}
+            onClick={() => {
+              i18n.changeLanguage(lng.code)
+              setLangAnchor(null)
+            }}
+          >
+            <ListItemIcon>
+              {i18n.resolvedLanguage === lng.code ? <CheckIcon fontSize="small" /> : null}
+            </ListItemIcon>
+            {lng.label}
+          </MenuItem>
+        ))}
+      </Menu>
       <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
         <IconButton
           size="small"
