@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fase 6 (MI Stack Reference): variables shadcn/ui mapeadas a los mismos
+   tokens que tailwind.config.js / src/ui/theme.js (MUI), para que los
+   primitivos de shadcn que se agreguen mas adelante (Button, Dialog, etc.)
+   salgan ya con la paleta real de la marca en vez de los grises por
+   defecto de shadcn. */
+@layer base {
+  :root {
+    --background: 220 27% 96%; /* #F4F6F9 */
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 45%; /* #1D4ED8 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 93%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 217 91% 45%;
+    --radius: 10px;
+  }
+
+  .dark {
+    --background: 222 47% 6%; /* #0B1120 */
+    --foreground: 210 20% 98%;
+    --card: 217 33% 8%; /* #0F172A */
+    --card-foreground: 210 20% 98%;
+    --popover: 217 33% 8%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+}
