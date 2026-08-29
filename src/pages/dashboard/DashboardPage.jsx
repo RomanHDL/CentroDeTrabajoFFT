@@ -1,31 +1,25 @@
-import Grid from '@mui/material/Grid'
-import Paper from '@mui/material/Paper'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import WbSunnyIcon from '@mui/icons-material/WbSunny'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import TrackChangesIcon from '@mui/icons-material/TrackChanges'
-import PersonOffIcon from '@mui/icons-material/PersonOff'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import ShieldIcon from '@mui/icons-material/Shield'
-import RefreshIcon from '@mui/icons-material/Refresh'
 import dayjs from 'dayjs'
-import { usePageStyles } from '../../ui/pageStyles'
-import { getCurrentShift } from '../../data/production/catalog'
+import { Cog, RefreshCw, Shield, Sun, Target, Users, UserX } from 'lucide-react'
+import {
+  cardClass,
+  metricChipClass,
+  pageClass,
+  pageSubtitleClass,
+  pageTitleClass,
+} from '@/lib/pageStyles'
 import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
+import { getCurrentShift } from '../../data/production/catalog'
+import AreaStatusDonutCard from './charts/AreaStatusDonutCard'
+import CoverageDonutCard from './charts/CoverageDonutCard'
+import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
+import ShiftDistributionDonutCard from './charts/ShiftDistributionDonutCard'
+import DailyMovementsSummaryCard from './DailyMovementsSummaryCard'
 import DashboardExecKpiCard from './DashboardExecKpiCard'
 import DashboardExportButton from './DashboardExportButton'
-import FindingsCard from './FindingsCard'
-import FftIndicatorsCard from './FftIndicatorsCard'
-import DailyMovementsSummaryCard from './DailyMovementsSummaryCard'
-import RecentActivityCard from './RecentActivityCard'
 import DashboardQuickSummaryStrip from './DashboardQuickSummaryStrip'
-import CoverageDonutCard from './charts/CoverageDonutCard'
-import AreaStatusDonutCard from './charts/AreaStatusDonutCard'
-import ShiftDistributionDonutCard from './charts/ShiftDistributionDonutCard'
-import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
+import FftIndicatorsCard from './FftIndicatorsCard'
+import FindingsCard from './FindingsCard'
+import RecentActivityCard from './RecentActivityCard'
 
 /* ─────────────────────────────────────────────
    Dashboard rediseñado (2026-08-25, extendido 2026-08-26 a peticion
@@ -49,160 +43,135 @@ import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
    pidio el usuario ya no las incluye. Los componentes NO se borraron
    (quedan disponibles si se piden de vuelta), solo se dejaron de
    renderizar aqui -- decision documentada en el reporte final de esa
-   tarea. */
+   tarea.
+
+   Fase 6c (MI Stack Reference): portado de MUI (Grid/Paper/Chip) a
+   Tailwind -- el Grid de 5 columnas fraccionarias (md={2.4}) se traduce
+   a grid-cols-5 real (2.4/12 = 1/5 exacto); la fila 2/3 (md=6/6/12,
+   lg=4/4/4) se traduce a md:grid-cols-2 + md:col-span-2 en el tercer
+   item para reproducir el mismo wrap. Iconos MUI -> Lucide (Cog
+   reemplaza PrecisionManufacturingIcon, ya consistente con el resto de
+   Fase 6). */
 export default function DashboardPage() {
-  const ps = usePageStyles()
   const metrics = useDashboardMetrics()
   const today = dayjs()
   const currentShift = getCurrentShift()
 
   return (
-    <Box sx={ps.page}>
+    <div className={pageClass}>
       {/* Header */}
-      <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-        <Box
-          sx={{
-            ...ps.cardHeader,
-            flexDirection: { xs: 'column', md: 'row' },
-            alignItems: { xs: 'flex-start', md: 'center' },
-            gap: 1.5,
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={ps.pageTitle}>Dashboard</Typography>
-            <Typography sx={ps.pageSubtitle}>Resumen general del centro de trabajo</Typography>
-          </Box>
+      <div className={`${cardClass} mb-4`}>
+        <div className="flex flex-col items-start gap-3 border-b border-border bg-black/[.015] px-5 py-3.5 dark:bg-white/[.02] md:flex-row md:items-center">
+          <div className="flex-1">
+            <p className={pageTitleClass}>Dashboard</p>
+            <p className={pageSubtitleClass}>Resumen general del centro de trabajo</p>
+          </div>
 
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Chip
-              icon={<WbSunnyIcon sx={{ fontSize: 16 }} />}
-              label={`Turno: ${currentShift.label}`}
-              sx={{ ...ps.metricChip('info'), fontWeight: 700 }}
-            />
-            <Chip label={`Hoy: ${today.format('DD MMMM YYYY')}`} sx={ps.metricChip('default')} />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={metricChipClass('info')}>
+              <Sun className="mr-1 h-4 w-4" />
+              {`Turno: ${currentShift.label}`}
+            </span>
+            <span
+              className={metricChipClass('default')}
+            >{`Hoy: ${today.format('DD MMMM YYYY')}`}</span>
             <DashboardExportButton metrics={metrics} />
-          </Stack>
-        </Box>
-      </Paper>
+          </div>
+        </div>
+      </div>
 
       {/* Fila 1 -- 5 KPIs ejecutivos, ORDEN EXACTO pedido 2026-08-26:
           Personal actual, Personal faltante, Plantilla ideal, Líneas
           operando, Cobertura total (antes: Plantilla ideal primero). */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<PeopleAltIcon />}
-            accent="#3B82F6"
-            title="Personal actual"
-            value={metrics.kpis.personalActual}
-            unit="personas en turno"
-            footerLabel="Ideal"
-            footerValue={metrics.kpis.personalIdeal}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<PersonOffIcon />}
-            accent="#EF4444"
-            title="Personal faltante"
-            value={metrics.kpis.personalFaltante}
-            unit="personas faltantes"
-            footerLabel={
-              metrics.kpis.faltantePct != null
-                ? `${metrics.kpis.faltantePct}% del ideal`
-                : 'Sin plantilla ideal'
-            }
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<TrackChangesIcon />}
-            accent="#A855F7"
-            title="Plantilla ideal"
-            value={metrics.kpis.personalIdeal}
-            unit="personas"
-            footerLabel="Total ideal definida"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<PrecisionManufacturingIcon />}
-            accent="#06B6D4"
-            title="Líneas operando"
-            value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`}
-            unit="líneas operativas"
-            footerLabel={
-              metrics.kpis.lineasTotal > 0
-                ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas`
-                : ''
-            }
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <DashboardExecKpiCard
-            icon={<ShieldIcon />}
-            accent="#10B981"
-            title="Cobertura total"
-            value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'}
-            unit="de cobertura general"
-            progressPct={metrics.kpis.coverageBarPct}
-            footerLabel={`${metrics.totals.realTotal} / ${metrics.totals.idealTotal} del ideal`}
-          />
-        </Grid>
-      </Grid>
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
+        <DashboardExecKpiCard
+          icon={<Users />}
+          accent="#3B82F6"
+          title="Personal actual"
+          value={metrics.kpis.personalActual}
+          unit="personas en turno"
+          footerLabel="Ideal"
+          footerValue={metrics.kpis.personalIdeal}
+        />
+        <DashboardExecKpiCard
+          icon={<UserX />}
+          accent="#EF4444"
+          title="Personal faltante"
+          value={metrics.kpis.personalFaltante}
+          unit="personas faltantes"
+          footerLabel={
+            metrics.kpis.faltantePct != null
+              ? `${metrics.kpis.faltantePct}% del ideal`
+              : 'Sin plantilla ideal'
+          }
+        />
+        <DashboardExecKpiCard
+          icon={<Target />}
+          accent="#A855F7"
+          title="Plantilla ideal"
+          value={metrics.kpis.personalIdeal}
+          unit="personas"
+          footerLabel="Total ideal definida"
+        />
+        <DashboardExecKpiCard
+          icon={<Cog />}
+          accent="#06B6D4"
+          title="Líneas operando"
+          value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`}
+          unit="líneas operativas"
+          footerLabel={
+            metrics.kpis.lineasTotal > 0
+              ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas`
+              : ''
+          }
+        />
+        <DashboardExecKpiCard
+          icon={<Shield />}
+          accent="#10B981"
+          title="Cobertura total"
+          value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'}
+          unit="de cobertura general"
+          progressPct={metrics.kpis.coverageBarPct}
+          footerLabel={`${metrics.totals.realTotal} / ${metrics.totals.idealTotal} del ideal`}
+        />
+      </div>
 
       {/* Fila 2 -- Cobertura por área | Faltante vs ideal por área | Estado de las áreas */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={6} lg={4}>
-          <CoverageDonutCard areas={metrics.areas} coveragePct={metrics.kpis.coveragePct} />
-        </Grid>
-        <Grid item xs={12} md={6} lg={4}>
-          <MissingVsIdealComboCard areas={metrics.areas} />
-        </Grid>
-        <Grid item xs={12} md={12} lg={4}>
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <CoverageDonutCard areas={metrics.areas} coveragePct={metrics.kpis.coveragePct} />
+        <MissingVsIdealComboCard areas={metrics.areas} />
+        <div className="md:col-span-2 lg:col-span-1">
           <AreaStatusDonutCard statusCounts={metrics.statusCounts} />
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       {/* Fila 3 -- Distribución por turno | Movimientos del día | Actividades recientes */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={6} lg={4}>
-          <ShiftDistributionDonutCard shifts={metrics.shifts} />
-        </Grid>
-        <Grid item xs={12} md={6} lg={4}>
-          <DailyMovementsSummaryCard dailyMovements={metrics.dailyMovements} />
-        </Grid>
-        <Grid item xs={12} md={12} lg={4}>
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ShiftDistributionDonutCard shifts={metrics.shifts} />
+        <DailyMovementsSummaryCard dailyMovements={metrics.dailyMovements} />
+        <div className="md:col-span-2 lg:col-span-1">
           <RecentActivityCard recentActivity={metrics.recentActivity} />
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       {/* Fila 4 -- Hallazgos del día | Indicadores FFT */}
-      <Grid container spacing={2} sx={{ mb: 1.5 }}>
-        <Grid item xs={12} md={7}>
+      <div className="mb-3 grid grid-cols-1 gap-4 md:grid-cols-12">
+        <div className="md:col-span-7">
           <FindingsCard findings={metrics.findings} />
-        </Grid>
-        <Grid item xs={12} md={5}>
+        </div>
+        <div className="md:col-span-5">
           <FftIndicatorsCard />
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       {/* Resumen rápido del centro de trabajo -- franja compacta final */}
       <DashboardQuickSummaryStrip metrics={metrics} />
 
       {/* Ultima actualizacion -- discreto, nunca una card grande */}
-      <Stack
-        direction="row"
-        spacing={0.5}
-        alignItems="center"
-        justifyContent="flex-end"
-        sx={{ opacity: 0.65, mt: 1.5 }}
-      >
-        <RefreshIcon sx={{ fontSize: 13 }} />
-        <Typography sx={{ fontSize: 11 }}>
-          Última actualización: {metrics.updatedAt.format('hh:mm A')}
-        </Typography>
-      </Stack>
-    </Box>
+      <div className="mt-3 flex items-center justify-end gap-1 opacity-65">
+        <RefreshCw className="h-[13px] w-[13px]" />
+        <p className="text-[11px]">Última actualización: {metrics.updatedAt.format('hh:mm A')}</p>
+      </div>
+    </div>
   )
 }

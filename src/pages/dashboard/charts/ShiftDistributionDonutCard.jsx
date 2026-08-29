@@ -1,7 +1,4 @@
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import ChartCard from '../ChartCard'
 
 const SHIFT_COLORS = {
@@ -23,22 +20,12 @@ function ChartTooltip({ active, payload, total }) {
   const row = payload[0].payload
   const pct = total > 0 ? ((row.count / total) * 100).toFixed(0) : 0
   return (
-    <Box
-      sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
-        px: 1.5,
-        py: 1,
-        boxShadow: 3,
-      }}
-    >
-      <Box sx={{ fontWeight: 700, fontSize: 12.5 }}>{row.label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+    <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      <div className="text-[12.5px] font-bold">{row.label}</div>
+      <div className="text-xs text-muted-foreground">
         {row.count} persona{row.count === 1 ? '' : 's'} ({pct}%)
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -54,8 +41,8 @@ export default function ShiftDistributionDonutCard({ shifts, loading }) {
       empty={total === 0}
       emptyMessage="Todavía no hay personal con turno registrado hoy."
     >
-      <Stack direction="row" spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-        <Box sx={{ position: 'relative', flex: '1 1 0', minWidth: 0 }}>
+      <div className="flex flex-1 min-h-0 flex-row gap-4">
+        <div className="relative min-w-0 flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -76,41 +63,29 @@ export default function ShiftDistributionDonutCard({ shifts, loading }) {
               <Tooltip content={<ChartTooltip total={total} />} />
             </PieChart>
           </ResponsiveContainer>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>
-              Total
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{total}</Typography>
-          </Box>
-        </Box>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+            <p className="text-[10px] font-semibold text-muted-foreground">Total</p>
+            <p className="text-2xl font-extrabold leading-none">{total}</p>
+          </div>
+        </div>
 
-        <Stack spacing={1} sx={{ flex: '0 0 48%', minWidth: 0, justifyContent: 'center' }}>
+        <div className="flex min-w-0 flex-none basis-[48%] flex-col justify-center gap-2">
           {data.map((row) => (
-            <Stack key={row.id} direction="row" alignItems="center" spacing={0.75}>
-              <Box
-                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+            <div key={row.id} className="flex flex-row items-center gap-1.5">
+              <div
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: row.color }}
               />
-              <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.25 }} noWrap>
-                  {row.label}
-                </Typography>
-                <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>
+              <div className="min-w-0">
+                <p className="truncate text-[11.5px] font-bold leading-tight">{row.label}</p>
+                <p className="text-[10.5px] leading-tight text-muted-foreground">
                   {row.count} persona{row.count === 1 ? '' : 's'}
-                </Typography>
-              </Box>
-            </Stack>
+                </p>
+              </div>
+            </div>
           ))}
-        </Stack>
-      </Stack>
+        </div>
+      </div>
     </ChartCard>
   )
 }

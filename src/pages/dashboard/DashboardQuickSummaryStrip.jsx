@@ -1,57 +1,42 @@
-import Paper from '@mui/material/Paper'
-import Stack from '@mui/material/Stack'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Skeleton from '@mui/material/Skeleton'
-import { usePageStyles } from '../../ui/pageStyles'
+import { cardClass, cardHeaderClass, cardHeaderTitleClass } from '@/lib/pageStyles'
 
 /* "Resumen rápido del centro de trabajo" (2026-08-26) -- franja
    horizontal compacta al final del Dashboard, a peticion explicita del
    usuario ("NO duplicar cards gigantes"). Todos los valores ya vienen
    calculados por useDashboardMetrics() -- esta card no computa nada
    nuevo, solo re-muestra en compacto lo que las cards/graficas de arriba
-   ya mostraron en detalle (misma fuente, cero calculo propio). */
+   ya mostraron en detalle (misma fuente, cero calculo propio).
+
+   Fase 6c: portado de MUI (Paper/Stack + Skeleton) a Tailwind. El divider
+   invisible del Stack original (Box sin border-width, solo borderColor)
+   no aportaba nada visual y se omite; el borde inferior real que si se
+   veia en mobile vivia en el selector "& > div" (todo hijo directo del
+   Stack), reproducido aqui directo en Item. */
 function Item({ label, value, loading }) {
   return (
-    <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.1, flex: '1 1 140px', minWidth: 120 }}>
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          mb: 0.4,
-        }}
-      >
+    <div className="min-w-[120px] flex-[1_1_140px] border-b border-border px-3 py-[8.8px] sm:border-b-0 md:px-[18px]">
+      <p className="mb-[3.2px] text-[10px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
         {label}
-      </Typography>
+      </p>
       {loading ? (
-        <Skeleton width={48} height={26} />
+        <div className="h-[26px] w-12 animate-pulse rounded bg-muted" />
       ) : (
-        <Typography sx={{ fontSize: 19, fontWeight: 800, lineHeight: 1 }}>{value}</Typography>
+        <p className="text-[19px] font-extrabold leading-none">{value}</p>
       )}
-    </Box>
+    </div>
   )
 }
 
 export default function DashboardQuickSummaryStrip({ metrics, loading }) {
-  const ps = usePageStyles()
   const areasTotal = metrics?.areas?.length ?? 0
   const coverage = metrics?.kpis?.coveragePct != null ? `${metrics.kpis.coveragePct}%` : 'Sin meta'
 
   return (
-    <Paper elevation={0} sx={{ ...ps.card, mt: 2, overflow: 'hidden' }}>
-      <Box sx={ps.cardHeader}>
-        <Typography sx={ps.cardHeaderTitle}>Resumen rápido del centro de trabajo</Typography>
-      </Box>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        divider={<Box sx={{ borderColor: 'divider' }} />}
-        sx={{
-          '& > div': { borderBottom: { xs: '1px solid', sm: 'none' }, borderColor: 'divider' },
-        }}
-      >
+    <div className={`${cardClass} mt-4`}>
+      <div className={cardHeaderClass}>
+        <p className={cardHeaderTitleClass}>Resumen rápido del centro de trabajo</p>
+      </div>
+      <div className="flex flex-col sm:flex-row">
         <Item label="Áreas totales" value={areasTotal} loading={loading} />
         <Item
           label="Personal en turno"
@@ -74,7 +59,7 @@ export default function DashboardQuickSummaryStrip({ metrics, loading }) {
           value={metrics?.dailyMovements?.total ?? 0}
           loading={loading}
         />
-      </Stack>
-    </Paper>
+      </div>
+    </div>
   )
 }
