@@ -1,16 +1,9 @@
-import React, { useMemo } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
-import { workCenterById } from '../../data/production/catalog'
+import { useMemo } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getMovementsForDate, todayISO } from '../../data/personnel/repository'
+import { workCenterById } from '../../data/production/catalog'
+import { EmptyState } from '../../ui'
 
 const MOVEMENT_LABEL = { CHECK_IN: 'Entrada', MOVE: 'Movimiento', RELEASE: 'Puesto liberado' }
 
@@ -19,7 +12,10 @@ function areaLabel(id) {
 }
 
 export default function LineHistoryDialog({ lineId, open, onClose }) {
-  const ps = usePageStyles()
+  // `open` fuerza refrescar los movimientos (getMovementsForDate) cada vez que el
+  // dialogo se reabre, aunque no se lea dentro del callback -- comportamiento
+  // original preservado tal cual.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const movements = useMemo(() => {
     if (!lineId) return []
     return getMovementsForDate(todayISO())
@@ -28,51 +24,47 @@ export default function LineHistoryDialog({ lineId, open, onClose }) {
   }, [lineId, open])
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      <DialogTitle sx={{ fontWeight: 800 }}>
-        Historial de {workCenterById(lineId)?.name || lineId} — hoy
-      </DialogTitle>
-      <DialogContent dividers>
-        {movements.length === 0 ? (
-          <EmptyState
-            compact
-            title="Sin movimientos hoy"
-            description="No ha habido entradas ni movimientos en esta área hoy."
-          />
-        ) : (
-          <Stack spacing={1}>
-            {movements.map((m) => (
-              <Box
-                key={m.id}
-                sx={{ display: 'flex', gap: 1.5, p: 1.1, borderRadius: 2, bgcolor: 'action.hover' }}
-              >
-                <Typography sx={{ fontWeight: 800, fontSize: 13, minWidth: 44 }}>
-                  {m.movedAt}
-                </Typography>
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
-                    {m.employeeNumber} · {MOVEMENT_LABEL[m.type] || m.type}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                    {m.fromAreaId
-                      ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
-                      : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        )}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Historial de {workCenterById(lineId)?.name || lineId} — hoy</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[70vh] overflow-y-auto border-y border-border px-6 py-4">
+          {movements.length === 0 ? (
+            <EmptyState
+              compact
+              title="Sin movimientos hoy"
+              description="No ha habido entradas ni movimientos en esta área hoy."
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {movements.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex gap-3 rounded-[20px] bg-black/[.04] p-[8.8px] dark:bg-white/[.08]"
+                >
+                  <p className="min-w-[44px] text-[13px] font-extrabold">{m.movedAt}</p>
+                  <div>
+                    <p className="text-[13px] font-bold">
+                      {m.employeeNumber} · {MOVEMENT_LABEL[m.type] || m.type}
+                    </p>
+                    <p className="text-[12.5px] text-muted-foreground">
+                      {m.fromAreaId
+                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
+                        : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 px-6 py-4">
+          <Button variant="ghost" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose}>Cerrar</Button>
-      </DialogActions>
     </Dialog>
   )
 }
