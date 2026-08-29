@@ -1,12 +1,5 @@
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import ShieldIcon from '@mui/icons-material/Shield'
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
-import SettingsIcon from '@mui/icons-material/Settings'
-import BuildIcon from '@mui/icons-material/Build'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import PersonIcon from '@mui/icons-material/Person'
+import { Award, Package, Settings, Shield, User, Wrench } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
 
 /* Rediseño WC LINEA 0-10 (2026-08-28, a peticion explicita del usuario)
@@ -18,17 +11,27 @@ import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
    Paletizado/Accesorios/Insumos/Midea/Conveyor, identidad visual
    distinta a proposito). */
 export const LINE_TYPE_ICONS = {
-  liderazgo: WorkspacePremiumIcon,
-  calidad: ShieldIcon,
-  produccion: SettingsIcon,
-  tecnico: BuildIcon,
-  suministro: Inventory2Icon,
-  apoyo: PersonIcon,
+  liderazgo: Award,
+  calidad: Shield,
+  produccion: Settings,
+  tecnico: Wrench,
+  suministro: Package,
+  apoyo: User,
 }
 
-export function LineTypeIcon({ type, size = 14, sx }) {
-  const Icon = (type && LINE_TYPE_ICONS[type.iconKey]) || ShieldIcon
-  return <Icon sx={{ fontSize: size, color: type?.color || 'text.disabled', ...sx }} />
+// Fase 6c (Centro de Trabajo, WC LINEA): reemplaza el `sx` de MUI --
+// `className`/`style` cumplen el mismo rol de escape hatch para el
+// llamador (mismo orden de merge: color de `type` primero, luego el
+// override del caller al final).
+export function LineTypeIcon({ type, size = 14, className, style }) {
+  const Icon = (type && LINE_TYPE_ICONS[type.iconKey]) || Shield
+  return (
+    <Icon
+      size={size}
+      className={cn(!type?.color && 'text-muted-foreground/60', className)}
+      style={type?.color ? { color: type.color, ...style } : style}
+    />
+  )
 }
 
 const STATION_STATES = [
@@ -40,49 +43,29 @@ const STATION_STATES = [
 
 export default function LineVisualLegend() {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 }, alignItems: 'center' }}>
-      <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+    <div className="flex flex-wrap items-center gap-4 md:gap-8">
+      <div className="flex flex-wrap items-center gap-[10px]">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
           Jerarquía / Tipo de puesto
-        </Typography>
+        </p>
         {LINE_VISUAL_TYPE_ORDER.map((type) => (
-          <Stack key={type.key} direction="row" spacing={0.5} alignItems="center">
+          <div key={type.key} className="flex items-center gap-1">
             <LineTypeIcon type={type} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {type.label}
-            </Typography>
-          </Stack>
+            <p className="text-[11px] font-bold text-muted-foreground">{type.label}</p>
+          </div>
         ))}
-      </Stack>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+      </div>
+      <div className="flex items-center gap-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
           Estado de estación
-        </Typography>
+        </p>
         {STATION_STATES.map((s) => (
-          <Stack key={s.label} direction="row" spacing={0.5} alignItems="center">
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.color }} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {s.label}
-            </Typography>
-          </Stack>
+          <div key={s.label} className="flex items-center gap-1">
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+            <p className="text-[11px] font-bold text-muted-foreground">{s.label}</p>
+          </div>
         ))}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   )
 }

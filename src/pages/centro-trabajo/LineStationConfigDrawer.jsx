@@ -1,31 +1,33 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import Drawer from '@mui/material/Drawer'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Stack from '@mui/material/Stack'
-import Divider from '@mui/material/Divider'
-import Button from '@mui/material/Button'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
-import Alert from '@mui/material/Alert'
-import Chip from '@mui/material/Chip'
-import CloseIcon from '@mui/icons-material/Close'
-import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteIcon from '@mui/icons-material/Delete'
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
-import { alpha } from '@mui/material/styles'
-import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { alertToneClass, metricChipClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 import {
   createLineStation,
-  updateLineStation,
   deactivateLineStation,
   reorderLineStations,
+  updateLineStation,
 } from '../../data/personnel/lineStationConfig'
+import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
 
 const EMPTY_FORM = { name: '', requiredRoleLabel: '', category: '', quantity: 1, capacity: 1 }
+
+// Radix <Select.Item> no acepta value="" (revienta en runtime) -- este
+// sentinel solo vive dentro del <Select>, el estado real (form.category)
+// sigue guardando '' para "sin categoría" exactamente como antes.
+const NO_CATEGORY = '__none__'
 
 /* Drawer administrativo "Configuración de puestos" (seccion 6-10 del
    pedido, "estaciones configurables por ADMINISTRADOR") -- EXCLUSIVO de
@@ -68,11 +70,15 @@ export default function LineStationConfigDrawer({
     }
   }, [open])
 
+  // `startEdit`/`workstations` intencionalmente fuera de deps -- solo debe
+  // dispararse cuando se abre o cambia editStationId (prop), no en cada
+  // render por identidad nueva de la funcion/arreglo (comportamiento
+  // original preservado, antes suprimido via eslint-disable-next-line).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     if (!open || !editStationId) return
     const w = workstations.find((s) => s.id === editStationId)
     if (w) startEdit(w)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editStationId])
 
   const sorted = useMemo(
@@ -197,252 +203,250 @@ export default function LineStationConfigDrawer({
   const formOpen = creating || !!editingDbId
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 460 } } }}
-    >
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 16 }}>Configuración de puestos</Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }} noWrap>
-            {areaName}
-          </Typography>
-        </Box>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="left-auto top-0 right-0 bottom-0 flex w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-none sm:w-[460px]">
+        <DialogTitle className="sr-only">Configuración de puestos — {areaName}</DialogTitle>
 
-      <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+        <div className="flex items-center gap-2 border-b border-border p-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-extrabold">Configuración de puestos</p>
+            <p className="truncate text-[12.5px] text-muted-foreground">{areaName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        {confirmTarget && (
-          <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-              Eliminar "{confirmTarget.name}"
-            </Typography>
-            {confirmTarget.occupants?.length > 0 ? (
-              <Alert severity="warning">
-                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 0.5 }}>
-                  Este puesto tiene a{' '}
-                  {confirmTarget.occupants.length === 1
-                    ? '1 persona asignada'
-                    : `${confirmTarget.occupants.length} personas asignadas`}
-                  :
-                </Typography>
-                <Stack spacing={0.25} sx={{ mb: 0.75 }}>
-                  {confirmTarget.occupants.map((o) => (
-                    <Typography key={o.id} sx={{ fontSize: 12.5 }}>
-                      • {o.employee?.name || 'Empleado'}
-                    </Typography>
-                  ))}
-                </Stack>
-                <Typography sx={{ fontSize: 12.5 }}>
-                  Al eliminar este puesto,{' '}
-                  {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a{' '}
-                  <b>Personal sin estación</b> dentro de esta línea, sin perder su asignación real
-                  ni su historial.
-                </Typography>
-              </Alert>
-            ) : (
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                Este puesto está disponible, no tiene personal asignado.
-              </Typography>
-            )}
-            <Divider />
-            <Stack direction="row" spacing={1}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => setConfirmTarget(null)}
-                disabled={busy}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
+        <div className="flex-1 overflow-y-auto p-4">
+          {error && (
+            <Alert className={cn(alertToneClass('error'), 'relative mb-3 pr-9')}>
+              {error}
+              <button
+                type="button"
+                onClick={() => setError('')}
+                className="absolute right-2 top-2 rounded-full p-1 hover:bg-black/[.06] dark:hover:bg-white/[.08]"
               >
-                Cancelar
-              </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                color="error"
-                disabled={busy}
-                onClick={confirmDeactivate}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
-                Eliminar puesto
-              </Button>
-            </Stack>
-          </Stack>
-        )}
+                <X className="h-4 w-4" />
+              </button>
+            </Alert>
+          )}
 
-        {!formOpen && !confirmTarget && (
-          <>
-            <Stack spacing={1} sx={{ mb: 2 }}>
-              {sorted.map((w, i) => (
-                <Box
-                  key={w.id}
-                  sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-                >
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography
-                      sx={{ fontSize: 11, fontWeight: 800, color: 'text.disabled', flexShrink: 0 }}
-                    >
-                      {i + 1}.
-                    </Typography>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontWeight: 700, fontSize: 13.5 }} noWrap>
-                        {w.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }} noWrap>
-                        Rol requerido: {w.requiredRole || '—'}
-                      </Typography>
-                      {w.category && (
-                        <Chip
-                          size="small"
-                          label={w.category}
-                          sx={{ mt: 0.5, fontSize: 10, height: 18 }}
-                        />
-                      )}
-                    </Box>
-                    <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
-                      <IconButton
-                        size="small"
-                        disabled={i === 0 || busy}
-                        onClick={() => moveStation(i, -1)}
-                      >
-                        <ArrowUpwardIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        disabled={i === sorted.length - 1 || busy}
-                        onClick={() => moveStation(i, 1)}
-                      >
-                        <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => startEdit(w)}>
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => requestDeactivate(w)}>
-                        <DeleteIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-                </Box>
-              ))}
-              {sorted.length === 0 && (
-                <Typography
-                  sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', py: 2 }}
-                >
-                  Esta línea todavía no tiene puestos configurados.
-                </Typography>
+          {confirmTarget && (
+            <div className="flex flex-col gap-3">
+              <p className="text-[14px] font-extrabold">Eliminar "{confirmTarget.name}"</p>
+              {confirmTarget.occupants?.length > 0 ? (
+                <Alert className={alertToneClass('warning')}>
+                  <p className="mb-1 text-[13px] font-bold">
+                    Este puesto tiene a{' '}
+                    {confirmTarget.occupants.length === 1
+                      ? '1 persona asignada'
+                      : `${confirmTarget.occupants.length} personas asignadas`}
+                    :
+                  </p>
+                  <div className="mb-1.5 flex flex-col gap-0.5">
+                    {confirmTarget.occupants.map((o) => (
+                      <p key={o.id} className="text-[12.5px]">
+                        • {o.employee?.name || 'Empleado'}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-[12.5px]">
+                    Al eliminar este puesto,{' '}
+                    {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a{' '}
+                    <b>Personal sin estación</b> dentro de esta línea, sin perder su asignación real
+                    ni su historial.
+                  </p>
+                </Alert>
+              ) : (
+                <p className="text-[12.5px] text-muted-foreground">
+                  Este puesto está disponible, no tiene personal asignado.
+                </p>
               )}
-            </Stack>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={startCreate}
-              sx={{ textTransform: 'none', fontWeight: 700 }}
-            >
-              Crear nuevo puesto
-            </Button>
-          </>
-        )}
+              <div className="border-t border-border" />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmTarget(null)}
+                  disabled={busy}
+                  className="flex-1 font-bold"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={confirmDeactivate}
+                  className="flex-1 font-bold"
+                >
+                  Eliminar puesto
+                </Button>
+              </div>
+            </div>
+          )}
 
-        {formOpen && (
-          <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
-              {creating ? 'Nuevo puesto' : 'Editar puesto'}
-            </Typography>
-            <TextField
-              label="Nombre de la estación"
-              size="small"
-              fullWidth
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-            <TextField
-              label="Rol requerido"
-              size="small"
-              fullWidth
-              value={form.requiredRoleLabel}
-              onChange={(e) => setForm((f) => ({ ...f, requiredRoleLabel: e.target.value }))}
-            />
-            <TextField
-              select
-              label="Categoría"
-              size="small"
-              fullWidth
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            >
-              <MenuItem value="">Sin categoría</MenuItem>
-              {LINE_VISUAL_TYPE_ORDER.map((t) => (
-                <MenuItem key={t.key} value={t.key}>
-                  {t.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            {creating ? (
-              <TextField
-                label="Cantidad de posiciones"
-                size="small"
-                type="number"
-                fullWidth
-                inputProps={{ min: 1, max: 20 }}
-                value={form.quantity}
-                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                helperText='Si es mayor a 1, se crean posiciones numeradas (ej. "Montaje", "Montaje 2"...).'
-              />
-            ) : (
-              <TextField
-                label="Capacidad (personas simultáneas)"
-                size="small"
-                type="number"
-                fullWidth
-                inputProps={{ min: 1 }}
-                value={form.capacity}
-                onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
-              />
-            )}
-            <Divider />
-            <Stack direction="row" spacing={1}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={cancelForm}
-                disabled={busy}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
-                Cancelar
+          {!formOpen && !confirmTarget && (
+            <>
+              <div className="mb-4 flex flex-col gap-2">
+                {sorted.map((w, i) => (
+                  <div key={w.id} className="rounded-[20px] border border-border p-2.5">
+                    <div className="flex items-center gap-2">
+                      <p className="shrink-0 text-[11px] font-extrabold text-muted-foreground/50">
+                        {i + 1}.
+                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13.5px] font-bold">{w.name}</p>
+                        <p className="truncate text-[11.5px] text-muted-foreground">
+                          Rol requerido: {w.requiredRole || '—'}
+                        </p>
+                        {w.category && (
+                          <span className={cn(metricChipClass('default'), 'mt-1')}>
+                            {w.category}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 gap-0.5">
+                        <button
+                          type="button"
+                          disabled={i === 0 || busy}
+                          onClick={() => moveStation(i, -1)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={i === sorted.length - 1 || busy}
+                          onClick={() => moveStation(i, 1)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(w)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => requestDeactivate(w)}
+                          className="grid h-7 w-7 place-items-center rounded-full text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {sorted.length === 0 && (
+                  <p className="py-4 text-center text-[12.5px] text-muted-foreground">
+                    Esta línea todavía no tiene puestos configurados.
+                  </p>
+                )}
+              </div>
+              <Button variant="outline" onClick={startCreate} className="w-full font-bold">
+                <Plus className="h-4 w-4" />
+                Crear nuevo puesto
               </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                disabled={busy}
-                onClick={creating ? submitCreate : submitEdit}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
-                {creating ? 'Crear puesto' : 'Guardar cambios'}
-              </Button>
-            </Stack>
-          </Stack>
-        )}
-      </Box>
-    </Drawer>
+            </>
+          )}
+
+          {formOpen && (
+            <div className="flex flex-col gap-3">
+              <p className="text-[14px] font-extrabold">
+                {creating ? 'Nuevo puesto' : 'Editar puesto'}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="station-name">Nombre de la estación</Label>
+                <Input
+                  id="station-name"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="station-role">Rol requerido</Label>
+                <Input
+                  id="station-role"
+                  value={form.requiredRoleLabel}
+                  onChange={(e) => setForm((f) => ({ ...f, requiredRoleLabel: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="station-category">Categoría</Label>
+                <Select
+                  value={form.category || NO_CATEGORY}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, category: v === NO_CATEGORY ? '' : v }))
+                  }
+                >
+                  <SelectTrigger id="station-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
+                    {LINE_VISUAL_TYPE_ORDER.map((t) => (
+                      <SelectItem key={t.key} value={t.key}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {creating ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="station-quantity">Cantidad de posiciones</Label>
+                  <Input
+                    id="station-quantity"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={form.quantity}
+                    onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                  />
+                  <p className="text-[12px] text-muted-foreground">
+                    Si es mayor a 1, se crean posiciones numeradas (ej. "Montaje", "Montaje 2"...).
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="station-capacity">Capacidad (personas simultáneas)</Label>
+                  <Input
+                    id="station-capacity"
+                    type="number"
+                    min={1}
+                    value={form.capacity}
+                    onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                  />
+                </div>
+              )}
+              <div className="border-t border-border" />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={cancelForm}
+                  disabled={busy}
+                  className="flex-1 font-bold"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={creating ? submitCreate : submitEdit}
+                  className="flex-1 font-bold"
+                >
+                  {creating ? 'Crear puesto' : 'Guardar cambios'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
