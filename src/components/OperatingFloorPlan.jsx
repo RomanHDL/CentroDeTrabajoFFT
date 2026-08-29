@@ -1,50 +1,40 @@
-import { useState, useRef, useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import RemoveIcon from '@mui/icons-material/Remove'
-import AddIcon from '@mui/icons-material/Add'
-import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong'
-import FullscreenIcon from '@mui/icons-material/Fullscreen'
-import FullscreenExitIcon from '@mui/icons-material/FullscreenExit'
-import PersonIcon from '@mui/icons-material/Person'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import CloseIcon from '@mui/icons-material/Close'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { alpha } from '@mui/material/styles'
+import { Focus, Info, Maximize, Minimize, Minus, Plus, User, Users, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+import { getPersonnelRank } from '../data/personnel/rankSystem'
+import { getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
 import {
-  workCenterById,
-  WORK_CENTERS,
+  AREA_STATION_SOURCE_OVERRIDE,
   canonicalOperationalAreaId,
   operationalGroupMembers,
-  AREA_STATION_SOURCE_OVERRIDE,
+  WORK_CENTERS,
+  workCenterById,
 } from '../data/production/catalog'
+import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS } from '../data/production/floorPlanZones'
 import {
   getAreaHeadcount,
   getAreaStaffing,
-  getPeopleByArea,
-  hasAnyPersonnelToday,
-  getStaffingTotals,
   getFftPeopleWithLine,
   getGroupAreaStaffing,
   getGroupPeople,
+  getPeopleByArea,
+  getStaffingTotals,
+  hasAnyPersonnelToday,
 } from '../data/production/personnelByArea'
-import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS } from '../data/production/floorPlanZones'
-import { getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
-import { getPersonnelRank } from '../data/personnel/rankSystem'
-import { useEmployeeDropTarget } from '../ui/dnd'
-import DraggablePersonChip from '../ui/DraggablePersonChip'
 import EmployeeAvatar from '../pages/centro-trabajo/EmployeeAvatar'
 import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCenter'
+import DraggablePersonChip from '../ui/DraggablePersonChip'
+import { useEmployeeDropTarget } from '../ui/dnd'
 
 /* ─────────────────────────────────────────────
    "Área operando" -- plano 2D completo (rediseño 2026-08-24 a partir
@@ -82,13 +72,130 @@ import { useSelectedWorkCenter } from '../pages/centro-trabajo/useSelectedWorkCe
    AreaSummaryStrip/WorkAreaMap (personnelByArea.js) -- ninguna fuente
    de datos paralela; usePersonnelVersion() cubre tanto cambios
    locales como el sondeo del backend real (Fase 2) sin plomería
-   extra. */
+   extra.
+
+   Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. La matemática
+   de interacción (zoom/ajustar vista/pantalla completa/CSS Grid de
+   alineación/drag&drop) se deja INTACTA -- solo cambia la capa visual
+   (sx -> className). El grid-template-columns/rows/areas se mantiene
+   como `style` inline literal (no como clases Tailwind) para no
+   arriesgar ni un pixel de la alineación ya afinada explícitamente por
+   el usuario en varias rondas. */
 
 const STATUS_META = {
-  COMPLETA: { color: '#10B981', label: 'Completa', description: 'Cobertura completa' },
-  FALTA: { color: '#EF4444', label: 'Falta personal', description: 'Faltan asignaciones' },
-  PARCIAL: { color: '#3B82F6', label: 'Parcial', description: 'Asignación parcial' },
-  SIN_PERSONAL: { color: '#94A3B8', label: 'Sin personal', description: 'Sin personal asignado' },
+  COMPLETA: { label: 'Completa', description: 'Cobertura completa' },
+  FALTA: { label: 'Falta personal', description: 'Faltan asignaciones' },
+  PARCIAL: { label: 'Parcial', description: 'Asignación parcial' },
+  SIN_PERSONAL: { label: 'Sin personal', description: 'Sin personal asignado' },
+}
+
+/* Clases Tailwind por estado -- los 4 colores de STATUS_META (antes hex
+   MUI: #10B981/#EF4444/#3B82F6/#94A3B8) son exactamente los defaults de
+   Tailwind (emerald-500/red-500/blue-500/slate-400), así que en vez de
+   `alpha()` en tiempo de ejecución se usan clases con opacidad entre
+   corchetes -- el MISMO número decimal que antes recibía `alpha(color, N)`,
+   nunca un valor inventado. Todos los literales completos están escritos
+   tal cual (Tailwind no puede descubrir clases armadas por interpolación
+   de string en tiempo de ejecución). */
+const ZONE_TONE = {
+  COMPLETA: {
+    border: 'border-emerald-500/[0.35]',
+    border30: 'border-emerald-500/[0.3]',
+    borderTop: 'border-t-emerald-500',
+    borderLeft: 'border-l-emerald-500',
+    bgIdle: 'bg-emerald-500/[0.035] dark:bg-emerald-500/[0.05]',
+    bgIdleAlt: 'bg-emerald-500/[0.06] dark:bg-emerald-500/[0.1]',
+    ring25: 'hover:shadow-[0_0_0_2px_rgba(16,185,129,.25)]',
+    ring20: 'hover:shadow-[0_0_0_2px_rgba(16,185,129,.2)]',
+    track18: 'bg-emerald-500/[0.18]',
+    divider25: 'bg-emerald-500/[0.25]',
+    chip: 'bg-emerald-500/[0.15] text-emerald-500',
+    fill55: 'bg-emerald-500/[0.55]',
+    empty8: 'bg-emerald-500/[0.08]',
+    itemBorder25: 'border-emerald-500/[0.25]',
+    solid: 'bg-emerald-500',
+    text: 'text-emerald-500',
+  },
+  FALTA: {
+    border: 'border-red-500/[0.35]',
+    border30: 'border-red-500/[0.3]',
+    borderTop: 'border-t-red-500',
+    borderLeft: 'border-l-red-500',
+    bgIdle: 'bg-red-500/[0.035] dark:bg-red-500/[0.05]',
+    bgIdleAlt: 'bg-red-500/[0.06] dark:bg-red-500/[0.1]',
+    ring25: 'hover:shadow-[0_0_0_2px_rgba(239,68,68,.25)]',
+    ring20: 'hover:shadow-[0_0_0_2px_rgba(239,68,68,.2)]',
+    track18: 'bg-red-500/[0.18]',
+    divider25: 'bg-red-500/[0.25]',
+    chip: 'bg-red-500/[0.15] text-red-500',
+    fill55: 'bg-red-500/[0.55]',
+    empty8: 'bg-red-500/[0.08]',
+    itemBorder25: 'border-red-500/[0.25]',
+    solid: 'bg-red-500',
+    text: 'text-red-500',
+  },
+  PARCIAL: {
+    border: 'border-blue-500/[0.35]',
+    border30: 'border-blue-500/[0.3]',
+    borderTop: 'border-t-blue-500',
+    borderLeft: 'border-l-blue-500',
+    bgIdle: 'bg-blue-500/[0.035] dark:bg-blue-500/[0.05]',
+    bgIdleAlt: 'bg-blue-500/[0.06] dark:bg-blue-500/[0.1]',
+    ring25: 'hover:shadow-[0_0_0_2px_rgba(59,130,246,.25)]',
+    ring20: 'hover:shadow-[0_0_0_2px_rgba(59,130,246,.2)]',
+    track18: 'bg-blue-500/[0.18]',
+    divider25: 'bg-blue-500/[0.25]',
+    chip: 'bg-blue-500/[0.15] text-blue-500',
+    fill55: 'bg-blue-500/[0.55]',
+    empty8: 'bg-blue-500/[0.08]',
+    itemBorder25: 'border-blue-500/[0.25]',
+    solid: 'bg-blue-500',
+    text: 'text-blue-500',
+  },
+  SIN_PERSONAL: {
+    border: 'border-slate-400/[0.35]',
+    border30: 'border-slate-400/[0.3]',
+    borderTop: 'border-t-slate-400',
+    borderLeft: 'border-l-slate-400',
+    bgIdle: 'bg-slate-400/[0.035] dark:bg-slate-400/[0.05]',
+    bgIdleAlt: 'bg-slate-400/[0.06] dark:bg-slate-400/[0.1]',
+    ring25: 'hover:shadow-[0_0_0_2px_rgba(148,163,184,.25)]',
+    ring20: 'hover:shadow-[0_0_0_2px_rgba(148,163,184,.2)]',
+    track18: 'bg-slate-400/[0.18]',
+    divider25: 'bg-slate-400/[0.25]',
+    chip: 'bg-slate-400/[0.15] text-slate-400',
+    fill55: 'bg-slate-400/[0.55]',
+    empty8: 'bg-slate-400/[0.08]',
+    itemBorder25: 'border-slate-400/[0.25]',
+    solid: 'bg-slate-400',
+    text: 'text-slate-400',
+  },
+}
+
+// isOver (arrastrando encima): siempre azul, sin importar el estado real
+// del área -- mismo comportamiento que antes (`isOver ? '#3B82F6' : ...`).
+const OVER_TONE = {
+  border: 'border-blue-500',
+  bg: 'bg-blue-500/[0.08] dark:bg-blue-500/[0.18]',
+}
+
+function toneFor(status) {
+  return ZONE_TONE[status] || ZONE_TONE.SIN_PERSONAL
+}
+
+// Nodo de Conveyor General (ConveyorNode): 2 colores fijos, ocupado/vacante
+// -- no dependen de STATUS_META.
+const NODE_TONE = {
+  occupied: {
+    border: 'border-emerald-500/[0.4]',
+    hoverBg: 'hover:bg-emerald-500/[0.07] dark:hover:bg-emerald-500/[0.14]',
+    text: 'text-emerald-500',
+  },
+  vacant: {
+    border: 'border-amber-500/[0.4]',
+    hoverBg: 'hover:bg-amber-500/[0.07] dark:hover:bg-amber-500/[0.14]',
+    text: 'text-amber-500',
+  },
 }
 
 /* 4 estados a partir de real/ideal (2026-08-24, a peticion del
@@ -178,7 +285,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   function computeFit() {
     const container = planRef.current
     const floor = floorRef.current
-    if (!container || !floor || !floor.scrollWidth) return 1
+    if (!container || !floor?.scrollWidth) return 1
     const availableWidth = container.clientWidth - 4
     return Math.max(0.5, Math.min(1.4, +(availableWidth / floor.scrollWidth).toFixed(2)))
   }
@@ -188,6 +295,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
     setZoom(computeFit())
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: computeFit lee planRef/floorRef (refs estables) y no debe re-crear el observer en cada render -- solo reacciona a cambios de autoZoom, igual que antes con el eslint-disable original.
   useEffect(() => {
     const container = planRef.current
     if (!container || typeof ResizeObserver === 'undefined') return
@@ -203,7 +311,6 @@ export default function OperatingFloorPlan({ readOnly = false }) {
       observer.disconnect()
       if (frame) cancelAnimationFrame(frame)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoZoom])
 
   // Click en cualquier zona con area real (2026-08-25, a peticion explicita
@@ -224,7 +331,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   const totalPeople = SHOWN_AREA_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
 
   return (
-    <Box sx={{ p: 2.5 }}>
+    <div className="p-5">
       {/* Leyenda superior (2026-08-25, correccion definitiva a peticion
           explicita del usuario): UNICA leyenda del plano -- reemplaza el
           aviso azul de "mapeo no confirmado" que vivia aqui antes (se
@@ -233,55 +340,37 @@ export default function OperatingFloorPlan({ readOnly = false }) {
           ya no existe showLegend/Paper de "Referencias" al fondo). Los
           totales (personas/cobertura) son los mismos que ya se
           calculaban arriba -- ninguna fuente de datos nueva. */}
-      <Paper
-        elevation={0}
-        sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: 2 }}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          flexWrap="wrap"
-          spacing={2}
-          rowGap={1.25}
-        >
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
-            <Box
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                bgcolor: operating ? '#10B981' : '#94A3B8',
-              }}
+      <div className="mb-4 rounded-[20px] border border-border p-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
+          <div className="flex shrink-0 items-center gap-2">
+            <span
+              className={cn(
+                'h-2.5 w-2.5 rounded-full',
+                operating ? 'bg-emerald-500' : 'bg-slate-400',
+              )}
             />
-            <Typography sx={{ fontWeight: 800, fontSize: 17 }}>Área operando</Typography>
-          </Stack>
+            <p className="text-[17px] font-extrabold">Área operando</p>
+          </div>
 
-          <Stack
-            direction="row"
-            spacing={2.5}
-            flexWrap="wrap"
-            useFlexGap
-            sx={{ flex: 1, justifyContent: 'center' }}
-          >
-            {Object.values(STATUS_META).map((meta) => (
+          <div className="flex flex-1 flex-wrap justify-center gap-5">
+            {Object.entries(STATUS_META).map(([status, meta]) => (
               <LegendItem
                 key={meta.label}
-                color={meta.color}
+                dotClass={toneFor(status).solid}
                 label={meta.label}
                 description={meta.description}
               />
             ))}
             <LegendItem
-              icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />}
+              icon={<Info className="h-[15px] w-[15px]" />}
               label="Referencias"
               description="Áreas de referencia"
             />
-          </Stack>
+          </div>
 
-          <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
+          <div className="flex shrink-0 items-center gap-3">
             <InfoStat
-              icon={<PeopleAltIcon sx={{ fontSize: 16 }} />}
+              icon={<Users className="h-4 w-4" />}
               value={`${totalPeople} personas`}
               label="Total asignadas"
             />
@@ -289,66 +378,74 @@ export default function OperatingFloorPlan({ readOnly = false }) {
               value={`${totals.realTotal} / ${totals.idealTotal}`}
               label="Cobertura del catálogo"
             />
-          </Stack>
-        </Stack>
-      </Paper>
+          </div>
+        </div>
+      </div>
 
-      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1.5 }}>
+      <div className="mb-3 flex items-center gap-1">
         <Button
-          size="small"
-          startIcon={<CenterFocusStrongIcon fontSize="small" />}
+          variant="ghost"
+          size="sm"
           onClick={fitToScreen}
-          sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary', minHeight: 36 }}
+          className="h-9 font-bold text-muted-foreground"
         >
+          <Focus className="h-4 w-4" />
           Ajustar vista
         </Button>
-        <Tooltip title="Alejar">
-          <IconButton
-            sx={{ width: 36, height: 36 }}
-            onClick={() => {
-              setAutoZoom(false)
-              setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))
-            }}
-          >
-            <RemoveIcon fontSize="small" />
-          </IconButton>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => {
+                setAutoZoom(false)
+                setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))
+              }}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Alejar</TooltipContent>
         </Tooltip>
-        <Typography sx={{ fontSize: 12, fontWeight: 700, minWidth: 34, textAlign: 'center' }}>
-          {Math.round(zoom * 100)}%
-        </Typography>
-        <Tooltip title="Acercar">
-          <IconButton
-            sx={{ width: 36, height: 36 }}
-            onClick={() => {
-              setAutoZoom(false)
-              setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))
-            }}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
+        <span className="w-[34px] text-center text-xs font-bold">{Math.round(zoom * 100)}%</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => {
+                setAutoZoom(false)
+                setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Acercar</TooltipContent>
         </Tooltip>
-        <Tooltip title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
-          <IconButton sx={{ width: 36, height: 36 }} onClick={toggleFullscreen}>
-            {isFullscreen ? (
-              <FullscreenExitIcon fontSize="small" />
-            ) : (
-              <FullscreenIcon fontSize="small" />
-            )}
-          </IconButton>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleFullscreen}>
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          </TooltipContent>
         </Tooltip>
-      </Stack>
+      </div>
 
-      <Box
+      <div
         ref={planRef}
-        sx={{
-          bgcolor: 'background.paper',
-          overflow: 'auto',
-          overscrollBehaviorX: 'contain',
-          ...(isFullscreen ? { p: 2.5, height: '100vh' } : {}),
-        }}
+        className={cn(
+          'overflow-auto overscroll-x-contain bg-background',
+          isFullscreen && 'h-screen p-5',
+        )}
       >
-        <Box
-          sx={{
+        <div
+          style={{
             transform: `scale(${zoom})`,
             transformOrigin: 'top left',
             transition: 'transform .15s ease',
@@ -361,32 +458,26 @@ export default function OperatingFloorPlan({ readOnly = false }) {
             onOpenSummary={setDetailId}
             readOnly={readOnly}
           />
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       <DetailDialog areaId={detailId} onClose={() => setDetailId(null)} />
-    </Box>
+    </div>
   )
 }
 
 /* Item de leyenda de dos lineas (etiqueta + descripcion), a partir del
    mockup que el usuario compartio 2026-08-25 -- reemplaza los Chips de
    una sola linea que habia antes. */
-function LegendItem({ color, icon, label, description }) {
+function LegendItem({ dotClass, icon, label, description }) {
   return (
-    <Stack direction="row" spacing={0.75} alignItems="flex-start">
-      {icon || (
-        <Box
-          sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, mt: 0.4, flexShrink: 0 }}
-        />
-      )}
-      <Stack spacing={0}>
-        <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{label}</Typography>
-        <Typography sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1.2 }}>
-          {description}
-        </Typography>
-      </Stack>
-    </Stack>
+    <div className="flex items-start gap-1.5">
+      {icon || <span className={cn('mt-[3.2px] h-2 w-2 shrink-0 rounded-full', dotClass)} />}
+      <div className="flex flex-col">
+        <p className="text-[11.5px] font-bold leading-[1.2]">{label}</p>
+        <p className="text-[10px] leading-[1.2] text-muted-foreground">{description}</p>
+      </div>
+    </div>
   )
 }
 
@@ -395,23 +486,22 @@ function LegendItem({ color, icon, label, description }) {
    presentacion nueva a dos lineas junto a la leyenda. */
 function InfoStat({ icon, value, label }) {
   return (
-    <Stack alignItems="flex-end" spacing={0}>
-      <Stack direction="row" spacing={0.5} alignItems="center">
+    <div className="flex flex-col items-end">
+      <div className="flex items-center gap-1">
         {icon}
-        <Typography sx={{ fontSize: 13.5, fontWeight: 800 }}>{value}</Typography>
-      </Stack>
-      <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>{label}</Typography>
-    </Stack>
+        <p className="text-[13.5px] font-extrabold">{value}</p>
+      </div>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+    </div>
   )
 }
 
 function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
   return (
-    <Box ref={floorRef} sx={{ minWidth: 1180 }}>
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 1,
+    <div ref={floorRef} className="min-w-[1180px]">
+      <div
+        className="grid gap-2"
+        style={{
           gridTemplateColumns:
             'minmax(90px,0.7fr) minmax(90px,0.7fr) repeat(10, minmax(56px,1fr)) minmax(150px,1.1fr) minmax(108px,0.8fr) minmax(190px,1.3fr)',
           /* minmax(_, auto) en vez de px fijo (2026-08-25, correccion
@@ -460,7 +550,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
       >
         <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
 
-        <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <div style={{ gridArea: 'paletizado' }} className="flex flex-col gap-2">
           <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
           <HorizontalLineBar
             lineId="PROYECTO"
@@ -468,7 +558,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
             onOpen={onOpen}
             readOnly={readOnly}
           />
-        </Box>
+        </div>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
@@ -479,54 +569,26 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
           onOpen={onOpen}
           readOnly={readOnly}
         >
-          <Stack sx={{ height: '100%', minHeight: 0 }}>
-            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-              <Box sx={{ flex: 1.4, minWidth: 0 }}>
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="flex shrink-0 gap-2">
+              <div className="min-w-0 flex-[1.4]">
                 <HighValueGrid areaId="HIGH_VALUE" />
-              </Box>
-              <Box
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 0.5,
-                  borderLeft: '1px dashed',
-                  borderColor: 'divider',
-                  pl: 1,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: 9.5,
-                    textAlign: 'center',
-                    color: 'text.secondary',
-                  }}
-                >
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-1 border-l border-dashed border-border pl-2">
+                <p className="text-center text-[9.5px] font-bold text-muted-foreground">
                   Productos Mixtos
-                </Typography>
+                </p>
                 <MixtosDecoration />
-              </Box>
-            </Stack>
+              </div>
+            </div>
             {/* Nombres reales debajo de la cuadricula decorativa (2026-08-25, a
                 peticion explicita del usuario: si hay personal en cualquier
                 area, debe verse su nombre igual que en WC Accesorios, no solo
                 un indicador visual abstracto). */}
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                overflow: 'auto',
-                mt: 0.75,
-                pt: 0.75,
-                borderTop: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
+            <div className="mt-1.5 min-h-0 flex-1 overflow-auto border-t border-dashed border-border pt-1.5">
               <PersonList areaId="HIGH_VALUE" columns={2} readOnly={readOnly} />
-            </Box>
-          </Stack>
+            </div>
+          </div>
         </BigZone>
 
         <BigZone
@@ -555,16 +617,16 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
         >
           <PersonList areaId="ACCESORIOS" columns={2} readOnly={readOnly} />
         </BigZone>
-      </Box>
+      </div>
 
-      <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <div className="mt-3 border-t border-dashed border-border pt-3">
+        <div className="flex flex-wrap gap-2">
           {SUPPORT_CARD_AREA_IDS.map((id) => (
             <SupportCard key={id} areaId={id} onOpen={onOpen} readOnly={readOnly} />
           ))}
-        </Stack>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -601,44 +663,30 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
   const real = stations.filter((w) => w.occupants.length > 0).length
   const ideal = stations.length
   const status = statusFor(real, ideal)
-  const color = status ? STATUS_META[status].color : '#94A3B8'
+  const tone = toneFor(status)
   const label = `${real} / ${ideal}`
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : CONVEYOR_SOURCE_AREA_ID)
 
   return (
-    <Box
+    // biome-ignore lint/a11y/useKeyWithClickEvents: contenedor no interactivo -- cada ConveyorNode adentro ya es un <button> real con su propio soporte de teclado; este onClick es solo una conveniencia de mouse ("click en cualquier parte de la barra"), no la única forma de llegar a la acción.
+    // biome-ignore lint/a11y/noStaticElementInteractions: mismo motivo -- no puede ser <button> porque contendría botones anidados (ConveyorNode), HTML invalido.
+    <div
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
-      sx={{
-        gridArea,
-        borderRadius: 2,
-        p: 1,
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
-        borderTop: `3px solid ${color}`,
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        transition: 'box-shadow .15s ease, background-color .15s ease',
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
-      }}
+      style={{ gridArea }}
+      className={cn(
+        'cursor-pointer select-none rounded-[20px] border border-t-[3px] p-2 transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-t-blue-500' : tone.borderTop,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring25,
+      )}
     >
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.75 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.4 }}>
-          CONVEYOR GENERAL
-        </Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-          {isOver ? 'Soltar aquí' : label}
-        </Typography>
-      </Stack>
-      {/* height:'1px' explicito (no `1` numerico) -- sx interpreta un numero
-          <=1 en propiedades de tamaño como PORCENTAJE (sizingTransform de
-          MUI), no como pixeles: con `height:1` esta linea se estiraba a
-          100% de la fila del grid (bug real detectado en la primera
-          verificacion visual, empujaba las posiciones fuera de la caja). */}
-      <Box sx={{ height: '1px', bgcolor: alpha(color, 0.25), mb: 0.85 }} />
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <p className="text-[12.5px] font-extrabold tracking-[0.4px]">CONVEYOR GENERAL</p>
+        <p className="text-[13.5px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+      </div>
+      <div className={cn('mb-[6.8px] h-px', tone.divider25)} />
       {/* flexWrap (2026-08-28, a peticion explicita del usuario, Parte 14):
           las 2 posiciones se centran en una sola fila -- si el bloque se
           angostara demasiado (tablet), igual se reparten solas sin dejar de
@@ -649,12 +697,7 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
           nodos angostos (maxWidth 140), dejarlos pegados a la izquierda del
           bloque ancho se veia desbalanceado -- centrados se ve como una
           franja limpia, no como una card a medio llenar. */}
-      <Stack
-        direction="row"
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ rowGap: 0.75, columnGap: 1.5 }}
-      >
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5">
         {stations.map((w, i) => (
           <ConveyorNode
             key={w.id}
@@ -663,8 +706,8 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
             onOpen={() => onOpen('CONVEYOR_PRINCIPAL')}
           />
         ))}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -679,50 +722,34 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
 function ConveyorNode({ index, station, onOpen }) {
   const occupant = station.occupants[0]?.employee || null
   const rank = occupant ? getPersonnelRank(station.role) : null
-  const nodeColor = occupant ? '#10B981' : '#F59E0B'
+  const tone = occupant ? NODE_TONE.occupied : NODE_TONE.vacant
   return (
-    <Stack
+    <button
+      type="button"
       onClick={(e) => {
         e.stopPropagation()
         onOpen()
       }}
-      alignItems="center"
-      spacing={0.15}
-      sx={{
-        flex: '1 1 84px',
-        minWidth: 76,
-        maxWidth: 140,
-        py: 0.5,
-        px: 0.5,
-        borderRadius: 1.5,
-        cursor: 'pointer',
-        border: '1px dashed',
-        borderColor: alpha(nodeColor, 0.4),
-        '&:hover': { bgcolor: (t) => alpha(nodeColor, t.palette.mode === 'dark' ? 0.14 : 0.07) },
-      }}
-    >
-      <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'text.disabled', lineHeight: 1 }}>
-        {index}
-      </Typography>
-      <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
-      <Typography
-        sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, mt: 0.15 }}
-        noWrap
-      >
-        {occupant ? occupant.name : 'Vacante'}
-      </Typography>
-      {rank && (
-        <Typography
-          sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1.1 }}
-          noWrap
-        >
-          {rank.label}
-        </Typography>
+      className={cn(
+        'flex min-w-[76px] max-w-[140px] flex-[1_1_84px] cursor-pointer flex-col items-center gap-[1.2px] rounded-[15px] border border-dashed px-1 py-1',
+        tone.border,
+        tone.hoverBg,
       )}
-      <Typography sx={{ fontSize: 8, fontWeight: 800, color: nodeColor, letterSpacing: 0.3 }}>
+    >
+      <p className="text-[9px] font-extrabold leading-none text-muted-foreground/60">{index}</p>
+      <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
+      <p className="mt-[1.2px] w-full truncate text-center text-[10px] font-bold leading-[1.15]">
+        {occupant ? occupant.name : 'Vacante'}
+      </p>
+      {rank && (
+        <p className="w-full truncate text-center text-[8.5px] leading-[1.1] text-muted-foreground">
+          {rank.label}
+        </p>
+      )}
+      <p className={cn('text-[8px] font-extrabold tracking-[0.3px]', tone.text)}>
         {occupant ? 'OCUPADA' : 'DISPONIBLE'}
-      </Typography>
-    </Stack>
+      </p>
+    </button>
   )
 }
 
@@ -730,7 +757,7 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
-  const color = status ? STATUS_META[status].color : '#94A3B8'
+  const tone = toneFor(status)
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
@@ -738,47 +765,33 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
-    <Box
+    <button
+      type="button"
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
-      sx={{
-        gridArea,
-        borderRadius: 2,
-        p: 1.25,
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
-        borderTop: `3px solid ${color}`,
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.6,
-        overflow: 'hidden',
-        transition: 'box-shadow .15s ease, background-color .15s ease',
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
-      }}
+      style={{ gridArea }}
+      className={cn(
+        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-t-blue-500' : tone.borderTop,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring25,
+      )}
     >
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
-        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-          {isOver ? 'Soltar aquí' : label}
-        </Typography>
-      </Stack>
+      <div className="flex flex-wrap items-baseline justify-between">
+        <p className="text-[13px] font-extrabold">{title || wc?.name}</p>
+        <p className="text-sm font-bold">{isOver ? 'Soltar aquí' : label}</p>
+      </div>
       {status && (
-        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>
-          {statusText(status, staffing)}
-        </Typography>
+        <p className={cn('text-[10.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
       )}
       {/* minHeight:0 (2026-08-25, correccion definitiva): sin esto, este
           hijo flex nunca se encoge por debajo de su contenido -- el
           overflow:auto de arriba quedaba sin efecto y el personal que no
           cabia se recortaba en silencio (visible en desktop grande, pero
           mucho mas facil de disparar en tablet con menos alto disponible). */}
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</Box>
-    </Box>
+      <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+    </button>
   )
 }
 
@@ -795,45 +808,30 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
     0,
   )
   return (
-    <Box
-      sx={{
-        gridArea: 'fft',
-        borderRadius: 2,
-        p: 1.25,
-        border: '1px solid',
-        borderColor: 'divider',
-        borderTop: '3px solid #3B82F6',
-        bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        overflow: 'hidden',
-      }}
+    <div
+      style={{ gridArea: 'fft' }}
+      className="flex flex-col gap-2 overflow-hidden rounded-[20px] border border-t-[3px] border-border border-t-blue-500 bg-blue-500/[0.035] p-2.5 dark:bg-blue-500/[0.05]"
     >
-      <Stack
-        direction="row"
-        alignItems="baseline"
-        justifyContent="space-between"
+      <button
+        type="button"
         onClick={() => onOpenSummary('FFT_ALL')}
-        sx={{ cursor: 'pointer' }}
+        className="flex w-full cursor-pointer flex-wrap items-baseline justify-between text-left"
       >
-        <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
-          WC Líneas de producción (FFT)
-        </Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+        <p className="text-[13.5px] font-extrabold">WC Líneas de producción (FFT)</p>
+        <p className="text-sm font-bold">
           {totalReal} / {totalIdeal}
-        </Typography>
-      </Stack>
+        </p>
+      </button>
       {/* minHeight:0 (2026-08-25, correccion definitiva, mismo motivo que
           BigZone): sin esto la fila nunca se encogia por debajo de sus
           columnas y FftBlock (overflow:hidden) recortaba el personal
           sobrante en silencio. */}
-      <Box sx={{ display: 'flex', gap: 0.6, flex: 1, minHeight: 0 }}>
+      <div className="flex min-h-0 flex-1 gap-[4.8px]">
         {FFT_COLUMN_LINE_IDS.map((id) => (
           <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />
         ))}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -845,7 +843,7 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
-  const color = STATUS_META[status].color
+  const tone = toneFor(status)
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
@@ -853,59 +851,35 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
-    <Box
+    <button
+      type="button"
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(lineId)}
-      sx={{
-        flex: 1,
-        borderRadius: 2,
-        p: 1,
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
-        borderTop: `3px solid ${color}`,
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 0.5,
-        minHeight: 0,
-        transition: 'box-shadow .15s ease, background-color .15s ease',
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
-      }}
-    >
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
-          {isOver ? 'Soltar aquí' : label}
-        </Typography>
-      </Stack>
-      {status && (
-        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color }}>
-          {statusText(status, staffing)}
-        </Typography>
+      className={cn(
+        'flex min-h-0 flex-1 cursor-pointer select-none flex-col justify-center gap-1 rounded-[20px] border border-t-[3px] p-2 text-left transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-t-blue-500' : tone.borderTop,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring25,
       )}
-      <Box
-        sx={{
-          width: '100%',
-          height: 6,
-          borderRadius: 999,
-          bgcolor: alpha(color, 0.18),
-          overflow: 'hidden',
-        }}
-      >
-        <Box sx={{ width: `${pct * 100}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
-      </Box>
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="text-[12.5px] font-extrabold">{title || wc?.name}</p>
+        <p className="text-[13.5px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+      </div>
+      {status && (
+        <p className={cn('text-[9.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
+      )}
+      <div className={cn('h-1.5 w-full overflow-hidden rounded-full', tone.track18)}>
+        <div className={cn('h-full rounded-full', tone.solid)} style={{ width: `${pct * 100}%` }} />
+      </div>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
           personal, debe verse su nombre igual que en WC Accesorios, no solo la
           barra de avance. */}
-      <Box sx={{ mt: 0.5, maxHeight: 70, overflow: 'auto' }}>
+      <div className="mt-1 max-h-[70px] overflow-auto">
         <PersonList areaId={lineId} columns={2} readOnly={readOnly} />
-      </Box>
-    </Box>
+      </div>
+    </button>
   )
 }
 
@@ -913,36 +887,23 @@ function LineColumn({ lineId, onOpen, readOnly }) {
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
-  const color = STATUS_META[status].color
+  const tone = toneFor(status)
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
-    <Box
+    <button
+      type="button"
       {...(readOnly ? {} : dropProps)}
       onClick={(e) => {
         e.stopPropagation()
         onOpen(lineId)
       }}
-      sx={{
-        flex: '1 1 0',
-        minWidth: 46,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        cursor: 'pointer',
-        userSelect: 'none',
-        py: 0.75,
-        px: 0.4,
-        borderRadius: 1.5,
-        minHeight: 0,
-        height: '100%',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.3),
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
-      }}
+      className={cn(
+        'flex h-full min-h-0 min-w-[46px] flex-1 cursor-pointer select-none flex-col items-center rounded-[15px] border px-[3.2px] py-1.5 transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border30,
+        isOver ? OVER_TONE.bg : tone.bgIdleAlt,
+        tone.ring25,
+      )}
     >
       {/* Prefijo WC completo (2026-08-27, corrigiendo un bug real: este
           Typography le quitaba "WC " al nombre real de wc.name, dejando
@@ -950,86 +911,60 @@ function LineColumn({ lineId, onOpen, readOnly }) {
           decia "WC Líneas de producción" pero las tarjetas internas no).
           fontSize/letterSpacing bajan un poco para que "WC LINEA 10" siga
           cabiendo en columnas angostas sin ensanchar la card; si de plano
-          no cabe, el Typography ya envuelve a 2 líneas solo (sin noWrap),
-          nunca trunca. */}
-      <Typography
-        sx={{
-          fontSize: 9,
-          fontWeight: 800,
-          letterSpacing: -0.2,
-          textAlign: 'center',
-          lineHeight: 1.15,
-        }}
-      >
+          no cabe, el texto ya envuelve a 2 líneas solo, nunca trunca. */}
+      <p className="text-center text-[9px] font-extrabold leading-[1.15] tracking-[-0.2px]">
         {isOver ? 'Soltar' : wc?.name || lineId}
-      </Typography>
-      <Box
-        sx={{
-          width: 8,
-          height: 36,
-          borderRadius: 4,
-          bgcolor: alpha(color, 0.18),
-          display: 'flex',
-          alignItems: 'flex-end',
-          overflow: 'hidden',
-          my: 0.5,
-        }}
+      </p>
+      <div
+        className={cn('my-1 flex h-9 w-2 items-end overflow-hidden rounded-[40px]', tone.track18)}
       >
-        <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />
-      </Box>
-      <Typography sx={{ fontSize: 11.5, fontWeight: 700 }}>
+        <div
+          className={cn('w-full rounded-[40px]', tone.solid)}
+          style={{ height: `${pct * 100}%` }}
+        />
+      </div>
+      <p className="text-[11.5px] font-bold">
         {staffing.real}/{staffing.ideal}
-      </Typography>
+      </p>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
           personal, debe verse su nombre igual que en WC Accesorios, no solo la
           barra de avance. */}
-      <Box sx={{ width: '100%', flex: 1, minHeight: 0, overflow: 'auto', mt: 0.4 }}>
+      <div className="mt-[3.2px] w-full min-h-0 flex-1 overflow-auto">
         <PersonList areaId={lineId} readOnly={readOnly} />
-      </Box>
-    </Box>
+      </div>
+    </button>
   )
 }
 
 function HighValueGrid({ areaId }) {
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
-  const color = STATUS_META[status].color
+  const tone = toneFor(status)
   const total = staffing.ideal || 16
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.5, flex: 1 }}>
+    <div className="grid flex-1 grid-cols-4 gap-1">
       {Array.from({ length: total }).map((_, i) => (
-        <Box
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: celdas decorativas de una cuadrícula fija por posición (sin identidad propia, nunca se reordenan) -- mismo patrón que el original en MUI.
           key={i}
-          sx={{
-            borderRadius: 0.75,
-            minHeight: 16,
-            bgcolor: i < staffing.real ? alpha(color, 0.55) : alpha(color, 0.08),
-            border: '1px solid',
-            borderColor: alpha(color, 0.25),
-          }}
+          className={cn(
+            'min-h-[16px] rounded-[7.5px] border',
+            i < staffing.real ? tone.fill55 : tone.empty8,
+            tone.itemBorder25,
+          )}
         />
       ))}
-    </Box>
+    </div>
   )
 }
 
 function MixtosDecoration() {
   return (
-    <Box sx={{ display: 'flex', gap: 1, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+    <div className="flex flex-1 items-center justify-center gap-2">
       {[0, 1].map((i) => (
-        <Box
-          key={i}
-          sx={{
-            width: 10,
-            height: '80%',
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'action.hover',
-          }}
-        />
+        <div key={i} className="h-[80%] w-2.5 rounded-[10px] border border-border bg-accent" />
       ))}
-    </Box>
+    </div>
   )
 }
 
@@ -1048,56 +983,40 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
   const staffing = getGroupAreaStaffing(memberIds)
   const people = getGroupPeople(memberIds)
   const status = statusFor(staffing.real, staffing.ideal)
+  const tone = toneFor(status)
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'INSUMOS')
-  const color = status ? STATUS_META[status].color : '#94A3B8'
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
       : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   return (
-    <Box
+    <button
+      type="button"
       {...(readOnly ? {} : dropProps)}
       onClick={() => (readOnly ? onOpenSummary('INSUMOS_SUMINISTRO_ALL') : onOpen('INSUMOS'))}
-      sx={{
-        gridArea,
-        borderRadius: 2,
-        p: 1.25,
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
-        borderTop: `3px solid ${color}`,
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.6,
-        overflow: 'hidden',
-        transition: 'box-shadow .15s ease, background-color .15s ease',
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
-      }}
-    >
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
-        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>
-          WC Insumos y Suministro de Material
-        </Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-          {isOver ? 'Soltar aquí' : label}
-        </Typography>
-      </Stack>
-      {status && (
-        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>
-          {statusText(status, staffing)}
-        </Typography>
+      style={{ gridArea }}
+      className={cn(
+        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-t-blue-500' : tone.borderTop,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring25,
       )}
-      <Typography sx={{ fontSize: 9, color: 'text.secondary', fontStyle: 'italic' }}>
+    >
+      <div className="flex flex-wrap items-baseline justify-between">
+        <p className="text-[13px] font-extrabold">WC Insumos y Suministro de Material</p>
+        <p className="text-sm font-bold">{isOver ? 'Soltar aquí' : label}</p>
+      </div>
+      {status && (
+        <p className={cn('text-[10.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
+      )}
+      <p className="text-[9px] italic text-muted-foreground">
         PNP / POC / PEN · Box Prep · Suministro de material
-      </Typography>
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+      </p>
+      <div className="min-h-0 flex-1 overflow-auto">
         <PersonList people={people} columns={2} readOnly={readOnly} />
-      </Box>
-    </Box>
+      </div>
+    </button>
   )
 }
 
@@ -1109,39 +1028,30 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
 function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
   const people = peopleProp || getPeopleByArea()[areaId] || []
   if (people.length === 0) {
-    return (
-      <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>
-        Sin personal asignado
-      </Typography>
-    )
+    return <p className="text-[11px] italic text-muted-foreground">Sin personal asignado</p>
   }
   return (
-    <Box
-      sx={
-        columns > 1
-          ? { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 0.4 }
-          : { display: 'flex', flexDirection: 'column', gap: 0.4 }
-      }
-    >
+    <div className={columns > 1 ? 'grid grid-cols-2 gap-[3.2px]' : 'flex flex-col gap-[3.2px]'}>
       {people.map((p) => {
         const row = (
-          <Tooltip title={p.name} enterTouchDelay={0} leaveTouchDelay={2500} disableInteractive>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>
-                {p.name}
-              </Typography>
-            </Stack>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1">
+                <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <p className="truncate text-[11.5px] leading-[1.25]">{p.name}</p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>{p.name}</TooltipContent>
           </Tooltip>
         )
-        if (readOnly) return <Box key={p.id}>{row}</Box>
+        if (readOnly) return <div key={p.id}>{row}</div>
         return (
           <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ display: 'block' }}>
             {row}
           </DraggablePersonChip>
         )
       })}
-    </Box>
+    </div>
   )
 }
 
@@ -1149,47 +1059,37 @@ function SupportCard({ areaId, onOpen, readOnly }) {
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
-  const color = status ? STATUS_META[status].color : '#94A3B8'
+  const tone = toneFor(status)
   const label =
     staffing.ideal != null ? `${staffing.real}/${staffing.ideal}` : `${staffing.real} pers.`
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
-    <Box
+    <button
+      type="button"
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
-      sx={{
-        minWidth: 168,
-        flex: '1 1 168px',
-        maxWidth: 230,
-        p: 1.25,
-        borderRadius: 2,
-        cursor: 'pointer',
-        border: '1px solid',
-        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
-        borderLeft: `3px solid ${color}`,
-        bgcolor: isOver
-          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
-          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        transition: 'box-shadow .15s ease, background-color .15s ease',
-        '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.2)}` },
-      }}
-    >
-      <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-        <Typography sx={{ fontWeight: 800, fontSize: 12 }}>{wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
-          {isOver ? 'Soltar aquí' : label}
-        </Typography>
-      </Stack>
-      {status && (
-        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color, mt: 0.25 }}>
-          {STATUS_META[status].label}
-        </Typography>
+      className={cn(
+        'max-w-[230px] min-w-[168px] flex-[1_1_168px] cursor-pointer select-none rounded-[20px] border border-l-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-l-blue-500' : tone.borderLeft,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring20,
       )}
-      <Box sx={{ mt: 0.5, maxHeight: 90, overflow: 'auto' }}>
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs font-extrabold">{wc?.name}</p>
+        <p className="text-[13px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+      </div>
+      {status && (
+        <p className={cn('mt-0.5 text-[9.5px] font-bold', tone.text)}>
+          {STATUS_META[status].label}
+        </p>
+      )}
+      <div className="mt-1 max-h-[90px] overflow-auto">
         <PersonList areaId={areaId} readOnly={readOnly} />
-      </Box>
-    </Box>
+      </div>
+    </button>
   )
 }
 
@@ -1221,58 +1121,58 @@ function DetailDialog({ areaId, onClose }) {
 
   const status = staffing ? statusFor(staffing.real, staffing.ideal) : null
   const meta = status ? STATUS_META[status] : null
+  const tone = status ? toneFor(status) : null
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       {staffing && (
-        <>
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontWeight: 800,
-            }}
-          >
-            {title}
-            <IconButton size="small" onClick={onClose}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent>
-            <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ mb: 1.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 20 }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </DialogClose>
+          </DialogHeader>
+          <div className="px-6 pb-6">
+            <div className="mb-3 flex items-baseline gap-3">
+              <p className="text-xl font-extrabold">
                 {staffing.ideal != null
                   ? `${staffing.real} / ${staffing.ideal}`
                   : `${staffing.real} personas`}
-              </Typography>
+              </p>
               {meta && (
-                <Chip
-                  size="small"
-                  label={meta.label}
-                  sx={{ bgcolor: alpha(meta.color, 0.15), color: meta.color, fontWeight: 700 }}
-                />
+                <span
+                  className={cn(
+                    'inline-flex h-6 items-center rounded-full px-2 text-xs font-bold',
+                    tone.chip,
+                  )}
+                >
+                  {meta.label}
+                </span>
               )}
-            </Stack>
+            </div>
             {people.length === 0 ? (
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                Sin personal asignado.
-              </Typography>
+              <p className="text-[12.5px] text-muted-foreground">Sin personal asignado.</p>
             ) : (
-              <Stack spacing={0.75} sx={{ maxHeight: 320, overflow: 'auto' }}>
+              <div className="flex max-h-[320px] flex-col gap-1.5 overflow-auto">
                 {people.map((p) => (
-                  <Stack key={p.id} direction="row" spacing={0.75} alignItems="center">
-                    <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography sx={{ fontSize: 13 }}>
+                  <div key={p.id} className="flex items-center gap-1.5">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-[13px]">
                       {p.name}
                       {p.lineName ? ` · ${p.lineName}` : ''}
-                    </Typography>
-                  </Stack>
+                    </p>
+                  </div>
                 ))}
-              </Stack>
+              </div>
             )}
-          </DialogContent>
-        </>
+          </div>
+        </DialogContent>
       )}
     </Dialog>
   )
