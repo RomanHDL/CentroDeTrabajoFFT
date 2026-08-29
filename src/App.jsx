@@ -19,6 +19,8 @@ import UsuariosPage from './pages/usuarios/UsuariosPage'
 import KpisPage from './pages/kpis/KpisPage'
 import AsistenciaPage from './pages/asistencia/AsistenciaPage'
 import AuditoriaPage from './pages/auditoria/AuditoriaPage'
+import DeveloperManualPage from './pages/docs/DeveloperManualPage'
+import UserManualPage from './pages/docs/UserManualPage'
 import ToastHost from './ui/ToastHost'
 
 export default function App() {
@@ -98,6 +100,12 @@ export default function App() {
                     </RequireModuleAccess>
                   }
                 />
+
+                {/* Documentación (MI Stack Reference, secciones 14d/17a) -- accesible a
+                    cualquier usuario autenticado, sin gate por módulo (no son una
+                    funcionalidad de negocio, son ayuda/referencia). */}
+                <Route path="/developer-manual" element={<DeveloperManualPage />} />
+                <Route path="/manual" element={<UserManualPage />} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
