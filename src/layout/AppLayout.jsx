@@ -1,17 +1,12 @@
+import { Cog, Menu as MenuIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import AppBar from '@mui/material/AppBar'
-import Toolbar from '@mui/material/Toolbar'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import MenuIcon from '@mui/icons-material/Menu'
+import { cn } from '@/lib/utils'
+import { setCurrentUserId } from '../data/personnel/apiSync'
 import { useAuth } from '../state/auth'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
-import { setCurrentUserId } from '../data/personnel/apiSync'
-import Sidebar from './Sidebar'
 import HeaderUserActions from './HeaderUserActions'
+import Sidebar from './Sidebar'
 
 const CLOSE_DELAY_MS = 320
 const HOTSPOT_WIDTH = 14
@@ -29,7 +24,7 @@ export default function AppLayout({ mode, setMode }) {
   const isWideLayoutRoute = location.pathname === '/centro-trabajo'
   // Puntero real del dispositivo, no ancho de pantalla: un mouse/trackpad
   // real habilita el auto-hide por hover; touch (tablet/movil) usa el
-  // drawer clasico con hamburguesa, sin depender de hover.
+  // Sheet clasico con hamburguesa, sin depender de hover.
   const isTouch = useIsTouchDevice()
   const hasFineHover = !isTouch
 
@@ -74,7 +69,7 @@ export default function AppLayout({ mode, setMode }) {
   }, [user?.id])
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', overflowX: 'hidden' }}>
+    <div className="min-h-screen overflow-x-hidden bg-background">
       {/* 2026-08-27 ("rediseño del header de Centro de Trabajo", a peticion
           explicita del usuario): la barra superior global se OCULTA
           unicamente en /centro-trabajo -- esa pagina construye su propio
@@ -84,47 +79,35 @@ export default function AppLayout({ mode, setMode }) {
           El resto de rutas (Dashboard, Registro de personal, Usuarios)
           conserva la barra superior tal cual, sin ningun cambio. */}
       {!isWideLayoutRoute && (
-        <AppBar
-          position="sticky"
-          elevation={0}
-          sx={{
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            color: 'text.primary',
-          }}
-        >
-          <Toolbar sx={{ gap: 1.25, minHeight: '56px !important', px: { xs: 1.5, md: 2.5 } }}>
+        <header className="sticky top-0 z-[1100] border-b border-border bg-card text-foreground">
+          <div className="flex min-h-14 items-center gap-2.5 px-3 md:px-5">
             {!hasFineHover && (
-              <IconButton size="small" onClick={() => setMobileOpen(true)}>
-                <MenuIcon fontSize="small" />
-              </IconButton>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="rounded-full p-1.5 hover:bg-accent"
+              >
+                <MenuIcon size={20} />
+              </button>
             )}
-            <PrecisionManufacturingIcon sx={{ color: '#3B82F6' }} />
-            <Typography sx={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.2 }}>
-              Centro de Trabajo FFT
-            </Typography>
-            <Box sx={{ flex: 1 }} />
+            <Cog size={24} style={{ color: '#3B82F6' }} />
+            <p className="text-[15px] font-extrabold tracking-[-0.2px]">Centro de Trabajo FFT</p>
+            <div className="flex-1" />
             <HeaderUserActions mode={mode} setMode={setMode} />
-          </Toolbar>
-        </AppBar>
+          </div>
+        </header>
       )}
 
       {hasFineHover && (
         // Hotspot invisible: entrar aqui abre el sidebar. Una vez abierto,
         // el propio sidebar (mas ancho, mismo left:0) lo cubre por completo,
         // asi que el mouse nunca "pierde" cobertura entre los dos elementos.
-        // top:0 en /centro-trabajo (sin AppBar arriba), top:56 en el resto.
-        <Box
+        // top:0 en /centro-trabajo (sin header arriba), top:56 en el resto.
+        // biome-ignore lint/a11y/noStaticElementInteractions: zona de deteccion de mouse, el hamburguesa+Sheet cubre teclado/touch sin depender de este div
+        <div
           onMouseEnter={openOnHover}
-          sx={{
-            position: 'fixed',
-            left: 0,
-            top: isWideLayoutRoute ? 0 : 56,
-            bottom: 0,
-            width: HOTSPOT_WIDTH,
-            zIndex: (t) => t.zIndex.drawer + 1,
-          }}
+          className="fixed bottom-0 left-0 z-[1201]"
+          style={{ top: isWideLayoutRoute ? 0 : 56, width: HOTSPOT_WIDTH }}
         />
       )}
 
@@ -139,14 +122,11 @@ export default function AppLayout({ mode, setMode }) {
         onMouseLeave={hasFineHover ? scheduleClose : undefined}
       />
 
-      <Box
-        sx={{
-          px: { xs: 1.5, sm: 2, md: isWideLayoutRoute ? 2 : 3 },
-          py: { xs: 2, md: 2.5 },
-          maxWidth: isWideLayoutRoute ? 1920 : 1600,
-          mx: 'auto',
-          width: '100%',
-        }}
+      <div
+        className={cn(
+          'mx-auto w-full px-3 py-4 sm:px-4 md:py-5',
+          isWideLayoutRoute ? 'max-w-[1920px] md:px-4' : 'max-w-[1600px] md:px-6',
+        )}
       >
         {/* mode/setMode + apertura del sidebar movil: SOLO los consume
             CentroTrabajoPage.jsx (via useOutletContext) para construir su
@@ -160,7 +140,7 @@ export default function AppLayout({ mode, setMode }) {
             showMobileMenuButton: !hasFineHover,
           }}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }

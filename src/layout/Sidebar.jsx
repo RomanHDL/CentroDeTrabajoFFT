@@ -1,23 +1,19 @@
-import Drawer from '@mui/material/Drawer'
-import List from '@mui/material/List'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import FactoryIcon from '@mui/icons-material/Factory'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import GroupIcon from '@mui/icons-material/Group'
-import QueryStatsIcon from '@mui/icons-material/QueryStats'
-import EventAvailableIcon from '@mui/icons-material/EventAvailable'
-import FactCheckIcon from '@mui/icons-material/FactCheck'
-import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import { NavLink } from 'react-router-dom'
+import {
+  BarChart3,
+  CalendarCheck,
+  ChevronsLeft,
+  ClipboardCheck,
+  Cog,
+  Factory,
+  LayoutDashboard,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { NavLink } from 'react-router-dom'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import { useEffectiveModules } from '../state/auth'
 
 // 250-270px (rediseño visual 2026-08-28, "sidebar blanca/azul tipo
@@ -47,173 +43,109 @@ const BRAND_BLUE = '#3B82F6'
 // EXACTAMENTE el mismo texto que antes -- cero cambio visible para el
 // personal actual, solo cambia de donde sale el string.
 const NAV_ITEMS = [
-  { to: '/dashboard', labelKey: 'dashboard', icon: DashboardIcon, configurable: true },
-  { to: '/centro-trabajo', labelKey: 'centroDeTrabajo', icon: FactoryIcon, configurable: true },
-  { to: '/usuarios', labelKey: 'usuarios', icon: GroupIcon, configurable: true },
+  { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, configurable: true },
+  { to: '/centro-trabajo', labelKey: 'centroDeTrabajo', icon: Factory, configurable: true },
+  { to: '/usuarios', labelKey: 'usuarios', icon: Users, configurable: true },
   {
     to: '/registro-personal',
     labelKey: 'registroDePersonal',
-    icon: PersonAddAlt1Icon,
+    icon: UserPlus,
     configurable: true,
   },
   // 2026-08-28 ("ajustes controlados"): 3 modulos nuevos, mismo patron que
   // los 4 de arriba -- solo navegacion, el permiso real lo resuelve
   // useEffectiveModules() (shared/moduleRegistry.js), nunca una lista de
   // permisos aparte aqui.
-  { to: '/kpis', labelKey: 'kpis', icon: QueryStatsIcon, configurable: true },
-  { to: '/asistencia', labelKey: 'asistencia', icon: EventAvailableIcon, configurable: true },
-  { to: '/auditoria', labelKey: 'auditoria', icon: FactCheckIcon, configurable: true },
+  { to: '/kpis', labelKey: 'kpis', icon: BarChart3, configurable: true },
+  { to: '/asistencia', labelKey: 'asistencia', icon: CalendarCheck, configurable: true },
+  { to: '/auditoria', labelKey: 'auditoria', icon: ClipboardCheck, configurable: true },
 ]
 
 // Estilo de item de menu (rediseño visual 2026-08-28, referencia "sidebar
 // blanca/azul"): sin card/borde individual por item (aire visual, lista
 // limpia), activo = fondo azul extremadamente claro + texto/icono azul +
-// barra vertical azul de 3px pegada al borde izquierdo (via '&::before',
-// nunca un elemento aparte) en vez del bgcolor gris grande de antes; hover
-// = mismo azul clarito mas un desplazamiento sutil (2px). Nunca toca
-// rutas/permisos/orden -- ESTO es exactamente lo mismo NAV_ITEMS/filter de
-// siempre, solo cambia sx.
+// barra vertical azul de 3px pegada al borde izquierdo (via `before:`, nunca
+// un elemento aparte) en vez del bgcolor gris grande de antes; hover = mismo
+// azul clarito mas un desplazamiento sutil (2px). Nunca toca rutas/permisos/
+// orden -- ESTO es exactamente lo mismo NAV_ITEMS/filter de siempre, solo
+// cambia la presentacion.
 function NavList({ items, onItemClick }) {
   const { t } = useTranslation('navigation')
   return (
-    <List sx={{ flex: 1, pt: 1, px: 1.25 }}>
+    <nav className="flex-1 space-y-1 px-2.5 pt-2">
       {items.map(({ to, labelKey, icon: Icon }) => (
-        <ListItemButton
+        <NavLink
           key={to}
-          component={NavLink}
           to={to}
           end={to === '/'}
           onClick={onItemClick}
-          sx={{
-            position: 'relative',
-            mb: 0.5,
-            px: 1.75,
-            py: 1.5,
-            minHeight: 56,
-            borderRadius: '11px',
-            color: 'text.primary',
-            transition: 'background-color 180ms ease, color 180ms ease, transform 180ms ease',
-            '&:hover': {
-              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.14)' : '#EFF6FF'),
-              transform: 'translateX(2px)',
-            },
-            '&.active': {
-              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.18)' : '#EFF6FF'),
-              color: BRAND_BLUE,
-            },
-            '&.active::before': {
-              content: '""',
-              position: 'absolute',
-              left: 4,
-              top: '22%',
-              bottom: '22%',
-              width: 3,
-              bgcolor: BRAND_BLUE,
-              borderRadius: 4,
-            },
-          }}
+          className={({ isActive }) =>
+            cn(
+              'relative flex min-h-[56px] items-center gap-0 rounded-[11px] px-3.5 py-3 text-foreground transition-[background-color,color,transform] duration-[180ms] ease-in-out',
+              'hover:translate-x-[2px] hover:bg-[#EFF6FF] dark:hover:bg-[rgba(59,130,246,.14)]',
+              isActive &&
+                "text-[#3B82F6] bg-[#EFF6FF] dark:bg-[rgba(59,130,246,.18)] before:absolute before:left-1 before:top-[22%] before:bottom-[22%] before:w-[3px] before:rounded before:bg-[#3B82F6] before:content-['']",
+            )
+          }
         >
-          <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}>
-            <Icon sx={{ fontSize: 21 }} />
-          </ListItemIcon>
-          <ListItemText
-            primaryTypographyProps={{ fontSize: 14.5, fontWeight: 600, color: 'inherit' }}
-          >
-            {t(labelKey)}
-          </ListItemText>
-        </ListItemButton>
+          <span className="flex min-w-[34px] items-center text-inherit">
+            <Icon size={21} />
+          </span>
+          <span className="text-[14.5px] font-semibold text-inherit">{t(labelKey)}</span>
+        </NavLink>
       ))}
-    </List>
+    </nav>
   )
 }
 
 // Encabezado (rediseño visual 2026-08-28): mismo icono de marca que ya usa
-// toda la app (PrecisionManufacturingIcon, #3B82F6 -- ver AppLayout.jsx/
-// LoginPage.jsx/CentroTrabajoPage.jsx), envuelto en una insignia azul
-// redondeada compacta -- nunca un logotipo nuevo. `onToggle` es exactamente
-// el mismo handler que antes (onTogglePin): el boton solo cambia de icono
-// (pin -> chevron) y de estilo, el comportamiento de fijar/soltar el menu
-// abierto NO cambia.
+// toda la app (antes PrecisionManufacturingIcon de MUI, #3B82F6 -- ver
+// AppLayout.jsx/LoginPage.jsx/CentroTrabajoPage.jsx). Fase 6 lo porta a
+// Lucide (Cog, el equivalente mas cercano a "manufactura de precision" en
+// ese set de iconos) -- LoginPage/CentroTrabajoPage siguen con el icono MUI
+// hasta que se conviertan en su propio paso de esta misma fase, asi que
+// durante la transicion el icono se vera distinto entre paginas ya
+// convertidas y las que faltan; se resuelve al terminar 6c. `onToggle` es
+// exactamente el mismo handler que antes (onTogglePin): el boton solo
+// cambia de icono (pin -> chevron) y de estilo, el comportamiento de fijar/
+// soltar el menu abierto NO cambia.
 function SidebarHeader({ onToggle, toggleTitle, pinned }) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.25,
-        px: 1.75,
-        py: 1.75,
-        minHeight: 64,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Box
-        sx={{
-          width: 36,
-          height: 36,
-          borderRadius: '10px',
-          flexShrink: 0,
-          bgcolor: BRAND_BLUE,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+    <div className="flex min-h-16 items-center gap-2.5 border-b border-border px-3.5 py-3.5">
+      <div
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: BRAND_BLUE }}
       >
-        <PrecisionManufacturingIcon sx={{ color: '#fff', fontSize: 20 }} />
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
-        <Typography
-          sx={{
-            fontSize: 12.5,
-            fontWeight: 800,
-            letterSpacing: 0.2,
-            color: 'text.primary',
-            lineHeight: 1.25,
-          }}
-        >
+        <Cog className="text-white" size={20} />
+      </div>
+      <div className="min-w-0 flex-1 leading-[1.15]">
+        <p className="text-[12.5px] font-extrabold leading-[1.25] tracking-[0.2px] text-foreground">
           CENTRO DE
-        </Typography>
-        <Typography sx={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
-          <Box component="span" sx={{ color: 'text.primary' }}>
-            TRABAJO{' '}
-          </Box>
-          <Box component="span" sx={{ color: BRAND_BLUE }}>
-            FFT
-          </Box>
-        </Typography>
-      </Box>
+        </p>
+        <p className="text-[12.5px] font-extrabold leading-[1.25] tracking-[0.2px]">
+          <span className="text-foreground">TRABAJO </span>
+          <span style={{ color: BRAND_BLUE }}>FFT</span>
+        </p>
+      </div>
       {onToggle && (
-        <Tooltip title={toggleTitle}>
-          <IconButton
-            size="small"
-            onClick={onToggle}
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: '9px',
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: (t) =>
-                t.palette.mode === 'dark' ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.18)',
-              transition: 'background-color 180ms ease',
-              '&:hover': {
-                bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.16)' : '#EFF6FF'),
-              },
-            }}
-          >
-            <KeyboardDoubleArrowLeftIcon
-              fontSize="small"
-              sx={{
-                color: BRAND_BLUE,
-                transition: 'transform 220ms ease',
-                transform: pinned ? 'none' : 'rotate(180deg)',
-              }}
-            />
-          </IconButton>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onToggle}
+              className="flex h-8 w-8 items-center justify-center rounded-[9px] border border-[rgba(59,130,246,.18)] bg-card transition-colors duration-[180ms] ease-in-out hover:bg-[#EFF6FF] dark:border-[rgba(59,130,246,.35)] dark:hover:bg-[rgba(59,130,246,.16)]"
+            >
+              <ChevronsLeft
+                size={20}
+                className="transition-transform duration-[220ms] ease-in-out"
+                style={{ color: BRAND_BLUE, transform: pinned ? 'none' : 'rotate(180deg)' }}
+              />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{toggleTitle}</TooltipContent>
         </Tooltip>
       )}
-    </Box>
+    </div>
   )
 }
 
@@ -230,8 +162,10 @@ function SidebarHeader({ onToggle, toggleTitle, pinned }) {
      sidebar cancele el cierre programado.
 
    - variant="temporary" (touch / sin hover fino — tablet y movil):
-     el Drawer de siempre, con boton de hamburguesa, overlay con
-     backdrop y cierre al seleccionar o hacer click afuera.
+     Sheet (shadcn/Radix Dialog) con backdrop y cierre al seleccionar
+     o hacer click afuera -- reemplaza al Drawer de MUI, mismo
+     comportamiento (abre/cierra por `open`/`onClose`, sin boton de
+     hamburguesa propio: eso lo sigue disparando AppLayout).
 
    Login/logout/roles/ProtectedRoute no se tocan: es solo
    presentacion de la misma lista de rutas de siempre. */
@@ -247,7 +181,7 @@ export default function Sidebar({
 }) {
   const { modules: allowedModules, loading: permsLoading } = useEffectiveModules()
   // Misma lista de modulos permitidos para CUALQUIER dispositivo (desktop,
-  // tablet, movil) -- solo cambia el contenedor visual (overlay vs Drawer,
+  // tablet, movil) -- solo cambia el contenedor visual (overlay vs Sheet,
   // ver variant mas abajo), nunca el contenido. Bug critico corregido
   // 2026-08-25: antes existia un TOUCH_NAV_ORDER hardcodeado que en touch
   // descartaba el calculo real de permisos y dejaba ver solo 2 rutas fijas
@@ -262,24 +196,15 @@ export default function Sidebar({
 
   if (variant === 'overlay') {
     return (
-      <Box
+      // biome-ignore lint/a11y/noStaticElementInteractions: mismo hotspot de AppLayout.jsx, solo cancela/programa el auto-cierre por hover
+      <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        sx={{
-          position: 'fixed',
-          left: 0,
-          top: 56,
-          bottom: 0,
+        className="fixed bottom-0 left-0 top-14 z-[1202] flex flex-col border-r border-border bg-card transition-[transform,box-shadow] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{
           width: SIDEBAR_WIDTH,
-          bgcolor: 'background.paper',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          flexDirection: 'column',
           transform: open || pinned ? 'translateX(0)' : 'translateX(-100%)',
           boxShadow: open || pinned ? '4px 0 20px rgba(15,23,42,0.08)' : 'none',
-          transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), box-shadow 220ms ease',
-          zIndex: (t) => t.zIndex.drawer + 2,
         }}
       >
         <SidebarHeader
@@ -288,26 +213,16 @@ export default function Sidebar({
           pinned={pinned}
         />
         <NavList items={items} />
-      </Box>
+      </div>
     )
   }
 
   return (
-    <Drawer
-      variant="temporary"
-      open={open}
-      onClose={onClose}
-      sx={{
-        [`& .MuiDrawer-paper`]: {
-          width: SIDEBAR_WIDTH,
-          boxSizing: 'border-box',
-        },
-      }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent side="left" style={{ width: SIDEBAR_WIDTH }} className="flex flex-col">
         <SidebarHeader />
         <NavList items={items} onItemClick={onClose} />
-      </Box>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   )
 }
