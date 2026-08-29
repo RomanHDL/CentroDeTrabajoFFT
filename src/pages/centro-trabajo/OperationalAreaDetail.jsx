@@ -477,10 +477,10 @@ export default function OperationalAreaDetail({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="inset-0 left-0 top-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 rounded-none bg-background">
+      <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
         <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
         {/* Header */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
           <button
             type="button"
             onClick={onClose}
@@ -526,7 +526,7 @@ export default function OperationalAreaDetail({
           </button>
         </div>
 
-        <div key={workCenterId} className="overflow-y-auto p-3 md:p-6">
+        <div key={workCenterId} className="min-h-0 flex-1 overflow-y-auto p-3 md:p-6">
           {/* Estado del area */}
           <p className="mb-2.5 text-[15px] font-extrabold">Estado del área</p>
           <div className="mb-5 overflow-hidden rounded-2xl border border-border">
