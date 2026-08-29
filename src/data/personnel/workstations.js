@@ -144,19 +144,33 @@ export const LINE_STATION_OVERRIDES = {
   // LINEA1 (2026-08-28, a peticion explicita del usuario -- "debe existir
   // solamente 1 Montaje" / "1 Etiquetado"): excluye Montaje Y Etiquetado.
   // Tercera ronda: tambien excluye Prueba eléctrica (regla global de
-  // arriba) -- el plan base nunca baja de 6 posiciones (piso ya
-  // existente), asi que sigue quedando 1 posicion repetida, pero ahora cae
-  // en "Suministro de Accesorios 2", nunca en Montaje/Etiquetado/Prueba
-  // eléctrica.
+  // arriba) -- el plan base nunca baja de 6 posiciones (piso minimo real,
+  // "min 6 max 10 personas por linea", ver buildLineRolePlan), asi que
+  // sigue quedando 1 posicion repetida, y con Montaje/Etiquetado/Prueba
+  // eléctrica excluidos, solo puede caer en "Suministro de Accesorios 2"
+  // (1er elemento de esta lista).
+  //
+  // Cuarta ronda (2026-08-28, "elimina Limpieza de TV 2 en LINEA1"): LINEA1
+  // NUNCA tuvo "Limpieza de TV 2" -- confirmado via DB en vivo, su unica
+  // posicion repetida es y siempre fue "Suministro de Accesorios 2" (sin
+  // ocupante real). Por el piso minimo de arriba, LINEA1 no puede bajar a
+  // 0 posiciones repetidas sin desincronizar "Dotación ideal" contra la
+  // cantidad real de estaciones (mismo bug que este archivo evita en
+  // LINEA6-10/PROYECTO) -- se deja SIN CAMBIO, reportado explicitamente al
+  // usuario, en vez de adivinar un swap de rol.
   LINEA1: { repeatOrder: ['Suministro de Accesorios', 'Limpieza de TV'] },
   // PROYECTO/WC LINEA 0 (2026-08-28, tercera ronda): antes usaba
   // DEFAULT_REPEAT_ORDER (unica linea que todavia lo consumia) -- ahora
   // necesita su PROPIO override explicito porque, sin Prueba eléctrica,
-  // solo quedan 4 roles repetibles para 5 posiciones extra (idealHeadcount
-  // 13 = 1 Calidad + 10 plan base + 2 Empaque, target=10, extra=5) -- el
-  // ciclo round-robin (buildLineRolePlan) inevitablemente le da una 3a
-  // posicion a "Montaje" (el 1o de esta lista) para completar las 10. Es
-  // la unica linea con 3 Montajes -- reportado explicitamente, no se oculta.
+  // solo quedan 4 roles repetibles.
+  // Cuarta ronda (2026-08-28, "en LINEA0 elimina Montaje 3, Limpieza de TV
+  // 2 y Suministro de Accesorios [2]"): idealHeadcount de PROYECTO bajo de
+  // 13 a 10 (catalog.js) -- target pasa de 10 a 7, extra de 5 a 2, asi que
+  // el round-robin ya solo alcanza a repetir los primeros 2 roles de esta
+  // lista ("Montaje" y "Etiquetado") una vez cada uno; "Suministro de
+  // Accesorios" y "Limpieza de TV" (3o y 4o de la lista) y la 3a vuelta a
+  // "Montaje" ya no se alcanzan. Se deja la lista completa documentada
+  // (mismo motivo que LINEA1: soporta que idealHeadcount vuelva a subir).
   PROYECTO: { repeatOrder: ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV'] },
 }
 

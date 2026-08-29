@@ -289,30 +289,47 @@ function sumStationPlan(plan) {
 // (2 en LINEA0/1, 1 en LINEA2..10 -- ver EMPAQUE_COUNT_BY_LINE en
 // workstations.js, misma logica de "resta antes del plan base" ya
 // probada con Calidad). idealHeadcount sube ese numero en cada linea.
-// LINEA1 tambien pide reducir Montaje/Etiquetado a 1 sola posicion
-// (elimina "Montaje 2"/"Etiquetado 2") -- PERO el plan base de 5 roles
-// nunca baja de 6 posiciones (limite real ya existente, confirmado por
-// el usuario en una tarea anterior: "min 6, max 10 personas por linea"),
-// asi que sigue quedando 1 posicion repetida ahi -- se excluye
-// explicitamente a Montaje/Etiquetado de esa repeticion (ver
-// LINE_STATION_OVERRIDES.LINEA1 en workstations.js), cae en "Prueba
-// eléctrica 2" en su lugar. Por eso LINEA1 SI sube (8 -> 9): 1 Calidad +
-// 6 del plan base (5 roles + 1 repetido) + 2 Empaque = 9, no 8 -- dejarlo
-// en 8 habria desincronizado "Dotación ideal" contra la cantidad real de
-// estaciones generadas (mismo bug que ya se verifica en
-// verify-line-logic.mjs).
+//
+// 2026-08-28 (cuarta ronda, a peticion explicita del usuario -- "elimina
+// Limpieza de TV 2 en LINEA1/6-10, y en LINEA0 elimina Montaje 3, Limpieza
+// de TV 2 y Suministro de Accesorios [2]"): LINEA6-10 y PROYECTO quedaban
+// con MAS de 1 posicion repetida (efecto colateral de la ronda anterior,
+// que solo saco "Prueba eléctrica" del pool de repeticion sin bajar
+// idealHeadcount). Se corrige bajando idealHeadcount para que el plan base
+// (buildLineRolePlan, workstations.js) nunca vuelva a necesitar una 2a
+// posicion repetida ahi:
+// - LINEA6..10: 9 -> 8 (quedan identicas a LINEA2-5: plan base de 6
+//   posiciones -- piso minimo real, ver nota de buildLineRolePlan -- solo
+//   "Etiquetado" se repite una vez, "Limpieza de TV 2" desaparece).
+// - PROYECTO/LINEA0: 13 -> 10 (plan base pasa de 10 a 7 posiciones: solo
+//   "Montaje" y "Etiquetado" se repiten una vez cada uno -- "Montaje 3",
+//   "Limpieza de TV 2" y "Suministro de Accesorios 2" desaparecen).
+// - LINEA1: SIN CAMBIO, se queda en 9 (a diferencia de las anteriores, su
+//   plan base YA estaba en el piso minimo de 6 posiciones -- 5 roles + 1
+//   repetido, inevitable por el piso "min 6 personas por linea" ya
+//   confirmado -- asi que no tenia margen para bajar sin desincronizar
+//   "Dotación ideal" contra la cantidad real de estaciones, el mismo bug
+//   que este archivo evita en todas las demas lineas). Ademas, LINEA1
+//   nunca tuvo "Limpieza de TV 2" -- su unica posicion repetida hoy es
+//   "Suministro de Accesorios 2" (sin ocupante real, ver migracion
+//   correspondiente) -- reportado explicitamente al usuario en vez de
+//   adivinar un cambio.
+// Nadie se pierde: quien ocupaba una de las posiciones eliminadas en
+// LINEA6-10/PROYECTO aparece en "Personal sin estación"
+// (getPeopleWithoutStation) sin que se toque su
+// DailyAssignment/EmployeeMovement real.
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 1 Calidad + 6 plan base (5 roles + Prueba eléctrica 2) + 2 Empaque
+  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 2 Empaque
   { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
   { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
   { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
   { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
-  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
-  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
-  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
-  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 7 + Calidad + 1 Empaque
-  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 13 }, // 10 + Calidad + 2 Empaque
+  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
+  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 }, // 7 + Calidad + 2 Empaque
   /* Paletizado/Accesorios (2026-08-26, a peticion explicita del usuario):
      idealHeadcount ya NO es un numero mantenido a mano -- se deriva de
      CUSTOM_STATION_PLANS de arriba (suma de puestos reales configurados),
