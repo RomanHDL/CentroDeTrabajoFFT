@@ -1,9 +1,3 @@
-import Paper from '@mui/material/Paper'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { alpha } from '@mui/material/styles'
-
 /* KPI ejecutivo del Dashboard rediseñado (2026-08-25, contrato visual
    exacto del mockup aprobado por el usuario) -- COMPONENTE NUEVO, no
    reemplaza DashboardKpiCard.jsx (ese sigue en uso real por
@@ -14,7 +8,24 @@ import { alpha } from '@mui/material/styles'
    un dato histórico real comparable, y no existe (el total de personal
    de hoy sale en su mayoría del snapshot estático sin fecha, no de un
    registro diario con el que comparar "ayer" de forma honesta) -- se
-   omite por completo en vez de inventar una tendencia. */
+   omite por completo en vez de inventar una tendencia.
+
+   Fase 6c: portado de MUI (Paper/Stack sx) a Tailwind. El accent llega
+   como hex en runtime (prop, no clase estática), asi que las variantes
+   de opacidad que MUI resolvia con alpha() se calculan aqui con
+   hexToRgba() y se aplican via style inline -- la unica excepcion es el
+   fondo claro/oscuro (0.025 vs 0.05), que Tailwind SI puede resolver en
+   build-time via el truco de var(--css-var) fijado en runtime por
+   style, para que dark: siga funcionando con la clase .dark del html. */
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace('#', '')
+  const bigint = parseInt(clean, 16)
+  const r = (bigint >> 16) & 255
+  const g = (bigint >> 8) & 255
+  const b = bigint & 255
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export default function DashboardExecKpiCard({
   icon,
   accent,
@@ -26,76 +37,51 @@ export default function DashboardExecKpiCard({
   progressPct,
 }) {
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        height: '100%',
-        minHeight: 128,
-        borderRadius: '16px',
-        p: 2,
-        border: '1px solid',
-        borderColor: alpha(accent, 0.16),
-        bgcolor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.05 : 0.025),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
+    <div
+      className="flex h-full min-h-[128px] flex-col gap-2 rounded-2xl border bg-[var(--kpi-bg-light)] p-4 dark:bg-[var(--kpi-bg-dark)]"
+      style={{
+        borderColor: hexToRgba(accent, 0.16),
+        '--kpi-bg-light': hexToRgba(accent, 0.025),
+        '--kpi-bg-dark': hexToRgba(accent, 0.05),
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Box
-          sx={{
-            width: 38,
-            height: 38,
-            borderRadius: '50%',
-            flexShrink: 0,
-            bgcolor: alpha(accent, 0.14),
-            display: 'grid',
-            placeItems: 'center',
-            color: accent,
-            '& .MuiSvgIcon-root': { fontSize: 19 },
-          }}
+      <div className="flex items-center gap-2">
+        <div
+          className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full [&>svg]:h-[19px] [&>svg]:w-[19px]"
+          style={{ backgroundColor: hexToRgba(accent, 0.14), color: accent }}
         >
           {icon}
-        </Box>
-        <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.secondary' }}>
-          {title}
-        </Typography>
-      </Stack>
+        </div>
+        <p className="text-[13.5px] font-bold text-muted-foreground">{title}</p>
+      </div>
 
-      <Stack direction="row" alignItems="baseline" spacing={0.75}>
-        <Typography
-          sx={{ fontSize: 32, fontWeight: 800, color: accent, lineHeight: 1, letterSpacing: -0.5 }}
+      <div className="flex items-baseline gap-1.5">
+        <p
+          className="text-[32px] font-extrabold leading-none tracking-[-0.5px]"
+          style={{ color: accent }}
         >
           {value}
-        </Typography>
-        {unit && (
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
-            {unit}
-          </Typography>
-        )}
-      </Stack>
+        </p>
+        {unit && <p className="text-[12.5px] font-semibold text-muted-foreground">{unit}</p>}
+      </div>
 
-      <Box sx={{ mt: 'auto' }}>
+      <div className="mt-auto">
         {progressPct != null && (
-          <Box
-            sx={{
-              height: 6,
-              borderRadius: 999,
-              bgcolor: alpha(accent, 0.14),
-              overflow: 'hidden',
-              mb: 0.5,
-            }}
+          <div
+            className="mb-1 h-1.5 overflow-hidden rounded-full"
+            style={{ backgroundColor: hexToRgba(accent, 0.14) }}
           >
-            <Box
-              sx={{ width: `${progressPct}%`, height: '100%', bgcolor: accent, borderRadius: 999 }}
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${progressPct}%`, backgroundColor: accent }}
             />
-          </Box>
+          </div>
         )}
-        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 600 }}>
+        <p className="text-[11.5px] font-semibold text-muted-foreground">
           {footerLabel}
           {footerValue != null ? `: ${footerValue}` : ''}
-        </Typography>
-      </Box>
-    </Paper>
+        </p>
+      </div>
+    </div>
   )
 }

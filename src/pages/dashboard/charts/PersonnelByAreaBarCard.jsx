@@ -1,49 +1,36 @@
-import Box from '@mui/material/Box'
-import { useTheme } from '@mui/material/styles'
 import {
-  ResponsiveContainer,
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
   Cell,
   LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts'
 import ChartCard from '../ChartCard'
 import { colorForIndex } from './chartPalette'
+
+const GRID_COLOR = 'hsl(var(--foreground) / 0.06)'
+const AXIS_COLOR = 'hsl(var(--muted-foreground))'
+const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
 
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
-    <Box
-      sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
-        px: 1.5,
-        py: 1,
-        boxShadow: 3,
-      }}
-    >
-      <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{row.name}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+    <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      <div className="mb-0.5 text-[12.5px] font-bold">{row.name}</div>
+      <div className="text-xs text-muted-foreground">
         {row.actual} persona{row.actual === 1 ? '' : 's'}
         {row.ideal != null ? ` · ideal ${row.ideal}` : ''}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
 export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
-  const gridColor = d ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)'
-  const axisColor = d ? 'rgba(148,163,184,.8)' : 'rgba(71,85,105,.8)'
-
   const data = [...areas]
     .sort((a, b) => b.actual - a.actual)
     .map((a, i) => ({ ...a, shortName: a.name.replace(/^WC /, ''), color: colorForIndex(i) }))
@@ -58,7 +45,7 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
       emptyMessage="No hay áreas con personal registrado todavía."
       height={height}
     >
-      <Box sx={{ flex: 1, minHeight: height, overflow: 'auto' }}>
+      <div className="flex-1 overflow-auto" style={{ minHeight: height }}>
         <ResponsiveContainer width="100%" height={height}>
           <BarChart
             data={data}
@@ -66,11 +53,11 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
             margin={{ top: 4, right: 32, left: 8, bottom: 4 }}
             barCategoryGap="28%"
           >
-            <CartesianGrid horizontal={false} stroke={gridColor} />
+            <CartesianGrid horizontal={false} stroke={GRID_COLOR} />
             <XAxis
               type="number"
-              tick={{ fontSize: 11, fill: axisColor }}
-              axisLine={{ stroke: gridColor }}
+              tick={{ fontSize: 11, fill: AXIS_COLOR }}
+              axisLine={{ stroke: GRID_COLOR }}
               tickLine={false}
               allowDecimals={false}
             />
@@ -78,14 +65,11 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
               type="category"
               dataKey="shortName"
               width={110}
-              tick={{ fontSize: 11.5, fill: axisColor }}
+              tick={{ fontSize: 11.5, fill: AXIS_COLOR }}
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip
-              content={<ChartTooltip />}
-              cursor={{ fill: d ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)' }}
-            />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: CURSOR_FILL }} />
             <Bar
               dataKey="actual"
               radius={[0, 4, 4, 0]}
@@ -96,7 +80,7 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
               <LabelList
                 dataKey="actual"
                 position="right"
-                style={{ fontSize: 11, fontWeight: 700, fill: axisColor }}
+                style={{ fontSize: 11, fontWeight: 700, fill: AXIS_COLOR }}
               />
               {data.map((row) => (
                 <Cell key={row.id} fill={row.color} />
@@ -104,7 +88,7 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </Box>
+      </div>
     </ChartCard>
   )
 }

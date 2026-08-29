@@ -1,19 +1,17 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import SpeedIcon from '@mui/icons-material/Speed'
-import HourglassBottomIcon from '@mui/icons-material/HourglassBottom'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import FactCheckIcon from '@mui/icons-material/FactCheck'
-import { usePageStyles } from '../../ui/pageStyles'
+import { ClipboardCheck, Cog, Gauge, Hourglass } from 'lucide-react'
+import {
+  cardClass,
+  cardHeaderClass,
+  cardHeaderSubtitleClass,
+  cardHeaderTitleClass,
+} from '@/lib/pageStyles'
 import { FFT_INDICATORS } from '../../data/production/catalog'
 
 const ICONS = {
-  EFICIENCIA: SpeedIcon,
-  DEMORAS: HourglassBottomIcon,
-  PRODUCCION: PrecisionManufacturingIcon,
-  CUMPLIMIENTO_PROGRAMAS: FactCheckIcon,
+  EFICIENCIA: Gauge,
+  DEMORAS: Hourglass,
+  PRODUCCION: Cog,
+  CUMPLIMIENTO_PROGRAMAS: ClipboardCheck,
 }
 
 /* "Indicadores FFT" (2026-08-26, a peticion explicita del usuario) --
@@ -25,58 +23,46 @@ const ICONS = {
    que un indicador tenga fuente real, basta con `hasSource:true` +
    un `value` real en catalog.js, sin tocar este archivo. */
 function IndicatorRow({ indicator }) {
-  const Icon = ICONS[indicator.id] || SpeedIcon
+  const Icon = ICONS[indicator.id] || Gauge
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 1 }}>
-      <Box
-        sx={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          bgcolor: 'action.hover',
-          color: 'text.secondary',
-          display: 'grid',
-          placeItems: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Icon sx={{ fontSize: 18 }} />
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>
+    <div className="flex items-center gap-3 py-2">
+      <div className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+        <Icon className="h-[18px] w-[18px]" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12.5px] font-bold">
           {indicator.order}. {indicator.label}
-        </Typography>
+        </p>
         {indicator.hasSource ? (
-          <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{indicator.value}</Typography>
+          <p className="text-[15px] font-extrabold">{indicator.value}</p>
         ) : (
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontStyle: 'italic' }}>
+          <p className="text-[11.5px] italic text-muted-foreground">
             Sin fuente de datos configurada
-          </Typography>
+          </p>
         )}
-      </Box>
-    </Stack>
+      </div>
+    </div>
   )
 }
 
 export default function FftIndicatorsCard() {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card, height: '100%' }}>
-      <Box sx={ps.cardHeader}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={ps.cardHeaderTitle}>Indicadores FFT</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
+    <div className={`${cardClass} h-full`}>
+      <div className={cardHeaderClass}>
+        <div className="min-w-0">
+          <p className={cardHeaderTitleClass}>Indicadores FFT</p>
+          <p className={cardHeaderSubtitleClass}>
             Eficiencia, demoras, producción y cumplimiento de programas del área
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ p: 2, pt: 0.5 }}>
-        <Stack divider={<Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }} />}>
+          </p>
+        </div>
+      </div>
+      <div className="p-4 pt-1">
+        <div className="divide-y divide-border">
           {FFT_INDICATORS.map((i) => (
             <IndicatorRow key={i.id} indicator={i} />
           ))}
-        </Stack>
-      </Box>
-    </Paper>
+        </div>
+      </div>
+    </div>
   )
 }

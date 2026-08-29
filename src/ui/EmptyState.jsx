@@ -1,8 +1,5 @@
-import React from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import { useTheme } from '@mui/material/styles'
-import InboxIcon from '@mui/icons-material/Inbox'
+import { Inbox } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function EmptyState({
   icon,
@@ -11,56 +8,37 @@ export default function EmptyState({
   action,
   compact = false,
 }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
-
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: compact ? 3 : 5,
-        px: 2,
-        textAlign: 'center',
-      }}
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center px-4 text-center',
+        compact ? 'py-6' : 'py-10',
+      )}
     >
-      <Box
-        sx={{
-          width: compact ? 48 : 64,
-          height: compact ? 48 : 64,
-          borderRadius: 3,
-          display: 'grid',
-          placeItems: 'center',
-          bgcolor: d ? 'rgba(255,255,255,.03)' : 'rgba(0,0,0,.02)',
-          border: '1px solid',
-          borderColor: d ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)',
-          color: 'text.secondary',
-          mb: 2,
-          '& .MuiSvgIcon-root': { fontSize: compact ? 24 : 32, opacity: 0.4 },
-        }}
+      <div
+        className={cn(
+          'mb-4 grid place-items-center rounded-[30px] border border-black/[.06] bg-black/[.02] text-muted-foreground dark:border-white/[.06] dark:bg-white/[.03]',
+          compact ? 'h-12 w-12' : 'h-16 w-16',
+          compact ? '[&>svg]:h-6 [&>svg]:w-6' : '[&>svg]:h-8 [&>svg]:w-8',
+          '[&>svg]:opacity-40',
+        )}
       >
-        {icon || <InboxIcon />}
-      </Box>
-      <Typography
-        sx={{ fontWeight: 600, fontSize: compact ? 13 : 14, color: 'text.primary', mb: 0.5 }}
-      >
+        {icon || <Inbox />}
+      </div>
+      <p className={cn('mb-1 font-semibold text-foreground', compact ? 'text-[13px]' : 'text-sm')}>
         {title}
-      </Typography>
+      </p>
       {description && (
-        <Typography
-          sx={{
-            fontSize: compact ? 12 : 13,
-            color: 'text.secondary',
-            maxWidth: 360,
-            lineHeight: 1.5,
-          }}
+        <p
+          className={cn(
+            'max-w-[360px] leading-[1.5] text-muted-foreground',
+            compact ? 'text-xs' : 'text-[13px]',
+          )}
         >
           {description}
-        </Typography>
+        </p>
       )}
-      {action && <Box sx={{ mt: 2 }}>{action}</Box>}
-    </Box>
+      {action && <div className="mt-4">{action}</div>}
+    </div>
   )
 }

@@ -63,6 +63,18 @@ export default {
       fontFamily: {
         sans: ['Inter', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
       },
+      keyframes: {
+        // Fase 6c (Dashboard): replica exacta de la animacion de entrada de
+        // src/ui/pageStyles.js (`page.animation`, usada en 30 archivos MUI
+        // via sx) para las paginas ya convertidas a Tailwind.
+        fadeInUp: {
+          from: { opacity: 0, transform: 'translateY(6px)' },
+          to: { opacity: 1, transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp .25s ease-out',
+      },
     },
   },
   plugins: [tailwindcssAnimate],

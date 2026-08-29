@@ -1,15 +1,16 @@
-import Box from '@mui/material/Box'
-import { useTheme } from '@mui/material/styles'
 import {
-  ResponsiveContainer,
-  AreaChart,
   Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
 } from 'recharts'
 import ChartCard from '../ChartCard'
+
+const GRID_COLOR = 'hsl(var(--foreground) / 0.06)'
+const AXIS_COLOR = 'hsl(var(--muted-foreground))'
 
 /* Sustituye a "Tendencia de asistencia por hora" del mockup (2026-08-25,
    cambio reportado explícitamente al usuario -- Parte 11 del prompt).
@@ -26,30 +27,16 @@ import ChartCard from '../ChartCard'
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <Box
-      sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
-        px: 1.5,
-        py: 1,
-        boxShadow: 3,
-      }}
-    >
-      <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+    <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      <div className="mb-0.5 text-[12.5px] font-bold">{label}</div>
+      <div className="text-xs text-muted-foreground">
         {payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
 export default function MovementsHourlyCard({ hourlyToday, loading, error, onRetry }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
-  const gridColor = d ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)'
-  const axisColor = d ? 'rgba(148,163,184,.8)' : 'rgba(71,85,105,.8)'
   const lineColor = '#3B82F6'
 
   return (
@@ -62,7 +49,7 @@ export default function MovementsHourlyCard({ hourlyToday, loading, error, onRet
       empty={!error && hourlyToday.length === 0}
       emptyMessage="Todavía no se ha registrado ningún movimiento hoy."
     >
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={hourlyToday} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
             <defs>
@@ -71,15 +58,15 @@ export default function MovementsHourlyCard({ hourlyToday, loading, error, onRet
                 <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke={gridColor} />
+            <CartesianGrid vertical={false} stroke={GRID_COLOR} />
             <XAxis
               dataKey="hour"
-              tick={{ fontSize: 11, fill: axisColor }}
-              axisLine={{ stroke: gridColor }}
+              tick={{ fontSize: 11, fill: AXIS_COLOR }}
+              axisLine={{ stroke: GRID_COLOR }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: axisColor }}
+              tick={{ fontSize: 11, fill: AXIS_COLOR }}
               axisLine={false}
               tickLine={false}
               width={30}
@@ -100,7 +87,7 @@ export default function MovementsHourlyCard({ hourlyToday, loading, error, onRet
             />
           </AreaChart>
         </ResponsiveContainer>
-      </Box>
+      </div>
     </ChartCard>
   )
 }

@@ -1,13 +1,13 @@
-import Button from '@mui/material/Button'
-import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import * as XLSX from 'xlsx'
 import dayjs from 'dayjs'
-import { workCenterById } from '../../data/production/catalog'
+import { Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { Button } from '@/components/ui/button'
 import {
-  getMovementsForDate,
   getAttendanceForDate,
   getEmployeeById,
+  getMovementsForDate,
 } from '../../data/personnel/repository'
+import { workCenterById } from '../../data/production/catalog'
 
 /* Export de Excel EXCLUSIVO del Dashboard rediseñado (2026-08-25,
    hoja Turnos agregada 2026-08-26 a peticion explicita del usuario) --
@@ -132,19 +132,12 @@ export default function DashboardExportButton({ metrics }) {
   }
 
   return (
+    // Fase 6c: h-40px = h-10, borderRadius 2 * theme.shape.borderRadius(10) = 20px, px 2.5*8 = 20px = px-5
     <Button
-      variant="contained"
-      startIcon={<FileDownloadIcon />}
       onClick={handleExport}
-      sx={{
-        height: 40,
-        borderRadius: 2,
-        fontWeight: 600,
-        textTransform: 'none',
-        px: 2.5,
-        flexShrink: 0,
-      }}
+      className="h-10 shrink-0 rounded-[20px] px-5 font-semibold normal-case"
     >
+      <Download className="h-4 w-4" />
       Descargar Excel
     </Button>
   )

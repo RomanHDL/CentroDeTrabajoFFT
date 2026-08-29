@@ -1,17 +1,20 @@
-import Box from '@mui/material/Box'
-import { useTheme } from '@mui/material/styles'
+import { useEffect, useState } from 'react'
 import {
-  ResponsiveContainer,
-  ComposedChart,
   Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
   Line,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
 } from 'recharts'
 import ChartCard from '../ChartCard'
+
+const GRID_COLOR = 'hsl(var(--foreground) / 0.06)'
+const AXIS_COLOR = 'hsl(var(--muted-foreground))'
+const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
 
 /* "Faltante vs ideal por área" -- combo chart (Parte 16 del prompt).
    Plantilla ideal se trata como META de planeación, nunca como techo:
@@ -20,31 +23,37 @@ function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
-    <Box
-      sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
-        px: 1.5,
-        py: 1,
-        boxShadow: 3,
-      }}
-    >
-      <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>Actual: {row.actual}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>Ideal: {row.ideal}</Box>
-      <Box sx={{ fontSize: 12, color: '#EF4444', fontWeight: 700 }}>Faltante: {row.missing}</Box>
-    </Box>
+    <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      <div className="mb-0.5 text-[12.5px] font-bold">{label}</div>
+      <div className="text-xs text-muted-foreground">Actual: {row.actual}</div>
+      <div className="text-xs text-muted-foreground">Ideal: {row.ideal}</div>
+      <div className="text-xs font-bold text-[#EF4444]">Faltante: {row.missing}</div>
+    </div>
   )
 }
 
+// Sigue la clase `dark` de Tailwind (sincronizada con el modo de MUI en
+// App.jsx mientras dura la migracion pagina por pagina) para elegir el
+// tono de la barra "ideal" -- equivalente a theme.palette.mode del MUI
+// original, sin depender de useTheme.
+function useIsDarkMode() {
+  const [isDark, setIsDark] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
+  )
+  useEffect(() => {
+    const root = document.documentElement
+    const sync = () => setIsDark(root.classList.contains('dark'))
+    sync()
+    const observer = new MutationObserver(sync)
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+  return isDark
+}
+
 export default function MissingVsIdealComboCard({ areas, loading }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
-  const gridColor = d ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)'
-  const axisColor = d ? 'rgba(148,163,184,.8)' : 'rgba(71,85,105,.8)'
-  const idealColor = d ? '#475569' : '#CBD5E1'
+  const isDark = useIsDarkMode()
+  const idealColor = isDark ? '#475569' : '#CBD5E1'
 
   const data = areas
     .filter((a) => a.ideal != null)
@@ -59,18 +68,18 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
       empty={data.length === 0}
       emptyMessage="Ninguna área tiene todavía una plantilla ideal definida."
     >
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={data}
             margin={{ top: 8, right: 12, left: -12, bottom: 4 }}
             barCategoryGap="20%"
           >
-            <CartesianGrid vertical={false} stroke={gridColor} />
+            <CartesianGrid vertical={false} stroke={GRID_COLOR} />
             <XAxis
               dataKey="shortName"
-              tick={{ fontSize: 10.5, fill: axisColor }}
-              axisLine={{ stroke: gridColor }}
+              tick={{ fontSize: 10.5, fill: AXIS_COLOR }}
+              axisLine={{ stroke: GRID_COLOR }}
               tickLine={false}
               interval={0}
               angle={-20}
@@ -79,7 +88,7 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
             />
             <YAxis
               yAxisId="left"
-              tick={{ fontSize: 11, fill: axisColor }}
+              tick={{ fontSize: 11, fill: AXIS_COLOR }}
               axisLine={false}
               tickLine={false}
               width={32}
@@ -94,10 +103,7 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
               width={28}
               allowDecimals={false}
             />
-            <Tooltip
-              content={<ChartTooltip />}
-              cursor={{ fill: d ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)' }}
-            />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: CURSOR_FILL }} />
             <Legend
               wrapperStyle={{ fontSize: 11 }}
               formatter={(v) =>
@@ -132,7 +138,7 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
             />
           </ComposedChart>
         </ResponsiveContainer>
-      </Box>
+      </div>
     </ChartCard>
   )
 }

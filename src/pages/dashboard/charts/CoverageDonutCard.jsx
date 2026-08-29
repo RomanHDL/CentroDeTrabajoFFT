@@ -1,7 +1,4 @@
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import ChartCard from '../ChartCard'
 import { colorForIndex } from './chartPalette'
 
@@ -15,22 +12,12 @@ function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
-    <Box
-      sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
-        px: 1.5,
-        py: 1,
-        boxShadow: 3,
-      }}
-    >
-      <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{row.name}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+    <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      <div className="mb-0.5 text-[12.5px] font-bold">{row.name}</div>
+      <div className="text-xs text-muted-foreground">
         {row.actual} personas · {row.share.toFixed(1)}% del personal actual
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -51,8 +38,8 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
       empty={data.length === 0}
       emptyMessage="Todavía no hay personal asignado en ninguna área."
     >
-      <Stack direction="row" spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-        <Box sx={{ position: 'relative', flex: '1 1 0', minWidth: 0 }}>
+      <div className="flex flex-1 min-h-0 flex-row gap-4">
+        <div className="relative min-w-0 flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -71,41 +58,29 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
               <Tooltip content={<ChartTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            <Typography sx={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+            <p className="text-2xl font-extrabold leading-none">
               {coveragePct != null ? `${coveragePct}%` : '—'}
-            </Typography>
-            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>
-              Cobertura total
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+            <p className="text-[10px] font-semibold text-muted-foreground">Cobertura total</p>
+          </div>
+        </div>
 
-        <Stack spacing={0.6} sx={{ flex: '0 0 42%', minWidth: 0, overflow: 'auto', pr: 0.5 }}>
+        <div className="flex min-w-0 flex-none basis-[42%] flex-col gap-[4.8px] overflow-auto pr-1">
           {data.map((row) => (
-            <Stack key={row.id} direction="row" alignItems="center" spacing={0.75}>
-              <Box
-                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+            <div key={row.id} className="flex flex-row items-center gap-1.5">
+              <div
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: row.color }}
               />
-              <Typography sx={{ fontSize: 11, flex: 1, minWidth: 0 }} noWrap title={row.name}>
+              <span className="min-w-0 flex-1 truncate text-[11px]" title={row.name}>
                 {row.name.replace(/^WC /, '')}
-              </Typography>
-              <Typography sx={{ fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                {row.share.toFixed(0)}%
-              </Typography>
-            </Stack>
+              </span>
+              <span className="shrink-0 text-[11px] font-bold">{row.share.toFixed(0)}%</span>
+            </div>
           ))}
-        </Stack>
-      </Stack>
+        </div>
+      </div>
     </ChartCard>
   )
 }

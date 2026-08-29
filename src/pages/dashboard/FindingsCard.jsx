@@ -1,22 +1,19 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import Grid from '@mui/material/Grid'
-import LightbulbIcon from '@mui/icons-material/Lightbulb'
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import InfoIcon from '@mui/icons-material/Info'
-import { alpha } from '@mui/material/styles'
-import { usePageStyles } from '../../ui/pageStyles'
+import { CheckCircle2, Info, Lightbulb, OctagonAlert, TriangleAlert } from 'lucide-react'
+import { cardClass, cardHeaderClass, cardHeaderTitleClass } from '@/lib/pageStyles'
 import { EmptyState } from '../../ui'
 
 const TONE = {
-  bad: { color: '#EF4444', Icon: PriorityHighIcon },
-  warn: { color: '#F59E0B', Icon: WarningAmberIcon },
-  ok: { color: '#10B981', Icon: CheckCircleIcon },
-  info: { color: '#3B82F6', Icon: InfoIcon },
+  bad: { color: '#EF4444', Icon: OctagonAlert },
+  warn: { color: '#F59E0B', Icon: TriangleAlert },
+  ok: { color: '#10B981', Icon: CheckCircle2 },
+  info: { color: '#3B82F6', Icon: Info },
+}
+
+// Misma matematica que MUI alpha(color, opacity) (rgba real, no el hack de
+// sufijo hex de 2 digitos) -- evita depender de @mui/material/styles.
+function withAlpha(hex, opacity) {
+  const n = Number.parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${opacity})`
 }
 
 /* "Hallazgos del día" -- reglas deterministicas (dashboardMetrics.js),
@@ -24,16 +21,15 @@ const TONE = {
    de color + texto corto en 2 líneas (Parte 23), máximo 6 filas, en 2
    columnas cuando hay espacio para no alargar la card verticalmente. */
 export default function FindingsCard({ findings }) {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card, height: '100%' }}>
-      <Box sx={ps.cardHeader}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <LightbulbIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
-          <Typography sx={ps.cardHeaderTitle}>Hallazgos del día</Typography>
-        </Box>
-      </Box>
-      <Box sx={{ p: 2 }}>
+    <div className={`${cardClass} h-full`}>
+      <div className={cardHeaderClass}>
+        <div className="flex items-center gap-1.5">
+          <Lightbulb className="h-[18px] w-[18px] text-[#F59E0B]" />
+          <p className={cardHeaderTitleClass}>Hallazgos del día</p>
+        </div>
+      </div>
+      <div className="p-4">
         {findings.length === 0 ? (
           <EmptyState
             compact
@@ -41,42 +37,27 @@ export default function FindingsCard({ findings }) {
             description="No hay condiciones destacables con los datos actuales."
           />
         ) : (
-          <Grid container spacing={1.25}>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {findings.map((f) => {
               const { color, Icon } = TONE[f.tone] || TONE.info
               return (
-                <Grid item xs={12} sm={6} key={f.id}>
-                  <Stack direction="row" spacing={1.1} alignItems="flex-start">
-                    <Box
-                      sx={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        mt: 0.1,
-                        bgcolor: alpha(color, 0.14),
-                        display: 'grid',
-                        placeItems: 'center',
-                        color,
-                      }}
-                    >
-                      <Icon sx={{ fontSize: 15 }} />
-                    </Box>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3 }}>
-                        {f.title}
-                      </Typography>
-                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', lineHeight: 1.3 }}>
-                        {f.detail}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
+                <div key={f.id} className="flex items-start gap-[8.8px]">
+                  <div
+                    className="mt-[0.8px] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full"
+                    style={{ backgroundColor: withAlpha(color, 0.14), color }}
+                  >
+                    <Icon className="h-[15px] w-[15px]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-bold leading-[1.3]">{f.title}</p>
+                    <p className="text-[11.5px] leading-[1.3] text-muted-foreground">{f.detail}</p>
+                  </div>
+                </div>
               )
             })}
-          </Grid>
+          </div>
         )}
-      </Box>
-    </Paper>
+      </div>
+    </div>
   )
 }
