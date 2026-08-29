@@ -14,7 +14,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": false,
+    // true (no false, como en la fase 1) a proposito: server-lib/api NO tienen build step
+    // (corren con Node plano via --env-file, ver server-lib/dev-server.js) -- Node 24 ejecuta
+    // .ts nativo pero EXIGE la extension explicita en imports relativos (confirmado con una
+    // prueba real), asi que los archivos .ts de este repo importan entre si con ".ts" incluido.
+    // Requiere noEmit:true (ya esta arriba) -- tsc nunca emite, solo type-checkea.
+    "allowImportingTsExtensions": true,
     "types": ["vite/client", "node"]
   },
   "include": ["src", "server-lib", "api", "shared", "scripts", "vite.config.js"],

@@ -1,7 +1,7 @@
 // Equivalente real de checkInEmployee (repository.js).
 import { prisma } from '../../server-lib/prisma.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
+import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -72,11 +72,9 @@ export default requireAuth(async (req, res) => {
     })
   }
   if (result.status === 'STATION_FULL') {
-    return res
-      .status(409)
-      .json({
-        error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).`,
-      })
+    return res.status(409).json({
+      error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).`,
+    })
   }
   return res.status(201).json({ employee, assignment: result.assignment })
 })

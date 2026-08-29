@@ -16,7 +16,7 @@
 // confirmada) -- exactamente el mismo alcance que el cliente.
 import { prisma } from '../../server-lib/prisma.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
-import { todayDateOnly } from '../../server-lib/personnel.js'
+import { todayDateOnly } from '../../server-lib/personnel.ts'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

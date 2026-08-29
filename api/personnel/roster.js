@@ -29,7 +29,7 @@
 // que una solicitud de un LIDER y su resolucion lleguen a otros dispositivos sin recargar.
 import { prisma } from '../../server-lib/prisma.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { parseDateOnly } from '../../server-lib/personnel.js'
+import { parseDateOnly } from '../../server-lib/personnel.ts'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
