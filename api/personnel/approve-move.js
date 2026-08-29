@@ -10,7 +10,8 @@
 // puede ganar la condicion `status:'PENDING'` (el otro ve count:0 y recibe 409). Si placeEmployee
 // falla despues de ganar el claim, se revierte el claim (vuelve a PENDING) para no perder la
 // solicitud.
-import { prisma } from '../../server-lib/prisma.js'
+import { and, eq } from 'drizzle-orm'
+import { db, pendingMove } from '../../server-lib/db/client.ts'
 import { requireRole } from '../../server-lib/auth.js'
 import { placeEmployee } from '../../server-lib/personnel.ts'
 
@@ -20,15 +21,20 @@ export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => 
   const { pendingMoveId } = req.body || {}
   if (!pendingMoveId) return res.status(400).json({ error: 'Falta pendingMoveId.' })
 
-  const claimed = await prisma.pendingMove.updateMany({
-    where: { id: pendingMoveId, status: 'PENDING' },
-    data: { status: 'APPROVED', resolvedByUserId: req.user.id, resolvedAt: new Date() },
-  })
-  if (claimed.count === 0) {
+  const claimed = await db
+    .update(pendingMove)
+    .set({ status: 'APPROVED', resolvedByUserId: req.user.id, resolvedAt: new Date() })
+    .where(and(eq(pendingMove.id, pendingMoveId), eq(pendingMove.status, 'PENDING')))
+    .returning()
+  if (claimed.length === 0) {
     return res.status(409).json({ error: 'Esta solicitud ya fue atendida.' })
   }
 
-  const pending = await prisma.pendingMove.findUnique({ where: { id: pendingMoveId } })
+  const [pending] = await db
+    .select()
+    .from(pendingMove)
+    .where(eq(pendingMove.id, pendingMoveId))
+    .limit(1)
 
   const result = await placeEmployee({
     employeeId: pending.employeeId,
@@ -40,10 +46,10 @@ export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => 
 
   if (result.status !== 'OK') {
     // Revertir el claim: la solicitud sigue pendiente para que se decida de nuevo.
-    await prisma.pendingMove.update({
-      where: { id: pendingMoveId },
-      data: { status: 'PENDING', resolvedByUserId: null, resolvedAt: null },
-    })
+    await db
+      .update(pendingMove)
+      .set({ status: 'PENDING', resolvedByUserId: null, resolvedAt: null })
+      .where(eq(pendingMove.id, pendingMoveId))
     if (result.status === 'INACTIVE_EMPLOYEE') {
       return res
         .status(409)
@@ -64,6 +70,10 @@ export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => 
       .json({ error: 'No se pudo aplicar el movimiento; la solicitud sigue pendiente.' })
   }
 
-  const updated = await prisma.pendingMove.findUnique({ where: { id: pendingMoveId } })
+  const [updated] = await db
+    .select()
+    .from(pendingMove)
+    .where(eq(pendingMove.id, pendingMoveId))
+    .limit(1)
   return res.status(200).json({ pendingMove: updated, assignment: result.assignment })
 })

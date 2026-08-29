@@ -32,12 +32,13 @@
 // viejo ya no existe / la fila ya esta active:false).
 //
 // Uso: node --env-file=.env.local --import ./scripts/_esm-extensionless-loader.mjs scripts/migrate-ajustes-controlados-2026-08-28.mjs
-import { prisma } from '../server-lib/prisma.js'
+import { and, eq, sql } from 'drizzle-orm'
+import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.ts'
 
 async function findArea(code) {
-  const wa = await prisma.workArea.findUnique({ where: { code } })
+  const [wa] = await db.select().from(workArea).where(eq(workArea.code, code)).limit(1)
   if (!wa) console.log(`  (omitido: WorkArea "${code}" no existe todavia en esta DB)`)
-  return wa
+  return wa || null
 }
 
 async function renameInPlace(
@@ -48,32 +49,37 @@ async function renameInPlace(
 ) {
   const wa = await findArea(areaCode)
   if (!wa) return
-  const already = await prisma.workstation.findUnique({
-    where: { workAreaId_name: { workAreaId: wa.id, name: newName } },
-  })
+  const [already] = await db
+    .select()
+    .from(workstation)
+    .where(and(eq(workstation.workAreaId, wa.id), eq(workstation.name, newName)))
+    .limit(1)
   if (already) {
     console.log(`  OK (ya renombrado) ${areaCode}: "${newName}"`)
     return
   }
-  const old = await prisma.workstation.findUnique({
-    where: { workAreaId_name: { workAreaId: wa.id, name: oldName } },
-  })
+  const [old] = await db
+    .select()
+    .from(workstation)
+    .where(and(eq(workstation.workAreaId, wa.id), eq(workstation.name, oldName)))
+    .limit(1)
   if (!old) {
     console.log(`  (omitido) ${areaCode}: "${oldName}" no existe (nada que renombrar)`)
     return
   }
-  const active = await prisma.dailyAssignment.count({
-    where: { workstationId: old.id, status: 'ACTIVE' },
-  })
-  await prisma.workstation.update({
-    where: { id: old.id },
-    data: {
+  const [{ count: active }] = await db
+    .select({ count: sql`count(*)::int` })
+    .from(dailyAssignment)
+    .where(and(eq(dailyAssignment.workstationId, old.id), eq(dailyAssignment.status, 'ACTIVE')))
+  await db
+    .update(workstation)
+    .set({
       name: newName,
       ...(role !== undefined ? { role } : {}),
       ...(requiredRoleLabel !== undefined ? { requiredRoleLabel } : {}),
       ...(category !== undefined ? { category } : {}),
-    },
-  })
+    })
+    .where(eq(workstation.id, old.id))
   console.log(
     `  RENOMBRADO ${areaCode}: "${oldName}" -> "${newName}" (ocupacion activa preservada: ${active})`,
   )
@@ -82,9 +88,11 @@ async function renameInPlace(
 async function deactivate(areaCode, name) {
   const wa = await findArea(areaCode)
   if (!wa) return
-  const w = await prisma.workstation.findUnique({
-    where: { workAreaId_name: { workAreaId: wa.id, name } },
-  })
+  const [w] = await db
+    .select()
+    .from(workstation)
+    .where(and(eq(workstation.workAreaId, wa.id), eq(workstation.name, name)))
+    .limit(1)
   if (!w) {
     console.log(`  (omitido) ${areaCode}: "${name}" no existe`)
     return
@@ -93,10 +101,11 @@ async function deactivate(areaCode, name) {
     console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`)
     return
   }
-  const active = await prisma.dailyAssignment.count({
-    where: { workstationId: w.id, status: 'ACTIVE' },
-  })
-  await prisma.workstation.update({ where: { id: w.id }, data: { active: false } })
+  const [{ count: active }] = await db
+    .select({ count: sql`count(*)::int` })
+    .from(dailyAssignment)
+    .where(and(eq(dailyAssignment.workstationId, w.id), eq(dailyAssignment.status, 'ACTIVE')))
+  await db.update(workstation).set({ active: false }).where(eq(workstation.id, w.id))
   console.log(
     `  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`,
   )
@@ -178,4 +187,4 @@ for (const n of [1, 2, 3, 4]) {
 console.log(
   '\nListo. Siguiente paso: npm run seed-personnel (crea los puestos nuevos -- Empaque -- y sincroniza role/category del resto).',
 )
-await prisma.$disconnect()
+await db.$client.end()

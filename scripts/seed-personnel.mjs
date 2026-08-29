@@ -22,7 +22,8 @@
 //   coincidencia, se crea. Se verifico que estos 6 campos juntos son unicos dentro de las 136
 //   filas del snapshot (ninguna fila sin numero es indistinguible de otra por este criterio), asi
 //   que este script se puede correr varias veces sin duplicar personal.
-import { prisma } from '../server-lib/prisma.js'
+import { and, eq, isNull } from 'drizzle-orm'
+import { db, workArea as workAreaTable, workstation, employee } from '../server-lib/db/client.ts'
 import { WORK_CENTERS } from '../src/data/production/catalog.js'
 import { getWorkstationsForLine } from '../src/data/personnel/workstations.js'
 import { REAL_PERSONNEL_SNAPSHOT } from '../src/data/production/realPersonnelSnapshot.js'
@@ -48,18 +49,21 @@ let employeeUpdated = 0
 
 for (let i = 0; i < WORK_CENTERS.length; i += 1) {
   const wc = WORK_CENTERS[i]
-  const workArea = await prisma.workArea.upsert({
-    where: { code: wc.id },
-    create: { code: wc.id, name: wc.name, displayOrder: i },
-    update: { name: wc.name, displayOrder: i },
-  })
+  const [workArea] = await db
+    .insert(workAreaTable)
+    .values({ code: wc.id, name: wc.name, displayOrder: i })
+    .onConflictDoUpdate({
+      target: [workAreaTable.code],
+      set: { name: wc.name, displayOrder: i },
+    })
+    .returning()
   workAreaCount += 1
 
   const stations = getWorkstationsForLine(wc.id)
   for (const station of stations) {
-    await prisma.workstation.upsert({
-      where: { workAreaId_name: { workAreaId: workArea.id, name: station.name } },
-      create: {
+    await db
+      .insert(workstation)
+      .values({
         workAreaId: workArea.id,
         name: station.name,
         capacity: station.capacity,
@@ -67,15 +71,17 @@ for (let i = 0; i < WORK_CENTERS.length; i += 1) {
         role: station.role,
         requiredRoleLabel: station.requiredRole,
         category: categoryForRole(station.role),
-      },
-      update: {
-        capacity: station.capacity,
-        displayOrder: station.order,
-        role: station.role,
-        requiredRoleLabel: station.requiredRole,
-        category: categoryForRole(station.role),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: [workstation.workAreaId, workstation.name],
+        set: {
+          capacity: station.capacity,
+          displayOrder: station.order,
+          role: station.role,
+          requiredRoleLabel: station.requiredRole,
+          category: categoryForRole(station.role),
+        },
+      })
     workstationCount += 1
   }
 
@@ -102,32 +108,41 @@ for (const p of REAL_PERSONNEL_SNAPSHOT) {
   }
 
   if (data.employeeNumber) {
-    const result = await prisma.employee.upsert({
-      where: { employeeNumber: data.employeeNumber },
-      create: data,
-      update: data,
-    })
+    const [result] = await db
+      .insert(employee)
+      .values({ ...data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [employee.employeeNumber],
+        set: { ...data, updatedAt: new Date() },
+      })
+      .returning()
     if (result.createdAt.getTime() === result.updatedAt.getTime()) employeeCreated += 1
     else employeeUpdated += 1
     continue
   }
 
-  const existing = await prisma.employee.findFirst({
-    where: {
-      employeeNumber: null,
-      fullName: data.fullName,
-      areaZona: data.areaZona,
-      rawZona: data.rawZona,
-      actividad: data.actividad,
-      baseAsistencia: data.baseAsistencia,
-      fechaIngreso: data.fechaIngreso,
-    },
-  })
+  // Prisma traduce `where: { field: null }` a IS NULL automaticamente -- Drizzle no, asi que cada
+  // campo opcional necesita isNull() explicito cuando su valor es null (en vez de eq(), que con
+  // NULL nunca hace match en SQL).
+  const matchConditions = [isNull(employee.employeeNumber), eq(employee.fullName, data.fullName)]
+  for (const [col, val] of [
+    [employee.areaZona, data.areaZona],
+    [employee.rawZona, data.rawZona],
+    [employee.actividad, data.actividad],
+    [employee.baseAsistencia, data.baseAsistencia],
+    [employee.fechaIngreso, data.fechaIngreso],
+  ]) {
+    matchConditions.push(val === null ? isNull(col) : eq(col, val))
+  }
+  const [existing] = await db.select().from(employee).where(and(...matchConditions)).limit(1)
   if (existing) {
-    await prisma.employee.update({ where: { id: existing.id }, data })
+    await db
+      .update(employee)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(employee.id, existing.id))
     employeeUpdated += 1
   } else {
-    await prisma.employee.create({ data })
+    await db.insert(employee).values({ ...data, updatedAt: new Date() })
     employeeCreated += 1
   }
 }
@@ -138,4 +153,4 @@ console.log(
   `OK Employee: ${employeeCreated} creados, ${employeeUpdated} actualizados (total snapshot: ${REAL_PERSONNEL_SNAPSHOT.length})`,
 )
 
-await prisma.$disconnect()
+await db.$client.end()

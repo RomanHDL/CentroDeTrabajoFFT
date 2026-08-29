@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../server-lib/prisma.js'
+import { eq, or } from 'drizzle-orm'
+import { db, user } from '../../server-lib/db/client.ts'
 import { signSessionToken, buildSessionCookie, publicUser } from '../../server-lib/auth.js'
-import { getEffectiveModulesForUser } from '../../server-lib/permissionService.js'
+import { getEffectiveModulesForUser } from '../../server-lib/permissionService.ts'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -11,21 +12,26 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Indica tu numero de empleado/usuario y contraseña' })
   }
 
-  const user = await prisma.user.findFirst({
-    where: { OR: [{ employeeNumber: identifier }, { username: identifier }] },
-  })
-  if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' })
-  if (!user.active) return res.status(403).json({ error: 'Usuario inactivo' })
+  const [found] = await db
+    .select()
+    .from(user)
+    .where(or(eq(user.employeeNumber, identifier), eq(user.username, identifier)))
+    .limit(1)
+  if (!found) return res.status(401).json({ error: 'Credenciales incorrectas' })
+  if (!found.active) return res.status(403).json({ error: 'Usuario inactivo' })
 
-  const valid = await bcrypt.compare(password, user.passwordHash)
+  const valid = await bcrypt.compare(password, found.passwordHash)
   if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' })
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: { lastLoginAt: new Date() },
-  })
+  // NOTA (fase 3, Prisma -> Drizzle): User.updatedAt no tiene default de Postgres -- se pone
+  // a mano, igual que en el resto de updates a esta tabla.
+  const [updated] = await db
+    .update(user)
+    .set({ lastLoginAt: new Date(), updatedAt: new Date() })
+    .where(eq(user.id, found.id))
+    .returning()
 
-  const token = signSessionToken(user.id)
+  const token = signSessionToken(found.id)
   res.setHeader('Set-Cookie', buildSessionCookie(token))
   const effectiveModules = await getEffectiveModulesForUser({
     userId: updated.id,

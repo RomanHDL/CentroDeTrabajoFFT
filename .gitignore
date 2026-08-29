@@ -5,7 +5,8 @@ node_modules/
 dist/
 dist-ssr/
 
-# Prisma Client generado (se regenera con `prisma generate`, no se versiona)
+# Salida generada de herramientas de build/codegen (ninguna activa hoy -- se
+# deja el patron por si una futura vuelve a necesitarlo)
 /generated/
 
 # Entorno / secretos — nunca subir valores reales
@@ -31,9 +32,6 @@ npm-debug.log*
 # Archivos temporales de scripts de verificación puntual (no forman parte del proyecto)
 _tmp*
 
-# SQL de referencia usado solo para revisar la migración antes de aplicarla — la migración
-# real y versionable vive en prisma/migrations/. Este directorio no se commitea.
-prisma/_preview-sql/
 
 # Editor / OS
 .DS_Store

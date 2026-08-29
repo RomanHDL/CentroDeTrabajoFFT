@@ -27,9 +27,27 @@
 // Ademas devuelve pendingMoves (PENDING de la fecha) y resolvedMoves (APPROVED/REJECTED resueltas
 // en los ultimos 3 minutos) -- src/data/personnel/apiSync.js los fusiona en cada poll de 7s para
 // que una solicitud de un LIDER y su resolucion lleguen a otros dispositivos sin recargar.
-import { prisma } from '../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, employee as employeeTable } from '../../server-lib/db/client.ts'
 import { requireAuth } from '../../server-lib/auth.js'
 import { parseDateOnly } from '../../server-lib/personnel.ts'
+
+// Reordena el resultado de la relational query de Drizzle (nombres de relacion auto-generados,
+// ambiguos por tener 2 FKs a la MISMA tabla Workstation/User, ver server-lib/db/relations.ts:
+// workstation_fromWorkstationId/workstation_toWorkstationId/user_requestedByUserId) de vuelta a la
+// misma forma que ya devolvia el `include` de Prisma (employee/requestedBy/toWorkstation/
+// fromWorkstation) -- el frontend (apiSync.js) espera exactamente esos nombres, sin cambio.
+function shapePendingMove(pm) {
+  return {
+    ...pm,
+    requestedBy: pm.user_requestedByUserId,
+    toWorkstation: pm.workstation_toWorkstationId,
+    fromWorkstation: pm.workstation_fromWorkstationId,
+    user_requestedByUserId: undefined,
+    workstation_toWorkstationId: undefined,
+    workstation_fromWorkstationId: undefined,
+  }
+}
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -47,51 +65,57 @@ export default requireAuth(async (req, res) => {
       // 'LIVE' real de la persona activa que comparte su nombre, porque ambos se fusionaban en el
       // mismo id local. Confirmado en vivo: "Cesar Hernandez Hernandez" desaparecia del layout de
       // WC LINEA 2 en cada poll de 2s pese a tener una asignacion ACTIVE real.
-      prisma.employee.findMany({
-        where: { active: true },
-        select: {
-          id: true,
-          employeeNumber: true,
-          fullName: true,
-          areaZona: true,
-          baselineSuppressed: true,
-        },
-      }),
+      db
+        .select({
+          id: employeeTable.id,
+          employeeNumber: employeeTable.employeeNumber,
+          fullName: employeeTable.fullName,
+          areaZona: employeeTable.areaZona,
+          baselineSuppressed: employeeTable.baselineSuppressed,
+        })
+        .from(employeeTable)
+        .where(eq(employeeTable.active, true)),
       // LIVE: sin filtro de fecha -- ver nota arriba.
-      prisma.dailyAssignment.findMany({
-        where: { status: 'ACTIVE' },
-        include: { workstation: { include: { workArea: true } } },
+      db.query.dailyAssignment.findMany({
+        where: (dailyAssignment, { eq }) => eq(dailyAssignment.status, 'ACTIVE'),
+        with: { workstation: { with: { workArea: true } } },
       }),
       // Solo para touchedToday (NONE vs SNAPSHOT) -- este SI sigue scoped a la fecha pedida.
-      prisma.dailyAssignment.findMany({
-        where: { date },
-        select: { employeeId: true },
+      db.query.dailyAssignment.findMany({
+        where: (dailyAssignment, { eq }) => eq(dailyAssignment.date, date),
+        columns: { employeeId: true },
       }),
-      prisma.pendingMove.findMany({
-        where: { date, status: 'PENDING' },
-        include: {
-          employee: { select: { id: true, employeeNumber: true, fullName: true } },
-          requestedBy: { select: { name: true } },
-          toWorkstation: { include: { workArea: true } },
-          fromWorkstation: { include: { workArea: true } },
-        },
-      }),
+      db.query.pendingMove
+        .findMany({
+          where: (pendingMove, { eq, and }) =>
+            and(eq(pendingMove.date, date), eq(pendingMove.status, 'PENDING')),
+          with: {
+            employee: { columns: { id: true, employeeNumber: true, fullName: true } },
+            user_requestedByUserId: { columns: { name: true } },
+            workstation_toWorkstationId: { with: { workArea: true } },
+            workstation_fromWorkstationId: { with: { workArea: true } },
+          },
+        })
+        .then((rows) => rows.map(shapePendingMove)),
       // Resueltas (APPROVED/REJECTED) recientemente -- ventana corta de 3 minutos, suficiente para
       // que el poll de 7s (apiSync.js) de OTRO dispositivo alcance a notificar a quien la pidio
       // antes de que salga de la ventana. No es un endpoint nuevo, es parte del mismo roster.
-      prisma.pendingMove.findMany({
-        where: {
-          date,
-          status: { in: ['APPROVED', 'REJECTED'] },
-          resolvedAt: { gte: new Date(Date.now() - 3 * 60 * 1000) },
-        },
-        include: {
-          employee: { select: { id: true, employeeNumber: true, fullName: true } },
-          requestedBy: { select: { name: true } },
-          toWorkstation: { include: { workArea: true } },
-          fromWorkstation: { include: { workArea: true } },
-        },
-      }),
+      db.query.pendingMove
+        .findMany({
+          where: (pendingMove, { eq, and, inArray, gte }) =>
+            and(
+              eq(pendingMove.date, date),
+              inArray(pendingMove.status, ['APPROVED', 'REJECTED']),
+              gte(pendingMove.resolvedAt, new Date(Date.now() - 3 * 60 * 1000)),
+            ),
+          with: {
+            employee: { columns: { id: true, employeeNumber: true, fullName: true } },
+            user_requestedByUserId: { columns: { name: true } },
+            workstation_toWorkstationId: { with: { workArea: true } },
+            workstation_fromWorkstationId: { with: { workArea: true } },
+          },
+        })
+        .then((rows) => rows.map(shapePendingMove)),
     ])
 
   const activeByEmployee = new Map()

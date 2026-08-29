@@ -17,12 +17,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
 - Observabilidad Sentry (frontend + backend), inactiva hasta recibir un DSN real.
 - Developer Manual (`/developer-manual`) y Manual de Usuario (`/manual`).
 - Este `CHANGELOG.md`.
+- **Migración completa Prisma → Drizzle ORM.** Schema (`server-lib/db/schema.ts`
+  + `relations.ts`) generado por introspección directa contra la base real
+  (18 tablas/12 enums, cero riesgo de definición divergente). Los 25 archivos
+  `api/*`/`server-lib/*` y los 11 scripts de mantenimiento que usaban Prisma
+  fueron portados uno por uno, mismo comportamiento verificado (transacciones
+  con `FOR UPDATE`, claves compuestas, upserts, joins anidados). `@prisma/*`
+  y `prisma` eliminados de las dependencias; `prisma/`, `prisma.config.js`,
+  `server-lib/prisma.js` y `generated/` eliminados del repo.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
-- Migración Prisma → Drizzle ORM.
 - Andamiaje i18n (en / es-MX / zh-CN).
 - SSO real de Nextcloud (OIDC), reemplaza el login propio.
 - Migración MUI → Tailwind CSS + shadcn/ui.

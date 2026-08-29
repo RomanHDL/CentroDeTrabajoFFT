@@ -1,6 +1,6 @@
 // Reglas de negocio para "estaciones configurables por ADMINISTRADOR" (WC LINEA 0-10,
 // 2026-08-27, a peticion explicita del usuario). Las invariantes viven aqui, no en las rutas de
-// api/work-areas/[code]/workstations/* -- mismo criterio que server-lib/permissionService.js
+// api/work-areas/[code]/workstations/* -- mismo criterio que server-lib/permissionService.ts
 // ("ADMINISTRADOR no puede quedar sin un modulo protegido" vive en el service, no en la ruta).
 //
 // IMPORTANTE (ver nota en src/data/personnel/workstations.js): `name` es la clave real que ya usan
@@ -19,13 +19,26 @@
 // de a quien afecta) se muestra en el cliente ANTES de llamar a este endpoint
 // (LineStationConfigDrawer.jsx), usando los datos que ya tiene en pantalla (localStorage), no una
 // segunda consulta a Postgres.
-import { prisma } from './prisma.js'
+//
+// Fase 3 (MI Stack Reference, Prisma -> Drizzle): mismo comportamiento linea
+// por linea que el archivo original (ver git history). `createWorkstations`
+// mejora de forma segura: el array-of-promises `$transaction` de Prisma se
+// vuelve un solo INSERT de multiples filas (Drizzle lo soporta nativo,
+// sigue siendo atomico) -- `reorderWorkstations` SI necesita una
+// transaccion real porque cada fila recibe un displayOrder distinto.
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
+import { db, workArea, workstation, dailyAssignment } from './db/client.ts'
 
-export async function resolveWorkArea(codeOrId) {
-  return prisma.workArea.findFirst({ where: { OR: [{ code: codeOrId }, { id: codeOrId }] } })
+export async function resolveWorkArea(codeOrId: string) {
+  const [area] = await db
+    .select()
+    .from(workArea)
+    .where(or(eq(workArea.code, codeOrId), eq(workArea.id, codeOrId)))
+    .limit(1)
+  return area || null
 }
 
-export function serializeWorkstation(w) {
+export function serializeWorkstation(w: typeof workstation.$inferSelect) {
   return {
     id: w.id,
     name: w.name,
@@ -38,19 +51,30 @@ export function serializeWorkstation(w) {
   }
 }
 
-export async function listWorkstations(workAreaId) {
-  return prisma.workstation.findMany({
-    where: { workAreaId, active: true },
-    orderBy: { displayOrder: 'asc' },
-  })
+export async function listWorkstations(workAreaId: string) {
+  return db
+    .select()
+    .from(workstation)
+    .where(and(eq(workstation.workAreaId, workAreaId), eq(workstation.active, true)))
+    .orderBy(asc(workstation.displayOrder))
 }
 
-export async function nextDisplayOrder(workAreaId) {
-  const agg = await prisma.workstation.aggregate({
-    where: { workAreaId },
-    _max: { displayOrder: true },
-  })
-  return (agg._max.displayOrder || 0) + 1
+export async function nextDisplayOrder(workAreaId: string) {
+  const [{ max }] = await db
+    .select({ max: sql<number | null>`max(${workstation.displayOrder})` })
+    .from(workstation)
+    .where(eq(workstation.workAreaId, workAreaId))
+  return (max || 0) + 1
+}
+
+type CreateWorkstationsInput = {
+  workAreaId: string
+  baseName: string
+  requiredRoleLabel?: string | null
+  category?: string | null
+  capacity: number
+  quantity: number
+  displayOrderStart: number
 }
 
 /* `quantity` > 1 reusa EXACTAMENTE la misma convencion de nombres que ya usa
@@ -66,7 +90,7 @@ export async function createWorkstations({
   capacity,
   quantity,
   displayOrderStart,
-}) {
+}: CreateWorkstationsInput) {
   const qty = Math.max(1, Math.min(20, Number(quantity) || 1))
   const cap = Math.max(1, Number(capacity) || 1)
   const rows = Array.from({ length: qty }, (_, i) => ({
@@ -74,33 +98,51 @@ export async function createWorkstations({
     name: i === 0 ? baseName : `${baseName} ${i + 1}`,
     role: baseName,
     requiredRoleLabel: requiredRoleLabel || null,
-    category: category || null,
+    category: (category || null) as any,
     capacity: cap,
     displayOrder: displayOrderStart + i,
     active: true,
   }))
-  return prisma.$transaction(rows.map((data) => prisma.workstation.create({ data })))
+  return db.insert(workstation).values(rows).returning()
 }
 
-async function activeOccupancy(workstationId) {
-  return prisma.dailyAssignment.count({ where: { workstationId, status: 'ACTIVE' } })
+async function activeOccupancy(workstationId: string) {
+  const [{ occupied }] = await db
+    .select({ occupied: sql<number>`count(*)::int` })
+    .from(dailyAssignment)
+    .where(
+      and(eq(dailyAssignment.workstationId, workstationId), eq(dailyAssignment.status, 'ACTIVE')),
+    )
+  return occupied
+}
+
+type UpdateWorkstationInput = {
+  name?: string
+  requiredRoleLabel?: string | null
+  category?: string | null
+  capacity?: number
+  displayOrder?: number
 }
 
 export async function updateWorkstation(
-  id,
-  { name, requiredRoleLabel, category, capacity, displayOrder },
+  id: string,
+  { name, requiredRoleLabel, category, capacity, displayOrder }: UpdateWorkstationInput,
 ) {
-  const data = {}
+  const data: Record<string, unknown> = {}
   if (requiredRoleLabel !== undefined) data.requiredRoleLabel = requiredRoleLabel || null
   if (category !== undefined) data.category = category || null
   if (displayOrder !== undefined) data.displayOrder = displayOrder
 
   if (name !== undefined) {
-    const current = await prisma.workstation.findUnique({ where: { id }, select: { name: true } })
+    const [current] = await db
+      .select({ name: workstation.name })
+      .from(workstation)
+      .where(eq(workstation.id, id))
+      .limit(1)
     if (current && current.name !== name) {
       const occupied = await activeOccupancy(id)
       if (occupied > 0) {
-        const err = new Error(
+        const err: any = new Error(
           'No se puede renombrar un puesto que actualmente tiene personal asignado. Reasigna primero.',
         )
         err.code = 'OCCUPIED'
@@ -113,7 +155,7 @@ export async function updateWorkstation(
   if (capacity !== undefined) {
     const occupied = await activeOccupancy(id)
     if (capacity < occupied) {
-      const err = new Error(
+      const err: any = new Error(
         `No se puede reducir la capacidad por debajo del personal actualmente asignado (${occupied}).`,
       )
       err.code = 'CAPACITY_BELOW_OCCUPANCY'
@@ -122,27 +164,36 @@ export async function updateWorkstation(
     data.capacity = capacity
   }
 
-  return prisma.workstation.update({ where: { id }, data })
+  const [row] = await db.update(workstation).set(data).where(eq(workstation.id, id)).returning()
+  return row
 }
 
-export async function deactivateWorkstation(id) {
-  return prisma.workstation.update({ where: { id }, data: { active: false } })
+export async function deactivateWorkstation(id: string) {
+  const [row] = await db
+    .update(workstation)
+    .set({ active: false })
+    .where(eq(workstation.id, id))
+    .returning()
+  return row
 }
 
-export async function reorderWorkstations(workAreaId, orderedIds) {
-  const rows = await prisma.workstation.findMany({
-    where: { id: { in: orderedIds } },
-    select: { id: true, workAreaId: true },
-  })
+export async function reorderWorkstations(workAreaId: string, orderedIds: string[]) {
+  const rows = await db
+    .select({ id: workstation.id, workAreaId: workstation.workAreaId })
+    .from(workstation)
+    .where(inArray(workstation.id, orderedIds))
   if (rows.length !== orderedIds.length || rows.some((r) => r.workAreaId !== workAreaId)) {
-    const err = new Error('IDs de estacion invalidos para esta linea.')
+    const err: any = new Error('IDs de estacion invalidos para esta linea.')
     err.code = 'INVALID_IDS'
     throw err
   }
-  await prisma.$transaction(
-    orderedIds.map((id, i) =>
-      prisma.workstation.update({ where: { id }, data: { displayOrder: i + 1 } }),
-    ),
-  )
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < orderedIds.length; i += 1) {
+      await tx
+        .update(workstation)
+        .set({ displayOrder: i + 1 })
+        .where(eq(workstation.id, orderedIds[i]))
+    }
+  })
   return listWorkstations(workAreaId)
 }

@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../server-lib/prisma.js'
+import { asc } from 'drizzle-orm'
+import { db, user } from '../../server-lib/db/client.ts'
 import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 
 export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method === 'GET') {
-    const users = await prisma.user.findMany({ orderBy: { createdAt: 'asc' } })
+    const users = await db.select().from(user).orderBy(asc(user.createdAt))
     return res.status(200).json({ users: users.map(publicUser) })
   }
 
@@ -30,8 +31,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 12)
     try {
-      const user = await prisma.user.create({
-        data: {
+      const [created] = await db
+        .insert(user)
+        .values({
           employeeNumber: employeeNumber || null,
           username: username || null,
           name,
@@ -40,14 +42,17 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
           active: active ?? true,
           mustChangePassword: true,
           employeeId: employeeId || null,
-        },
-      })
-      return res.status(201).json({ user: publicUser(user) })
+          updatedAt: new Date(),
+        })
+        .returning()
+      return res.status(201).json({ user: publicUser(created) })
     } catch (e) {
-      if (e.code === 'P2002') {
-        return res
-          .status(409)
-          .json({ error: `Ya existe un usuario con ese ${e.meta?.target?.[0] ?? 'valor unico'}` })
+      // Fase 3 (Prisma -> Drizzle): P2002 (Prisma) -> 23505 unique_violation (pg nativo).
+      // `e.constraint` es el nombre real del indice unico (ej. "User_username_key");
+      // se deriva la columna del mismo modo que antes devolvia e.meta.target[0].
+      if (e.code === '23505') {
+        const target = e.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor unico'
+        return res.status(409).json({ error: `Ya existe un usuario con ese ${target}` })
       }
       throw e
     }

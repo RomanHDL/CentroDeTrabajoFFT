@@ -1,5 +1,5 @@
 import { requireAuth } from '../../server-lib/auth.js'
-import { getRoleModulePermissionsMap } from '../../server-lib/permissionService.js'
+import { getRoleModulePermissionsMap } from '../../server-lib/permissionService.ts'
 
 // GET, cualquier usuario autenticado (no solo ADMINISTRADOR): el frontend lo
 // necesita para decidir el menu/rutas de SU PROPIO rol, no para administrar.

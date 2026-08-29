@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   // Modulos con acceso EFECTIVO para el usuario actual (rol + override
   // individual, ya resueltos en el servidor -- ver
-  // server-lib/permissionService.js getEffectiveModulesForUser). Llegan
+  // server-lib/permissionService.ts getEffectiveModulesForUser). Llegan
   // junto con /api/auth/session y /api/auth/login, como propiedad hermana de
   // "user" -- el JWT sigue siendo solo { sub: userId }, asi que un cambio de
   // permiso aplica en el siguiente refresh de sesion sin requerir login

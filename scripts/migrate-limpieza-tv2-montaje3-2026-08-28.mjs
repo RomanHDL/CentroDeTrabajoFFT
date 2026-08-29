@@ -23,17 +23,20 @@
 // IDEMPOTENTE: si ya se corrio antes, no hace nada (revisa `active` antes de tocar).
 //
 // Uso: node --env-file=.env.local --import ./scripts/_esm-extensionless-loader.mjs scripts/migrate-limpieza-tv2-montaje3-2026-08-28.mjs
-import { prisma } from '../server-lib/prisma.js'
+import { and, eq, sql } from 'drizzle-orm'
+import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.ts'
 
 async function deactivate(areaCode, name) {
-  const wa = await prisma.workArea.findUnique({ where: { code: areaCode } })
+  const [wa] = await db.select().from(workArea).where(eq(workArea.code, areaCode)).limit(1)
   if (!wa) {
     console.log(`  (omitido) WorkArea "${areaCode}" no existe`)
     return
   }
-  const w = await prisma.workstation.findUnique({
-    where: { workAreaId_name: { workAreaId: wa.id, name } },
-  })
+  const [w] = await db
+    .select()
+    .from(workstation)
+    .where(and(eq(workstation.workAreaId, wa.id), eq(workstation.name, name)))
+    .limit(1)
   if (!w) {
     console.log(`  (omitido) ${areaCode}: "${name}" no existe`)
     return
@@ -42,10 +45,11 @@ async function deactivate(areaCode, name) {
     console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`)
     return
   }
-  const active = await prisma.dailyAssignment.count({
-    where: { workstationId: w.id, status: 'ACTIVE' },
-  })
-  await prisma.workstation.update({ where: { id: w.id }, data: { active: false } })
+  const [{ count: active }] = await db
+    .select({ count: sql`count(*)::int` })
+    .from(dailyAssignment)
+    .where(and(eq(dailyAssignment.workstationId, w.id), eq(dailyAssignment.status, 'ACTIVE')))
+  await db.update(workstation).set({ active: false }).where(eq(workstation.id, w.id))
   console.log(
     `  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`,
   )
@@ -70,4 +74,4 @@ console.log(
 console.log(
   '\nListo. Siguiente paso: npm run seed-personnel (sincroniza role/category/active de TODAS las estaciones de WC LINEA con el generador actual).',
 )
-await prisma.$disconnect()
+await db.$client.end()

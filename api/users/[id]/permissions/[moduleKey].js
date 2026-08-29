@@ -1,11 +1,12 @@
-import { prisma } from '../../../../server-lib/prisma.js'
+import { eq } from 'drizzle-orm'
+import { db, user } from '../../../../server-lib/db/client.ts'
 import { requireModuleAccess } from '../../../../server-lib/auth.js'
 import { getModule } from '../../../../shared/moduleRegistry.js'
 import { resolveEffectiveAccess } from '../../../../shared/permissions.js'
 import {
   setUserOverride,
   getRoleModulePermissionsMap,
-} from '../../../../server-lib/permissionService.js'
+} from '../../../../server-lib/permissionService.ts'
 
 // moduleKey viaja URL-encoded (ej. "/dashboard" -> "%2Fdashboard") porque
 // contiene una barra -- un solo segmento de ruta dinamica, decodificado
@@ -23,8 +24,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
     return res.status(400).json({ error: 'effect debe ser ALLOW, DENY o INHERIT' })
   }
 
-  const user = await prisma.user.findUnique({ where: { id } })
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' })
+  // `foundUser` (no `user`) para no chocar con la tabla `user` importada de db/client.ts.
+  const [foundUser] = await db.select().from(user).where(eq(user.id, id)).limit(1)
+  if (!foundUser) return res.status(404).json({ error: 'Usuario no encontrado' })
 
   try {
     await setUserOverride(id, moduleKey, effect, req.user.id)
@@ -33,9 +35,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   }
 
   const roleMap = await getRoleModulePermissionsMap()
-  const roleAllowed = !!roleMap[user.role]?.[moduleKey]
+  const roleAllowed = !!roleMap[foundUser.role]?.[moduleKey]
   const override = effect === 'INHERIT' ? null : effect
-  const effective = resolveEffectiveAccess({ role: user.role, module, roleAllowed, override })
+  const effective = resolveEffectiveAccess({ role: foundUser.role, module, roleAllowed, override })
 
   return res.status(200).json({
     moduleKey,

@@ -4,7 +4,7 @@
 // usuario (2026-08-21). ADMINISTRADOR y SUPERVISOR mantienen el mismo acceso
 // que ya tenian antes de este cambio (dashboard + centro-trabajo +
 // registro-personal); "/usuarios" no vive aqui (ver nota en schema.prisma).
-import { prisma } from '../server-lib/prisma.js'
+import { db, roleModuleAccess } from '../server-lib/db/client.ts'
 
 const DEFAULTS = {
   ADMINISTRADOR: ['/dashboard', '/centro-trabajo', '/registro-personal'],
@@ -13,12 +13,14 @@ const DEFAULTS = {
 }
 
 for (const [role, modules] of Object.entries(DEFAULTS)) {
-  await prisma.roleModuleAccess.upsert({
-    where: { role },
-    create: { role, modules },
-    update: { modules },
-  })
+  await db
+    .insert(roleModuleAccess)
+    .values({ role, modules })
+    .onConflictDoUpdate({
+      target: [roleModuleAccess.role],
+      set: { modules },
+    })
   console.log(`OK ${role} -> ${modules.join(', ')}`)
 }
 
-await prisma.$disconnect()
+await db.$client.end()
