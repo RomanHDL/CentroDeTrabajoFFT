@@ -17,6 +17,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck'
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useEffectiveModules } from '../state/auth'
 
 // 250-270px (rediseño visual 2026-08-28, "sidebar blanca/azul tipo
@@ -40,13 +41,18 @@ const BRAND_BLUE = '#3B82F6'
 // explicita del usuario (un rol con el modulo "Usuarios" tiene control total
 // de gestion de usuarios/permisos, incluido reset de contraseñas). Un
 // ADMINISTRADOR siempre tiene acceso total sin excepcion (resolveEffectiveAccess).
+// `labelKey` (fase 4, i18n, no `label` literal) -- referencia a
+// public/locales/{lng}/navigation.json, resuelta con useTranslation en
+// NavList mas abajo. es-MX (idioma por defecto, ver src/i18n.js) tiene
+// EXACTAMENTE el mismo texto que antes -- cero cambio visible para el
+// personal actual, solo cambia de donde sale el string.
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
-  { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
-  { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, configurable: true },
+  { to: '/dashboard', labelKey: 'dashboard', icon: DashboardIcon, configurable: true },
+  { to: '/centro-trabajo', labelKey: 'centroDeTrabajo', icon: FactoryIcon, configurable: true },
+  { to: '/usuarios', labelKey: 'usuarios', icon: GroupIcon, configurable: true },
   {
     to: '/registro-personal',
-    label: 'Registro de personal',
+    labelKey: 'registroDePersonal',
     icon: PersonAddAlt1Icon,
     configurable: true,
   },
@@ -54,9 +60,9 @@ const NAV_ITEMS = [
   // los 4 de arriba -- solo navegacion, el permiso real lo resuelve
   // useEffectiveModules() (shared/moduleRegistry.js), nunca una lista de
   // permisos aparte aqui.
-  { to: '/kpis', label: "KPI's", icon: QueryStatsIcon, configurable: true },
-  { to: '/asistencia', label: 'Asistencia', icon: EventAvailableIcon, configurable: true },
-  { to: '/auditoria', label: 'Auditoría', icon: FactCheckIcon, configurable: true },
+  { to: '/kpis', labelKey: 'kpis', icon: QueryStatsIcon, configurable: true },
+  { to: '/asistencia', labelKey: 'asistencia', icon: EventAvailableIcon, configurable: true },
+  { to: '/auditoria', labelKey: 'auditoria', icon: FactCheckIcon, configurable: true },
 ]
 
 // Estilo de item de menu (rediseño visual 2026-08-28, referencia "sidebar
@@ -68,9 +74,10 @@ const NAV_ITEMS = [
 // rutas/permisos/orden -- ESTO es exactamente lo mismo NAV_ITEMS/filter de
 // siempre, solo cambia sx.
 function NavList({ items, onItemClick }) {
+  const { t } = useTranslation('navigation')
   return (
     <List sx={{ flex: 1, pt: 1, px: 1.25 }}>
-      {items.map(({ to, label, icon: Icon }) => (
+      {items.map(({ to, labelKey, icon: Icon }) => (
         <ListItemButton
           key={to}
           component={NavLink}
@@ -112,7 +119,7 @@ function NavList({ items, onItemClick }) {
           <ListItemText
             primaryTypographyProps={{ fontSize: 14.5, fontWeight: 600, color: 'inherit' }}
           >
-            {label}
+            {t(labelKey)}
           </ListItemText>
         </ListItemButton>
       ))}
