@@ -4,7 +4,7 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Box from '@mui/material/Box'
-import Divider from '@mui/material/Divider'
+import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import DashboardIcon from '@mui/icons-material/Dashboard'
@@ -14,12 +14,21 @@ import GroupIcon from '@mui/icons-material/Group'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
-import PushPinIcon from '@mui/icons-material/PushPin'
-import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
+import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
 import { NavLink } from 'react-router-dom'
 import { useEffectiveModules } from '../state/auth'
 
-export const SIDEBAR_WIDTH = 232
+// 250-270px (rediseño visual 2026-08-28, "sidebar blanca/azul tipo
+// referencia") -- antes 232, sube dentro del rango pedido. Es un overlay de
+// posicion fija (nunca reserva espacio en el layout), asi que este cambio
+// no mueve ni redimensiona el contenido principal.
+export const SIDEBAR_WIDTH = 260
+
+// Mismo azul de marca que ya usa toda la app (AppBar/LoginPage/
+// CentroTrabajoPage, ver PrecisionManufacturingIcon sx={{ color: '#3B82F6' }}
+// en esos archivos) -- una sola constante aqui para no repetir el literal.
+const BRAND_BLUE = '#3B82F6'
 
 // El sidebar es solo UX -- la proteccion real esta en el backend
 // (requireModuleAccess en cada API), no en que este menu se muestre u oculte.
@@ -45,9 +54,17 @@ const NAV_ITEMS = [
   { to: '/auditoria', label: 'Auditoría', icon: FactCheckIcon, configurable: true },
 ]
 
+// Estilo de item de menu (rediseño visual 2026-08-28, referencia "sidebar
+// blanca/azul"): sin card/borde individual por item (aire visual, lista
+// limpia), activo = fondo azul extremadamente claro + texto/icono azul +
+// barra vertical azul de 3px pegada al borde izquierdo (via '&::before',
+// nunca un elemento aparte) en vez del bgcolor gris grande de antes; hover
+// = mismo azul clarito mas un desplazamiento sutil (2px). Nunca toca
+// rutas/permisos/orden -- ESTO es exactamente lo mismo NAV_ITEMS/filter de
+// siempre, solo cambia sx.
 function NavList({ items, onItemClick }) {
   return (
-    <List sx={{ flex: 1, pt: 1 }}>
+    <List sx={{ flex: 1, pt: 1, px: 1.25 }}>
       {items.map(({ to, label, icon: Icon }) => (
         <ListItemButton
           key={to}
@@ -56,15 +73,85 @@ function NavList({ items, onItemClick }) {
           end={to === '/'}
           onClick={onItemClick}
           sx={{
-            mx: 1, mb: 0.5, borderRadius: 2,
-            '&.active': { bgcolor: 'action.selected', fontWeight: 700 },
+            position: 'relative',
+            mb: 0.5, px: 1.75, py: 1.5, minHeight: 56,
+            borderRadius: '11px',
+            color: 'text.primary',
+            transition: 'background-color 180ms ease, color 180ms ease, transform 180ms ease',
+            '&:hover': {
+              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.14)' : '#EFF6FF'),
+              transform: 'translateX(2px)',
+            },
+            '&.active': {
+              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.18)' : '#EFF6FF'),
+              color: BRAND_BLUE,
+            },
+            '&.active::before': {
+              content: '""',
+              position: 'absolute',
+              left: 4, top: '22%', bottom: '22%', width: 3,
+              bgcolor: BRAND_BLUE, borderRadius: 4,
+            },
           }}
         >
-          <ListItemIcon sx={{ minWidth: 36 }}><Icon fontSize="small" /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}>{label}</ListItemText>
+          <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}><Icon sx={{ fontSize: 21 }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: 14.5, fontWeight: 600, color: 'inherit' }}>{label}</ListItemText>
         </ListItemButton>
       ))}
     </List>
+  )
+}
+
+// Encabezado (rediseño visual 2026-08-28): mismo icono de marca que ya usa
+// toda la app (PrecisionManufacturingIcon, #3B82F6 -- ver AppLayout.jsx/
+// LoginPage.jsx/CentroTrabajoPage.jsx), envuelto en una insignia azul
+// redondeada compacta -- nunca un logotipo nuevo. `onToggle` es exactamente
+// el mismo handler que antes (onTogglePin): el boton solo cambia de icono
+// (pin -> chevron) y de estilo, el comportamiento de fijar/soltar el menu
+// abierto NO cambia.
+function SidebarHeader({ onToggle, toggleTitle, pinned }) {
+  return (
+    <Box sx={{
+      display: 'flex', alignItems: 'center', gap: 1.25,
+      px: 1.75, py: 1.75, minHeight: 64,
+      borderBottom: '1px solid', borderColor: 'divider',
+    }}>
+      <Box sx={{
+        width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+        bgcolor: BRAND_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <PrecisionManufacturingIcon sx={{ color: '#fff', fontSize: 20 }} />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
+        <Typography sx={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 0.2, color: 'text.primary', lineHeight: 1.25 }}>
+          CENTRO DE
+        </Typography>
+        <Typography sx={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
+          <Box component="span" sx={{ color: 'text.primary' }}>TRABAJO </Box>
+          <Box component="span" sx={{ color: BRAND_BLUE }}>FFT</Box>
+        </Typography>
+      </Box>
+      {onToggle && (
+        <Tooltip title={toggleTitle}>
+          <IconButton
+            size="small"
+            onClick={onToggle}
+            sx={{
+              width: 32, height: 32, borderRadius: '9px',
+              bgcolor: 'background.paper',
+              border: '1px solid', borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.18)'),
+              transition: 'background-color 180ms ease',
+              '&:hover': { bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.16)' : '#EFF6FF') },
+            }}
+          >
+            <KeyboardDoubleArrowLeftIcon
+              fontSize="small"
+              sx={{ color: BRAND_BLUE, transition: 'transform 220ms ease', transform: pinned ? 'none' : 'rotate(180deg)' }}
+            />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
   )
 }
 
@@ -112,18 +199,16 @@ export default function Sidebar({ role, open, onClose, variant, pinned, onToggle
           bgcolor: 'background.paper', borderRight: '1px solid', borderColor: 'divider',
           display: 'flex', flexDirection: 'column',
           transform: open || pinned ? 'translateX(0)' : 'translateX(-100%)',
-          boxShadow: open || pinned ? '6px 0 24px rgba(0,0,0,.14)' : 'none',
-          transition: 'transform .2s ease, box-shadow .2s ease',
+          boxShadow: open || pinned ? '4px 0 20px rgba(15,23,42,0.08)' : 'none',
+          transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), box-shadow 220ms ease',
           zIndex: (t) => t.zIndex.drawer + 2,
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pt: 1 }}>
-          <Tooltip title={pinned ? 'Dejar de fijar' : 'Fijar menú abierto'}>
-            <IconButton size="small" onClick={onTogglePin}>
-              {pinned ? <PushPinIcon fontSize="small" color="primary" /> : <PushPinOutlinedIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <SidebarHeader
+          onToggle={onTogglePin}
+          toggleTitle={pinned ? 'Dejar de fijar' : 'Fijar menú abierto'}
+          pinned={pinned}
+        />
         <NavList items={items} />
       </Box>
     )
@@ -142,7 +227,7 @@ export default function Sidebar({ role, open, onClose, variant, pinned, onToggle
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Divider />
+        <SidebarHeader />
         <NavList items={items} onItemClick={onClose} />
       </Box>
     </Drawer>
