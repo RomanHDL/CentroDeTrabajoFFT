@@ -1,54 +1,51 @@
+import {
+  ChevronDown,
+  Cog,
+  GraduationCap,
+  Headset,
+  Info,
+  LayoutGrid,
+  List,
+  MonitorSmartphone,
+  Package2,
+  PieChart,
+  PlusCircle,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  SprayCan,
+  Tag,
+  User,
+  UserCheck,
+  UserCog,
+  Users,
+  Users2,
+  UsersRound,
+  UserX,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
-import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import Tooltip from '@mui/material/Tooltip'
-import Button from '@mui/material/Button'
-import ToggleButton from '@mui/material/ToggleButton'
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import SearchIcon from '@mui/icons-material/Search'
-import ViewModuleIcon from '@mui/icons-material/ViewModule'
-import ViewListIcon from '@mui/icons-material/ViewList'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import DevicesOtherIcon from '@mui/icons-material/DevicesOther'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import LocalOfferIcon from '@mui/icons-material/LocalOffer'
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
-import SchoolIcon from '@mui/icons-material/School'
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount'
-import SupportAgentIcon from '@mui/icons-material/SupportAgent'
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices'
-import PersonIcon from '@mui/icons-material/Person'
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import GroupsIcon from '@mui/icons-material/Groups'
-import Groups2Icon from '@mui/icons-material/Groups2'
-import PersonOffIcon from '@mui/icons-material/PersonOff'
-import DonutLargeIcon from '@mui/icons-material/DonutLarge'
-import { alpha } from '@mui/material/styles'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn, hexToRgba } from '@/lib/utils'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { operationalGroupMembers } from '../../data/production/catalog'
+import { FFT_LINE_IDS, REFERENCE_ONLY_ZONES } from '../../data/production/floorPlanZones'
+import { colorForArea } from '../../data/production/layoutZones'
 import {
   getAreaStaffing,
-  getPeopleByArea,
   getGroupAreaStaffing,
+  getPeopleByArea,
 } from '../../data/production/personnelByArea'
-import { FFT_LINE_IDS, REFERENCE_ONLY_ZONES } from '../../data/production/floorPlanZones'
-import { operationalGroupMembers } from '../../data/production/catalog'
-import { colorForArea } from '../../data/production/layoutZones'
-import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 
 /* ─────────────────────────────────────────────
    Rediseño 2026-08-25 (a petición explícita del usuario, mockup
@@ -115,84 +112,84 @@ const AREA_SLOTS = [
     name: 'WC Líneas de producción (FFT)',
     subtitle: 'líneas activas',
     badge: 'Líneas 1 - 10',
-    icon: <PrecisionManufacturingIcon />,
+    icon: <Cog size={22} />,
     colorAreaId: 'LINEA1',
   },
   {
     id: 'HIGH_VALUE',
     name: 'WC Midea / High Value / DMT',
     subtitle: 'Productos mixtos',
-    icon: <DevicesOtherIcon />,
+    icon: <MonitorSmartphone size={22} />,
     colorAreaId: 'HIGH_VALUE',
   },
   {
     id: 'PALETIZADO',
     name: 'WC Paletizado (Palletizing)',
     subtitle: 'Zona de paletizado',
-    icon: <Inventory2Icon />,
+    icon: <Package2 size={22} />,
     colorAreaId: 'PALETIZADO',
   },
   {
     id: 'INSUMOS_SUMINISTRO',
     name: 'WC Insumos y Suministro de Material',
     subtitle: 'PNP/POC/PEN · Box Prep · Suministro',
-    icon: <ShoppingCartIcon />,
+    icon: <ShoppingCart size={22} />,
     colorAreaId: 'INSUMOS',
   },
   {
     id: 'ACCESORIOS',
     name: 'WC Accesorios',
     subtitle: 'Accesorios',
-    icon: <LocalOfferIcon />,
+    icon: <Tag size={22} />,
     colorAreaId: 'ACCESORIOS',
   },
   {
     id: 'CALIDAD',
     name: 'WC Calidad',
     subtitle: 'Control de calidad',
-    icon: <VerifiedUserIcon />,
+    icon: <ShieldCheck size={22} />,
     colorAreaId: 'CALIDAD',
   },
   {
     id: 'CAPACITACION',
     name: 'WC Capacitación',
     subtitle: 'Capacitación',
-    icon: <SchoolIcon />,
+    icon: <GraduationCap size={22} />,
     colorAreaId: 'CAPACITACION',
   },
   {
     id: 'TEAM_LEADER',
     name: 'WC Team Leader',
     subtitle: 'Liderazgo',
-    icon: <SupervisorAccountIcon />,
+    icon: <UserCog size={22} />,
     colorAreaId: 'TEAM_LEADER',
   },
   {
     id: 'ENTRENADOR',
     name: 'WC Entrenador',
     subtitle: 'Entrenamiento',
-    icon: <SupportAgentIcon />,
+    icon: <Headset size={22} />,
     colorAreaId: 'ENTRENADOR',
   },
   {
     id: 'LIMPIEZA',
     name: 'WC Limpieza',
     subtitle: 'Limpieza',
-    icon: <CleaningServicesIcon />,
+    icon: <SprayCan size={22} />,
     colorAreaId: 'LIMPIEZA',
   },
   {
     id: 'GERENTE',
     name: 'WC Coordinador de Almacén',
     subtitle: 'Gerencia',
-    icon: <PersonIcon />,
+    icon: <User size={22} />,
     colorAreaId: 'GERENTE',
   },
   {
     id: 'SUPERVISOR',
     name: 'WC Supervisor',
     subtitle: 'Supervisión',
-    icon: <AssignmentIndIcon />,
+    icon: <UserCheck size={22} />,
     colorAreaId: 'SUPERVISOR',
   },
 ]
@@ -272,79 +269,67 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
   }
 
   return (
-    <Box>
-      <Stack
-        direction="row"
-        alignItems="flex-start"
-        justifyContent="space-between"
-        flexWrap="wrap"
-        spacing={1.5}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Stack direction="row" alignItems="center" spacing={0.75}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>
-              Estaciones del centro de trabajo
-            </Typography>
-            <Tooltip title="Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el plano físico se administran en Áreas de trabajo.">
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+    <div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[16px] font-extrabold">Estaciones del centro de trabajo</p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 cursor-help text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el
+                plano físico se administran en Áreas de trabajo.
+              </TooltipContent>
             </Tooltip>
-          </Stack>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
+          </div>
+          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
             Todas las áreas y estaciones operativas registradas
-          </Typography>
-        </Box>
+          </p>
+        </div>
 
-        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-          <TextField
-            size="small"
-            placeholder="Buscar área, estación o empleado..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            sx={{ minWidth: 260 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={view}
-            onChange={(_, v) => v && setView(v)}
-          >
-            <ToggleButton
-              value="tarjetas"
-              sx={{ textTransform: 'none', fontWeight: 700, px: 1.5, gap: 0.5 }}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[260px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar área, estación o empleado..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
+          <div className="inline-flex shrink-0 items-center overflow-hidden rounded-lg border border-input">
+            <button
+              type="button"
+              onClick={() => setView('tarjetas')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold transition-colors',
+                view === 'tarjetas'
+                  ? 'bg-[rgba(59,130,246,.12)] text-[#3B82F6]'
+                  : 'text-muted-foreground hover:bg-accent/50',
+              )}
             >
-              <ViewModuleIcon sx={{ fontSize: 17 }} /> Tarjetas
-            </ToggleButton>
-            <ToggleButton
-              value="lista"
-              sx={{ textTransform: 'none', fontWeight: 700, px: 1.5, gap: 0.5 }}
+              <LayoutGrid className="h-[17px] w-[17px]" /> Tarjetas
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('lista')}
+              className={cn(
+                'flex items-center gap-1.5 border-l border-input px-3 py-1.5 text-[13px] font-bold transition-colors',
+                view === 'lista'
+                  ? 'bg-[rgba(59,130,246,.12)] text-[#3B82F6]'
+                  : 'text-muted-foreground hover:bg-accent/50',
+              )}
             >
-              <ViewListIcon sx={{ fontSize: 17 }} /> Lista
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-      </Stack>
+              <List className="h-[17px] w-[17px]" /> Lista
+            </button>
+          </div>
+        </div>
+      </div>
 
       {view === 'tarjetas' ? (
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            },
-          }}
-        >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredRows.map((row) => (
             <AreaCard key={row.slot.id} row={row} onClick={() => handleOpenRow(row)} />
           ))}
@@ -355,7 +340,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
               onAssign={() => navigate('/registro-personal')}
             />
           ))}
-        </Box>
+        </div>
       ) : (
         <EstacionesListView
           rows={filteredRows}
@@ -366,19 +351,19 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
       )}
 
       {filteredRows.length === 0 && filteredPlaceholders.length === 0 && (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary', textAlign: 'center', py: 4 }}>
+        <p className="py-8 text-center text-[13px] text-muted-foreground">
           Ninguna área coincide con "{query}".
-        </Typography>
+        </p>
       )}
 
       <SummaryPanel totals={totals} />
 
-      <Typography sx={{ fontSize: 11, color: 'text.disabled', textAlign: 'center', mt: 1.5 }}>
+      <p className="mt-3 text-center text-[11px] text-muted-foreground/60">
         Los datos se actualizan según las asignaciones del día actual (snapshot histórico mientras
         nadie registre a alguien hoy; en cuanto se registra o mueve, esa asignación real siempre
         gana).
-      </Typography>
-    </Box>
+      </p>
+    </div>
   )
 }
 
@@ -391,238 +376,107 @@ function AreaCard({ row, onClick }) {
   const pct = ideal ? Math.min((real / ideal) * 100, 999) : null
 
   return (
-    <Paper
-      elevation={0}
+    <button
+      type="button"
       onClick={onClick}
-      sx={{
-        p: 1.75,
-        borderRadius: '16px',
-        cursor: 'pointer',
-        userSelect: 'none',
-        border: '1px solid',
-        borderColor: 'divider',
-        boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        transition: 'transform .18s ease, box-shadow .18s ease, border-color .18s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 16px rgba(16,24,40,0.08)',
-          borderColor: alpha('#3B82F6', 0.4),
-        },
-      }}
+      className="flex w-full select-none flex-col gap-2 rounded-[16px] border border-border p-3.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all duration-[180ms] ease-in-out hover:-translate-y-0.5 hover:border-[rgba(59,130,246,0.4)] hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
     >
-      <Stack direction="row" alignItems="flex-start" spacing={1.25}>
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            borderRadius: '50%',
-            flexShrink: 0,
-            bgcolor: alpha(accent, 0.12),
-            color: accent,
-            display: 'grid',
-            placeItems: 'center',
-            '& .MuiSvgIcon-root': { fontSize: 22 },
-          }}
+      <div className="flex items-start gap-2.5">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+          style={{ backgroundColor: hexToRgba(accent, 0.12), color: accent }}
         >
           {slot.icon}
-        </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 13.5, lineHeight: 1.25 }}>
-            {slot.name}
-          </Typography>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-extrabold leading-[1.25]">{slot.name}</p>
           {slot.badge && (
-            <Chip
-              size="small"
-              label={slot.badge}
-              sx={{
-                height: 18,
-                fontSize: 9.5,
-                fontWeight: 700,
-                mt: 0.4,
-                bgcolor: alpha(accent, 0.1),
-                color: accent,
-              }}
-            />
+            <span
+              className="mt-[3.2px] inline-flex h-[18px] items-center rounded-full px-1.5 text-[9.5px] font-bold"
+              style={{ backgroundColor: hexToRgba(accent, 0.1), color: accent }}
+            >
+              {slot.badge}
+            </span>
           )}
-        </Box>
-      </Stack>
+        </div>
+      </div>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-        <Typography sx={{ fontSize: 15, fontWeight: 800 }}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[15px] font-extrabold">
           {real} / {ideal != null ? ideal : '—'}
-        </Typography>
+        </p>
         {badge && (
-          <Chip
-            size="small"
-            label={badge.text}
-            sx={{
-              height: 20,
-              fontSize: 10.5,
-              fontWeight: 700,
-              bgcolor: alpha(statusColor, 0.14),
-              color: statusColor,
-            }}
-          />
+          <span
+            className="inline-flex h-5 items-center rounded-full px-2 text-[10.5px] font-bold"
+            style={{ backgroundColor: hexToRgba(statusColor, 0.14), color: statusColor }}
+          >
+            {badge.text}
+          </span>
         )}
-      </Stack>
+      </div>
 
       {ideal != null ? (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Box
-            sx={{
-              flex: 1,
-              height: 6,
-              borderRadius: 999,
-              bgcolor: 'action.hover',
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              sx={{
-                width: `${Math.min(pct, 100)}%`,
-                height: '100%',
-                bgcolor: statusColor,
-                borderRadius: 999,
-              }}
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: statusColor }}
             />
-          </Box>
-          <Typography
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 700,
-              color: statusColor,
-              minWidth: 40,
-              textAlign: 'right',
-            }}
+          </div>
+          <span
+            className="min-w-[40px] text-right text-[11.5px] font-bold"
+            style={{ color: statusColor }}
           >
             {pct.toFixed(1)}%
-          </Typography>
-        </Stack>
+          </span>
+        </div>
       ) : (
-        <Typography sx={{ fontSize: 10.5, color: 'text.disabled', fontStyle: 'italic' }}>
-          Sin plantilla definida
-        </Typography>
+        <p className="text-[10.5px] italic text-muted-foreground/60">Sin plantilla definida</p>
       )}
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ pt: 0.5, mt: 'auto', borderTop: '1px dashed', borderColor: 'divider' }}
-      >
-        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 600 }}>
-          {extraNote}
-        </Typography>
-        <ExpandMoreIcon
-          sx={{ fontSize: 18, color: 'text.disabled', transform: 'rotate(-90deg)' }}
-        />
-      </Stack>
-    </Paper>
+      <div className="mt-auto flex items-center justify-between border-t border-dashed border-border pt-1">
+        <p className="text-[11.5px] font-semibold text-muted-foreground">{extraNote}</p>
+        <ChevronDown className="h-[18px] w-[18px] -rotate-90 text-muted-foreground/60" />
+      </div>
+    </button>
   )
 }
 
 function PlaceholderCard({ placeholder, onAssign }) {
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 1.75,
-        borderRadius: '16px',
-        border: '1.5px dashed',
-        borderColor: 'divider',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        alignItems: 'flex-start',
-        bgcolor: 'action.hover',
-      }}
-    >
-      <Box
-        sx={{
-          width: 44,
-          height: 44,
-          borderRadius: '50%',
-          bgcolor: 'background.paper',
-          color: 'text.disabled',
-          display: 'grid',
-          placeItems: 'center',
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <AddCircleOutlineIcon sx={{ fontSize: 22 }} />
-      </Box>
-      <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>{placeholder.label}</Typography>
-      <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Sin personal asignado</Typography>
+    <div className="flex flex-col items-start gap-2 rounded-[16px] border-[1.5px] border-dashed border-border bg-muted p-3.5">
+      <div className="grid h-11 w-11 place-items-center rounded-full border border-border bg-card text-muted-foreground/60">
+        <PlusCircle className="h-[22px] w-[22px]" />
+      </div>
+      <p className="text-[13.5px] font-extrabold">{placeholder.label}</p>
+      <p className="text-[12px] text-muted-foreground">Sin personal asignado</p>
       <Button
-        size="small"
+        variant="ghost"
         onClick={(e) => {
           e.stopPropagation()
           onAssign()
         }}
-        sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, mt: 'auto' }}
+        className="mt-auto h-auto justify-start p-0 text-[13px] font-bold text-primary hover:bg-transparent hover:text-primary"
       >
         Asignar personal
       </Button>
-    </Paper>
+    </div>
   )
 }
 
 function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
   return (
-    <Paper
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'auto' }}
-    >
-      <Table size="small">
-        <TableHead>
+    <div className="overflow-auto rounded-2xl border border-border">
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Área
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Personal
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Estado
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textTransform: 'uppercase',
-                color: 'text.secondary',
-              }}
-            >
-              Cobertura
-            </TableCell>
-            <TableCell />
+            <TableHead className="text-[11.5px] font-extrabold uppercase">Área</TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">Personal</TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">Estado</TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">Cobertura</TableHead>
+            <TableHead />
           </TableRow>
-        </TableHead>
+        </TableHeader>
         <TableBody>
           {rows.map((row) => {
             const statusKey = statusFor(row.real, row.ideal)
@@ -632,80 +486,65 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
             return (
               <TableRow
                 key={row.slot.id}
-                hover
                 onClick={() => onOpenRow(row)}
-                sx={{
-                  cursor: 'pointer',
-                  '&:last-of-type td': { borderBottom: placeholders.length ? undefined : 0 },
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onOpenRow(row)
+                  }
                 }}
+                className="cursor-pointer"
               >
                 <TableCell>
-                  <Stack direction="row" alignItems="center" spacing={0.75}>
-                    <Box
-                      sx={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: '50%',
-                        bgcolor: color,
-                        flexShrink: 0,
-                      }}
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="h-[7px] w-[7px] shrink-0 rounded-full"
+                      style={{ backgroundColor: color }}
                     />
-                    <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{row.slot.name}</Typography>
-                  </Stack>
+                    <p className="text-[13px] font-bold">{row.slot.name}</p>
+                  </div>
                 </TableCell>
-                <TableCell sx={{ fontSize: 13, fontWeight: 600 }}>
+                <TableCell className="text-[13px] font-semibold">
                   {row.real} / {row.ideal != null ? row.ideal : '—'}
                 </TableCell>
                 <TableCell>
                   {badge && (
-                    <Chip
-                      size="small"
-                      label={badge.text}
-                      sx={{
-                        height: 20,
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        bgcolor: alpha(color, 0.14),
-                        color,
-                      }}
-                    />
+                    <span
+                      className="inline-flex h-5 items-center rounded-full px-2 text-[10.5px] font-bold"
+                      style={{ backgroundColor: hexToRgba(color, 0.14), color }}
+                    >
+                      {badge.text}
+                    </span>
                   )}
                 </TableCell>
-                <TableCell sx={{ fontSize: 13, fontWeight: 700, color }}>
+                <TableCell className="text-[13px] font-bold" style={{ color }}>
                   {pct != null ? `${pct.toFixed(1)}%` : 'Sin plantilla'}
                 </TableCell>
-                <TableCell align="right">
-                  <ExpandMoreIcon
-                    sx={{ fontSize: 18, color: 'text.disabled', transform: 'rotate(-90deg)' }}
-                  />
+                <TableCell className="text-right">
+                  <ChevronDown className="ml-auto h-[18px] w-[18px] -rotate-90 text-muted-foreground/60" />
                 </TableCell>
               </TableRow>
             )
           })}
           {placeholders.map((p) => (
-            <TableRow key={p.key} hover sx={{ '& td': { color: 'text.disabled' } }}>
+            <TableRow key={p.key} className="[&>td]:text-muted-foreground/60">
               <TableCell>
-                <Stack direction="row" alignItems="center" spacing={0.75}>
-                  <Box
-                    sx={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      bgcolor: '#94A3B8',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p.label}</Typography>
-                </Stack>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#94A3B8]" />
+                  <p className="text-[13px] font-bold">{p.label}</p>
+                </div>
               </TableCell>
-              <TableCell colSpan={3} sx={{ fontSize: 12.5, fontStyle: 'italic' }}>
+              <TableCell colSpan={3} className="text-[12.5px] italic">
                 Sin personal asignado
               </TableCell>
-              <TableCell align="right">
+              <TableCell className="text-right">
                 <Button
-                  size="small"
+                  variant="ghost"
+                  size="sm"
                   onClick={onAssign}
-                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                  className="font-bold text-primary hover:bg-transparent hover:text-primary"
                 >
                   Asignar personal
                 </Button>
@@ -714,108 +553,80 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
           ))}
         </TableBody>
       </Table>
-    </Paper>
+    </div>
   )
 }
 
 function SummaryPanel({ totals }) {
   const items = [
-    { label: 'Áreas totales', value: totals.count, icon: <PeopleAltIcon />, color: '#3B82F6' },
-    { label: 'Personal asignado', value: totals.totalReal, icon: <GroupsIcon />, color: '#10B981' },
-    { label: 'Plantilla ideal', value: totals.totalIdeal, icon: <Groups2Icon />, color: '#A855F7' },
+    { label: 'Áreas totales', value: totals.count, icon: <Users size={16} />, color: '#3B82F6' },
+    {
+      label: 'Personal asignado',
+      value: totals.totalReal,
+      icon: <Users2 size={16} />,
+      color: '#10B981',
+    },
+    {
+      label: 'Plantilla ideal',
+      value: totals.totalIdeal,
+      icon: <UsersRound size={16} />,
+      color: '#A855F7',
+    },
     {
       label: 'Personal faltante',
       value: totals.faltante,
-      icon: <PersonOffIcon />,
+      icon: <UserX size={16} />,
       color: '#EF4444',
     },
     {
       label: '% Cobertura general',
       value: `${totals.coverage.toFixed(1)}%`,
-      icon: <DonutLargeIcon />,
+      icon: <PieChart size={16} />,
       color: '#06B6D4',
     },
   ]
   return (
-    <Paper
-      elevation={0}
-      sx={{ mt: 2.5, p: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}
-    >
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        justifyContent="space-between"
-      >
-        <Box>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              letterSpacing: 0.4,
-              mb: 0.75,
-            }}
-          >
+    <div className="mt-5 rounded-[16px] border border-border p-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
             Leyenda de estado
-          </Typography>
-          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+          </p>
+          <div className="flex flex-wrap gap-3">
             {Object.values(STATUS_META).map((meta) => (
-              <Stack key={meta.label} direction="row" spacing={0.6} alignItems="center">
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: meta.color }} />
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600 }}>
-                  {meta.label}
-                </Typography>
-              </Stack>
+              <div key={meta.label} className="flex items-center gap-[4.8px]">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
+                <p className="text-[12px] font-semibold text-muted-foreground">{meta.label}</p>
+              </div>
             ))}
-          </Stack>
-        </Box>
+          </div>
+        </div>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+        <div className="flex flex-wrap gap-3">
           {items.map((item) => (
-            <Stack
+            <div
               key={item.label}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{
-                px: 1.5,
-                py: 1,
-                borderRadius: 2,
-                minWidth: 140,
-                border: '1px solid',
-                borderColor: alpha(item.color, 0.2),
-                bgcolor: (t) => alpha(item.color, t.palette.mode === 'dark' ? 0.08 : 0.05),
+              className="flex min-w-[140px] items-center gap-2 rounded-[20px] border bg-[var(--chip-bg-light)] px-3 py-2 dark:bg-[var(--chip-bg-dark)]"
+              style={{
+                borderColor: hexToRgba(item.color, 0.2),
+                '--chip-bg-light': hexToRgba(item.color, 0.05),
+                '--chip-bg-dark': hexToRgba(item.color, 0.08),
               }}
             >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  bgcolor: alpha(item.color, 0.14),
-                  color: item.color,
-                  display: 'grid',
-                  placeItems: 'center',
-                  '& .MuiSvgIcon-root': { fontSize: 16 },
-                }}
+              <div
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full"
+                style={{ backgroundColor: hexToRgba(item.color, 0.14), color: item.color }}
               >
                 {item.icon}
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 15, fontWeight: 800, lineHeight: 1.15 }}>
-                  {item.value}
-                </Typography>
-                <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>
-                  {item.label}
-                </Typography>
-              </Box>
-            </Stack>
+              </div>
+              <div>
+                <p className="text-[15px] font-extrabold leading-[1.15]">{item.value}</p>
+                <p className="text-[10px] font-semibold text-muted-foreground">{item.label}</p>
+              </div>
+            </div>
           ))}
-        </Stack>
-      </Stack>
-    </Paper>
+        </div>
+      </div>
+    </div>
   )
 }
