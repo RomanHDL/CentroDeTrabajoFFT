@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import ThemeProvider from '@mui/material/styles/ThemeProvider'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -26,6 +26,14 @@ import ToastHost from './ui/ToastHost'
 export default function App() {
   const [mode, setMode] = useState('light')
   const theme = useMemo(() => buildTheme(mode), [mode])
+
+  // Fase 6 (MI Stack Reference): mantiene la clase `dark` de Tailwind
+  // sincronizada con el mismo estado `mode` que ya controla el
+  // ThemeProvider de MUI, para que ambos sistemas convivan sin duplicar
+  // el toggle mientras dura la migracion pagina por pagina.
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', mode === 'dark')
+  }, [mode])
 
   return (
     <ThemeProvider theme={theme}>
