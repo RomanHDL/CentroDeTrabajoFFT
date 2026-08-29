@@ -1,74 +1,88 @@
-import React, { useMemo, useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
-import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableBody from '@mui/material/TableBody'
-import TableContainer from '@mui/material/TableContainer'
-import Tabs from '@mui/material/Tabs'
-import Tab from '@mui/material/Tab'
-import { alpha } from '@mui/material/styles'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import BadgeIcon from '@mui/icons-material/Badge'
-import WorkOutlineIcon from '@mui/icons-material/WorkOutline'
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
-import SearchIcon from '@mui/icons-material/Search'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import HistoryIcon from '@mui/icons-material/History'
-import CheckIcon from '@mui/icons-material/Check'
-import CloseIcon from '@mui/icons-material/Close'
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import ContactsIcon from '@mui/icons-material/Contacts'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import BoltIcon from '@mui/icons-material/Bolt'
-import PersonOffIcon from '@mui/icons-material/PersonOff'
-import GridViewIcon from '@mui/icons-material/GridView'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
-import { WORK_CENTERS, SHIFT_OPTIONS, workCenterById } from '../../data/production/catalog'
 import {
-  getEffectiveTodayRoster,
-  getEffectiveAreaForEmployee,
-  AUTO_ACTIVE_AREAS,
-} from '../../data/production/personnelByArea'
-import { exportPersonalExcel } from '../../data/production/excelExport'
+  ArrowLeftRight,
+  Badge,
+  Briefcase,
+  CalendarDays,
+  Check,
+  ChevronRight,
+  Contact,
+  Download,
+  History,
+  LayoutGrid,
+  Search,
+  TriangleAlert,
+  UserPlus,
+  Users,
+  UserX,
+  X,
+  Zap,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
-  getMovesCountForDate,
-  getPendingMoves,
-  getAllEmployees,
-  searchEmployees,
-  getCurrentAssignment,
-  getMovementsForEmployee,
-  getUnassignedPresentToday,
-  todayISO,
-} from '../../data/personnel/repository'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  cardClass,
+  cardHeaderClass,
+  cardHeaderSubtitleClass,
+  cardHeaderTitleClass,
+  cellTextClass,
+  cellTextSecondaryClass,
+  emptyTextClass,
+  metricChipClass,
+  statusChipClass,
+  tableHeaderRowClass,
+  tableRowClass,
+} from '@/lib/pageStyles'
+import { cn, hexToRgba } from '@/lib/utils'
+import { isEmployeeEligible } from '../../data/personnel/directory'
 import {
   approvePendingMoveWithToast,
   rejectPendingMoveWithToast,
 } from '../../data/personnel/moveApprovalActions'
-import { isEmployeeEligible } from '../../data/personnel/directory'
+import {
+  getAllEmployees,
+  getCurrentAssignment,
+  getMovementsForEmployee,
+  getMovesCountForDate,
+  getPendingMoves,
+  getUnassignedPresentToday,
+  searchEmployees,
+  todayISO,
+} from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { useRoleMode } from '../../state/roleMode'
+import { SHIFT_OPTIONS, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
+import { exportPersonalExcel } from '../../data/production/excelExport'
+import {
+  AUTO_ACTIVE_AREAS,
+  getEffectiveAreaForEmployee,
+  getEffectiveTodayRoster,
+} from '../../data/production/personnelByArea'
 import { useAuth } from '../../state/auth'
+import { useRoleMode } from '../../state/roleMode'
+import { EmptyState } from '../../ui'
 // Reutiliza la card KPI compacta y horizontal ya aprobada para el Dashboard
 // (2026-08-24) -- mismo lenguaje visual pedido para Personal en este rediseño
 // (2026-08-25), en vez de duplicar el componente.
 import DashboardKpiCard from '../dashboard/DashboardKpiCard'
+import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
-import EmployeeHistoryDialog from './EmployeeHistoryDialog'
-import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
    Rediseño 2026-08-25 (a peticion explicita del usuario, mockup
@@ -102,7 +116,9 @@ import EmployeeAvatar from './EmployeeAvatar'
      asignacion hoy -- CONFLICT step de RegisterPersonnelForm.jsx);
      Ver bajas / Ver layout general solo cambian de pestaña
      (onGoToBajas/onGoToAreas, mismo patron que onGoToLineas en
-     EstacionesTab.jsx). */
+     EstacionesTab.jsx).
+
+   Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. */
 
 // 'PENDIENTE' (BASE/SEM34 no confirmo numero real) y 'PROYECTO' (se
 // registro sin numero desde Registro de Personal) son los dos valores
@@ -129,7 +145,6 @@ const DIRECTORY_PAGE_SIZE = 8
 const AREA_SUMMARY_TOP_N = 5
 
 export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
-  const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   // roleMode colapsa ADMINISTRADOR/SUPERVISOR/LIDER en un solo modo
@@ -151,6 +166,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const [showAllRoster, setShowAllRoster] = useState(false)
   const [showAllDirectory, setShowAllDirectory] = useState(false)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const pendingMoves = useMemo(
     () => (canApproveMoves ? getPendingMoves() : []),
     [version, canApproveMoves],
@@ -164,9 +180,12 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
     rejectPendingMoveWithToast(id, user?.id)
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const roster = useMemo(() => getEffectiveTodayRoster(), [version])
   const presentToday = roster.length
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const movesToday = useMemo(() => getMovesCountForDate(todayISO()), [version])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const unassigned = useMemo(() => getUnassignedPresentToday(), [version])
   const rosterSinEstacion = useMemo(() => roster.filter((r) => !r.stationId), [roster])
   const rosterSnapshot = useMemo(() => roster.filter((r) => r.source === 'SNAPSHOT'), [roster])
@@ -176,6 +195,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   // ("Con numero de empleado"/"Personal por proyecto") son
   // exactamente estos mismos dos conteos, para que nunca se
   // desincronicen con las tabs de abajo.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const directoryAll = useMemo(() => getAllEmployees().filter(isEmployeeEligible), [version])
   const directoryWithNumber = useMemo(
     () =>
@@ -197,6 +217,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const pctConNumero =
     directoryAll.length > 0 ? (directoryWithNumber.length / directoryAll.length) * 100 : 0
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const searchResults = useMemo(() => searchEmployees(query), [query, version])
   const bestMatch = useMemo(() => {
     if (!query.trim()) return null
@@ -204,6 +225,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
     return exact || searchResults[0] || null
   }, [query, searchResults])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const bestMatchDetail = useMemo(() => {
     if (!bestMatch) return null
     const assignment = getCurrentAssignment(bestMatch.id)
@@ -294,149 +316,135 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   }
 
   return (
-    <Box>
+    <div>
       {/* KPIs — exactamente 4 */}
-      <Grid container spacing={2} sx={{ mb: 2.5 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardKpiCard
-            icon={<PeopleAltIcon />}
-            accent="#3B82F6"
-            title="Personal presente hoy"
-            subtitle="Registrados en la fecha"
-            value={presentToday}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardKpiCard
-            icon={<BadgeIcon />}
-            accent="#06B6D4"
-            title="Con número de empleado"
-            subtitle="Personal activo identificado"
-            value={directoryWithNumber.length}
-            unit={`· ${pctConNumero.toFixed(1)}% del personal activo`}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardKpiCard
-            icon={<WorkOutlineIcon />}
-            accent="#A855F7"
-            title="Personal por proyecto"
-            subtitle="Asignados a proyectos"
-            value={directoryProyectos.length}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardKpiCard
-            icon={<SwapHorizIcon />}
-            accent="#F59E0B"
-            title="Movimientos hoy"
-            subtitle="Altas, traslados o cambios"
-            value={movesToday}
-          />
-        </Grid>
-      </Grid>
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <DashboardKpiCard
+          icon={<Users />}
+          accent="#3B82F6"
+          title="Personal presente hoy"
+          subtitle="Registrados en la fecha"
+          value={presentToday}
+        />
+        <DashboardKpiCard
+          icon={<Badge />}
+          accent="#06B6D4"
+          title="Con número de empleado"
+          subtitle="Personal activo identificado"
+          value={directoryWithNumber.length}
+          unit={`· ${pctConNumero.toFixed(1)}% del personal activo`}
+        />
+        <DashboardKpiCard
+          icon={<Briefcase />}
+          accent="#A855F7"
+          title="Personal por proyecto"
+          subtitle="Asignados a proyectos"
+          value={directoryProyectos.length}
+        />
+        <DashboardKpiCard
+          icon={<ArrowLeftRight />}
+          accent="#F59E0B"
+          title="Movimientos hoy"
+          subtitle="Altas, traslados o cambios"
+          value={movesToday}
+        />
+      </div>
 
       {/* Barra de busqueda + filtros + acciones */}
-      <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: 1.5 }}>
-        <Stack direction="row" spacing={1.25} flexWrap="wrap" rowGap={1.25} alignItems="center">
-          <TextField
-            size="small"
-            placeholder="Buscar empleado por nombre o número..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} />,
-            }}
-            sx={{ ...ps.inputSx, minWidth: 260, flex: 1 }}
-          />
-          <TextField
-            select
-            size="small"
-            label="Área"
-            value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 150 }}
-          >
-            <MenuItem value="TODAS">Todas</MenuItem>
-            {WORK_CENTERS.map((w) => (
-              <MenuItem key={w.id} value={w.id}>
-                {w.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Turno"
-            value={shiftFilter}
-            onChange={(e) => setShiftFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 130 }}
-          >
-            <MenuItem value="TODOS">Todos</MenuItem>
-            {SHIFT_OPTIONS.map((s) => (
-              <MenuItem key={s} value={s}>
-                {s}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Estado"
-            value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            sx={{ ...ps.inputSx, minWidth: 150 }}
-          >
-            {ESTADO_OPTIONS.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Box sx={{ flex: 1, minWidth: 0 }} />
+      <div className={cn(cardClass, 'mb-4 p-3')}>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[260px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground opacity-50" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar empleado por nombre o número..."
+              className="h-9 pl-9"
+            />
+          </div>
+          <div className="min-w-[150px]">
+            <Select value={areaFilter} onValueChange={setAreaFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Área" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas</SelectItem>
+                {WORK_CENTERS.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[130px]">
+            <Select value={shiftFilter} onValueChange={setShiftFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Turno" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todos</SelectItem>
+                {SHIFT_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[150px]">
+            <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                {ESTADO_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1" />
           <Button
-            variant="contained"
-            startIcon={<PersonAddAlt1Icon />}
             onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, flexShrink: 0 }}
+            className="shrink-0 rounded-[20px] font-bold"
           >
+            <UserPlus className="h-4 w-4" />
             {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
           </Button>
           <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
+            variant="outline"
             onClick={() => exportPersonalExcel(todayISO())}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, flexShrink: 0 }}
+            className="shrink-0 rounded-[20px] font-bold"
           >
+            <Download className="h-4 w-4" />
             Exportar Excel
           </Button>
-        </Stack>
-      </Paper>
+        </div>
+      </div>
 
       {query.trim() && (
-        <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: 2.5 }}>
+        <div className={cn(cardClass, 'mb-4 p-5')}>
           {bestMatchDetail ? (
-            <Stack spacing={1.5}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                alignItems={{ sm: 'center' }}
-                justifyContent="space-between"
-              >
-                <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                <p className="text-lg font-extrabold">
                   {bestMatchDetail.employee.employeeNumber} — {bestMatchDetail.employee.name}
-                </Typography>
+                </p>
                 <Button
-                  size="small"
-                  startIcon={<HistoryIcon />}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setHistoryEmployee(bestMatchDetail.employee)}
-                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                  className="font-bold"
                 >
+                  <History className="h-4 w-4" />
                   Ver historial de hoy
                 </Button>
-              </Stack>
+              </div>
               {bestMatchDetail.assignment ? (
-                <Stack direction="row" spacing={3} flexWrap="wrap" rowGap={1.5}>
+                <div className="flex flex-wrap gap-6 gap-y-3">
                   <InfoField label="Estado" value="Presente" />
                   <InfoField
                     label="Ubicación actual"
@@ -450,17 +458,15 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
                       value={`${areaLabel(bestMatchDetail.lastMove.fromAreaId)} → ${areaLabel(bestMatchDetail.lastMove.toAreaId)} · ${bestMatchDetail.lastMove.movedAt}`}
                     />
                   )}
-                </Stack>
+                </div>
               ) : (
-                <Typography sx={ps.emptyText}>No registrado hoy.</Typography>
+                <p className={emptyTextClass}>No registrado hoy.</p>
               )}
-            </Stack>
+            </div>
           ) : (
-            <Typography sx={ps.emptyText}>
-              No se encontró ningún empleado para "{query}".
-            </Typography>
+            <p className={emptyTextClass}>No se encontró ningún empleado para "{query}".</p>
           )}
-        </Paper>
+        </div>
       )}
 
       {/* Movimientos pendientes de aprobacion — solo SUPERVISOR/ADMINISTRADOR
@@ -468,63 +474,56 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
           verifique aqui, peticion explicita del usuario). Funcionalidad sin
           cambios, solo se conserva arriba del contenido de dos columnas. */}
       {canApproveMoves && pendingMoves.length > 0 && (
-        <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-          <Box sx={ps.cardHeader}>
-            <Typography sx={ps.cardHeaderTitle}>
-              Movimientos pendientes de aprobación ({pendingMoves.length})
-            </Typography>
-            <Typography sx={ps.cardHeaderSubtitle}>
-              Pedidos por líderes — verifica antes de aplicarlos
-            </Typography>
-          </Box>
-          <Stack spacing={1} sx={{ p: 2 }}>
+        <div className={cn(cardClass, 'mb-4')}>
+          <div className={cardHeaderClass}>
+            <div>
+              <p className={cardHeaderTitleClass}>
+                Movimientos pendientes de aprobación ({pendingMoves.length})
+              </p>
+              <p className={cardHeaderSubtitleClass}>
+                Pedidos por líderes — verifica antes de aplicarlos
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 p-4">
             {pendingMoves.map((m) => (
-              <Stack
+              <div
                 key={m.id}
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.5}
-                alignItems={{ sm: 'center' }}
-                justifyContent="space-between"
-                sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                className="flex flex-col justify-between gap-3 rounded-lg border border-border p-2.5 sm:flex-row sm:items-center"
               >
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
+                <div>
+                  <p className="text-[13.5px] font-bold">
                     {m.employeeNumber} — {m.employeeName}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
                     {areaLabel(m.fromAreaId)} → {areaLabel(m.toAreaId)} · {m.toStationId} · pedido
                     por {m.requestedByName || 'un líder'}
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={1}>
+                  </p>
+                </div>
+                <div className="flex gap-2">
                   <Button
-                    size="small"
-                    color="error"
-                    startIcon={<CloseIcon fontSize="small" />}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleRejectMove(m.id)}
-                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                    className="font-bold text-destructive hover:text-destructive"
                   >
+                    <X className="h-4 w-4" />
                     Rechazar
                   </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<CheckIcon fontSize="small" />}
-                    onClick={() => handleApproveMove(m.id)}
-                    sx={{ textTransform: 'none', fontWeight: 700 }}
-                  >
+                  <Button size="sm" onClick={() => handleApproveMove(m.id)} className="font-bold">
+                    <Check className="h-4 w-4" />
                     Aprobar
                   </Button>
-                </Stack>
-              </Stack>
+                </div>
+              </div>
             ))}
-          </Stack>
-        </Paper>
+          </div>
+        </div>
       )}
 
       {/* Contenido principal — dos columnas (70/30 en desktop) */}
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={8} lg={8.4} sx={{ minWidth: 0 }}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+        <div className="min-w-0 md:col-span-8">
           <RegistroDeHoyCard
             rows={visibleRoster}
             total={filteredRoster.length}
@@ -546,10 +545,10 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             onToggleShowAll={() => setShowAllDirectory((v) => !v)}
             onRowClick={setHistoryEmployee}
           />
-        </Grid>
+        </div>
 
-        <Grid item xs={12} md={4} lg={3.6} sx={{ minWidth: 0 }}>
-          <Stack spacing={2}>
+        <div className="min-w-0 md:col-span-4">
+          <div className="flex flex-col gap-4">
             <ResumenPorAreaCard
               areas={areaSummary}
               totalPresente={presentToday}
@@ -569,9 +568,9 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
               onVerBajas={onGoToBajas}
               onVerLayout={onGoToAreas}
             />
-          </Stack>
-        </Grid>
-      </Grid>
+          </div>
+        </div>
+      </div>
 
       <RegisterPersonnelDialog
         open={registerOpen}
@@ -589,26 +588,18 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
         onClose={() => setHistoryEmployee(null)}
         onChanged={() => {}}
       />
-    </Box>
+    </div>
   )
 }
 
 function InfoField({ label, value }) {
   return (
-    <Box>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-        }}
-      >
+    <div>
+      <p className="text-[10.5px] font-bold uppercase tracking-[0.5px] text-muted-foreground">
         {label}
-      </Typography>
-      <Typography sx={{ fontSize: 14, fontWeight: 700, mt: 0.25 }}>{value}</Typography>
-    </Box>
+      </p>
+      <p className="mt-0.5 text-sm font-bold">{value}</p>
+    </div>
   )
 }
 
@@ -618,38 +609,33 @@ function InfoField({ label, value }) {
    "Ver todos los registros" para expandir -- nunca fuerza scroll de
    cientos de filas para llegar al siguiente bloque. */
 function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, onRowClick }) {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
-      <Box sx={{ ...ps.cardHeader, justifyContent: 'space-between' }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CalendarTodayIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-          <Box>
-            <Typography sx={ps.cardHeaderTitle}>Registro de hoy</Typography>
-            <Typography sx={ps.cardHeaderSubtitle}>
+    <div className={cn(cardClass, 'mb-4')}>
+      <div className={cn(cardHeaderClass, 'justify-between')}>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-[18px] w-[18px] text-muted-foreground" />
+          <div>
+            <p className={cardHeaderTitleClass}>Registro de hoy</p>
+            <p className={cardHeaderSubtitleClass}>
               Pase de lista efectivo — snapshot histórico + asignaciones reales del día
-            </Typography>
-          </Box>
-        </Stack>
-        <Chip
-          size="small"
-          label={`${allCount} registrados hoy`}
-          sx={{ ...ps.metricChip('info'), flexShrink: 0 }}
-        />
-      </Box>
-      <TableContainer sx={{ maxHeight: showAll ? 480 : 'none', overflowX: 'auto' }}>
-        <Table size="small" stickyHeader={showAll}>
-          <TableHead>
-            <TableRow sx={ps.tableHeaderRow}>
-              <TableCell>Empleado</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Área actual</TableCell>
-              <TableCell>Rol</TableCell>
-              <TableCell>Entrada</TableCell>
-              <TableCell>Turno</TableCell>
-              <TableCell>Estado</TableCell>
+            </p>
+          </div>
+        </div>
+        <span className={cn(metricChipClass('info'), 'shrink-0')}>{allCount} registrados hoy</span>
+      </div>
+      <div className={cn('overflow-x-auto', showAll && 'max-h-[480px] overflow-y-auto')}>
+        <Table>
+          <TableHeader className={showAll ? 'sticky top-0 z-10 bg-card' : undefined}>
+            <TableRow className={tableHeaderRowClass}>
+              <TableHead>Empleado</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Área actual</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Entrada</TableHead>
+              <TableHead>Turno</TableHead>
+              <TableHead>Estado</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {rows.map((r, idx) => {
               // Areas fijas de soporte (Capacitacion, Team Leader, Soporte,
@@ -663,26 +649,28 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
               return (
                 <TableRow
                   key={r.id}
-                  sx={ps.tableRow(idx)}
-                  hover
+                  className={cn(tableRowClass(idx), 'cursor-pointer')}
                   onClick={() => onRowClick(r.employee)}
-                  style={{ cursor: 'pointer' }}
                 >
-                  <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
+                  <TableCell className={cn(cellTextClass, 'font-mono font-semibold')}>
                     {r.employeeNumber}
                   </TableCell>
-                  <TableCell sx={ps.cellText}>{r.employee?.name || '—'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{areaLabel(r.areaId) || '—'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.stationId || 'Sin estación'}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{displayCheckIn}</TableCell>
-                  <TableCell sx={ps.cellTextSecondary}>{r.shift || '—'}</TableCell>
+                  <TableCell className={cellTextClass}>{r.employee?.name || '—'}</TableCell>
+                  <TableCell className={cellTextSecondaryClass}>
+                    {areaLabel(r.areaId) || '—'}
+                  </TableCell>
+                  <TableCell className={cellTextSecondaryClass}>
+                    {r.stationId || 'Sin estación'}
+                  </TableCell>
+                  <TableCell className={cellTextSecondaryClass}>{displayCheckIn}</TableCell>
+                  <TableCell className={cellTextSecondaryClass}>{r.shift || '—'}</TableCell>
                   <TableCell>
                     {r.source === 'SIN_ASIGNACION' ? (
-                      <Chip size="small" label="Sin asignación" sx={ps.statusChip('CANCELADA')} />
+                      <span className={statusChipClass('CANCELADA')}>Sin asignación</span>
                     ) : r.source === 'SNAPSHOT' && !showAsAutoActive ? (
-                      <Chip size="small" label="Por snapshot" sx={ps.statusChip('PENDIENTE')} />
+                      <span className={statusChipClass('PENDIENTE')}>Por snapshot</span>
                     ) : (
-                      <Chip size="small" label="Registrado hoy" sx={ps.statusChip('COMPLETADA')} />
+                      <span className={statusChipClass('COMPLETADA')}>Registrado hoy</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -701,20 +689,16 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
             )}
           </TableBody>
         </Table>
-      </TableContainer>
+      </div>
       {total > 0 && (
-        <Box sx={{ p: 1.25, textAlign: 'right', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
-            onClick={onToggleShowAll}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
+        <div className="border-t border-border p-3 text-right">
+          <Button variant="ghost" size="sm" onClick={onToggleShowAll} className="font-bold">
             {showAll ? 'Ver menos' : `Ver todos los registros (${total})`}
+            <ChevronRight className="h-4 w-4" />
           </Button>
-        </Box>
+        </div>
       )}
-    </Paper>
+    </div>
   )
 }
 
@@ -734,82 +718,69 @@ function DirectorioCard({
   onToggleShowAll,
   onRowClick,
 }) {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card }}>
-      <Box sx={ps.cardHeader}>
-        <ContactsIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-        <Box>
-          <Typography sx={ps.cardHeaderTitle}>Directorio completo de personal</Typography>
-          <Typography sx={ps.cardHeaderSubtitle}>
+    <div className={cardClass}>
+      <div className={cardHeaderClass}>
+        <Contact className="h-[18px] w-[18px] text-muted-foreground" />
+        <div>
+          <p className={cardHeaderTitleClass}>Directorio completo de personal</p>
+          <p className={cardHeaderSubtitleClass}>
             Todo el personal, persona por persona — con número de empleado o como Proyecto
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ px: 2.5, pt: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => onTabChange(v)} sx={{ minHeight: 36 }}>
-          <Tab
-            value="CON_NUMERO"
-            label={`Con número de empleado (${withNumberCount})`}
-            sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }}
-          />
-          <Tab
-            value="PROYECTOS"
-            label={`Proyectos (${proyectosCount})`}
-            sx={{ minHeight: 36, textTransform: 'none', fontWeight: 700 }}
-          />
+          </p>
+        </div>
+      </div>
+      <div className="px-5 pt-4">
+        <Tabs value={tab} onValueChange={onTabChange}>
+          <TabsList>
+            <TabsTrigger value="CON_NUMERO">Con número de empleado ({withNumberCount})</TabsTrigger>
+            <TabsTrigger value="PROYECTOS">Proyectos ({proyectosCount})</TabsTrigger>
+          </TabsList>
         </Tabs>
-      </Box>
-      <Box sx={{ px: 2.5, pt: 2 }}>
-        <TextField
-          size="small"
-          fullWidth
-          placeholder="Buscar por nombre o número..."
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
-          sx={ps.inputSx}
-        />
-      </Box>
-      <TableContainer sx={{ maxHeight: showAll ? 480 : 'none', mt: 1, overflowX: 'auto' }}>
-        <Table size="small" stickyHeader={showAll}>
-          <TableHead>
-            <TableRow sx={ps.tableHeaderRow}>
-              <TableCell>Empleado</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Área actual</TableCell>
-              <TableCell>Fecha de ingreso</TableCell>
-              {tab === 'PROYECTOS' && <TableCell>Tipo</TableCell>}
+      </div>
+      <div className="px-5 pt-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground opacity-50" />
+          <Input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Buscar por nombre o número..."
+            className="h-9 w-full pl-9"
+          />
+        </div>
+      </div>
+      <div className={cn('mt-2 overflow-x-auto', showAll && 'max-h-[480px] overflow-y-auto')}>
+        <Table>
+          <TableHeader className={showAll ? 'sticky top-0 z-10 bg-card' : undefined}>
+            <TableRow className={tableHeaderRowClass}>
+              <TableHead>Empleado</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Área actual</TableHead>
+              <TableHead>Fecha de ingreso</TableHead>
+              {tab === 'PROYECTOS' && <TableHead>Tipo</TableHead>}
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {rows.map((e, idx) => (
               <TableRow
                 key={e.id}
-                sx={ps.tableRow(idx)}
-                hover
+                className={cn(tableRowClass(idx), 'cursor-pointer')}
                 onClick={() => onRowClick(e)}
-                style={{ cursor: 'pointer' }}
               >
-                <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
+                <TableCell className={cn(cellTextClass, 'font-mono font-semibold')}>
                   {hasRealNumber(e.employeeNumber) ? e.employeeNumber : '—'}
                 </TableCell>
-                <TableCell sx={ps.cellText}>{e.name}</TableCell>
-                <TableCell sx={ps.cellTextSecondary}>
+                <TableCell className={cellTextClass}>{e.name}</TableCell>
+                <TableCell className={cellTextSecondaryClass}>
                   {areaLabel(getEffectiveAreaForEmployee(e.id)) || '—'}
                 </TableCell>
-                <TableCell sx={ps.cellTextSecondary}>{e.fechaIngreso || '—'}</TableCell>
+                <TableCell className={cellTextSecondaryClass}>{e.fechaIngreso || '—'}</TableCell>
                 {tab === 'PROYECTOS' && (
                   <TableCell>
-                    <Chip
-                      size="small"
-                      label={
-                        e.employeeNumber === 'PROYECTO'
-                          ? 'Registrado como Proyecto'
-                          : 'Sin número confirmado'
-                      }
-                      sx={ps.statusChip('PENDIENTE')}
-                    />
+                    <span className={statusChipClass('PENDIENTE')}>
+                      {e.employeeNumber === 'PROYECTO'
+                        ? 'Registrado como Proyecto'
+                        : 'Sin número confirmado'}
+                    </span>
                   </TableCell>
                 )}
               </TableRow>
@@ -827,20 +798,16 @@ function DirectorioCard({
             )}
           </TableBody>
         </Table>
-      </TableContainer>
+      </div>
       {total > 0 && (
-        <Box sx={{ p: 1.25, textAlign: 'right', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            size="small"
-            endIcon={<ChevronRightIcon fontSize="small" />}
-            onClick={onToggleShowAll}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
+        <div className="border-t border-border p-3 text-right">
+          <Button variant="ghost" size="sm" onClick={onToggleShowAll} className="font-bold">
             {showAll ? 'Ver menos' : `Ver directorio completo (${total})`}
+            <ChevronRight className="h-4 w-4" />
           </Button>
-        </Box>
+        </div>
       )}
-    </Paper>
+    </div>
   )
 }
 
@@ -849,76 +816,48 @@ function DirectorioCard({
    del roster completo (sin filtros de la barra) para que sea estable
    -- clic en una fila aplica ese filtro de Area a la tabla principal. */
 function ResumenPorAreaCard({ areas, totalPresente, onAreaClick }) {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={ps.card}>
-      <Box sx={ps.cardHeader}>
-        <Typography sx={ps.cardHeaderTitle}>Resumen por área</Typography>
-        <Typography sx={ps.cardHeaderSubtitle}>Dónde está el personal presente hoy</Typography>
-      </Box>
-      <Box sx={{ p: 2 }}>
+    <div className={cardClass}>
+      <div className={cardHeaderClass}>
+        <div>
+          <p className={cardHeaderTitleClass}>Resumen por área</p>
+          <p className={cardHeaderSubtitleClass}>Dónde está el personal presente hoy</p>
+        </div>
+      </div>
+      <div className="p-4">
         {areas.length === 0 ? (
-          <Typography sx={ps.emptyText}>Sin personal presente hoy.</Typography>
+          <p className={emptyTextClass}>Sin personal presente hoy.</p>
         ) : (
-          <Stack spacing={1.25}>
+          <div className="flex flex-col gap-3">
             {areas.map((a) => (
-              <Box
+              <button
+                type="button"
                 key={a.areaId}
                 onClick={() => onAreaClick(a.areaId)}
-                sx={{ cursor: 'pointer', '&:hover .bar-fill': { opacity: 0.85 } }}
+                className="group w-full text-left"
               >
-                <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-                  <Typography sx={{ fontSize: 12.5, fontWeight: 700 }} noWrap>
-                    {areaLabel(a.areaId)}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: 'text.secondary',
-                      flexShrink: 0,
-                      ml: 1,
-                    }}
-                  >
+                <div className="flex items-baseline justify-between">
+                  <p className="truncate text-[12.5px] font-bold">{areaLabel(a.areaId)}</p>
+                  <p className="ml-2 shrink-0 text-[11.5px] font-bold text-muted-foreground">
                     {a.count} · {a.pct.toFixed(1)}%
-                  </Typography>
-                </Stack>
-                <Box
-                  sx={{
-                    mt: 0.4,
-                    height: 6,
-                    borderRadius: 999,
-                    bgcolor: 'action.hover',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Box
-                    className="bar-fill"
-                    sx={{
-                      width: `${Math.min(a.pct, 100)}%`,
-                      height: '100%',
-                      bgcolor: '#3B82F6',
-                      borderRadius: 999,
-                      transition: 'opacity .15s ease',
-                    }}
+                  </p>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/[.04] dark:bg-white/[.08]">
+                  <div
+                    className="h-full rounded-full bg-[#3B82F6] transition-opacity duration-150 group-hover:opacity-85"
+                    style={{ width: `${Math.min(a.pct, 100)}%` }}
                   />
-                </Box>
-              </Box>
+                </div>
+              </button>
             ))}
-          </Stack>
+          </div>
         )}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}
-        >
-          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
-            Total presente
-          </Typography>
-          <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{totalPresente}</Typography>
-        </Stack>
-      </Box>
-    </Paper>
+        <div className="mt-4 flex justify-between border-t border-dashed border-border pt-3">
+          <p className="text-xs font-bold text-muted-foreground">Total presente</p>
+          <p className="text-sm font-extrabold">{totalPresente}</p>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -935,7 +874,6 @@ function AlertasCard({
   onClickSnapshot,
   onClickMovimientos,
 }) {
-  const ps = usePageStyles()
   const rows = [
     {
       label: 'Empleados sin estación asignada',
@@ -957,39 +895,30 @@ function AlertasCard({
     },
   ]
   return (
-    <Paper elevation={0} sx={ps.card}>
-      <Box sx={ps.cardHeader}>
-        <WarningAmberIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
-        <Typography sx={ps.cardHeaderTitle}>Alertas / pendientes</Typography>
-      </Box>
-      <Stack sx={{ p: 1 }}>
+    <div className={cardClass}>
+      <div className={cardHeaderClass}>
+        <TriangleAlert className="h-[18px] w-[18px] text-[#F59E0B]" />
+        <p className={cardHeaderTitleClass}>Alertas / pendientes</p>
+      </div>
+      <div className="flex flex-col p-1">
         {rows.map((row) => (
-          <Stack
+          <button
+            type="button"
             key={row.label}
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
             onClick={row.onClick}
-            sx={{
-              p: 1.25,
-              borderRadius: 2,
-              cursor: 'pointer',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
+            className="flex items-center justify-between rounded-lg p-2.5 text-left hover:bg-accent"
           >
-            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.secondary' }}>
-              {row.label}
-            </Typography>
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography sx={{ fontSize: 14, fontWeight: 800, color: row.color }}>
+            <p className="text-[12.5px] font-semibold text-muted-foreground">{row.label}</p>
+            <span className="flex items-center gap-1">
+              <span className="text-sm font-extrabold" style={{ color: row.color }}>
                 {row.value}
-              </Typography>
-              <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-            </Stack>
-          </Stack>
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+            </span>
+          </button>
         ))}
-      </Stack>
-    </Paper>
+      </div>
+    </div>
   )
 }
 
@@ -998,65 +927,38 @@ function AlertasCard({
    de siempre (su propio flujo ya distingue registrar de mover); Ver
    bajas / Ver layout general solo cambian de pestaña. */
 function AccionesRapidasCard({ onAsignar, onMover, onVerBajas, onVerLayout }) {
-  const ps = usePageStyles()
   const actions = [
-    { label: 'Asignar a línea', icon: <PersonAddAlt1Icon />, color: '#3B82F6', onClick: onAsignar },
-    { label: 'Mover personal', icon: <SwapHorizIcon />, color: '#10B981', onClick: onMover },
-    { label: 'Ver bajas', icon: <PersonOffIcon />, color: '#EF4444', onClick: onVerBajas },
-    { label: 'Ver layout general', icon: <GridViewIcon />, color: '#3B82F6', onClick: onVerLayout },
+    { label: 'Asignar a línea', icon: UserPlus, color: '#3B82F6', onClick: onAsignar },
+    { label: 'Mover personal', icon: ArrowLeftRight, color: '#10B981', onClick: onMover },
+    { label: 'Ver bajas', icon: UserX, color: '#EF4444', onClick: onVerBajas },
+    { label: 'Ver layout general', icon: LayoutGrid, color: '#3B82F6', onClick: onVerLayout },
   ]
   return (
-    <Paper elevation={0} sx={ps.card}>
-      <Box sx={ps.cardHeader}>
-        <BoltIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-        <Typography sx={ps.cardHeaderTitle}>Acciones rápidas</Typography>
-      </Box>
-      <Box sx={{ p: 1.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25 }}>
+    <div className={cardClass}>
+      <div className={cardHeaderClass}>
+        <Zap className="h-[18px] w-[18px] text-muted-foreground" />
+        <p className={cardHeaderTitleClass}>Acciones rápidas</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 p-3">
         {actions.map((a) => (
-          <Box
+          <button
+            type="button"
             key={a.label}
             onClick={a.onClick}
-            sx={{
-              p: 1.5,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              cursor: a.onClick ? 'pointer' : 'default',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.75,
-              alignItems: 'flex-start',
-              bgcolor: (t) => alpha(a.color, t.palette.mode === 'dark' ? 0.05 : 0.03),
-              transition: 'all .15s ease',
-              '&:hover': a.onClick
-                ? {
-                    borderColor: a.color,
-                    transform: 'translateY(-1px)',
-                    boxShadow: `0 4px 12px ${alpha(a.color, 0.15)}`,
-                  }
-                : {},
-            }}
+            disabled={!a.onClick}
+            className="flex flex-col items-start gap-1.5 rounded-lg border border-border p-3 text-left transition-all duration-150 hover:-translate-y-px disabled:cursor-default"
+            style={{ backgroundColor: hexToRgba(a.color, 0.03) }}
           >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                bgcolor: alpha(a.color, 0.14),
-                color: a.color,
-                display: 'grid',
-                placeItems: 'center',
-                '& .MuiSvgIcon-root': { fontSize: 17 },
-              }}
+            <span
+              className="grid h-8 w-8 place-items-center rounded-full"
+              style={{ backgroundColor: hexToRgba(a.color, 0.14), color: a.color }}
             >
-              {a.icon}
-            </Box>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2 }}>
-              {a.label}
-            </Typography>
-          </Box>
+              <a.icon className="h-[17px] w-[17px]" />
+            </span>
+            <p className="text-[12.5px] font-bold leading-[1.2]">{a.label}</p>
+          </button>
         ))}
-      </Box>
-    </Paper>
+      </div>
+    </div>
   )
 }

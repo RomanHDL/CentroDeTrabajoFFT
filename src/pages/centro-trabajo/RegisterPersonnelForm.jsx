@@ -1,35 +1,37 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
-import Button from '@mui/material/Button'
-import Alert from '@mui/material/Alert'
-import Chip from '@mui/material/Chip'
-import Checkbox from '@mui/material/Checkbox'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import PendingActionsIcon from '@mui/icons-material/PendingActions'
-import { usePageStyles } from '../../ui/pageStyles'
+import { CheckCircle2, Hourglass } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
-  WORK_CENTERS,
-  SHIFT_OPTIONS,
-  CURRENT_SHIFT,
-  workCenterById,
-} from '../../data/production/catalog'
-import { getWorkstationsForLine } from '../../data/personnel/workstations'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { alertToneClass, metricChipClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 import {
   checkInEmployee,
-  moveEmployee,
-  requestMove,
   createEmployee,
+  getCurrentAssignment,
+  getPendingMoves,
   getStationOccupancy,
   hasSkill,
-  getPendingMoves,
-  getCurrentAssignment,
+  moveEmployee,
+  requestMove,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { getWorkstationsForLine } from '../../data/personnel/workstations'
+import {
+  CURRENT_SHIFT,
+  SHIFT_OPTIONS,
+  WORK_CENTERS,
+  workCenterById,
+} from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
 import EmployeeSearchField from './EmployeeSearchField'
 
@@ -65,7 +67,6 @@ export default function RegisterPersonnelForm({
   onDone,
   cancelLabel = 'Cancelar',
 }) {
-  const ps = usePageStyles()
   const { user } = useAuth()
   const isLider = user?.role === 'LIDER'
   const [form, setForm] = useState(() => emptyForm(fixedAreaId))
@@ -83,6 +84,7 @@ export default function RegisterPersonnelForm({
   // quedarse esperando indefinidamente (Cambio 7, 2026-08-25). Heuristica simple: si ya no esta
   // en getPendingMoves(), se resolvio; si la asignacion actual del empleado ya coincide con el
   // destino solicitado, fue aprobada, si no, fue rechazada.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza refresco cuando la solicitud se resuelve en otra pestaña/usuario, aunque no se lea dentro del callback
   useEffect(() => {
     if (step !== 'PENDING' || !pendingRequest) return
     const stillPending = getPendingMoves().some((p) => p.id === pendingRequest.id)
@@ -93,7 +95,6 @@ export default function RegisterPersonnelForm({
       current.areaId === pendingRequest.toAreaId &&
       current.stationId === pendingRequest.toStationId
     setResolvedOutcome(approved ? 'APPROVED' : 'REJECTED')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, step, pendingRequest])
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function RegisterPersonnelForm({
         eventTime: res.assignment.checkInAt,
       })
       setStep('SUCCESS')
-      onDone && onDone()
+      onDone?.()
     } else if (res.status === 'CONFLICT') {
       // Mismo empleado, misma área y misma forma de trabajo (estación) que ya tenía hoy: no es
       // una reasignación, solo se cuenta su asistencia de hoy (ya registrada desde su primer
@@ -163,7 +164,7 @@ export default function RegisterPersonnelForm({
           alreadyThere: true,
         })
         setStep('SUCCESS')
-        onDone && onDone()
+        onDone?.()
       } else {
         setConflict(res)
         setStep('CONFLICT')
@@ -236,7 +237,7 @@ export default function RegisterPersonnelForm({
       if (res.status === 'PENDING') {
         setPendingRequest(res.request)
         setStep('PENDING')
-        onDone && onDone()
+        onDone?.()
       } else {
         setError(res.message || 'No se pudo enviar la solicitud.')
       }
@@ -258,7 +259,7 @@ export default function RegisterPersonnelForm({
         eventTime: res.movedAt,
       })
       setStep('SUCCESS')
-      onDone && onDone()
+      onDone?.()
     } else {
       setError(res.message || 'No se pudo mover al empleado.')
     }
@@ -278,68 +279,49 @@ export default function RegisterPersonnelForm({
   if (step === 'CONFLICT' && conflict) {
     const sameArea = conflict.assignment.areaId === areaId
     return (
-      <Stack spacing={1.5}>
-        <Typography sx={{ fontWeight: 800, fontSize: 17 }}>
+      <div className="flex flex-col gap-3">
+        <p className="text-[17px] font-extrabold">
           {conflict.employee.employeeNumber} — {conflict.employee.name}
-        </Typography>
-        <Alert severity="warning" sx={{ py: 0.5 }}>
+        </p>
+        <Alert className={cn(alertToneClass('warning'), 'py-1')}>
           {sameArea
             ? 'Ya está registrado hoy en esta misma área, pero con otra forma de trabajo. Esto lo va a cambiar de estación/rol dentro de la misma área, no solo a contar su asistencia.'
             : 'Ya está registrado hoy en otra área. Esto lo va a mover de área, no solo a contar su asistencia.'}
         </Alert>
-        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-            }}
-          >
-            Actualmente hace
-          </Typography>
-          <Typography sx={{ fontWeight: 700 }}>
+        <div className="rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">Actualmente hace</p>
+          <p className="font-bold">
             {workCenterById(conflict.assignment.areaId)?.name || conflict.assignment.areaId} —{' '}
             {conflict.assignment.stationId}
-          </Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+          </p>
+          <p className="text-[12.5px] text-muted-foreground">
             Entrada: {conflict.assignment.checkInAt}
-          </Typography>
-        </Box>
-        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-            }}
-          >
+          </p>
+        </div>
+        <div className="rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">
             Va a pasar a hacer
-          </Typography>
-          <Typography sx={{ fontWeight: 700 }}>
+          </p>
+          <p className="font-bold">
             {areaName} — {form.stationId || '—'}
-          </Typography>
-        </Box>
+          </p>
+        </div>
         {isLider && (
-          <Alert severity="info" sx={{ py: 0.5 }}>
+          <Alert className={cn(alertToneClass('info'), 'py-1')}>
             Como líder, este movimiento se enviará a un supervisor o administrador para su
             aprobación — no se aplica de inmediato.
           </Alert>
         )}
-        {error && <Alert severity="error">{error}</Alert>}
-        <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ pt: 1 }}>
-          <Button onClick={onCancel}>Mantener asignación actual</Button>
-          <Button
-            variant="contained"
-            onClick={handleMove}
-            disabled={submitting}
-            sx={{ fontWeight: 700 }}
-          >
+        {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button variant="ghost" onClick={onCancel}>
+            Mantener asignación actual
+          </Button>
+          <Button onClick={handleMove} disabled={submitting} className="font-bold">
             {isLider ? `Enviar para aprobación — ${areaName}` : `Confirmar cambio — ${areaName}`}
           </Button>
-        </Stack>
-      </Stack>
+        </div>
+      </div>
     )
   }
 
@@ -347,200 +329,218 @@ export default function RegisterPersonnelForm({
     const resolved = resolvedOutcome != null
     const approved = resolvedOutcome === 'APPROVED'
     return (
-      <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
-        <Box>
+      <div className="flex flex-col gap-4 pt-2 text-center">
+        <div>
           {resolved ? (
             approved ? (
-              <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
+              <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
             ) : (
-              <PendingActionsIcon sx={{ fontSize: 48, color: '#EF4444', mb: 1 }} />
+              <Hourglass className="mx-auto mb-2 h-12 w-12 text-[#EF4444]" />
             )
           ) : (
-            <PendingActionsIcon sx={{ fontSize: 48, color: '#F59E0B', mb: 1 }} />
+            <Hourglass className="mx-auto mb-2 h-12 w-12 text-[#F59E0B]" />
           )}
-          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
+          <p className="mb-4 text-[16px] font-extrabold">
             {resolved
               ? approved
                 ? '✓ Movimiento aprobado'
                 : '✕ Movimiento rechazado'
               : 'Movimiento enviado para aprobación'}
-          </Typography>
-          <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
+          </p>
+          <p className="text-[18px] font-extrabold">
             {pendingRequest.employeeNumber} — {pendingRequest.employeeName}
-          </Typography>
-          <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
-            <Chip
-              size="small"
-              label={workCenterById(pendingRequest.toAreaId)?.name || pendingRequest.toAreaId}
-              sx={ps.metricChip('info')}
-            />
-            <Chip size="small" label={pendingRequest.toStationId} sx={ps.metricChip('default')} />
-          </Stack>
-          <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
+          </p>
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <span className={metricChipClass('info')}>
+              {workCenterById(pendingRequest.toAreaId)?.name || pendingRequest.toAreaId}
+            </span>
+            <span className={metricChipClass('default')}>{pendingRequest.toStationId}</span>
+          </div>
+          <p className="mt-2 text-[13px] text-muted-foreground">
             {resolved
               ? approved
                 ? 'El cambio ya se aplicó.'
                 : 'Se mantiene en su ubicación anterior.'
               : 'Un supervisor o administrador debe verificarlo antes de que se aplique.'}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} justifyContent="center">
-          <Button onClick={handleRegisterAnother}>Registrar otro</Button>
+          </p>
+        </div>
+        <div className="flex justify-center gap-2">
+          <Button variant="ghost" onClick={handleRegisterAnother}>
+            Registrar otro
+          </Button>
           {onCancel && (
-            <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>
+            <Button onClick={onCancel} className="font-bold">
               Cerrar
             </Button>
           )}
-        </Stack>
-      </Stack>
+        </div>
+      </div>
     )
   }
 
   if (step === 'SUCCESS' && result) {
     return (
-      <Stack spacing={2} sx={{ textAlign: 'center', pt: 1 }}>
-        <Box>
-          <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
+      <div className="flex flex-col gap-4 pt-2 text-center">
+        <div>
+          <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
+          <p className="mb-4 text-[16px] font-extrabold">
             {result.alreadyThere ? 'Ya registrada hoy' : 'Registro realizado'}
-          </Typography>
-          <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
+          </p>
+          <p className="text-[18px] font-extrabold">
             {result.employee.employeeNumber} — {result.employee.name}
-          </Typography>
-          <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
-            <Chip
-              size="small"
-              label={workCenterById(result.assignment.areaId)?.name || result.assignment.areaId}
-              sx={ps.metricChip('info')}
-            />
-            <Chip size="small" label={result.assignment.stationId} sx={ps.metricChip('default')} />
-          </Stack>
-          <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
+          </p>
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <span className={metricChipClass('info')}>
+              {workCenterById(result.assignment.areaId)?.name || result.assignment.areaId}
+            </span>
+            <span className={metricChipClass('default')}>{result.assignment.stationId}</span>
+          </div>
+          <p className="mt-2 text-[13px] text-muted-foreground">
             {result.assignment.shift} · {result.eventLabel} {result.eventTime}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} justifyContent="center">
-          <Button onClick={handleRegisterAnother}>Registrar otro</Button>
+          </p>
+        </div>
+        <div className="flex justify-center gap-2">
+          <Button variant="ghost" onClick={handleRegisterAnother}>
+            Registrar otro
+          </Button>
           {onCancel && (
-            <Button variant="contained" onClick={onCancel} sx={{ fontWeight: 700 }}>
+            <Button onClick={onCancel} className="font-bold">
               Cerrar
             </Button>
           )}
-        </Stack>
-      </Stack>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Stack spacing={2}>
-      {error && <Alert severity="error">{error}</Alert>}
+    <div className="flex flex-col gap-4">
+      {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
 
       {!form.noNumber && (
         <EmployeeSearchField autoFocus value={form.employee} onChange={handleSearch} />
       )}
 
-      <FormControlLabel
-        control={
-          <Checkbox
-            size="small"
-            checked={form.noNumber}
-            onChange={(e) => handleToggleNoNumber(e.target.checked)}
-          />
-        }
-        label="No tiene número de empleado"
-      />
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="rpf-no-number"
+          checked={form.noNumber}
+          onCheckedChange={(checked) => handleToggleNoNumber(checked === true)}
+        />
+        <Label htmlFor="rpf-no-number" className="cursor-pointer">
+          No tiene número de empleado
+        </Label>
+      </div>
 
       {form.noNumber && (
         <>
-          <Alert severity="info" sx={{ py: 0.5 }}>
+          <Alert className={cn(alertToneClass('info'), 'py-1')}>
             Se registrará como <b>PROYECTO</b> — se identifica por su nombre completo.
           </Alert>
-          <TextField
-            fullWidth
-            autoFocus
-            label="Nombre completo"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rpf-name-no-number">Nombre completo</Label>
+            <Input
+              id="rpf-name-no-number"
+              autoFocus
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
+          </div>
         </>
       )}
 
       {needsName && (
         <>
-          <Alert severity="warning" sx={{ py: 0.5 }}>
+          <Alert className={cn(alertToneClass('warning'), 'py-1')}>
             Empleado {employeeNumber} no registrado — captura su nombre.
           </Alert>
-          <TextField
-            fullWidth
-            label="Nombre completo"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rpf-name">Nombre completo</Label>
+            <Input
+              id="rpf-name"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
+          </div>
         </>
       )}
 
       {fixedAreaId ? (
-        <TextField fullWidth label="Área / Línea" value={areaName} disabled sx={ps.inputSx} />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rpf-area">Área / Línea</Label>
+          <Input id="rpf-area" value={areaName} disabled />
+        </div>
       ) : (
-        <TextField
-          select
-          fullWidth
-          label="Área / Línea"
-          value={form.areaId}
-          onChange={(e) => setForm((f) => ({ ...f, areaId: e.target.value, stationId: '' }))}
-        >
-          {WORK_CENTERS.map((w) => (
-            <MenuItem key={w.id} value={w.id}>
-              {w.name}
-            </MenuItem>
-          ))}
-        </TextField>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rpf-area">Área / Línea</Label>
+          <Select
+            value={form.areaId}
+            onValueChange={(v) => setForm((f) => ({ ...f, areaId: v, stationId: '' }))}
+          >
+            <SelectTrigger id="rpf-area">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WORK_CENTERS.map((w) => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
-      <TextField
-        select
-        fullWidth
-        label="Rol / Estación de hoy"
-        value={form.stationId}
-        onChange={(e) => setForm((f) => ({ ...f, stationId: e.target.value }))}
-      >
-        {stations.map((s) => {
-          const occ = getStationOccupancy(areaId, s.name)
-          const compatible = form.employee ? hasSkill(form.employee.id, s.name) : false
-          return (
-            <MenuItem key={s.id} value={s.name} disabled={occ.isFull}>
-              {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
-              {compatible ? ' ✓ habilidad' : ''}
-            </MenuItem>
-          )
-        })}
-      </TextField>
-
-      <TextField
-        select
-        fullWidth
-        label="Turno"
-        value={form.shift}
-        onChange={(e) => setForm((f) => ({ ...f, shift: e.target.value }))}
-      >
-        {SHIFT_OPTIONS.map((s) => (
-          <MenuItem key={s} value={s}>
-            {s}
-          </MenuItem>
-        ))}
-      </TextField>
-
-      <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
-        {onCancel && <Button onClick={onCancel}>{cancelLabel}</Button>}
-        <Button
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={!canSubmit || submitting}
-          sx={{ fontWeight: 700 }}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="rpf-station">Rol / Estación de hoy</Label>
+        <Select
+          value={form.stationId}
+          onValueChange={(v) => setForm((f) => ({ ...f, stationId: v }))}
         >
+          <SelectTrigger id="rpf-station">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {stations.map((s) => {
+              const occ = getStationOccupancy(areaId, s.name)
+              const compatible = form.employee ? hasSkill(form.employee.id, s.name) : false
+              return (
+                <SelectItem key={s.id} value={s.name} disabled={occ.isFull}>
+                  {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
+                  {compatible ? ' ✓ habilidad' : ''}
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="rpf-shift">Turno</Label>
+        <Select value={form.shift} onValueChange={(v) => setForm((f) => ({ ...f, shift: v }))}>
+          <SelectTrigger id="rpf-shift">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SHIFT_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+        )}
+        <Button onClick={handleConfirm} disabled={!canSubmit || submitting} className="font-bold">
           Confirmar registro
         </Button>
-      </Stack>
-    </Stack>
+      </div>
+    </div>
   )
 }
