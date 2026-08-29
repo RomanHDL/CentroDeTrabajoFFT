@@ -1,13 +1,10 @@
+import { Cog, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation, Navigate } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '../../state/auth'
 
 export default function LoginPage() {
@@ -64,74 +61,47 @@ export default function LoginPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        px: 2,
-      }}
-    >
-      <Paper
-        elevation={0}
-        sx={{
-          width: '100%',
-          maxWidth: 400,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, mb: 3 }}>
-          <PrecisionManufacturingIcon sx={{ fontSize: 36, color: '#3B82F6' }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 18, textAlign: 'center' }}>
-            Centro de Trabajo FFT
-          </Typography>
-          <Typography color="text.secondary" sx={{ fontSize: 13, textAlign: 'center' }}>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-[400px] rounded-[30px] border border-border bg-card p-6 text-foreground sm:p-8">
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <Cog size={36} style={{ color: '#3B82F6' }} />
+          <p className="text-center text-[18px] font-extrabold">Centro de Trabajo FFT</p>
+          <p className="text-center text-[13px] text-muted-foreground">
             Organización de áreas, líneas, estaciones y personal
-          </Typography>
-        </Box>
+          </p>
+        </div>
 
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-        >
-          <TextField
-            label="Número de empleado / Usuario"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            autoFocus
-            fullWidth
-            disabled={submitting}
-            autoComplete="username"
-          />
-          <TextField
-            label="Contraseña"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            fullWidth
-            disabled={submitting}
-            autoComplete="current-password"
-          />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="login-identifier">Número de empleado / Usuario</Label>
+            <Input
+              id="login-identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoFocus
+              disabled={submitting}
+              autoComplete="username"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="login-password">Contraseña</Label>
+            <Input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
+              autoComplete="current-password"
+            />
+          </div>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <Alert variant="destructive">{error}</Alert>}
 
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={submitting}
-            sx={{ mt: 1, fontWeight: 700 }}
-          >
-            {submitting ? <CircularProgress size={22} color="inherit" /> : 'Iniciar sesión'}
+          <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
+            {submitting ? <Loader2 size={22} className="animate-spin" /> : 'Iniciar sesión'}
           </Button>
-        </Box>
-      </Paper>
-    </Box>
+        </form>
+      </div>
+    </div>
   )
 }
