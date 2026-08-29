@@ -17,7 +17,9 @@ export default requireAuth(async (req, res) => {
   // alguien llega aqui evitando la UI.
   if (!req.user.mustChangePassword) {
     if (req.user.role !== 'ADMINISTRADOR') {
-      return res.status(403).json({ error: 'Solo un administrador puede cambiar su contraseña libremente' })
+      return res
+        .status(403)
+        .json({ error: 'Solo un administrador puede cambiar su contraseña libremente' })
     }
     if (!currentPassword) {
       return res.status(400).json({ error: 'Indica tu contraseña actual' })

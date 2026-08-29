@@ -3,7 +3,11 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import * as XLSX from 'xlsx'
 import dayjs from 'dayjs'
 import { workCenterById } from '../../data/production/catalog'
-import { getMovementsForDate, getAttendanceForDate, getEmployeeById } from '../../data/personnel/repository'
+import {
+  getMovementsForDate,
+  getAttendanceForDate,
+  getEmployeeById,
+} from '../../data/personnel/repository'
 
 /* Export de Excel EXCLUSIVO del Dashboard rediseñado (2026-08-25,
    hoja Turnos agregada 2026-08-26 a peticion explicita del usuario) --
@@ -34,24 +38,34 @@ export default function DashboardExportButton({ metrics }) {
     const dateISO = dayjs().format('YYYY-MM-DD')
     const wb = XLSX.utils.book_new()
 
-    const resumenWs = buildSheet([
-      { metrica: 'Personal actual', valor: metrics.kpis.personalActual },
-      { metrica: 'Plantilla ideal', valor: metrics.kpis.personalIdeal },
-      { metrica: 'Personal faltante', valor: metrics.kpis.personalFaltante },
-      { metrica: 'Cobertura general (%)', valor: metrics.kpis.coveragePct ?? '' },
-      { metrica: 'Líneas operando', valor: `${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}` },
-      { metrica: 'Movimientos hoy', valor: metrics.movementsToday },
-      { metrica: 'Movimientos pendientes de aprobación', valor: metrics.pendingMovesCount },
-    ], [
-      { key: 'metrica', header: 'Métrica', width: 32 },
-      { key: 'valor', header: 'Valor', width: 16 },
-    ])
+    const resumenWs = buildSheet(
+      [
+        { metrica: 'Personal actual', valor: metrics.kpis.personalActual },
+        { metrica: 'Plantilla ideal', valor: metrics.kpis.personalIdeal },
+        { metrica: 'Personal faltante', valor: metrics.kpis.personalFaltante },
+        { metrica: 'Cobertura general (%)', valor: metrics.kpis.coveragePct ?? '' },
+        {
+          metrica: 'Líneas operando',
+          valor: `${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`,
+        },
+        { metrica: 'Movimientos hoy', valor: metrics.movementsToday },
+        { metrica: 'Movimientos pendientes de aprobación', valor: metrics.pendingMovesCount },
+      ],
+      [
+        { key: 'metrica', header: 'Métrica', width: 32 },
+        { key: 'valor', header: 'Valor', width: 16 },
+      ],
+    )
     XLSX.utils.book_append_sheet(wb, resumenWs, 'Resumen')
 
     const coberturaWs = buildSheet(
       metrics.areas.map((a) => ({
-        area: a.name, actual: a.actual, ideal: a.ideal ?? '', faltante: a.missing ?? '',
-        cobertura: a.coveragePct != null ? `${a.coveragePct}%` : '', estado: a.status || 'Sin plantilla',
+        area: a.name,
+        actual: a.actual,
+        ideal: a.ideal ?? '',
+        faltante: a.missing ?? '',
+        cobertura: a.coveragePct != null ? `${a.coveragePct}%` : '',
+        estado: a.status || 'Sin plantilla',
       })),
       [
         { key: 'area', header: 'Área', width: 28 },
@@ -79,9 +93,10 @@ export default function DashboardExportButton({ metrics }) {
         movements.map((m) => ({
           hora: m.movedAt || '',
           empleado: getEmployeeById(m.employeeId)?.name || m.employeeNumber || '',
-          tipo: m.type === 'CHECK_IN' ? 'Registro' : m.type === 'RELEASE' ? 'Liberación' : 'Movimiento',
-          desde: m.fromAreaId ? (workCenterById(m.fromAreaId)?.name || m.fromAreaId) : '',
-          hacia: m.toAreaId ? (workCenterById(m.toAreaId)?.name || m.toAreaId) : '',
+          tipo:
+            m.type === 'CHECK_IN' ? 'Registro' : m.type === 'RELEASE' ? 'Liberación' : 'Movimiento',
+          desde: m.fromAreaId ? workCenterById(m.fromAreaId)?.name || m.fromAreaId : '',
+          hacia: m.toAreaId ? workCenterById(m.toAreaId)?.name || m.toAreaId : '',
         })),
         [
           { key: 'hora', header: 'Hora', width: 10 },
@@ -118,8 +133,17 @@ export default function DashboardExportButton({ metrics }) {
 
   return (
     <Button
-      variant="contained" startIcon={<FileDownloadIcon />} onClick={handleExport}
-      sx={{ height: 40, borderRadius: 2, fontWeight: 600, textTransform: 'none', px: 2.5, flexShrink: 0 }}
+      variant="contained"
+      startIcon={<FileDownloadIcon />}
+      onClick={handleExport}
+      sx={{
+        height: 40,
+        borderRadius: 2,
+        fontWeight: 600,
+        textTransform: 'none',
+        px: 2.5,
+        flexShrink: 0,
+      }}
     >
       Descargar Excel
     </Button>

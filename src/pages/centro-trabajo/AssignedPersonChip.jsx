@@ -25,15 +25,27 @@ export default function AssignedPersonChip({ employeeId, name, subtitle, size = 
   return (
     <DraggablePersonChip employeeId={employeeId} sx={{ width: '100%' }}>
       <Stack
-        direction="row" spacing={1} alignItems="center"
+        direction="row"
+        spacing={1}
+        alignItems="center"
         sx={{ p: 1, pr: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
       >
         <EmployeeAvatar employee={{ name }} size={size} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>{name}</Typography>
-          {subtitle && <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>{subtitle}</Typography>}
+          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>
+            {name}
+          </Typography>
+          {subtitle && (
+            <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+              {subtitle}
+            </Typography>
+          )}
         </Box>
-        <IconButton size="small" onClick={() => dnd.requestRelease(employeeId)} sx={{ color: 'text.secondary' }}>
+        <IconButton
+          size="small"
+          onClick={() => dnd.requestRelease(employeeId)}
+          sx={{ color: 'text.secondary' }}
+        >
           <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </Stack>

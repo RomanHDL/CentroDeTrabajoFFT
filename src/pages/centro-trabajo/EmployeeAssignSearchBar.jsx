@@ -43,7 +43,11 @@ export default function EmployeeAssignSearchBar({ areaId }) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar por número de empleado o nombre..."
         InputProps={{
-          startAdornment: <InputAdornment position="start"><SearchIcon sx={{ opacity: 0.5 }} /></InputAdornment>,
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ opacity: 0.5 }} />
+            </InputAdornment>
+          ),
         }}
         sx={{
           '& .MuiInputBase-input': { fontSize: 15, py: 1.4 },
@@ -52,9 +56,22 @@ export default function EmployeeAssignSearchBar({ areaId }) {
       />
 
       {query.trim() && (
-        <Paper elevation={4} sx={{ position: 'absolute', zIndex: 20, mt: 0.5, width: '100%', maxHeight: 320, overflowY: 'auto', borderRadius: 2 }}>
+        <Paper
+          elevation={4}
+          sx={{
+            position: 'absolute',
+            zIndex: 20,
+            mt: 0.5,
+            width: '100%',
+            maxHeight: 320,
+            overflowY: 'auto',
+            borderRadius: 2,
+          }}
+        >
           {results.length === 0 ? (
-            <Typography sx={{ p: 2, fontSize: 13, color: 'text.secondary' }}>No se encontró personal activo con ese criterio.</Typography>
+            <Typography sx={{ p: 2, fontSize: 13, color: 'text.secondary' }}>
+              No se encontró personal activo con ese criterio.
+            </Typography>
           ) : (
             <Stack divider={<Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }} />}>
               {results.map((employee) => {
@@ -62,14 +79,26 @@ export default function EmployeeAssignSearchBar({ areaId }) {
                 const effectiveAreaId = current?.areaId ?? getEffectiveAreaForEmployee(employee.id)
                 const sameArea = effectiveAreaId === areaId
                 const formattedNumber = formatEmployeeNumber(employee.employeeNumber)
-                const numberLabel = formattedNumber === 'PROYECTO' ? 'PROYECTO' : `#${formattedNumber}`
+                const numberLabel =
+                  formattedNumber === 'PROYECTO' ? 'PROYECTO' : `#${formattedNumber}`
                 return (
-                  <Stack key={employee.id} direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5 }}>
+                  <Stack
+                    key={employee.id}
+                    direction="row"
+                    spacing={1.5}
+                    alignItems="center"
+                    sx={{ p: 1.5 }}
+                  >
                     <EmployeeAvatar employee={employee} size={38} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography noWrap sx={{ fontWeight: 700, fontSize: 13.5 }}>{employee.name}</Typography>
+                      <Typography noWrap sx={{ fontWeight: 700, fontSize: 13.5 }}>
+                        {employee.name}
+                      </Typography>
                       <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                        {numberLabel} · {effectiveAreaId ? `Actualmente: ${workCenterById(effectiveAreaId)?.name || effectiveAreaId}` : 'Sin asignación'}
+                        {numberLabel} ·{' '}
+                        {effectiveAreaId
+                          ? `Actualmente: ${workCenterById(effectiveAreaId)?.name || effectiveAreaId}`
+                          : 'Sin asignación'}
                       </Typography>
                     </Box>
                     {sameArea ? (

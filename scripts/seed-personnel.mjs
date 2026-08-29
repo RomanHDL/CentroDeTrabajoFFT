@@ -134,6 +134,8 @@ for (const p of REAL_PERSONNEL_SNAPSHOT) {
 
 console.log(`OK WorkArea: ${workAreaCount}`)
 console.log(`OK Workstation: ${workstationCount}`)
-console.log(`OK Employee: ${employeeCreated} creados, ${employeeUpdated} actualizados (total snapshot: ${REAL_PERSONNEL_SNAPSHOT.length})`)
+console.log(
+  `OK Employee: ${employeeCreated} creados, ${employeeUpdated} actualizados (total snapshot: ${REAL_PERSONNEL_SNAPSHOT.length})`,
+)
 
 await prisma.$disconnect()

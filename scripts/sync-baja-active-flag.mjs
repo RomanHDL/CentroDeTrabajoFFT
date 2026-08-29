@@ -5,7 +5,7 @@
 // snapshot que solo tienen nombre (esas se reportan como omitidas, no se tocan).
 //
 // Corre UNA vez (mismo estilo que seed-role-module-access.mjs) para activar el bloqueo real de
-// BAJA en checkin/move/approve-move (ver server-lib/personnel.js, placeEmployee). Es seguro
+// BAJA en checkin/move/approve-move (ver server-lib/personnel.ts, placeEmployee). Es seguro
 // volver a correrlo despues (upsert idempotente vía update simple, no falla si ya esta en
 // active=false).
 import { prisma } from '../server-lib/prisma.js'
@@ -38,5 +38,7 @@ for (const employeeNumber of BAJA_EMPLOYEE_NUMBERS) {
   updated += 1
 }
 
-console.log(`\nResumen: ${updated} actualizados, ${alreadyInactive} ya estaban inactivos, ${notFound} no encontrados.`)
+console.log(
+  `\nResumen: ${updated} actualizados, ${alreadyInactive} ya estaban inactivos, ${notFound} no encontrados.`,
+)
 await prisma.$disconnect()

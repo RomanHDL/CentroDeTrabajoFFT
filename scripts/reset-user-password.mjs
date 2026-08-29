@@ -11,7 +11,12 @@ import { prisma } from '../server-lib/prisma.js'
 
 function ask(query) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  return new Promise((resolve) => rl.question(query, (answer) => { rl.close(); resolve(answer.trim()) }))
+  return new Promise((resolve) =>
+    rl.question(query, (answer) => {
+      rl.close()
+      resolve(answer.trim())
+    }),
+  )
 }
 
 function askHidden(query) {
@@ -34,7 +39,9 @@ function askHidden(query) {
 
 async function main() {
   console.log('=== Restablecer contraseña de un usuario existente — Centro de Trabajo FFT ===')
-  console.log('(Ctrl+C para cancelar. La contraseña no se muestra en pantalla ni se guarda en logs.)\n')
+  console.log(
+    '(Ctrl+C para cancelar. La contraseña no se muestra en pantalla ni se guarda en logs.)\n',
+  )
 
   const employeeNumber = await ask('Numero de empleado del usuario: ')
   if (!employeeNumber) {
@@ -44,11 +51,15 @@ async function main() {
 
   const user = await prisma.user.findUnique({ where: { employeeNumber } })
   if (!user) {
-    console.error(`\nError: no existe ningun usuario con employeeNumber=${employeeNumber}. No se creo nada.`)
+    console.error(
+      `\nError: no existe ningun usuario con employeeNumber=${employeeNumber}. No se creo nada.`,
+    )
     process.exit(1)
   }
 
-  console.log(`\nUsuario localizado: "${user.name}" (rol ${user.role}, activo=${user.active}). Se le va a restablecer SOLO la contraseña.\n`)
+  console.log(
+    `\nUsuario localizado: "${user.name}" (rol ${user.role}, activo=${user.active}). Se le va a restablecer SOLO la contraseña.\n`,
+  )
 
   const password = await askHidden('Nueva contraseña temporal (minimo 8 caracteres): ')
   if (!password || password.length < 8) {

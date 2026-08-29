@@ -21,10 +21,22 @@ import CloseIcon from '@mui/icons-material/Close'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
-import { workCenterById, WORK_CENTERS, canonicalOperationalAreaId, operationalGroupMembers, AREA_STATION_SOURCE_OVERRIDE } from '../data/production/catalog'
 import {
-  getAreaHeadcount, getAreaStaffing, getPeopleByArea, hasAnyPersonnelToday,
-  getStaffingTotals, getFftPeopleWithLine, getGroupAreaStaffing, getGroupPeople,
+  workCenterById,
+  WORK_CENTERS,
+  canonicalOperationalAreaId,
+  operationalGroupMembers,
+  AREA_STATION_SOURCE_OVERRIDE,
+} from '../data/production/catalog'
+import {
+  getAreaHeadcount,
+  getAreaStaffing,
+  getPeopleByArea,
+  hasAnyPersonnelToday,
+  getStaffingTotals,
+  getFftPeopleWithLine,
+  getGroupAreaStaffing,
+  getGroupPeople,
 } from '../data/production/personnelByArea'
 import { FFT_LINE_IDS, SUPPORT_CARD_AREA_IDS } from '../data/production/floorPlanZones'
 import { getLineWorkstationsWithOccupancy } from '../data/personnel/repository'
@@ -110,8 +122,9 @@ function statusText(status, staffing) {
 // puestos reales siguen viviendo en Paletizado -- getAreaHeadcount('PALETIZADO')
 // ya los cuenta; si tambien se sumara getAreaHeadcount('CONVEYOR_PRINCIPAL')
 // aqui se duplicarian en el total "N personas" del encabezado).
-const SHOWN_AREA_IDS = WORK_CENTERS
-  .filter((w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO')
+const SHOWN_AREA_IDS = WORK_CENTERS.filter(
+  (w) => w.id !== 'CONVEYOR_PRINCIPAL' && w.id !== 'CONVEYOR_SECUNDARIO' && w.id !== 'SELLADO',
+)
   .filter((w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id)
   .map((w) => w.id)
 
@@ -140,7 +153,9 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   const floorRef = useRef(null)
 
   useEffect(() => {
-    function onFsChange() { setIsFullscreen(!!document.fullscreenElement) }
+    function onFsChange() {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
     document.addEventListener('fullscreenchange', onFsChange)
     return () => document.removeEventListener('fullscreenchange', onFsChange)
   }, [])
@@ -184,7 +199,10 @@ export default function OperatingFloorPlan({ readOnly = false }) {
     })
     observer.observe(container)
     setZoom(computeFit())
-    return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame) }
+    return () => {
+      observer.disconnect()
+      if (frame) cancelAnimationFrame(frame)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoZoom])
 
@@ -194,7 +212,10 @@ export default function OperatingFloorPlan({ readOnly = false }) {
   // Principal/Secundario lo permitian). En readOnly (Dashboard) se comporta
   // EXACTAMENTE igual que siempre: solo abre el detalle de solo lectura.
   function handleZoneOpen(areaId) {
-    if (readOnly) { setDetailId(areaId); return }
+    if (readOnly) {
+      setDetailId(areaId)
+      return
+    }
     openWorkCenter(areaId)
   }
 
@@ -212,48 +233,107 @@ export default function OperatingFloorPlan({ readOnly = false }) {
           ya no existe showLegend/Paper de "Referencias" al fondo). Los
           totales (personas/cobertura) son los mismos que ya se
           calculaban arriba -- ninguna fuente de datos nueva. */}
-      <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={2} rowGap={1.25}>
+      <Paper
+        elevation={0}
+        sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: 2 }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          flexWrap="wrap"
+          spacing={2}
+          rowGap={1.25}
+        >
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: operating ? '#10B981' : '#94A3B8' }} />
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                bgcolor: operating ? '#10B981' : '#94A3B8',
+              }}
+            />
             <Typography sx={{ fontWeight: 800, fontSize: 17 }}>Área operando</Typography>
           </Stack>
 
-          <Stack direction="row" spacing={2.5} flexWrap="wrap" useFlexGap sx={{ flex: 1, justifyContent: 'center' }}>
+          <Stack
+            direction="row"
+            spacing={2.5}
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ flex: 1, justifyContent: 'center' }}
+          >
             {Object.values(STATUS_META).map((meta) => (
-              <LegendItem key={meta.label} color={meta.color} label={meta.label} description={meta.description} />
+              <LegendItem
+                key={meta.label}
+                color={meta.color}
+                label={meta.label}
+                description={meta.description}
+              />
             ))}
-            <LegendItem icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />} label="Referencias" description="Áreas de referencia" />
+            <LegendItem
+              icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />}
+              label="Referencias"
+              description="Áreas de referencia"
+            />
           </Stack>
 
           <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
-            <InfoStat icon={<PeopleAltIcon sx={{ fontSize: 16 }} />} value={`${totalPeople} personas`} label="Total asignadas" />
-            <InfoStat value={`${totals.realTotal} / ${totals.idealTotal}`} label="Cobertura del catálogo" />
+            <InfoStat
+              icon={<PeopleAltIcon sx={{ fontSize: 16 }} />}
+              value={`${totalPeople} personas`}
+              label="Total asignadas"
+            />
+            <InfoStat
+              value={`${totals.realTotal} / ${totals.idealTotal}`}
+              label="Cobertura del catálogo"
+            />
           </Stack>
         </Stack>
       </Paper>
 
       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1.5 }}>
         <Button
-          size="small" startIcon={<CenterFocusStrongIcon fontSize="small" />} onClick={fitToScreen}
+          size="small"
+          startIcon={<CenterFocusStrongIcon fontSize="small" />}
+          onClick={fitToScreen}
           sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary', minHeight: 36 }}
         >
           Ajustar vista
         </Button>
         <Tooltip title="Alejar">
-          <IconButton sx={{ width: 36, height: 36 }} onClick={() => { setAutoZoom(false); setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2))) }}>
+          <IconButton
+            sx={{ width: 36, height: 36 }}
+            onClick={() => {
+              setAutoZoom(false)
+              setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))
+            }}
+          >
             <RemoveIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Typography sx={{ fontSize: 12, fontWeight: 700, minWidth: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</Typography>
+        <Typography sx={{ fontSize: 12, fontWeight: 700, minWidth: 34, textAlign: 'center' }}>
+          {Math.round(zoom * 100)}%
+        </Typography>
         <Tooltip title="Acercar">
-          <IconButton sx={{ width: 36, height: 36 }} onClick={() => { setAutoZoom(false); setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2))) }}>
+          <IconButton
+            sx={{ width: 36, height: 36 }}
+            onClick={() => {
+              setAutoZoom(false)
+              setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))
+            }}
+          >
             <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
           <IconButton sx={{ width: 36, height: 36 }} onClick={toggleFullscreen}>
-            {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+            {isFullscreen ? (
+              <FullscreenExitIcon fontSize="small" />
+            ) : (
+              <FullscreenIcon fontSize="small" />
+            )}
           </IconButton>
         </Tooltip>
       </Stack>
@@ -261,12 +341,26 @@ export default function OperatingFloorPlan({ readOnly = false }) {
       <Box
         ref={planRef}
         sx={{
-          bgcolor: 'background.paper', overflow: 'auto', overscrollBehaviorX: 'contain',
+          bgcolor: 'background.paper',
+          overflow: 'auto',
+          overscrollBehaviorX: 'contain',
           ...(isFullscreen ? { p: 2.5, height: '100vh' } : {}),
         }}
       >
-        <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform .15s ease', width: `${100 / zoom}%` }}>
-          <FloorPlan floorRef={floorRef} onOpen={handleZoneOpen} onOpenSummary={setDetailId} readOnly={readOnly} />
+        <Box
+          sx={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+            transition: 'transform .15s ease',
+            width: `${100 / zoom}%`,
+          }}
+        >
+          <FloorPlan
+            floorRef={floorRef}
+            onOpen={handleZoneOpen}
+            onOpenSummary={setDetailId}
+            readOnly={readOnly}
+          />
         </Box>
       </Box>
 
@@ -281,10 +375,16 @@ export default function OperatingFloorPlan({ readOnly = false }) {
 function LegendItem({ color, icon, label, description }) {
   return (
     <Stack direction="row" spacing={0.75} alignItems="flex-start">
-      {icon || <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, mt: 0.4, flexShrink: 0 }} />}
+      {icon || (
+        <Box
+          sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, mt: 0.4, flexShrink: 0 }}
+        />
+      )}
       <Stack spacing={0}>
         <Typography sx={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{label}</Typography>
-        <Typography sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1.2 }}>{description}</Typography>
+        <Typography sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1.2 }}>
+          {description}
+        </Typography>
       </Stack>
     </Stack>
   )
@@ -310,8 +410,10 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
     <Box ref={floorRef} sx={{ minWidth: 1180 }}>
       <Box
         sx={{
-          display: 'grid', gap: 1,
-          gridTemplateColumns: 'minmax(90px,0.7fr) minmax(90px,0.7fr) repeat(10, minmax(56px,1fr)) minmax(150px,1.1fr) minmax(108px,0.8fr) minmax(190px,1.3fr)',
+          display: 'grid',
+          gap: 1,
+          gridTemplateColumns:
+            'minmax(90px,0.7fr) minmax(90px,0.7fr) repeat(10, minmax(56px,1fr)) minmax(150px,1.1fr) minmax(108px,0.8fr) minmax(190px,1.3fr)',
           /* minmax(_, auto) en vez de px fijo (2026-08-25, correccion
              definitiva a peticion explicita del usuario): esa altura sigue
              siendo el piso normal de siempre, pero ya nunca es un techo que
@@ -360,19 +462,50 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
 
         <Box sx={{ gridArea: 'paletizado', display: 'flex', flexDirection: 'column', gap: 1 }}>
           <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
-          <HorizontalLineBar lineId="PROYECTO" title="WC LINEA 0" onOpen={onOpen} readOnly={readOnly} />
+          <HorizontalLineBar
+            lineId="PROYECTO"
+            title="WC LINEA 0"
+            onOpen={onOpen}
+            readOnly={readOnly}
+          />
         </Box>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
-        <BigZone areaId="HIGH_VALUE" gridArea="highvalue" title="WC Midea / High Value" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone
+          areaId="HIGH_VALUE"
+          gridArea="highvalue"
+          title="WC Midea / High Value"
+          onOpen={onOpen}
+          readOnly={readOnly}
+        >
           <Stack sx={{ height: '100%', minHeight: 0 }}>
             <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
               <Box sx={{ flex: 1.4, minWidth: 0 }}>
                 <HighValueGrid areaId="HIGH_VALUE" />
               </Box>
-              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5, borderLeft: '1px dashed', borderColor: 'divider', pl: 1 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: 9.5, textAlign: 'center', color: 'text.secondary' }}>Productos Mixtos</Typography>
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.5,
+                  borderLeft: '1px dashed',
+                  borderColor: 'divider',
+                  pl: 1,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 9.5,
+                    textAlign: 'center',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Productos Mixtos
+                </Typography>
                 <MixtosDecoration />
               </Box>
             </Stack>
@@ -380,26 +513,55 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
                 peticion explicita del usuario: si hay personal en cualquier
                 area, debe verse su nombre igual que en WC Accesorios, no solo
                 un indicador visual abstracto). */}
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', mt: 0.75, pt: 0.75, borderTop: '1px dashed', borderColor: 'divider' }}>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflow: 'auto',
+                mt: 0.75,
+                pt: 0.75,
+                borderTop: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
               <PersonList areaId="HIGH_VALUE" columns={2} readOnly={readOnly} />
             </Box>
           </Stack>
         </BigZone>
 
-        <BigZone areaId="PALETIZADO" gridArea="palletizing" title="WC Paletizado (Palletizing)" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone
+          areaId="PALETIZADO"
+          gridArea="palletizing"
+          title="WC Paletizado (Palletizing)"
+          onOpen={onOpen}
+          readOnly={readOnly}
+        >
           <PersonList areaId="PALETIZADO" columns={2} readOnly={readOnly} />
         </BigZone>
 
-        <InsumosSuministroZone gridArea="insumos" onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
+        <InsumosSuministroZone
+          gridArea="insumos"
+          onOpen={onOpen}
+          onOpenSummary={onOpenSummary}
+          readOnly={readOnly}
+        />
 
-        <BigZone areaId="ACCESORIOS" gridArea="accessories" title="WC Accesorios" onOpen={onOpen} readOnly={readOnly}>
+        <BigZone
+          areaId="ACCESORIOS"
+          gridArea="accessories"
+          title="WC Accesorios"
+          onOpen={onOpen}
+          readOnly={readOnly}
+        >
           <PersonList areaId="ACCESORIOS" columns={2} readOnly={readOnly} />
         </BigZone>
       </Box>
 
       <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {SUPPORT_CARD_AREA_IDS.map((id) => <SupportCard key={id} areaId={id} onOpen={onOpen} readOnly={readOnly} />)}
+          {SUPPORT_CARD_AREA_IDS.map((id) => (
+            <SupportCard key={id} areaId={id} onOpen={onOpen} readOnly={readOnly} />
+          ))}
         </Stack>
       </Box>
     </Box>
@@ -433,7 +595,9 @@ const CONVEYOR_ROLE = 'Ayudante General de Conveyor'
 const CONVEYOR_SOURCE_AREA_ID = AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL.sourceAreaId
 
 function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
-  const stations = getLineWorkstationsWithOccupancy(CONVEYOR_SOURCE_AREA_ID).filter((w) => w.role === CONVEYOR_ROLE)
+  const stations = getLineWorkstationsWithOccupancy(CONVEYOR_SOURCE_AREA_ID).filter(
+    (w) => w.role === CONVEYOR_ROLE,
+  )
   const real = stations.filter((w) => w.occupants.length > 0).length
   const ideal = stations.length
   const status = statusFor(real, ideal)
@@ -446,16 +610,28 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       sx={{
-        gridArea, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        gridArea,
+        borderRadius: 2,
+        p: 1,
+        cursor: 'pointer',
+        userSelect: 'none',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
+        borderTop: `3px solid ${color}`,
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.75 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.4 }}>CONVEYOR GENERAL</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.4 }}>
+          CONVEYOR GENERAL
+        </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
+          {isOver ? 'Soltar aquí' : label}
+        </Typography>
       </Stack>
       {/* height:'1px' explicito (no `1` numerico) -- sx interpreta un numero
           <=1 en propiedades de tamaño como PORCENTAJE (sizingTransform de
@@ -473,9 +649,19 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
           nodos angostos (maxWidth 140), dejarlos pegados a la izquierda del
           bloque ancho se veia desbalanceado -- centrados se ve como una
           franja limpia, no como una card a medio llenar. */}
-      <Stack direction="row" flexWrap="wrap" justifyContent="center" sx={{ rowGap: 0.75, columnGap: 1.5 }}>
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        justifyContent="center"
+        sx={{ rowGap: 0.75, columnGap: 1.5 }}
+      >
         {stations.map((w, i) => (
-          <ConveyorNode key={w.id} index={i + 1} station={w} onOpen={() => onOpen('CONVEYOR_PRINCIPAL')} />
+          <ConveyorNode
+            key={w.id}
+            index={i + 1}
+            station={w}
+            onOpen={() => onOpen('CONVEYOR_PRINCIPAL')}
+          />
         ))}
       </Stack>
     </Box>
@@ -496,21 +682,40 @@ function ConveyorNode({ index, station, onOpen }) {
   const nodeColor = occupant ? '#10B981' : '#F59E0B'
   return (
     <Stack
-      onClick={(e) => { e.stopPropagation(); onOpen() }}
-      alignItems="center" spacing={0.15}
+      onClick={(e) => {
+        e.stopPropagation()
+        onOpen()
+      }}
+      alignItems="center"
+      spacing={0.15}
       sx={{
-        flex: '1 1 84px', minWidth: 76, maxWidth: 140, py: 0.5, px: 0.5, borderRadius: 1.5, cursor: 'pointer',
-        border: '1px dashed', borderColor: alpha(nodeColor, 0.4),
+        flex: '1 1 84px',
+        minWidth: 76,
+        maxWidth: 140,
+        py: 0.5,
+        px: 0.5,
+        borderRadius: 1.5,
+        cursor: 'pointer',
+        border: '1px dashed',
+        borderColor: alpha(nodeColor, 0.4),
         '&:hover': { bgcolor: (t) => alpha(nodeColor, t.palette.mode === 'dark' ? 0.14 : 0.07) },
       }}
     >
-      <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'text.disabled', lineHeight: 1 }}>{index}</Typography>
+      <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'text.disabled', lineHeight: 1 }}>
+        {index}
+      </Typography>
       <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
-      <Typography sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, mt: 0.15 }} noWrap>
+      <Typography
+        sx={{ fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, mt: 0.15 }}
+        noWrap
+      >
         {occupant ? occupant.name : 'Vacante'}
       </Typography>
       {rank && (
-        <Typography sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1.1 }} noWrap>
+        <Typography
+          sx={{ fontSize: 8.5, color: 'text.secondary', textAlign: 'center', lineHeight: 1.1 }}
+          noWrap
+        >
           {rank.label}
         </Typography>
       )}
@@ -526,9 +731,10 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
   const color = status ? STATUS_META[status].color : '#94A3B8'
-  const label = staffing.ideal != null
-    ? `${staffing.real} / ${staffing.ideal}`
-    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const label =
+    staffing.ideal != null
+      ? `${staffing.real} / ${staffing.ideal}`
+      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
@@ -536,19 +742,36 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       sx={{
-        gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
+        gridArea,
+        borderRadius: 2,
+        p: 1.25,
+        cursor: 'pointer',
+        userSelect: 'none',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
+        borderTop: `3px solid ${color}`,
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.6,
+        overflow: 'hidden',
         transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
         <Typography sx={{ fontWeight: 800, fontSize: 13 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+          {isOver ? 'Soltar aquí' : label}
+        </Typography>
       </Stack>
-      {status && <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
+      {status && (
+        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>
+          {statusText(status, staffing)}
+        </Typography>
+      )}
       {/* minHeight:0 (2026-08-25, correccion definitiva): sin esto, este
           hijo flex nunca se encoge por debajo de su contenido -- el
           overflow:auto de arriba quedaba sin efecto y el personal que no
@@ -567,26 +790,48 @@ const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
 
 function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
-  const totalIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
+  const totalIdeal = FFT_LINE_IDS.reduce(
+    (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
+    0,
+  )
   return (
-    <Box sx={{
-      gridArea: 'fft', borderRadius: 2, p: 1.25, border: '1px solid', borderColor: 'divider',
-      borderTop: '3px solid #3B82F6', bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.05 : 0.035),
-      display: 'flex', flexDirection: 'column', gap: 1, overflow: 'hidden',
-    }}>
+    <Box
+      sx={{
+        gridArea: 'fft',
+        borderRadius: 2,
+        p: 1.25,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderTop: '3px solid #3B82F6',
+        bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        overflow: 'hidden',
+      }}
+    >
       <Stack
-        direction="row" alignItems="baseline" justifyContent="space-between"
-        onClick={() => onOpenSummary('FFT_ALL')} sx={{ cursor: 'pointer' }}
+        direction="row"
+        alignItems="baseline"
+        justifyContent="space-between"
+        onClick={() => onOpenSummary('FFT_ALL')}
+        sx={{ cursor: 'pointer' }}
       >
-        <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>WC Líneas de producción (FFT)</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{totalReal} / {totalIdeal}</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
+          WC Líneas de producción (FFT)
+        </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+          {totalReal} / {totalIdeal}
+        </Typography>
       </Stack>
       {/* minHeight:0 (2026-08-25, correccion definitiva, mismo motivo que
           BigZone): sin esto la fila nunca se encogia por debajo de sus
           columnas y FftBlock (overflow:hidden) recortaba el personal
           sobrante en silencio. */}
       <Box sx={{ display: 'flex', gap: 0.6, flex: 1, minHeight: 0 }}>
-        {FFT_COLUMN_LINE_IDS.map((id) => <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />)}
+        {FFT_COLUMN_LINE_IDS.map((id) => (
+          <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />
+        ))}
       </Box>
     </Box>
   )
@@ -601,9 +846,10 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
   const color = STATUS_META[status].color
-  const label = staffing.ideal != null
-    ? `${staffing.real} / ${staffing.ideal}`
-    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const label =
+    staffing.ideal != null
+      ? `${staffing.real} / ${staffing.ideal}`
+      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
@@ -611,20 +857,46 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(lineId)}
       sx={{
-        flex: 1, borderRadius: 2, p: 1, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0.5, minHeight: 0,
+        flex: 1,
+        borderRadius: 2,
+        p: 1,
+        cursor: 'pointer',
+        userSelect: 'none',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
+        borderTop: `3px solid ${color}`,
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: 0.5,
+        minHeight: 0,
         transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between">
         <Typography sx={{ fontWeight: 800, fontSize: 12.5 }}>{title || wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>
+          {isOver ? 'Soltar aquí' : label}
+        </Typography>
       </Stack>
-      {status && <Typography sx={{ fontSize: 9.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
-      <Box sx={{ width: '100%', height: 6, borderRadius: 999, bgcolor: alpha(color, 0.18), overflow: 'hidden' }}>
+      {status && (
+        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color }}>
+          {statusText(status, staffing)}
+        </Typography>
+      )}
+      <Box
+        sx={{
+          width: '100%',
+          height: 6,
+          borderRadius: 999,
+          bgcolor: alpha(color, 0.18),
+          overflow: 'hidden',
+        }}
+      >
         <Box sx={{ width: `${pct * 100}%`, height: '100%', bgcolor: color, borderRadius: 999 }} />
       </Box>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
@@ -647,12 +919,28 @@ function LineColumn({ lineId, onOpen, readOnly }) {
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
-      onClick={(e) => { e.stopPropagation(); onOpen(lineId) }}
+      onClick={(e) => {
+        e.stopPropagation()
+        onOpen(lineId)
+      }}
       sx={{
-        flex: '1 1 0', minWidth: 46, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        cursor: 'pointer', userSelect: 'none', py: 0.75, px: 0.4, borderRadius: 1.5, minHeight: 0, height: '100%',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.3),
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
+        flex: '1 1 0',
+        minWidth: 46,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        cursor: 'pointer',
+        userSelect: 'none',
+        py: 0.75,
+        px: 0.4,
+        borderRadius: 1.5,
+        minHeight: 0,
+        height: '100%',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.3),
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.1 : 0.06),
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
@@ -664,13 +952,34 @@ function LineColumn({ lineId, onOpen, readOnly }) {
           cabiendo en columnas angostas sin ensanchar la card; si de plano
           no cabe, el Typography ya envuelve a 2 líneas solo (sin noWrap),
           nunca trunca. */}
-      <Typography sx={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.2, textAlign: 'center', lineHeight: 1.15 }}>
-        {isOver ? 'Soltar' : (wc?.name || lineId)}
+      <Typography
+        sx={{
+          fontSize: 9,
+          fontWeight: 800,
+          letterSpacing: -0.2,
+          textAlign: 'center',
+          lineHeight: 1.15,
+        }}
+      >
+        {isOver ? 'Soltar' : wc?.name || lineId}
       </Typography>
-      <Box sx={{ width: 8, height: 36, borderRadius: 4, bgcolor: alpha(color, 0.18), display: 'flex', alignItems: 'flex-end', overflow: 'hidden', my: 0.5 }}>
+      <Box
+        sx={{
+          width: 8,
+          height: 36,
+          borderRadius: 4,
+          bgcolor: alpha(color, 0.18),
+          display: 'flex',
+          alignItems: 'flex-end',
+          overflow: 'hidden',
+          my: 0.5,
+        }}
+      >
         <Box sx={{ width: '100%', height: `${pct * 100}%`, bgcolor: color, borderRadius: 4 }} />
       </Box>
-      <Typography sx={{ fontSize: 11.5, fontWeight: 700 }}>{staffing.real}/{staffing.ideal}</Typography>
+      <Typography sx={{ fontSize: 11.5, fontWeight: 700 }}>
+        {staffing.real}/{staffing.ideal}
+      </Typography>
       {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
           personal, debe verse su nombre igual que en WC Accesorios, no solo la
           barra de avance. */}
@@ -692,9 +1001,11 @@ function HighValueGrid({ areaId }) {
         <Box
           key={i}
           sx={{
-            borderRadius: 0.75, minHeight: 16,
+            borderRadius: 0.75,
+            minHeight: 16,
             bgcolor: i < staffing.real ? alpha(color, 0.55) : alpha(color, 0.08),
-            border: '1px solid', borderColor: alpha(color, 0.25),
+            border: '1px solid',
+            borderColor: alpha(color, 0.25),
           }}
         />
       ))}
@@ -706,7 +1017,17 @@ function MixtosDecoration() {
   return (
     <Box sx={{ display: 'flex', gap: 1, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       {[0, 1].map((i) => (
-        <Box key={i} sx={{ width: 10, height: '80%', borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }} />
+        <Box
+          key={i}
+          sx={{
+            width: 10,
+            height: '80%',
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'action.hover',
+          }}
+        />
       ))}
     </Box>
   )
@@ -729,28 +1050,50 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
   const status = statusFor(staffing.real, staffing.ideal)
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : 'INSUMOS')
   const color = status ? STATUS_META[status].color : '#94A3B8'
-  const label = staffing.ideal != null
-    ? `${staffing.real} / ${staffing.ideal}`
-    : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+  const label =
+    staffing.ideal != null
+      ? `${staffing.real} / ${staffing.ideal}`
+      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
   return (
     <Box
       {...(readOnly ? {} : dropProps)}
       onClick={() => (readOnly ? onOpenSummary('INSUMOS_SUMINISTRO_ALL') : onOpen('INSUMOS'))}
       sx={{
-        gridArea, borderRadius: 2, p: 1.25, cursor: 'pointer', userSelect: 'none',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderTop: `3px solid ${color}`,
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
-        display: 'flex', flexDirection: 'column', gap: 0.6, overflow: 'hidden',
+        gridArea,
+        borderRadius: 2,
+        p: 1.25,
+        cursor: 'pointer',
+        userSelect: 'none',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
+        borderTop: `3px solid ${color}`,
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.6,
+        overflow: 'hidden',
         transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.25)}` },
       }}
     >
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" flexWrap="wrap">
-        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>WC Insumos y Suministro de Material</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>
+          WC Insumos y Suministro de Material
+        </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+          {isOver ? 'Soltar aquí' : label}
+        </Typography>
       </Stack>
-      {status && <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>{statusText(status, staffing)}</Typography>}
-      <Typography sx={{ fontSize: 9, color: 'text.secondary', fontStyle: 'italic' }}>PNP / POC / PEN · Box Prep · Suministro de material</Typography>
+      {status && (
+        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color }}>
+          {statusText(status, staffing)}
+        </Typography>
+      )}
+      <Typography sx={{ fontSize: 9, color: 'text.secondary', fontStyle: 'italic' }}>
+        PNP / POC / PEN · Box Prep · Suministro de material
+      </Typography>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         <PersonList people={people} columns={2} readOnly={readOnly} />
       </Box>
@@ -766,16 +1109,28 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
 function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
   const people = peopleProp || getPeopleByArea()[areaId] || []
   if (people.length === 0) {
-    return <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>Sin personal asignado</Typography>
+    return (
+      <Typography sx={{ fontSize: 11, color: 'text.secondary', fontStyle: 'italic' }}>
+        Sin personal asignado
+      </Typography>
+    )
   }
   return (
-    <Box sx={columns > 1 ? { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 0.4 } : { display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+    <Box
+      sx={
+        columns > 1
+          ? { display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 0.4 }
+          : { display: 'flex', flexDirection: 'column', gap: 0.4 }
+      }
+    >
       {people.map((p) => {
         const row = (
           <Tooltip title={p.name} enterTouchDelay={0} leaveTouchDelay={2500} disableInteractive>
             <Stack direction="row" spacing={0.5} alignItems="center">
               <PersonIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>{p.name}</Typography>
+              <Typography sx={{ fontSize: 11.5, lineHeight: 1.25 }} noWrap>
+                {p.name}
+              </Typography>
             </Stack>
           </Tooltip>
         )
@@ -795,9 +1150,8 @@ function SupportCard({ areaId, onOpen, readOnly }) {
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
   const color = status ? STATUS_META[status].color : '#94A3B8'
-  const label = staffing.ideal != null
-    ? `${staffing.real}/${staffing.ideal}`
-    : `${staffing.real} pers.`
+  const label =
+    staffing.ideal != null ? `${staffing.real}/${staffing.ideal}` : `${staffing.real} pers.`
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
@@ -805,18 +1159,33 @@ function SupportCard({ areaId, onOpen, readOnly }) {
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       sx={{
-        minWidth: 168, flex: '1 1 168px', maxWidth: 230, p: 1.25, borderRadius: 2, cursor: 'pointer',
-        border: '1px solid', borderColor: isOver ? '#3B82F6' : alpha(color, 0.35), borderLeft: `3px solid ${color}`,
-        bgcolor: isOver ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
+        minWidth: 168,
+        flex: '1 1 168px',
+        maxWidth: 230,
+        p: 1.25,
+        borderRadius: 2,
+        cursor: 'pointer',
+        border: '1px solid',
+        borderColor: isOver ? '#3B82F6' : alpha(color, 0.35),
+        borderLeft: `3px solid ${color}`,
+        bgcolor: isOver
+          ? (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08)
+          : (t) => alpha(color, t.palette.mode === 'dark' ? 0.05 : 0.035),
         transition: 'box-shadow .15s ease, background-color .15s ease',
         '&:hover': { boxShadow: `0 0 0 2px ${alpha(color, 0.2)}` },
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="baseline">
         <Typography sx={{ fontWeight: 800, fontSize: 12 }}>{wc?.name}</Typography>
-        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{isOver ? 'Soltar aquí' : label}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+          {isOver ? 'Soltar aquí' : label}
+        </Typography>
       </Stack>
-      {status && <Typography sx={{ fontSize: 9.5, fontWeight: 700, color, mt: 0.25 }}>{STATUS_META[status].label}</Typography>}
+      {status && (
+        <Typography sx={{ fontSize: 9.5, fontWeight: 700, color, mt: 0.25 }}>
+          {STATUS_META[status].label}
+        </Typography>
+      )}
       <Box sx={{ mt: 0.5, maxHeight: 90, overflow: 'auto' }}>
         <PersonList areaId={areaId} readOnly={readOnly} />
       </Box>
@@ -833,7 +1202,10 @@ function DetailDialog({ areaId, onClose }) {
   if (areaId === 'FFT_ALL') {
     title = 'WC Líneas de producción (FFT)'
     const real = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
-    const ideal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
+    const ideal = FFT_LINE_IDS.reduce(
+      (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
+      0,
+    )
     staffing = { real, ideal }
     people = getFftPeopleWithLine()
   } else if (areaId === 'INSUMOS_SUMINISTRO_ALL') {
@@ -854,27 +1226,47 @@ function DetailDialog({ areaId, onClose }) {
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       {staffing && (
         <>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800 }}>
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontWeight: 800,
+            }}
+          >
             {title}
-            <IconButton size="small" onClick={onClose}><CloseIcon fontSize="small" /></IconButton>
+            <IconButton size="small" onClick={onClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
           </DialogTitle>
           <DialogContent>
             <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ mb: 1.5 }}>
               <Typography sx={{ fontWeight: 800, fontSize: 20 }}>
-                {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal}` : `${staffing.real} personas`}
+                {staffing.ideal != null
+                  ? `${staffing.real} / ${staffing.ideal}`
+                  : `${staffing.real} personas`}
               </Typography>
               {meta && (
-                <Chip size="small" label={meta.label} sx={{ bgcolor: alpha(meta.color, 0.15), color: meta.color, fontWeight: 700 }} />
+                <Chip
+                  size="small"
+                  label={meta.label}
+                  sx={{ bgcolor: alpha(meta.color, 0.15), color: meta.color, fontWeight: 700 }}
+                />
               )}
             </Stack>
             {people.length === 0 ? (
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Sin personal asignado.</Typography>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                Sin personal asignado.
+              </Typography>
             ) : (
               <Stack spacing={0.75} sx={{ maxHeight: 320, overflow: 'auto' }}>
                 {people.map((p) => (
                   <Stack key={p.id} direction="row" spacing={0.75} alignItems="center">
                     <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography sx={{ fontSize: 13 }}>{p.name}{p.lineName ? ` · ${p.lineName}` : ''}</Typography>
+                    <Typography sx={{ fontSize: 13 }}>
+                      {p.name}
+                      {p.lineName ? ` · ${p.lineName}` : ''}
+                    </Typography>
                   </Stack>
                 ))}
               </Stack>

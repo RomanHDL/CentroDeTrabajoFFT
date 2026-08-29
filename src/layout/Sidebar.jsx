@@ -44,7 +44,12 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, configurable: true },
   { to: '/centro-trabajo', label: 'Centro de Trabajo', icon: FactoryIcon, configurable: true },
   { to: '/usuarios', label: 'Usuarios', icon: GroupIcon, configurable: true },
-  { to: '/registro-personal', label: 'Registro de personal', icon: PersonAddAlt1Icon, configurable: true },
+  {
+    to: '/registro-personal',
+    label: 'Registro de personal',
+    icon: PersonAddAlt1Icon,
+    configurable: true,
+  },
   // 2026-08-28 ("ajustes controlados"): 3 modulos nuevos, mismo patron que
   // los 4 de arriba -- solo navegacion, el permiso real lo resuelve
   // useEffectiveModules() (shared/moduleRegistry.js), nunca una lista de
@@ -74,7 +79,10 @@ function NavList({ items, onItemClick }) {
           onClick={onItemClick}
           sx={{
             position: 'relative',
-            mb: 0.5, px: 1.75, py: 1.5, minHeight: 56,
+            mb: 0.5,
+            px: 1.75,
+            py: 1.5,
+            minHeight: 56,
             borderRadius: '11px',
             color: 'text.primary',
             transition: 'background-color 180ms ease, color 180ms ease, transform 180ms ease',
@@ -89,13 +97,23 @@ function NavList({ items, onItemClick }) {
             '&.active::before': {
               content: '""',
               position: 'absolute',
-              left: 4, top: '22%', bottom: '22%', width: 3,
-              bgcolor: BRAND_BLUE, borderRadius: 4,
+              left: 4,
+              top: '22%',
+              bottom: '22%',
+              width: 3,
+              bgcolor: BRAND_BLUE,
+              borderRadius: 4,
             },
           }}
         >
-          <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}><Icon sx={{ fontSize: 21 }} /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14.5, fontWeight: 600, color: 'inherit' }}>{label}</ListItemText>
+          <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}>
+            <Icon sx={{ fontSize: 21 }} />
+          </ListItemIcon>
+          <ListItemText
+            primaryTypographyProps={{ fontSize: 14.5, fontWeight: 600, color: 'inherit' }}
+          >
+            {label}
+          </ListItemText>
         </ListItemButton>
       ))}
     </List>
@@ -111,24 +129,51 @@ function NavList({ items, onItemClick }) {
 // abierto NO cambia.
 function SidebarHeader({ onToggle, toggleTitle, pinned }) {
   return (
-    <Box sx={{
-      display: 'flex', alignItems: 'center', gap: 1.25,
-      px: 1.75, py: 1.75, minHeight: 64,
-      borderBottom: '1px solid', borderColor: 'divider',
-    }}>
-      <Box sx={{
-        width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-        bgcolor: BRAND_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        px: 1.75,
+        py: 1.75,
+        minHeight: 64,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Box
+        sx={{
+          width: 36,
+          height: 36,
+          borderRadius: '10px',
+          flexShrink: 0,
+          bgcolor: BRAND_BLUE,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <PrecisionManufacturingIcon sx={{ color: '#fff', fontSize: 20 }} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
-        <Typography sx={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 0.2, color: 'text.primary', lineHeight: 1.25 }}>
+        <Typography
+          sx={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            letterSpacing: 0.2,
+            color: 'text.primary',
+            lineHeight: 1.25,
+          }}
+        >
           CENTRO DE
         </Typography>
         <Typography sx={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 0.2, lineHeight: 1.25 }}>
-          <Box component="span" sx={{ color: 'text.primary' }}>TRABAJO </Box>
-          <Box component="span" sx={{ color: BRAND_BLUE }}>FFT</Box>
+          <Box component="span" sx={{ color: 'text.primary' }}>
+            TRABAJO{' '}
+          </Box>
+          <Box component="span" sx={{ color: BRAND_BLUE }}>
+            FFT
+          </Box>
         </Typography>
       </Box>
       {onToggle && (
@@ -137,16 +182,26 @@ function SidebarHeader({ onToggle, toggleTitle, pinned }) {
             size="small"
             onClick={onToggle}
             sx={{
-              width: 32, height: 32, borderRadius: '9px',
+              width: 32,
+              height: 32,
+              borderRadius: '9px',
               bgcolor: 'background.paper',
-              border: '1px solid', borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.18)'),
+              border: '1px solid',
+              borderColor: (t) =>
+                t.palette.mode === 'dark' ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.18)',
               transition: 'background-color 180ms ease',
-              '&:hover': { bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.16)' : '#EFF6FF') },
+              '&:hover': {
+                bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59,130,246,.16)' : '#EFF6FF'),
+              },
             }}
           >
             <KeyboardDoubleArrowLeftIcon
               fontSize="small"
-              sx={{ color: BRAND_BLUE, transition: 'transform 220ms ease', transform: pinned ? 'none' : 'rotate(180deg)' }}
+              sx={{
+                color: BRAND_BLUE,
+                transition: 'transform 220ms ease',
+                transform: pinned ? 'none' : 'rotate(180deg)',
+              }}
             />
           </IconButton>
         </Tooltip>
@@ -173,7 +228,16 @@ function SidebarHeader({ onToggle, toggleTitle, pinned }) {
 
    Login/logout/roles/ProtectedRoute no se tocan: es solo
    presentacion de la misma lista de rutas de siempre. */
-export default function Sidebar({ role, open, onClose, variant, pinned, onTogglePin, onMouseEnter, onMouseLeave }) {
+export default function Sidebar({
+  role,
+  open,
+  onClose,
+  variant,
+  pinned,
+  onTogglePin,
+  onMouseEnter,
+  onMouseLeave,
+}) {
   const { modules: allowedModules, loading: permsLoading } = useEffectiveModules()
   // Misma lista de modulos permitidos para CUALQUIER dispositivo (desktop,
   // tablet, movil) -- solo cambia el contenedor visual (overlay vs Drawer,
@@ -181,13 +245,13 @@ export default function Sidebar({ role, open, onClose, variant, pinned, onToggle
   // 2026-08-25: antes existia un TOUCH_NAV_ORDER hardcodeado que en touch
   // descartaba el calculo real de permisos y dejaba ver solo 2 rutas fijas
   // sin importar el rol -- eso rompia tablet incluso para ADMINISTRADOR.
-  const items = NAV_ITEMS.filter((item) => (
+  const items = NAV_ITEMS.filter((item) =>
     item.configurable
-      // Mientras carga (allowedModules === null) no se oculta nada: evita el
-      // parpadeo de "sin modulos" un instante antes de que llegue la respuesta.
-      ? (permsLoading || allowedModules === null || allowedModules.includes(item.to))
-      : item.roles.includes(role)
-  ))
+      ? // Mientras carga (allowedModules === null) no se oculta nada: evita el
+        // parpadeo de "sin modulos" un instante antes de que llegue la respuesta.
+        permsLoading || allowedModules === null || allowedModules.includes(item.to)
+      : item.roles.includes(role),
+  )
 
   if (variant === 'overlay') {
     return (
@@ -195,9 +259,16 @@ export default function Sidebar({ role, open, onClose, variant, pinned, onToggle
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         sx={{
-          position: 'fixed', left: 0, top: 56, bottom: 0, width: SIDEBAR_WIDTH,
-          bgcolor: 'background.paper', borderRight: '1px solid', borderColor: 'divider',
-          display: 'flex', flexDirection: 'column',
+          position: 'fixed',
+          left: 0,
+          top: 56,
+          bottom: 0,
+          width: SIDEBAR_WIDTH,
+          bgcolor: 'background.paper',
+          borderRight: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
           transform: open || pinned ? 'translateX(0)' : 'translateX(-100%)',
           boxShadow: open || pinned ? '4px 0 20px rgba(15,23,42,0.08)' : 'none',
           transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), box-shadow 220ms ease',

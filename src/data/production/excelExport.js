@@ -4,7 +4,11 @@ import { WORK_CENTERS, CURRENT_SHIFT, workCenterById } from './catalog'
 import { hourlySeriesFor, weeklyProductionFor, weeklyTotals } from './production'
 import { allLineSummaries, generalKpis } from './selectors'
 import {
-  getTodayRoster, getMovementsForEmployee, getMovementsForDate, getAverageHeadcountForArea, todayISO,
+  getTodayRoster,
+  getMovementsForEmployee,
+  getMovementsForDate,
+  getAverageHeadcountForArea,
+  todayISO,
   getAllEmployees,
 } from '../personnel/repository'
 import { isEmployeeEligible } from '../personnel/directory'
@@ -15,10 +19,10 @@ import { getEffectiveAreaForEmployee } from './personnelByArea'
    CSV disfrazado. */
 
 function buildSheet(rows, columns) {
-  const header = columns.map(c => c.header)
-  const body = rows.map(row => columns.map(col => row[col.key]))
+  const header = columns.map((c) => c.header)
+  const body = rows.map((row) => columns.map((col) => row[col.key]))
   const ws = XLSX.utils.aoa_to_sheet([header, ...body], { cellDates: true })
-  ws['!cols'] = columns.map(c => ({ wch: c.width || 16 }))
+  ws['!cols'] = columns.map((c) => ({ wch: c.width || 16 }))
 
   const lastRow = body.length
   columns.forEach((col, colIdx) => {
@@ -51,25 +55,30 @@ function mondayOf(dateISO) {
 
 function sheetResumenDiario(dateISO) {
   const kpis = generalKpis()
-  return buildSheet([{
-    fecha: dayjs(dateISO).toDate(),
-    turno: CURRENT_SHIFT,
-    produccion: kpis.produccionHoy,
-    meta: kpis.metaDia,
-    cumplimiento: kpis.avancePct,
-    personal: kpis.personalActivo,
-  }], [
-    { key: 'fecha', header: 'Fecha', width: 14, numFmt: 'dd/mm/yyyy' },
-    { key: 'turno', header: 'Turno', width: 14 },
-    { key: 'produccion', header: 'Producción total', width: 16, numFmt: '#,##0' },
-    { key: 'meta', header: 'Meta', width: 12, numFmt: '#,##0' },
-    { key: 'cumplimiento', header: 'Cumplimiento', width: 14, numFmt: '0"%"' },
-    { key: 'personal', header: 'Personal activo', width: 16, numFmt: '#,##0' },
-  ])
+  return buildSheet(
+    [
+      {
+        fecha: dayjs(dateISO).toDate(),
+        turno: CURRENT_SHIFT,
+        produccion: kpis.produccionHoy,
+        meta: kpis.metaDia,
+        cumplimiento: kpis.avancePct,
+        personal: kpis.personalActivo,
+      },
+    ],
+    [
+      { key: 'fecha', header: 'Fecha', width: 14, numFmt: 'dd/mm/yyyy' },
+      { key: 'turno', header: 'Turno', width: 14 },
+      { key: 'produccion', header: 'Producción total', width: 16, numFmt: '#,##0' },
+      { key: 'meta', header: 'Meta', width: 12, numFmt: '#,##0' },
+      { key: 'cumplimiento', header: 'Cumplimiento', width: 14, numFmt: '0"%"' },
+      { key: 'personal', header: 'Personal activo', width: 16, numFmt: '#,##0' },
+    ],
+  )
 }
 
 function sheetProduccionPorLinea() {
-  const rows = allLineSummaries().map(r => ({
+  const rows = allLineSummaries().map((r) => ({
     linea: r.name,
     personal: r.personnel,
     produccion: r.production,
@@ -107,8 +116,8 @@ function sheetPersonal(dateISO = todayISO()) {
   const roster = getTodayRoster(dateISO)
   const rows = roster.map((r) => {
     const movements = getMovementsForEmployee(r.employeeId, dateISO)
-    const checkIn = movements.find(m => m.type === 'CHECK_IN')
-    const moveCount = movements.filter(m => m.type === 'MOVE').length
+    const checkIn = movements.find((m) => m.type === 'CHECK_IN')
+    const moveCount = movements.filter((m) => m.type === 'MOVE').length
     return {
       numero: r.employeeNumber,
       nombre: r.employee?.name || '',
@@ -143,9 +152,9 @@ function sheetPersonal(dateISO = todayISO()) {
    cubierta en la hoja Personal). */
 function sheetMovimientos(dateISO = todayISO()) {
   const rows = getMovementsForDate(dateISO)
-    .filter(m => m.type === 'MOVE')
+    .filter((m) => m.type === 'MOVE')
     .map((m) => {
-      const roster = getTodayRoster(dateISO).find(r => r.employeeId === m.employeeId)
+      const roster = getTodayRoster(dateISO).find((r) => r.employeeId === m.employeeId)
       return {
         numero: m.employeeNumber,
         nombre: roster?.employee?.name || '',
@@ -175,17 +184,22 @@ function sheetResumenSemanal(weekStart) {
   const totals = weeklyTotals()
   const production = totals.reduce((s, r) => s + r.production, 0)
   const target = totals.reduce((s, r) => s + r.target, 0)
-  return buildSheet([{
-    semana: `${weekStart.format('DD/MM/YYYY')} — ${weekStart.add(4, 'day').format('DD/MM/YYYY')}`,
-    produccion: production,
-    meta: target,
-    cumplimiento: target > 0 ? Math.round((production / target) * 100) : 0,
-  }], [
-    { key: 'semana', header: 'Semana', width: 26 },
-    { key: 'produccion', header: 'Producción total', width: 18, numFmt: '#,##0' },
-    { key: 'meta', header: 'Meta semanal', width: 16, numFmt: '#,##0' },
-    { key: 'cumplimiento', header: 'Cumplimiento', width: 14, numFmt: '0"%"' },
-  ])
+  return buildSheet(
+    [
+      {
+        semana: `${weekStart.format('DD/MM/YYYY')} — ${weekStart.add(4, 'day').format('DD/MM/YYYY')}`,
+        produccion: production,
+        meta: target,
+        cumplimiento: target > 0 ? Math.round((production / target) * 100) : 0,
+      },
+    ],
+    [
+      { key: 'semana', header: 'Semana', width: 26 },
+      { key: 'produccion', header: 'Producción total', width: 18, numFmt: '#,##0' },
+      { key: 'meta', header: 'Meta semanal', width: 16, numFmt: '#,##0' },
+      { key: 'cumplimiento', header: 'Cumplimiento', width: 14, numFmt: '0"%"' },
+    ],
+  )
 }
 
 function sheetProduccionPorDia(weekStart) {
@@ -209,7 +223,9 @@ function sheetProduccionPorLineaSemanal() {
     const week = weeklyProductionFor(wc.id)
     const total = week.reduce((s, d) => s + d.production, 0)
     const byDay = {}
-    week.forEach((d) => { byDay[d.day] = d.production })
+    week.forEach((d) => {
+      byDay[d.day] = d.production
+    })
     return {
       linea: wc.name,
       lunes: byDay['Lunes'] || 0,
@@ -245,7 +261,12 @@ function sheetPersonalSemanal() {
   })
   return buildSheet(rows, [
     { key: 'linea', header: 'Línea', width: 16 },
-    { key: 'promedioPersonal', header: 'Cantidad promedio de empleados', width: 26, numFmt: '#,##0.0' },
+    {
+      key: 'promedioPersonal',
+      header: 'Cantidad promedio de empleados',
+      width: 26,
+      numFmt: '#,##0.0',
+    },
     { key: 'produccion', header: 'Producción', width: 14, numFmt: '#,##0' },
     { key: 'productividad', header: 'Productividad', width: 16, numFmt: '#,##0.0' },
   ])
@@ -261,13 +282,17 @@ const NO_REAL_NUMBER = new Set(['PENDIENTE', 'PROYECTO'])
    persona por persona, igual fuente que el Directorio completo de la
    pestaña Personal (getAllEmployees + isEmployeeEligible). */
 function sheetDirectorio() {
-  const rows = getAllEmployees().filter(isEmployeeEligible).map((e) => ({
-    numero: NO_REAL_NUMBER.has(e.employeeNumber) ? '' : e.employeeNumber,
-    nombre: e.name,
-    areaActual: workCenterById(getEffectiveAreaForEmployee(e.id))?.name || '',
-    fechaIngreso: e.fechaIngreso || '',
-    tipo: NO_REAL_NUMBER.has(e.employeeNumber) ? 'Proyecto / sin número confirmado' : 'Con número de empleado',
-  }))
+  const rows = getAllEmployees()
+    .filter(isEmployeeEligible)
+    .map((e) => ({
+      numero: NO_REAL_NUMBER.has(e.employeeNumber) ? '' : e.employeeNumber,
+      nombre: e.name,
+      areaActual: workCenterById(getEffectiveAreaForEmployee(e.id))?.name || '',
+      fechaIngreso: e.fechaIngreso || '',
+      tipo: NO_REAL_NUMBER.has(e.employeeNumber)
+        ? 'Proyecto / sin número confirmado'
+        : 'Con número de empleado',
+    }))
   return buildSheet(rows, [
     { key: 'numero', header: 'Número empleado', width: 18 },
     { key: 'nombre', header: 'Nombre', width: 28 },
@@ -328,7 +353,11 @@ export function exportCompleteExcel(referenceDateISO = dayjs().format('YYYY-MM-D
   XLSX.utils.book_append_sheet(wb, sheetProduccionPorHora(), 'Producción por hora')
   XLSX.utils.book_append_sheet(wb, sheetResumenSemanal(weekStart), 'Resumen semana')
   XLSX.utils.book_append_sheet(wb, sheetProduccionPorDia(weekStart), 'Producción por día (semana)')
-  XLSX.utils.book_append_sheet(wb, sheetProduccionPorLineaSemanal(), 'Producción por línea (semana)')
+  XLSX.utils.book_append_sheet(
+    wb,
+    sheetProduccionPorLineaSemanal(),
+    'Producción por línea (semana)',
+  )
   XLSX.utils.book_append_sheet(wb, sheetPersonal(referenceDateISO), 'Personal')
   XLSX.utils.book_append_sheet(wb, sheetMovimientos(referenceDateISO), 'Movimientos')
   XLSX.writeFile(wb, `Produccion_Completa_${referenceDateISO}.xlsx`)

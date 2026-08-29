@@ -1,7 +1,22 @@
 import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
-import { WORK_CENTERS, workCenterById, hasLineStations, LINE_LIKE_AREA_IDS, canonicalOperationalAreaId, operationalGroupMembers } from './catalog'
+import {
+  WORK_CENTERS,
+  workCenterById,
+  hasLineStations,
+  LINE_LIKE_AREA_IDS,
+  canonicalOperationalAreaId,
+  operationalGroupMembers,
+} from './catalog'
 import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
-import { getMovementsForDate, getAssignmentsForDate, getEmployeeById, getAllEmployees, getAssignableEmployees, getBaselineSuppressed, todayISO } from '../personnel/repository'
+import {
+  getMovementsForDate,
+  getAssignmentsForDate,
+  getEmployeeById,
+  getAllEmployees,
+  getAssignableEmployees,
+  getBaselineSuppressed,
+  todayISO,
+} from '../personnel/repository'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -17,7 +32,15 @@ export { BASE_SNAPSHOT_DATE }
 // 2026-08-26 ("Reestructuracion operativa FFT"): SOPORTE se quita (archivada,
 // `active:false` -- ya no aparece en "Personal de hoy" como area fija).
 // ENTRENADOR se agrega (WC nuevo, mismo trato que las demas areas de apoyo).
-export const FIXED_SUPPORT_AREAS = ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR']
+export const FIXED_SUPPORT_AREAS = [
+  'CALIDAD',
+  'CAPACITACION',
+  'TEAM_LEADER',
+  'ENTRENADOR',
+  'LIMPIEZA',
+  'GERENTE',
+  'SUPERVISOR',
+]
 export const AUTO_ACTIVE_AREAS = FIXED_SUPPORT_AREAS.filter((id) => id !== 'CALIDAD')
 
 /* BUG REAL detectado en produccion 2026-08-24: esta lista antes se mantenia a mano (los 7 fijos +
@@ -26,7 +49,9 @@ export const AUTO_ACTIVE_AREAS = FIXED_SUPPORT_AREAS.filter((id) => id !== 'CALI
    por snapshot. Ahora se DERIVA del catalogo: todo WORK_CENTER que no sea una linea numerada ni
    CT LINEA 0/Proyecto queda protegido automaticamente, sin mantenimiento manual, para que nunca
    se vuelva a quedar una area nueva sin proteger por accidente. */
-export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = WORK_CENTERS.filter((w) => w.kind !== 'linea' && w.id !== 'PROYECTO').map((w) => w.id)
+export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = WORK_CENTERS.filter(
+  (w) => w.kind !== 'linea' && w.id !== 'PROYECTO',
+).map((w) => w.id)
 
 /* Convierte la ZONA normalizada del snapshot ("LINEA 3") al id del
    catalogo ("LINEA3"). El resto de las zonas ya coinciden 1:1 con
@@ -159,7 +184,13 @@ export function getPeopleByArea() {
     if (!employee) return
     map[a.areaId] = map[a.areaId] || []
     if (!map[a.areaId].some((x) => x.id === employee.id)) {
-      map[a.areaId].push({ id: employee.id, name: employee.name, areaZona: null, rawZona: null, asistencia: null })
+      map[a.areaId].push({
+        id: employee.id,
+        name: employee.name,
+        areaZona: null,
+        rawZona: null,
+        asistencia: null,
+      })
     }
   })
 
@@ -256,7 +287,10 @@ export function getEffectiveTodayRoster() {
         // 2026-08-26: WC Midea/High Value (LINE_LIKE) tampoco lleva estacion
         // especifica desde snapshot -- igual que Linea 1..10, BASE no dice en
         // que "Puesto N" estaba cada quien.
-        stationId: (hasLineStations(areaId) || LINE_LIKE_AREA_IDS.has(areaId)) ? null : (workCenterById(areaId)?.name || areaId),
+        stationId:
+          hasLineStations(areaId) || LINE_LIKE_AREA_IDS.has(areaId)
+            ? null
+            : workCenterById(areaId)?.name || areaId,
         checkInAt: null,
         shift: null,
         date: todayISO(),
@@ -265,7 +299,9 @@ export function getEffectiveTodayRoster() {
     })
   })
 
-  return [...real, ...synthetic].sort((a, b) => ((a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1))
+  return [...real, ...synthetic].sort((a, b) =>
+    (a.checkInAt || '') > (b.checkInAt || '') ? -1 : 1,
+  )
 }
 
 /* 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
@@ -308,7 +344,12 @@ export function getPeopleWithoutArea() {
   const snapshotById = new Map(REAL_PERSONNEL_SNAPSHOT.map((p) => [p.id, p]))
   return getAvailablePersonnelToday().map((e) => {
     const snap = snapshotById.get(e.id)
-    return { ...e, areaZona: snap?.areaZona ?? null, rawZona: snap?.rawZona ?? null, asistencia: snap?.asistencia ?? null }
+    return {
+      ...e,
+      areaZona: snap?.areaZona ?? null,
+      rawZona: snap?.rawZona ?? null,
+      asistencia: snap?.asistencia ?? null,
+    }
   })
 }
 
@@ -332,7 +373,11 @@ export function getEffectiveAreaForEmployee(employeeId) {
    resultado es 0 es correcto: significa que todo el personal
    elegible ya esta ubicado en alguna area hoy. */
 export function getAvailablePersonnelToday() {
-  const placedIds = new Set(Object.values(getPeopleByArea()).flat().map((p) => p.id))
+  const placedIds = new Set(
+    Object.values(getPeopleByArea())
+      .flat()
+      .map((p) => p.id),
+  )
   return getAssignableEmployees().filter((e) => !placedIds.has(e.id))
 }
 
@@ -382,7 +427,9 @@ export function getStaffingTotals() {
   // su id canonico es INSUMOS (fusionadas, no eliminadas) -- su personal
   // real sigue contando en el total, exactamente igual que antes de
   // archivarlas, solo que ahora conceptualmente pertenece a Insumos.
-  const eligible = WORK_CENTERS.filter((w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id)
+  const eligible = WORK_CENTERS.filter(
+    (w) => w.active !== false || canonicalOperationalAreaId(w.id) !== w.id,
+  )
   const withIdeal = eligible.filter((w) => w.idealHeadcount != null)
   const idealTotal = withIdeal.reduce((sum, w) => sum + w.idealHeadcount, 0)
   const realTotal = eligible.reduce((sum, w) => sum + getAreaHeadcount(w.id), 0)
@@ -446,7 +493,10 @@ export function getGroupAreaStaffing(memberIds) {
   memberIds.forEach((id) => {
     const s = getAreaStaffing(id)
     real += s.real
-    if (s.ideal != null) { idealSum += s.ideal; hasIdeal = true }
+    if (s.ideal != null) {
+      idealSum += s.ideal
+      hasIdeal = true
+    }
   })
   const ideal = hasIdeal ? idealSum : null
   if (ideal == null) return { ideal: null, real, diff: null, status: 'SIN_PLANTILLA' }
@@ -482,15 +532,33 @@ export function getActividadForEmployee(employeeId) {
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
-  const fftIdeal = FFT_LINE_IDS.reduce((sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0), 0)
+  const fftIdeal = FFT_LINE_IDS.reduce(
+    (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
+    0,
+  )
   const entries = [
-    { id: 'FFT', name: 'FFT', count: fftCount, ideal: fftIdeal, group: colorGroupForArea('LINEA1') },
-    ...WORK_CENTERS
-      .filter((w) => w.kind === 'area' && w.active !== false && canonicalOperationalAreaId(w.id) === w.id)
-      .map((w) => {
-        const count = operationalGroupMembers(w.id).reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
-        return { id: w.id, name: w.name, count, ideal: w.idealHeadcount ?? null, group: colorGroupForArea(w.id) }
-      }),
+    {
+      id: 'FFT',
+      name: 'FFT',
+      count: fftCount,
+      ideal: fftIdeal,
+      group: colorGroupForArea('LINEA1'),
+    },
+    ...WORK_CENTERS.filter(
+      (w) => w.kind === 'area' && w.active !== false && canonicalOperationalAreaId(w.id) === w.id,
+    ).map((w) => {
+      const count = operationalGroupMembers(w.id).reduce(
+        (sum, id) => sum + (byArea[id]?.length || 0),
+        0,
+      )
+      return {
+        id: w.id,
+        name: w.name,
+        count,
+        ideal: w.idealHeadcount ?? null,
+        group: colorGroupForArea(w.id),
+      }
+    }),
   ]
   return entries.sort((a, b) => b.count - a.count)
 }

@@ -29,10 +29,19 @@ function ActivityRow({ a }) {
   const { Icon } = meta
   return (
     <Stack direction="row" spacing={1.25} alignItems="flex-start">
-      <Box sx={{
-        width: 26, height: 26, borderRadius: '50%', flexShrink: 0, mt: 0.1,
-        bgcolor: `${meta.color}22`, display: 'grid', placeItems: 'center', color: meta.color,
-      }}>
+      <Box
+        sx={{
+          width: 26,
+          height: 26,
+          borderRadius: '50%',
+          flexShrink: 0,
+          mt: 0.1,
+          bgcolor: `${meta.color}22`,
+          display: 'grid',
+          placeItems: 'center',
+          color: meta.color,
+        }}
+      >
         <Icon sx={{ fontSize: 14 }} />
       </Box>
       <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -42,7 +51,8 @@ function ActivityRow({ a }) {
         <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }} noWrap>
           {a.type === 'MOVE' && a.fromAreaName && a.toAreaName
             ? `${a.fromAreaName} → ${a.toAreaName}`
-            : a.toAreaName || a.fromAreaName || ''} · {a.time}
+            : a.toAreaName || a.fromAreaName || ''}{' '}
+          · {a.time}
         </Typography>
       </Box>
     </Stack>
@@ -63,27 +73,57 @@ export default function RecentActivityCard({ recentActivity, loading }) {
         emptyMessage="Todavía no hay actividad registrada hoy."
       >
         <Stack spacing={1.25}>
-          {items.slice(0, 6).map((a) => <ActivityRow key={a.id} a={a} />)}
+          {items.slice(0, 6).map((a) => (
+            <ActivityRow key={a.id} a={a} />
+          ))}
         </Stack>
         {items.length > 6 && (
           <Typography
             component="button"
             onClick={() => setOpen(true)}
-            sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', p: 0, mt: 1.5, alignSelf: 'flex-start' }}
+            sx={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: '#3B82F6',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              p: 0,
+              mt: 1.5,
+              alignSelf: 'flex-start',
+            }}
           >
             Ver todas las actividades
           </Typography>
         )}
       </ChartCard>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800, fontSize: 16 }}>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontWeight: 800,
+            fontSize: 16,
+          }}
+        >
           Actividades de hoy
-          <IconButton size="small" onClick={() => setOpen(false)}><CloseIcon fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={() => setOpen(false)}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ pb: 1 }}>
-            {items.map((a) => <ActivityRow key={a.id} a={a} />)}
+            {items.map((a) => (
+              <ActivityRow key={a.id} a={a} />
+            ))}
           </Stack>
         </DialogContent>
       </Dialog>

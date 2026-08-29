@@ -30,10 +30,20 @@ import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer } from 'r
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { getCurrentShift, formatShiftSchedule, workCenterById, canonicalOperationalAreaId, operationalGroupMembers } from '../../data/production/catalog'
 import {
-  getAvailablePersonnelToday, getGroupAreaStaffing, getGroupPeople,
-  AREA_STATUS_META, classifyAreaStatus, getActividadForEmployee,
+  getCurrentShift,
+  formatShiftSchedule,
+  workCenterById,
+  canonicalOperationalAreaId,
+  operationalGroupMembers,
+} from '../../data/production/catalog'
+import {
+  getAvailablePersonnelToday,
+  getGroupAreaStaffing,
+  getGroupPeople,
+  AREA_STATUS_META,
+  classifyAreaStatus,
+  getActividadForEmployee,
 } from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { reconcileLineAssignments, getCurrentAssignment } from '../../data/personnel/repository'
@@ -85,10 +95,19 @@ function relativeTimeEs(iso) {
 function HistoryRow({ h }) {
   return (
     <Stack direction="row" spacing={1} alignItems="flex-start">
-      <Box sx={{
-        width: 24, height: 24, borderRadius: '50%', flexShrink: 0, mt: 0.1,
-        bgcolor: alpha('#10B981', 0.14), display: 'grid', placeItems: 'center', color: '#10B981',
-      }}>
+      <Box
+        sx={{
+          width: 24,
+          height: 24,
+          borderRadius: '50%',
+          flexShrink: 0,
+          mt: 0.1,
+          bgcolor: alpha('#10B981', 0.14),
+          display: 'grid',
+          placeItems: 'center',
+          color: '#10B981',
+        }}
+      >
         <PersonAddAlt1Icon sx={{ fontSize: 13 }} />
       </Box>
       <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -96,7 +115,8 @@ function HistoryRow({ h }) {
           {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
         </Typography>
         <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-          {h.byName ? `Por ${h.byName} · ` : ''}{relativeTimeEs(h.movedAt)}
+          {h.byName ? `Por ${h.byName} · ` : ''}
+          {relativeTimeEs(h.movedAt)}
         </Typography>
       </Box>
     </Stack>
@@ -105,8 +125,25 @@ function HistoryRow({ h }) {
 
 function MetricBlock({ label, children, borderLeft }) {
   return (
-    <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1, flex: 1, minWidth: 130, ...(borderLeft ? { borderLeft: '1px solid', borderColor: 'divider' } : {}) }}>
-      <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
+    <Box
+      sx={{
+        px: { xs: 1.5, md: 2.25 },
+        py: 1,
+        flex: 1,
+        minWidth: 130,
+        ...(borderLeft ? { borderLeft: '1px solid', borderColor: 'divider' } : {}),
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: 10.5,
+          fontWeight: 800,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+          mb: 0.5,
+        }}
+      >
         {label}
       </Typography>
       {children}
@@ -121,10 +158,27 @@ function DropZone({ areaId, label }) {
       elevation={0}
       {...dropProps}
       sx={{
-        minHeight: 180, borderRadius: '16px', border: '2px dashed',
+        minHeight: 180,
+        borderRadius: '16px',
+        border: '2px dashed',
         borderColor: isOver ? '#3B82F6' : alpha('#3B82F6', 0.4),
-        bgcolor: (t) => alpha('#3B82F6', isOver ? (t.palette.mode === 'dark' ? 0.16 : 0.08) : (t.palette.mode === 'dark' ? 0.04 : 0.02)),
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, p: 2,
+        bgcolor: (t) =>
+          alpha(
+            '#3B82F6',
+            isOver
+              ? t.palette.mode === 'dark'
+                ? 0.16
+                : 0.08
+              : t.palette.mode === 'dark'
+                ? 0.04
+                : 0.02,
+          ),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1,
+        p: 2,
         transition: 'all .15s ease',
       }}
     >
@@ -144,17 +198,30 @@ function AvailableCandidateRow({ person, areaId }) {
   return (
     <DraggablePersonChip employeeId={person.id} sx={{ display: 'block' }}>
       <Stack
-        direction="row" spacing={1} alignItems="center"
+        direction="row"
+        spacing={1}
+        alignItems="center"
         onClick={() => dnd.requestAssign(person.id, areaId)}
         sx={{
-          p: 0.9, borderRadius: 2, border: '1px solid', borderColor: 'divider', cursor: 'pointer',
-          '&:hover': { borderColor: '#3B82F6', bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05) },
+          p: 0.9,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          cursor: 'pointer',
+          '&:hover': {
+            borderColor: '#3B82F6',
+            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05),
+          },
         }}
       >
         <EmployeeAvatar employee={person} size={32} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 12.5 }}>{person.name}</Typography>
-          <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>#{person.employeeNumber}</Typography>
+          <Typography noWrap sx={{ fontWeight: 700, fontSize: 12.5 }}>
+            {person.name}
+          </Typography>
+          <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+            #{person.employeeNumber}
+          </Typography>
         </Box>
         <DragIndicatorIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
       </Stack>
@@ -185,8 +252,13 @@ function RoleDistributionCard({ people }) {
 
   if (withData < 2 || counts.size < 2) {
     return (
-      <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Distribución por tipo de puesto</Typography>
+      <Paper
+        elevation={0}
+        sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
+      >
+        <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
+          Distribución por tipo de puesto
+        </Typography>
         <EmptyState
           compact
           title="Sin información suficiente"
@@ -196,33 +268,69 @@ function RoleDistributionCard({ people }) {
     )
   }
 
-  const data = [...counts.entries()].map(([codigo, value], i) => ({ codigo, value, color: PIE_PALETTE[i % PIE_PALETTE.length] }))
+  const data = [...counts.entries()].map(([codigo, value], i) => ({
+    codigo,
+    value,
+    color: PIE_PALETTE[i % PIE_PALETTE.length],
+  }))
 
   return (
-    <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
-      <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 0.25 }}>Distribución por tipo de puesto</Typography>
-      <Typography sx={{ fontSize: 10.5, color: 'text.secondary', mb: 1 }}>Código de actividad real, sin interpretar (BASE)</Typography>
+    <Paper
+      elevation={0}
+      sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
+    >
+      <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 0.25 }}>
+        Distribución por tipo de puesto
+      </Typography>
+      <Typography sx={{ fontSize: 10.5, color: 'text.secondary', mb: 1 }}>
+        Código de actividad real, sin interpretar (BASE)
+      </Typography>
       <Stack direction="row" spacing={2} sx={{ minHeight: 160 }}>
         <Box sx={{ position: 'relative', flex: '0 0 140px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="value" nameKey="codigo" innerRadius="60%" outerRadius="92%" paddingAngle={1.5} stroke="none">
-                {data.map((row) => <Cell key={row.codigo} fill={row.color} />)}
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="codigo"
+                innerRadius="60%"
+                outerRadius="92%"
+                paddingAngle={1.5}
+                stroke="none"
+              >
+                {data.map((row) => (
+                  <Cell key={row.codigo} fill={row.color} />
+                ))}
               </Pie>
               <RTooltip formatter={(v, n) => [`${v} persona${v === 1 ? '' : 's'}`, n]} />
             </PieChart>
           </ResponsiveContainer>
-          <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
-            <Typography sx={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{withData}</Typography>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%,-50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Typography sx={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>
+              {withData}
+            </Typography>
             <Typography sx={{ fontSize: 9, color: 'text.secondary' }}>personas</Typography>
           </Box>
         </Box>
         <Stack spacing={0.75} justifyContent="center" sx={{ flex: 1, minWidth: 0 }}>
           {data.map((row) => (
             <Stack key={row.codigo} direction="row" spacing={0.75} alignItems="center">
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }} />
+              <Box
+                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+              />
               <Typography sx={{ fontSize: 12, fontWeight: 700, flex: 1 }}>{row.codigo}</Typography>
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>{row.value} ({((row.value / withData) * 100).toFixed(0)}%)</Typography>
+              <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+                {row.value} ({((row.value / withData) * 100).toFixed(0)}%)
+              </Typography>
             </Stack>
           ))}
         </Stack>
@@ -234,17 +342,54 @@ function RoleDistributionCard({ people }) {
 /* Clasificacion + recomendacion -- reglas matematicas simples sobre
    real/ideal, nunca texto de IA. */
 function classifyForTip(real, ideal) {
-  if (ideal == null) return { icon: '⭐', label: 'Sin plantilla oficial', tip: 'Esta área no tiene una plantilla ideal definida todavía.' }
-  if (real === 0) return { icon: '⚠️', label: 'Sin personal', tip: 'Asigna personal para comenzar a operar esta área.' }
-  if (real > ideal) return { icon: '⭐', label: 'Sobre plantilla', tip: `Esta área tiene ${real - ideal} persona(s) por encima de su ideal.` }
-  if (real === ideal) return { icon: '⭐', label: 'Plantilla completa', tip: 'Esta área alcanzó su plantilla ideal.' }
+  if (ideal == null)
+    return {
+      icon: '⭐',
+      label: 'Sin plantilla oficial',
+      tip: 'Esta área no tiene una plantilla ideal definida todavía.',
+    }
+  if (real === 0)
+    return {
+      icon: '⚠️',
+      label: 'Sin personal',
+      tip: 'Asigna personal para comenzar a operar esta área.',
+    }
+  if (real > ideal)
+    return {
+      icon: '⭐',
+      label: 'Sobre plantilla',
+      tip: `Esta área tiene ${real - ideal} persona(s) por encima de su ideal.`,
+    }
+  if (real === ideal)
+    return { icon: '⭐', label: 'Plantilla completa', tip: 'Esta área alcanzó su plantilla ideal.' }
   const pct = (real / ideal) * 100
-  if (pct < 50) return { icon: '🔴', label: 'Área crítica', tip: `Faltan ${ideal - real} personas — cobertura por debajo del 50%.` }
-  if (pct < 90) return { icon: '⭐', label: 'Área en desarrollo', tip: `Cerca de alcanzar la plantilla ideal. Tip: asigna ${ideal - real} persona(s) más para lograr cobertura completa.` }
-  return { icon: '⭐', label: 'Cerca de completarse', tip: `Solo faltan ${ideal - real} persona(s) para cobertura completa.` }
+  if (pct < 50)
+    return {
+      icon: '🔴',
+      label: 'Área crítica',
+      tip: `Faltan ${ideal - real} personas — cobertura por debajo del 50%.`,
+    }
+  if (pct < 90)
+    return {
+      icon: '⭐',
+      label: 'Área en desarrollo',
+      tip: `Cerca de alcanzar la plantilla ideal. Tip: asigna ${ideal - real} persona(s) más para lograr cobertura completa.`,
+    }
+  return {
+    icon: '⭐',
+    label: 'Cerca de completarse',
+    tip: `Solo faltan ${ideal - real} persona(s) para cobertura completa.`,
+  }
 }
 
-export default function OperationalAreaDetail({ workCenterId, open, onClose, previous, next, onNavigate }) {
+export default function OperationalAreaDetail({
+  workCenterId,
+  open,
+  onClose,
+  previous,
+  next,
+  onNavigate,
+}) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -280,8 +425,14 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
 
   const area = canonicalId ? workCenterById(canonicalId) : null
-  const staffing = useMemo(() => (memberIds.length ? getGroupAreaStaffing(memberIds) : null), [workCenterId, version])
-  const people = useMemo(() => (memberIds.length ? getGroupPeople(memberIds) : []), [workCenterId, version])
+  const staffing = useMemo(
+    () => (memberIds.length ? getGroupAreaStaffing(memberIds) : null),
+    [workCenterId, version],
+  )
+  const people = useMemo(
+    () => (memberIds.length ? getGroupPeople(memberIds) : []),
+    [workCenterId, version],
+  )
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
 
   /* Reconciliacion de puestos reales al abrir el area (2026-08-26, a
@@ -313,33 +464,60 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   const filteredAvailable = useMemo(() => {
     const q = availableQuery.trim().toLowerCase()
     if (!q) return available
-    return available.filter((p) => p.name?.toLowerCase().includes(q) || String(p.employeeNumber || '').toLowerCase().includes(q))
+    return available.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(q) ||
+        String(p.employeeNumber || '')
+          .toLowerCase()
+          .includes(q),
+    )
   }, [available, availableQuery])
 
   useEffect(() => {
     if (!open || !memberIds.length) return
     let cancelled = false
     setHistory((s) => ({ ...s, loading: true, error: null }))
-    Promise.all(memberIds.map((id) =>
-      fetch(`/api/personnel/area-history?areaId=${encodeURIComponent(id)}&limit=8`, { credentials: 'include' })
-        .then((r) => { if (!r.ok) throw new Error(`area-history -> ${r.status}`); return r.json() })
-        .then((data) => data.history)
-    ))
+    Promise.all(
+      memberIds.map((id) =>
+        fetch(`/api/personnel/area-history?areaId=${encodeURIComponent(id)}&limit=8`, {
+          credentials: 'include',
+        })
+          .then((r) => {
+            if (!r.ok) throw new Error(`area-history -> ${r.status}`)
+            return r.json()
+          })
+          .then((data) => data.history),
+      ),
+    )
       .then((lists) => {
         if (cancelled) return
-        const merged = lists.flat().sort((a, b) => (a.movedAt < b.movedAt ? 1 : -1)).slice(0, 8)
+        const merged = lists
+          .flat()
+          .sort((a, b) => (a.movedAt < b.movedAt ? 1 : -1))
+          .slice(0, 8)
         setHistory({ loading: false, error: null, items: merged })
       })
-      .catch((e) => { if (!cancelled) setHistory({ loading: false, error: e.message, items: [] }) })
-    return () => { cancelled = true }
+      .catch((e) => {
+        if (!cancelled) setHistory({ loading: false, error: e.message, items: [] })
+      })
+    return () => {
+      cancelled = true
+    }
   }, [workCenterId, open, version])
 
   if (!area || !staffing) return null
 
   const status = classifyAreaStatus(staffing.real, staffing.ideal)
   const statusMeta = status ? AREA_STATUS_META[status] : null
-  const headerLabel = statusMeta ? statusMeta.label : (people.length > 0 ? 'Con personal' : 'Sin personal hoy')
-  const coveragePct = staffing.ideal != null && staffing.ideal > 0 ? Math.round((staffing.real / staffing.ideal) * 1000) / 10 : null
+  const headerLabel = statusMeta
+    ? statusMeta.label
+    : people.length > 0
+      ? 'Con personal'
+      : 'Sin personal hoy'
+  const coveragePct =
+    staffing.ideal != null && staffing.ideal > 0
+      ? Math.round((staffing.real / staffing.ideal) * 1000) / 10
+      : null
   const coverageBarPct = coveragePct != null ? Math.min(100, coveragePct) : 0
   const missing = staffing.ideal != null ? Math.max(0, staffing.ideal - staffing.real) : 0
   const tip = classifyForTip(staffing.real, staffing.ideal)
@@ -353,18 +531,37 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen PaperProps={{ sx: { bgcolor: 'background.default' } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen
+      PaperProps={{ sx: { bgcolor: 'background.default' } }}
+    >
       {/* Header */}
-      <Box sx={{
-        px: { xs: 1.5, md: 3 }, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-        borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper',
-      }}>
-        <IconButton onClick={onClose}><ArrowBackIcon /></IconButton>
+      <Box
+        sx={{
+          px: { xs: 1.5, md: 3 },
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <IconButton onClick={onClose}>
+          <ArrowBackIcon />
+        </IconButton>
         <Box sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography sx={{ fontWeight: 800, fontSize: 19, letterSpacing: -0.4 }}>{area.name}</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 19, letterSpacing: -0.4 }}>
+              {area.name}
+            </Typography>
             <Chip
-              size="small" label={headerLabel}
+              size="small"
+              label={headerLabel}
               sx={{
                 fontWeight: 700,
                 bgcolor: alpha(statusMeta?.color || '#10B981', 0.14),
@@ -373,18 +570,25 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
               }}
             />
           </Stack>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Centro de Trabajo • Área de producción</Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+            Centro de Trabajo • Área de producción
+          </Typography>
         </Box>
         <Box sx={{ flex: 1 }} />
-        {onNavigate && <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />}
+        {onNavigate && (
+          <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
+        )}
         <Button
-          variant="contained" startIcon={<PersonAddAlt1Icon />}
+          variant="contained"
+          startIcon={<PersonAddAlt1Icon />}
           onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
           sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
         >
           {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
         </Button>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
       </Box>
 
       <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
@@ -396,52 +600,145 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             "No calculable" en vez de un guion sin contexto) -- nunca se
             inventa un numero. */}
         <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>Estado del área</Typography>
-        <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 2.5, overflow: 'hidden' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '16px',
+            border: '1px solid',
+            borderColor: 'divider',
+            mb: 2.5,
+            overflow: 'hidden',
+          }}
+        >
           <Stack direction={{ xs: 'column', md: 'row' }} divider={false}>
-            <Box sx={{ px: { xs: 1.5, md: 2.25 }, py: 1.25, flex: '1 1 180px', display: 'flex', alignItems: 'center', gap: 1.25 }}>
-              <Box sx={{ width: 46, height: 46, borderRadius: '50%', bgcolor: alpha('#3B82F6', 0.12), display: 'grid', placeItems: 'center', color: '#3B82F6' }}>
+            <Box
+              sx={{
+                px: { xs: 1.5, md: 2.25 },
+                py: 1.25,
+                flex: '1 1 180px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: '50%',
+                  bgcolor: alpha('#3B82F6', 0.12),
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#3B82F6',
+                }}
+              >
                 <GroupsIcon />
               </Box>
               <Box>
                 <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
                   {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal}` : staffing.real}
                 </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>personas asignadas</Typography>
-                {missing > 0 && <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#EF4444' }}>Faltan {missing}</Typography>}
+                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                  personas asignadas
+                </Typography>
+                {missing > 0 && (
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#EF4444' }}>
+                    Faltan {missing}
+                  </Typography>
+                )}
               </Box>
             </Box>
 
             <MetricBlock label="Cobertura actual" borderLeft>
-              <Typography sx={{ fontSize: coveragePct != null ? 21 : 14, fontWeight: 800, color: coveragePct != null && coveragePct >= 100 ? '#10B981' : coveragePct != null ? '#3B82F6' : 'text.secondary', lineHeight: 1.2 }}>
+              <Typography
+                sx={{
+                  fontSize: coveragePct != null ? 21 : 14,
+                  fontWeight: 800,
+                  color:
+                    coveragePct != null && coveragePct >= 100
+                      ? '#10B981'
+                      : coveragePct != null
+                        ? '#3B82F6'
+                        : 'text.secondary',
+                  lineHeight: 1.2,
+                }}
+              >
                 {coveragePct != null ? `${coveragePct}%` : 'Sin meta'}
               </Typography>
               {coveragePct != null && (
                 <>
-                  <Box sx={{ height: 5, borderRadius: 999, bgcolor: 'action.hover', overflow: 'hidden', my: 0.5 }}>
-                    <Box sx={{ width: `${coverageBarPct}%`, height: '100%', bgcolor: coveragePct >= 100 ? '#10B981' : '#3B82F6', borderRadius: 999 }} />
+                  <Box
+                    sx={{
+                      height: 5,
+                      borderRadius: 999,
+                      bgcolor: 'action.hover',
+                      overflow: 'hidden',
+                      my: 0.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${coverageBarPct}%`,
+                        height: '100%',
+                        bgcolor: coveragePct >= 100 ? '#10B981' : '#3B82F6',
+                        borderRadius: 999,
+                      }}
+                    />
                   </Box>
-                  <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>{staffing.real} de {staffing.ideal}</Typography>
+                  <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+                    {staffing.real} de {staffing.ideal}
+                  </Typography>
                 </>
               )}
             </MetricBlock>
 
             <MetricBlock label="Plantilla ideal" borderLeft>
-              <Typography sx={{ fontSize: staffing.ideal != null ? 21 : 14, fontWeight: 800, lineHeight: 1.2, color: staffing.ideal != null ? 'text.primary' : 'text.secondary' }}>
+              <Typography
+                sx={{
+                  fontSize: staffing.ideal != null ? 21 : 14,
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  color: staffing.ideal != null ? 'text.primary' : 'text.secondary',
+                }}
+              >
                 {staffing.ideal != null ? staffing.ideal : 'Sin definir'}
               </Typography>
-              {staffing.ideal != null && <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>}
+              {staffing.ideal != null && (
+                <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
+              )}
             </MetricBlock>
 
             <MetricBlock label="Faltante" borderLeft>
-              <Typography sx={{ fontSize: staffing.ideal != null ? 21 : 14, fontWeight: 800, lineHeight: 1.2, color: staffing.ideal == null ? 'text.secondary' : missing > 0 ? '#EF4444' : 'text.primary' }}>
+              <Typography
+                sx={{
+                  fontSize: staffing.ideal != null ? 21 : 14,
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  color:
+                    staffing.ideal == null
+                      ? 'text.secondary'
+                      : missing > 0
+                        ? '#EF4444'
+                        : 'text.primary',
+                }}
+              >
                 {staffing.ideal != null ? missing : 'No calculable'}
               </Typography>
-              {staffing.ideal != null && <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>}
+              {staffing.ideal != null && (
+                <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
+              )}
             </MetricBlock>
 
             <MetricBlock label="Estado del área" borderLeft>
               <Stack direction="row" spacing={0.6} alignItems="center">
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusMeta?.color || '#94A3B8' }} />
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: statusMeta?.color || '#94A3B8',
+                  }}
+                />
                 <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{headerLabel}</Typography>
               </Stack>
               <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
@@ -462,15 +759,28 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
         {/* Personal asignado + Distribucion por tipo de puesto */}
         <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
           <Grid item xs={12} lg={8}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Personal asignado ({people.length})</Typography>
+            <Paper
+              elevation={0}
+              sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
+                Personal asignado ({people.length})
+              </Typography>
               {people.length === 0 ? (
-                <EmptyState compact title="Nadie asignado todavía" description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'." />
+                <EmptyState
+                  compact
+                  title="Nadie asignado todavía"
+                  description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'."
+                />
               ) : (
                 <Grid container spacing={1.25} sx={{ maxHeight: 420, overflowY: 'auto', pr: 0.5 }}>
                   {people.map((p) => (
                     <Grid item xs={12} sm={6} md={4} key={p.id}>
-                      <AssignedPersonChip employeeId={p.id} name={p.name} subtitle={getCurrentAssignment(p.id)?.stationId} />
+                      <AssignedPersonChip
+                        employeeId={p.id}
+                        name={p.name}
+                        subtitle={getCurrentAssignment(p.id)?.stationId}
+                      />
                     </Grid>
                   ))}
                 </Grid>
@@ -498,29 +808,57 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             Historial apilados en la tercera columna (su suma vertical es
             lo que ahora se alinea con las otras dos, en vez de 4 columnas
             iguales forzadas). */}
-        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>Gestión de personal</Typography>
-        <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', bgcolor: (t) => (t.palette.mode === 'dark' ? alpha('#fff', 0.02) : alpha('#000', 0.012)), p: { xs: 1.5, md: 2 }, mb: 2.5 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>
+          Gestión de personal
+        </Typography>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '16px',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: (t) =>
+              t.palette.mode === 'dark' ? alpha('#fff', 0.02) : alpha('#000', 0.012),
+            p: { xs: 1.5, md: 2 },
+            mb: 2.5,
+          }}
+        >
           <Grid container spacing={2} alignItems="flex-start">
             <Grid item xs={12} md={4}>
               <Paper
                 ref={availableRef}
                 elevation={0}
                 sx={{
-                  borderRadius: '16px', border: '1px solid', borderColor: highlightAvailable ? '#3B82F6' : 'divider',
-                  p: 2, transition: 'border-color .3s ease', bgcolor: 'background.paper',
-                  boxShadow: highlightAvailable ? (t) => `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}` : 'none',
+                  borderRadius: '16px',
+                  border: '1px solid',
+                  borderColor: highlightAvailable ? '#3B82F6' : 'divider',
+                  p: 2,
+                  transition: 'border-color .3s ease',
+                  bgcolor: 'background.paper',
+                  boxShadow: highlightAvailable
+                    ? (t) =>
+                        `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}`
+                    : 'none',
                 }}
               >
                 <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1 }}>
                   Disponibles para asignar ({available.length})
                   {availableQuery.trim() && (
-                    <Typography component="span" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}>
-                      · {filteredAvailable.length} resultado{filteredAvailable.length === 1 ? '' : 's'}
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}
+                    >
+                      · {filteredAvailable.length} resultado
+                      {filteredAvailable.length === 1 ? '' : 's'}
                     </Typography>
                   )}
                 </Typography>
                 {available.length === 0 ? (
-                  <EmptyState compact title="Sin personal disponible" description="Todo el personal activo ya tiene ubicación asignada hoy." />
+                  <EmptyState
+                    compact
+                    title="Sin personal disponible"
+                    description="Todo el personal activo ya tiene ubicación asignada hoy."
+                  />
                 ) : (
                   <>
                     <TextField
@@ -530,15 +868,32 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
                       onChange={(e) => setAvailableQuery(e.target.value)}
                       placeholder="Buscar por nombre o número..."
                       InputProps={{
-                        startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} /></InputAdornment>,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} />
+                          </InputAdornment>
+                        ),
                       }}
-                      sx={{ mb: 1, '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                      sx={{
+                        mb: 1,
+                        '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 },
+                        '& .MuiOutlinedInput-root': { borderRadius: 2 },
+                      }}
                     />
                     {filteredAvailable.length === 0 ? (
-                      <EmptyState compact title="Sin coincidencias" description="Nadie disponible coincide con la búsqueda." />
+                      <EmptyState
+                        compact
+                        title="Sin coincidencias"
+                        description="Nadie disponible coincide con la búsqueda."
+                      />
                     ) : (
-                      <Stack spacing={1} sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}>
-                        {filteredAvailable.map((p) => <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />)}
+                      <Stack
+                        spacing={1}
+                        sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}
+                      >
+                        {filteredAvailable.map((p) => (
+                          <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />
+                        ))}
                       </Stack>
                     )}
                   </>
@@ -550,8 +905,19 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
             </Grid>
             <Grid item xs={12} md={4}>
               <Stack spacing={2}>
-                <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.paper' }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>Resumen rápido</Typography>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    p: 2,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
+                    Resumen rápido
+                  </Typography>
                   <Stack spacing={1}>
                     {[
                       ['Total en el área', staffing.real],
@@ -561,34 +927,70 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
                       ['Disponibles', available.length],
                     ].map(([label, value]) => (
                       <Stack key={label} direction="row" justifyContent="space-between">
-                        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{label}</Typography>
+                        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                          {label}
+                        </Typography>
                         <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{value}</Typography>
                       </Stack>
                     ))}
                   </Stack>
                 </Paper>
-                <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.paper' }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>Historial reciente</Typography>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    p: 2,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 1.5 }}
+                  >
+                    <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>
+                      Historial reciente
+                    </Typography>
                     {history.items.length > 5 && (
                       <Typography
                         component="button"
                         onClick={() => setHistoryDialogOpen(true)}
-                        sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', p: 0 }}
+                        sx={{
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          color: '#3B82F6',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          p: 0,
+                        }}
                       >
                         Ver todo
                       </Typography>
                     )}
                   </Stack>
                   {history.loading ? (
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Cargando…</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                      Cargando…
+                    </Typography>
                   ) : history.error ? (
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>No se pudo cargar el historial.</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                      No se pudo cargar el historial.
+                    </Typography>
                   ) : history.items.length === 0 ? (
-                    <EmptyState compact title="Sin movimientos recientes" description="Todavía no hay asignaciones o movimientos registrados para esta área." />
+                    <EmptyState
+                      compact
+                      title="Sin movimientos recientes"
+                      description="Todavía no hay asignaciones o movimientos registrados para esta área."
+                    />
                   ) : (
                     <Stack spacing={1.25}>
-                      {history.items.slice(0, 5).map((h) => <HistoryRow key={h.id} h={h} />)}
+                      {history.items.slice(0, 5).map((h) => (
+                        <HistoryRow key={h.id} h={h} />
+                      ))}
                     </Stack>
                   )}
                 </Paper>
@@ -603,27 +1005,76 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
         <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.5 }}>Análisis del área</Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%', textAlign: 'center' }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5, textAlign: 'left' }}>Cobertura vs ideal</Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 2,
+                height: '100%',
+                textAlign: 'center',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5, textAlign: 'left' }}>
+                Cobertura vs ideal
+              </Typography>
               {coveragePct != null ? (
                 <>
-                  <Box sx={{ ...ps.gauge(coverageBarPct, coveragePct >= 100 ? '#10B981' : coveragePct >= 90 ? '#3B82F6' : coveragePct >= 50 ? '#F59E0B' : '#EF4444'), mx: 'auto' }}>
-                    <Typography sx={{ position: 'relative', zIndex: 1, fontSize: 17, fontWeight: 800 }}>{coveragePct}%</Typography>
+                  <Box
+                    sx={{
+                      ...ps.gauge(
+                        coverageBarPct,
+                        coveragePct >= 100
+                          ? '#10B981'
+                          : coveragePct >= 90
+                            ? '#3B82F6'
+                            : coveragePct >= 50
+                              ? '#F59E0B'
+                              : '#EF4444',
+                      ),
+                      mx: 'auto',
+                    }}
+                  >
+                    <Typography
+                      sx={{ position: 'relative', zIndex: 1, fontSize: 17, fontWeight: 800 }}
+                    >
+                      {coveragePct}%
+                    </Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 1 }}>Cobertura actual</Typography>
-                  <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{staffing.real} de {staffing.ideal} personas</Typography>
+                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 1 }}>
+                    Cobertura actual
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                    {staffing.real} de {staffing.ideal} personas
+                  </Typography>
                 </>
               ) : (
-                <EmptyState compact title="Sin plantilla ideal" description="No hay meta definida para calcular cobertura." />
+                <EmptyState
+                  compact
+                  title="Sin plantilla ideal"
+                  description="No hay meta definida para calcular cobertura."
+                />
               )}
             </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 2,
+                height: '100%',
+              }}
+            >
               <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
                 <ShowChartIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>Tendencia de cobertura (7 días)</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
+                  Tendencia de cobertura (7 días)
+                </Typography>
               </Stack>
               {/* Investigado (2026-08-25): el headcount real de cada dia pasado
                   viene mayormente de un snapshot SIN fecha (REAL_PERSONNEL_SNAPSHOT),
@@ -641,28 +1092,67 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
           </Grid>
 
           <Grid item xs={12} sm={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%' }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5 }}>Clasificación del área</Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 2,
+                height: '100%',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5 }}>
+                Clasificación del área
+              </Typography>
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <StarIcon sx={{ fontSize: 18, color: '#F59E0B', mt: 0.2 }} />
                 <Box>
                   <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{tip.label}</Typography>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.5 }}>{tip.tip}</Typography>
+                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.5 }}>
+                    {tip.tip}
+                  </Typography>
                 </Box>
               </Stack>
             </Paper>
           </Grid>
 
           <Grid item xs={12} sm={6} lg={3}>
-            <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1 }}>
                 <AssignmentIndIcon sx={{ fontSize: 17, color: '#3B82F6' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>Recomendación automática</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
+                  Recomendación automática
+                </Typography>
               </Stack>
               {missing > 0 ? (
                 <Chip
-                  size="small" label={missing >= 5 ? 'Prioridad alta' : missing >= 2 ? 'Prioridad media' : 'Prioridad baja'}
-                  sx={{ alignSelf: 'flex-start', mb: 1, fontWeight: 700, bgcolor: alpha('#F59E0B', 0.15), color: '#B45309' }}
+                  size="small"
+                  label={
+                    missing >= 5
+                      ? 'Prioridad alta'
+                      : missing >= 2
+                        ? 'Prioridad media'
+                        : 'Prioridad baja'
+                  }
+                  sx={{
+                    alignSelf: 'flex-start',
+                    mb: 1,
+                    fontWeight: 700,
+                    bgcolor: alpha('#F59E0B', 0.15),
+                    color: '#B45309',
+                  }}
                 />
               ) : null}
               <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 1.5, flex: 1 }}>
@@ -673,7 +1163,12 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
                     : 'Esta área no tiene una plantilla ideal definida todavía.'}
               </Typography>
               {missing > 0 && (
-                <Button size="small" onClick={scrollToAvailable} startIcon={<TipsAndUpdatesIcon sx={{ fontSize: 16 }} />} sx={{ textTransform: 'none', fontWeight: 700, alignSelf: 'flex-start' }}>
+                <Button
+                  size="small"
+                  onClick={scrollToAvailable}
+                  startIcon={<TipsAndUpdatesIcon sx={{ fontSize: 16 }} />}
+                  sx={{ textTransform: 'none', fontWeight: 700, alignSelf: 'flex-start' }}
+                >
                   Ver candidatos disponibles
                 </Button>
               )}
@@ -682,20 +1177,48 @@ export default function OperationalAreaDetail({ workCenterId, open, onClose, pre
         </Grid>
       </Box>
 
-      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
-      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={canonicalId} onDone={() => {}} />
+      <RegisterPersonnelDialog
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        fixedAreaId={canonicalId}
+        onDone={() => {}}
+      />
+      <SelfAssignDialog
+        open={selfAssignOpen}
+        onClose={() => setSelfAssignOpen(false)}
+        fixedAreaId={canonicalId}
+        onDone={() => {}}
+      />
 
       {/* "Ver todo" del historial -- 2026-08-26, mockup aprobado. Reutiliza
           los mismos `history.items` ya obtenidos (fetch limit=8), nunca una
           segunda consulta: la vista compacta de arriba solo corta a 5. */}
-      <Dialog open={historyDialogOpen} onClose={() => setHistoryDialogOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800, fontSize: 16 }}>
+      <Dialog
+        open={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontWeight: 800,
+            fontSize: 16,
+          }}
+        >
           Historial de {area.name}
-          <IconButton size="small" onClick={() => setHistoryDialogOpen(false)}><CloseIcon fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={() => setHistoryDialogOpen(false)}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ pb: 1 }}>
-            {history.items.map((h) => <HistoryRow key={h.id} h={h} />)}
+            {history.items.map((h) => (
+              <HistoryRow key={h.id} h={h} />
+            ))}
           </Stack>
         </DialogContent>
       </Dialog>

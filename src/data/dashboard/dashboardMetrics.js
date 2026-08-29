@@ -1,8 +1,15 @@
 import { LINES_ONLY, OFFICIAL_SHIFTS, workCenterById } from '../production/catalog'
 import {
-  getAllAreaSummaries, getAreaHeadcount, AREA_STATUS_META, classifyAreaStatus,
+  getAllAreaSummaries,
+  getAreaHeadcount,
+  AREA_STATUS_META,
+  classifyAreaStatus,
 } from '../production/personnelByArea'
-import { getAssignmentsForDate, getMovementsForDate, getEmployeeById } from '../personnel/repository'
+import {
+  getAssignmentsForDate,
+  getMovementsForDate,
+  getEmployeeById,
+} from '../personnel/repository'
 
 /* ─────────────────────────────────────────────
    Capa de calculo EXCLUSIVA del rediseño del Dashboard (2026-08-25).
@@ -36,7 +43,8 @@ export function getDashboardAreas() {
       actual: a.count,
       ideal: a.ideal,
       missing: a.ideal != null ? Math.max(0, a.ideal - a.count) : null,
-      coveragePct: a.ideal != null && a.ideal > 0 ? Math.round((a.count / a.ideal) * 1000) / 10 : null,
+      coveragePct:
+        a.ideal != null && a.ideal > 0 ? Math.round((a.count / a.ideal) * 1000) / 10 : null,
       status: classifyAreaStatus(a.count, a.ideal),
     }))
 }
@@ -47,7 +55,9 @@ export function getDashboardAreas() {
    (status null se ignora), para no fingir un estado de "sin plantilla". */
 export function getAreaStatusCounts(areas) {
   const counts = { COMPLETA: 0, PARCIAL: 0, FALTA: 0, SIN_PERSONAL: 0 }
-  areas.forEach((a) => { if (a.status) counts[a.status] += 1 })
+  areas.forEach((a) => {
+    if (a.status) counts[a.status] += 1
+  })
   return counts
 }
 
@@ -56,9 +66,12 @@ export function getAreaStatusCounts(areas) {
    faltante" en general (una línea es un WORK_CENTER kind:'linea', las
    demas areas no cuentan aqui). */
 export function getIncompleteLines() {
-  return LINES_ONLY
-    .map((wc) => ({ id: wc.id, name: wc.name, actual: getAreaHeadcount(wc.id), ideal: wc.idealHeadcount }))
-    .filter((l) => l.ideal != null && l.actual < l.ideal)
+  return LINES_ONLY.map((wc) => ({
+    id: wc.id,
+    name: wc.name,
+    actual: getAreaHeadcount(wc.id),
+    ideal: wc.idealHeadcount,
+  })).filter((l) => l.ideal != null && l.actual < l.ideal)
 }
 
 function shortAreaName(name) {
@@ -72,7 +85,13 @@ function shortAreaName(name) {
    pendientes > areas completas > areas sobre plantilla > (relleno)
    movimientos de hoy. Maximo 6, minimo lo que realmente aplique (puede
    haber menos de 4 si el dia esta genuinamente bien). */
-export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount, canSeeApprovals, movementsToday }) {
+export function getDashboardFindings({
+  areas,
+  incompleteLines,
+  pendingMovesCount,
+  canSeeApprovals,
+  movementsToday,
+}) {
   const findings = []
 
   const withIdeal = areas.filter((a) => a.ideal != null)
@@ -80,18 +99,23 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
   const noPersonnel = withIdeal.filter((a) => a.status === 'SIN_PERSONAL')
   noPersonnel.slice(0, 2).forEach((a) => {
     findings.push({
-      id: `none-${a.id}`, tone: 'bad',
+      id: `none-${a.id}`,
+      tone: 'bad',
       title: `${shortAreaName(a.name)} no tiene personal asignado.`,
       detail: `Requiere ${a.ideal} persona${a.ideal === 1 ? '' : 's'} para cubrir su plantilla.`,
     })
   })
 
   const critical = withIdeal
-    .filter((a) => a.status === 'FALTA' && (a.missing >= 3 || (a.coveragePct != null && a.coveragePct < 50)))
+    .filter(
+      (a) =>
+        a.status === 'FALTA' && (a.missing >= 3 || (a.coveragePct != null && a.coveragePct < 50)),
+    )
     .sort((a, b) => b.missing - a.missing)
   critical.slice(0, 2).forEach((a) => {
     findings.push({
-      id: `critical-${a.id}`, tone: 'warn',
+      id: `critical-${a.id}`,
+      tone: 'warn',
       title: `${shortAreaName(a.name)} opera al ${a.coveragePct}% de cobertura.`,
       detail: `Faltan ${a.missing} persona${a.missing === 1 ? '' : 's'} para alcanzar la plantilla ideal.`,
     })
@@ -99,11 +123,13 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
 
   if (incompleteLines.length > 0) {
     const names = incompleteLines.map((l) => shortAreaName(l.name))
-    const list = names.length <= 3
-      ? names.join(names.length === 2 ? ' y ' : ', ').replace(/, ([^,]*)$/, ' y $1')
-      : `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`
+    const list =
+      names.length <= 3
+        ? names.join(names.length === 2 ? ' y ' : ', ').replace(/, ([^,]*)$/, ' y $1')
+        : `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`
     findings.push({
-      id: 'lines-incomplete', tone: incompleteLines.length >= 3 ? 'bad' : 'warn',
+      id: 'lines-incomplete',
+      tone: incompleteLines.length >= 3 ? 'bad' : 'warn',
       title: `${incompleteLines.length} línea${incompleteLines.length === 1 ? '' : 's'} de producción con personal incompleto.`,
       detail: list,
     })
@@ -111,7 +137,8 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
 
   if (canSeeApprovals && pendingMovesCount > 0) {
     findings.push({
-      id: 'pending-moves', tone: 'info',
+      id: 'pending-moves',
+      tone: 'info',
       title: `${pendingMovesCount} movimiento${pendingMovesCount === 1 ? '' : 's'} esperan aprobación.`,
       detail: 'Revísalos en Centro de Trabajo.',
     })
@@ -120,9 +147,11 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
   const complete = withIdeal.filter((a) => a.status === 'COMPLETA')
   if (complete.length > 0) {
     const names = complete.slice(0, 2).map((a) => shortAreaName(a.name))
-    const label = complete.length > 2 ? `${names.join(', ')} y ${complete.length - 2} más` : names.join(' y ')
+    const label =
+      complete.length > 2 ? `${names.join(', ')} y ${complete.length - 2} más` : names.join(' y ')
     findings.push({
-      id: 'areas-complete', tone: 'ok',
+      id: 'areas-complete',
+      tone: 'ok',
       title: `${label} ${complete.length === 1 ? 'está completa' : 'están completas'}.`,
       detail: `Cobertura del 100% o más en ${complete.length} área${complete.length === 1 ? '' : 's'}.`,
     })
@@ -130,12 +159,13 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
 
   const overIdeal = withIdeal
     .filter((a) => a.actual > a.ideal)
-    .sort((a, b) => (b.actual - b.ideal) - (a.actual - a.ideal))
+    .sort((a, b) => b.actual - b.ideal - (a.actual - a.ideal))
   if (overIdeal.length > 0) {
     const a = overIdeal[0]
     const surplus = a.actual - a.ideal
     findings.push({
-      id: `over-${a.id}`, tone: 'ok',
+      id: `over-${a.id}`,
+      tone: 'ok',
       title: `${shortAreaName(a.name)} supera su plantilla ideal.`,
       detail: `Cuenta con ${surplus} persona${surplus === 1 ? '' : 's'} adicionales al ideal.`,
     })
@@ -143,7 +173,8 @@ export function getDashboardFindings({ areas, incompleteLines, pendingMovesCount
 
   if (findings.length < 4 && movementsToday > 0) {
     findings.push({
-      id: 'movements-today', tone: 'info',
+      id: 'movements-today',
+      tone: 'info',
       title: `${movementsToday} movimiento${movementsToday === 1 ? '' : 's'} registrados hoy.`,
       detail: 'Incluye asignaciones, movimientos y liberaciones.',
     })
@@ -198,7 +229,13 @@ export function getDailyMovementsBreakdown(date) {
   const asignaciones = moves.filter((m) => m.type === 'CHECK_IN').length
   const removidos = moves.filter((m) => m.type === 'RELEASE').length
   const movimientos = moves.filter((m) => m.type === 'MOVE').length
-  return { asignaciones, removidos, movimientos, neto: asignaciones - removidos, total: moves.length }
+  return {
+    asignaciones,
+    removidos,
+    movimientos,
+    neto: asignaciones - removidos,
+    total: moves.length,
+  }
 }
 
 const ACTIVITY_LABELS = { CHECK_IN: 'Asignación', MOVE: 'Movimiento', RELEASE: 'Liberación' }
@@ -222,8 +259,8 @@ export function getRecentActivity(limit = 30) {
         type: m.type,
         label: ACTIVITY_LABELS[m.type] || m.type,
         employeeName: employee?.name || m.employeeNumber || 'Empleado',
-        fromAreaName: m.fromAreaId ? (workCenterById(m.fromAreaId)?.name || m.fromAreaId) : null,
-        toAreaName: m.toAreaId ? (workCenterById(m.toAreaId)?.name || m.toAreaId) : null,
+        fromAreaName: m.fromAreaId ? workCenterById(m.fromAreaId)?.name || m.fromAreaId : null,
+        toAreaName: m.toAreaId ? workCenterById(m.toAreaId)?.name || m.toAreaId : null,
         time: m.movedAt,
       }
     })

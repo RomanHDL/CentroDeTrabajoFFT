@@ -20,9 +20,21 @@ const WEEKDAY_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 3 }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        px: 1.5,
+        py: 1,
+        boxShadow: 3,
+      }}
+    >
       <Box sx={{ fontWeight: 700, fontSize: 12.5, mb: 0.25 }}>{label}</Box>
-      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}</Box>
+      <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+        {payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}
+      </Box>
     </Box>
   )
 }
@@ -51,11 +63,29 @@ export default function MovementsDailyCard({ dailyLast7, loading, error, onRetry
     >
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 12, right: 12, left: -16, bottom: 0 }} barCategoryGap="30%">
+          <BarChart
+            data={data}
+            margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
+            barCategoryGap="30%"
+          >
             <CartesianGrid vertical={false} stroke={gridColor} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: axisColor }} axisLine={{ stroke: gridColor }} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} width={28} allowDecimals={false} />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: d ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)' }} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: axisColor }}
+              axisLine={{ stroke: gridColor }}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: axisColor }}
+              axisLine={false}
+              tickLine={false}
+              width={28}
+              allowDecimals={false}
+            />
+            <Tooltip
+              content={<ChartTooltip />}
+              cursor={{ fill: d ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)' }}
+            />
             <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={36} />
           </BarChart>
         </ResponsiveContainer>

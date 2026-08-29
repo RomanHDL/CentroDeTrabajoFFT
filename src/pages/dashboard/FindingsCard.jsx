@@ -35,7 +35,11 @@ export default function FindingsCard({ findings }) {
       </Box>
       <Box sx={{ p: 2 }}>
         {findings.length === 0 ? (
-          <EmptyState compact title="Sin hallazgos por ahora" description="No hay condiciones destacables con los datos actuales." />
+          <EmptyState
+            compact
+            title="Sin hallazgos por ahora"
+            description="No hay condiciones destacables con los datos actuales."
+          />
         ) : (
           <Grid container spacing={1.25}>
             {findings.map((f) => {
@@ -43,15 +47,28 @@ export default function FindingsCard({ findings }) {
               return (
                 <Grid item xs={12} sm={6} key={f.id}>
                   <Stack direction="row" spacing={1.1} alignItems="flex-start">
-                    <Box sx={{
-                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0, mt: 0.1,
-                      bgcolor: alpha(color, 0.14), display: 'grid', placeItems: 'center', color,
-                    }}>
+                    <Box
+                      sx={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        mt: 0.1,
+                        bgcolor: alpha(color, 0.14),
+                        display: 'grid',
+                        placeItems: 'center',
+                        color,
+                      }}
+                    >
                       <Icon sx={{ fontSize: 15 }} />
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3 }}>{f.title}</Typography>
-                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', lineHeight: 1.3 }}>{f.detail}</Typography>
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3 }}>
+                        {f.title}
+                      </Typography>
+                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', lineHeight: 1.3 }}>
+                        {f.detail}
+                      </Typography>
                     </Box>
                   </Stack>
                 </Grid>

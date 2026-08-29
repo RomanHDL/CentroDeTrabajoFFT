@@ -16,21 +16,46 @@ import { prisma } from '../server-lib/prisma.js'
 
 async function deactivate(areaCode, name) {
   const wa = await prisma.workArea.findUnique({ where: { code: areaCode } })
-  if (!wa) { console.log(`  (omitido) WorkArea "${areaCode}" no existe`); return }
-  const w = await prisma.workstation.findUnique({ where: { workAreaId_name: { workAreaId: wa.id, name } } })
-  if (!w) { console.log(`  (omitido) ${areaCode}: "${name}" no existe`); return }
-  if (!w.active) { console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`); return }
-  const active = await prisma.dailyAssignment.count({ where: { workstationId: w.id, status: 'ACTIVE' } })
+  if (!wa) {
+    console.log(`  (omitido) WorkArea "${areaCode}" no existe`)
+    return
+  }
+  const w = await prisma.workstation.findUnique({
+    where: { workAreaId_name: { workAreaId: wa.id, name } },
+  })
+  if (!w) {
+    console.log(`  (omitido) ${areaCode}: "${name}" no existe`)
+    return
+  }
+  if (!w.active) {
+    console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`)
+    return
+  }
+  const active = await prisma.dailyAssignment.count({
+    where: { workstationId: w.id, status: 'ACTIVE' },
+  })
   await prisma.workstation.update({ where: { id: w.id }, data: { active: false } })
-  console.log(`  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`)
+  console.log(
+    `  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`,
+  )
 }
 
-const LINEAS_CON_PRUEBA_ELECTRICA_2 = ['PROYECTO', 'LINEA1', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
+const LINEAS_CON_PRUEBA_ELECTRICA_2 = [
+  'PROYECTO',
+  'LINEA1',
+  'LINEA6',
+  'LINEA7',
+  'LINEA8',
+  'LINEA9',
+  'LINEA10',
+]
 
 console.log('--- Desactivar "Prueba eléctrica 2" en las 7 lineas donde existia ---')
 for (const areaCode of LINEAS_CON_PRUEBA_ELECTRICA_2) {
   await deactivate(areaCode, 'Prueba eléctrica 2')
 }
 
-console.log('\nListo. Siguiente paso: npm run seed-personnel (crea las estaciones nuevas que reemplazan el hueco liberado y sincroniza role/category de TODAS las estaciones de WC LINEA).')
+console.log(
+  '\nListo. Siguiente paso: npm run seed-personnel (crea las estaciones nuevas que reemplazan el hueco liberado y sincroniza role/category de TODAS las estaciones de WC LINEA).',
+)
 await prisma.$disconnect()

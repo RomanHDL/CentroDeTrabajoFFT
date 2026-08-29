@@ -12,7 +12,9 @@ export default requireAuth(async (req, res) => {
   const map = await getRoleModulePermissionsMap()
   const rolePermissions = {}
   for (const [role, modules] of Object.entries(map)) {
-    rolePermissions[role] = Object.entries(modules).filter(([, allowed]) => allowed).map(([key]) => key)
+    rolePermissions[role] = Object.entries(modules)
+      .filter(([, allowed]) => allowed)
+      .map(([key]) => key)
   }
   return res.status(200).json({ rolePermissions })
 })

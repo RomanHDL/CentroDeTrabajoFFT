@@ -21,8 +21,14 @@ export default function RegistroPersonalPage() {
     <Box sx={ps.page}>
       <Paper elevation={0} sx={{ ...ps.card, maxWidth: 480, mx: 'auto' }}>
         <Box sx={{ p: 3 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 2 }}>+ Registrar personal</Typography>
-          <RegisterPersonnelForm key={resetKey} cancelLabel="Cancelar" onCancel={() => setResetKey((k) => k + 1)} />
+          <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 2 }}>
+            + Registrar personal
+          </Typography>
+          <RegisterPersonnelForm
+            key={resetKey}
+            cancelLabel="Cancelar"
+            onCancel={() => setResetKey((k) => k + 1)}
+          />
         </Box>
       </Paper>
     </Box>

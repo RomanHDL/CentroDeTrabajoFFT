@@ -1,7 +1,7 @@
 // Equivalente real de checkInEmployee (repository.js).
 import { prisma } from '../../server-lib/prisma.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
+import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -27,10 +27,14 @@ export default requireAuth(async (req, res) => {
         return res.status(200).json({ status: 'NEEDS_NAME', employeeNumber: number })
       }
       try {
-        employee = await prisma.employee.create({ data: { employeeNumber: number, fullName: name.trim() } })
+        employee = await prisma.employee.create({
+          data: { employeeNumber: number, fullName: name.trim() },
+        })
       } catch (e) {
         if (e.code === 'P2002') {
-          return res.status(409).json({ error: `El número de empleado ${number} ya está en uso por otra persona.` })
+          return res
+            .status(409)
+            .json({ error: `El número de empleado ${number} ya está en uso por otra persona.` })
         }
         throw e
       }
@@ -39,7 +43,9 @@ export default requireAuth(async (req, res) => {
     // Sin numero de empleado -- alta tipo "PROYECTO" (persona real sin numero confirmado
     // todavia), identificada por nombre. employeeNumber se guarda null, NUNCA el literal
     // 'PROYECTO'/'PENDIENTE' (esos son solo etiquetas de presentacion del frontend).
-    employee = await prisma.employee.create({ data: { employeeNumber: null, fullName: name.trim() } })
+    employee = await prisma.employee.create({
+      data: { employeeNumber: null, fullName: name.trim() },
+    })
   }
 
   const workstation = await resolveWorkstation(workAreaId, stationName)
@@ -54,7 +60,9 @@ export default requireAuth(async (req, res) => {
   })
 
   if (result.status === 'INACTIVE_EMPLOYEE') {
-    return res.status(400).json({ error: 'Este empleado está marcado como baja y no puede registrarse.' })
+    return res
+      .status(400)
+      .json({ error: 'Este empleado está marcado como baja y no puede registrarse.' })
   }
   if (result.status === 'CONFLICT') {
     return res.status(409).json({
@@ -64,7 +72,9 @@ export default requireAuth(async (req, res) => {
     })
   }
   if (result.status === 'STATION_FULL') {
-    return res.status(409).json({ error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).` })
+    return res.status(409).json({
+      error: `${stationName} ya está completa (${result.occupiedCount}/${result.capacity}).`,
+    })
   }
   return res.status(201).json({ employee, assignment: result.assignment })
 })

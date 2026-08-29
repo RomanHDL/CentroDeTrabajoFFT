@@ -33,7 +33,9 @@ export default function BajasTab() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return baja
-    return baja.filter((e) => e.name.toLowerCase().includes(q) || e.employeeNumber.toLowerCase().includes(q))
+    return baja.filter(
+      (e) => e.name.toLowerCase().includes(q) || e.employeeNumber.toLowerCase().includes(q),
+    )
   }, [baja, query])
 
   return (
@@ -69,7 +71,9 @@ export default function BajasTab() {
           <TableBody>
             {filtered.map((e, idx) => (
               <TableRow key={e.id} sx={ps.tableRow(idx)}>
-                <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{e.employeeNumber}</TableCell>
+                <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
+                  {e.employeeNumber}
+                </TableCell>
                 <TableCell sx={ps.cellText}>{e.name}</TableCell>
                 <TableCell sx={ps.cellTextSecondary}>{e.areaHistorica || '—'}</TableCell>
                 <TableCell sx={ps.cellTextSecondary}>{e.fechaIngreso || '—'}</TableCell>
@@ -81,7 +85,11 @@ export default function BajasTab() {
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <EmptyState compact title="Sin resultados" description="Nadie coincide con esta búsqueda." />
+                  <EmptyState
+                    compact
+                    title="Sin resultados"
+                    description="Nadie coincide con esta búsqueda."
+                  />
                 </TableCell>
               </TableRow>
             )}

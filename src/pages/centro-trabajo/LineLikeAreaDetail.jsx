@@ -29,14 +29,28 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import { alpha } from '@mui/material/styles'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
-import { CURRENT_SHIFT, getCurrentShift, workCenterById, canonicalOperationalAreaId, operationalGroupMembers, AREA_STATION_SOURCE_OVERRIDE } from '../../data/production/catalog'
 import {
-  classifyAreaStatus, AREA_STATUS_META, getEffectiveTodayRoster, getGroupAreaStaffing, getGroupPeople,
+  CURRENT_SHIFT,
+  getCurrentShift,
+  workCenterById,
+  canonicalOperationalAreaId,
+  operationalGroupMembers,
+  AREA_STATION_SOURCE_OVERRIDE,
+} from '../../data/production/catalog'
+import {
+  classifyAreaStatus,
+  AREA_STATUS_META,
+  getEffectiveTodayRoster,
+  getGroupAreaStaffing,
+  getGroupPeople,
   getPeopleWithoutStation,
 } from '../../data/production/personnelByArea'
 import PersonSearchIcon from '@mui/icons-material/PersonSearch'
 import {
-  getLineWorkstationsWithOccupancy, getSuggestedCandidates, checkInEmployee, reconcileLineAssignments,
+  getLineWorkstationsWithOccupancy,
+  getSuggestedCandidates,
+  checkInEmployee,
+  reconcileLineAssignments,
 } from '../../data/personnel/repository'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -100,7 +114,12 @@ const RANK_SECTION_LABEL = {
    debe verse como una estación normal"). Hoy solo TEAM_LEADER tiene
    puestos reales en este grupo de areas; los demas se incluyen por si
    algun dia existe un puesto real con ese rango aqui. */
-const LEADERSHIP_RANK_KEYS = new Set(['HEAD_CHIEF_AREA', 'GERENTE_FFT', 'SUPERVISOR', 'TEAM_LEADER'])
+const LEADERSHIP_RANK_KEYS = new Set([
+  'HEAD_CHIEF_AREA',
+  'GERENTE_FFT',
+  'SUPERVISOR',
+  'TEAM_LEADER',
+])
 
 /* Agrupa las estaciones por su rango REAL (getPersonnelRank(role), nunca
    por substring del nombre de puesto -- Seccion 15 del pedido: "no
@@ -125,7 +144,14 @@ function groupStationsByRank(workstations) {
   return order.map((key) => map.get(key))
 }
 
-export default function LineLikeAreaDetail({ workCenterId, open, onClose, previous, next, onNavigate }) {
+export default function LineLikeAreaDetail({
+  workCenterId,
+  open,
+  onClose,
+  previous,
+  next,
+  onNavigate,
+}) {
   const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -168,7 +194,7 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
 
   const allSourceWorkstations = useMemo(
     () => (dataAreaId ? getLineWorkstationsWithOccupancy(dataAreaId) : []),
-    [dataAreaId, version]
+    [dataAreaId, version],
   )
   const workstations = useMemo(() => {
     if (!stationSource) return allSourceWorkstations
@@ -187,22 +213,28 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
     }
     return memberIds.length ? getGroupAreaStaffing(memberIds) : null
   }, [stationSource, workstations, memberIds, version])
-  const areaStatusKey = staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
+  const areaStatusKey =
+    staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
   const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   const people = useMemo(() => {
-    if (stationSource) return workstations.flatMap((w) => w.occupants.map((o) => o.employee).filter(Boolean))
+    if (stationSource)
+      return workstations.flatMap((w) => w.occupants.map((o) => o.employee).filter(Boolean))
     return memberIds.length ? getGroupPeople(memberIds) : []
   }, [stationSource, workstations, memberIds, version])
   const stationGroups = useMemo(() => groupStationsByRank(workstations), [workstations])
-  const summaryGroups = useMemo(() => stationGroups.map((g) => ({
-    key: g.rank ? g.rank.key : '__SIN_CLASIFICAR__',
-    label: g.rank ? (RANK_SECTION_LABEL[g.rank.key] || g.rank.label) : 'Puestos generales',
-    color: g.rank ? g.rank.color : '#94A3B8',
-    occupied: g.stations.filter((w) => w.occupants.length > 0).length,
-    total: g.stations.length,
-  })), [stationGroups])
+  const summaryGroups = useMemo(
+    () =>
+      stationGroups.map((g) => ({
+        key: g.rank ? g.rank.key : '__SIN_CLASIFICAR__',
+        label: g.rank ? RANK_SECTION_LABEL[g.rank.key] || g.rank.label : 'Puestos generales',
+        color: g.rank ? g.rank.color : '#94A3B8',
+        occupied: g.stations.filter((w) => w.occupants.length > 0).length,
+        total: g.stations.length,
+      })),
+    [stationGroups],
+  )
 
   useEffect(() => {
     // reconcileLineAssignments es para "corregir asignaciones huerfanas dentro de MI PROPIA
@@ -214,16 +246,18 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
       .flatMap((id) => getGroupPeople([id]))
       .slice()
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-      .map(p => p.id)
+      .map((p) => p.id)
     reconcileLineAssignments(canonicalId, ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalId, open, stationSource])
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null
-    return workstations.find(w => w.name === selectedStationName)
-      || workstations.find(w => w.isAvailable)
-      || workstations[0]
+    return (
+      workstations.find((w) => w.name === selectedStationName) ||
+      workstations.find((w) => w.isAvailable) ||
+      workstations[0]
+    )
   }, [workstations, selectedStationName])
 
   const selectedStationRank = selectedStation ? getPersonnelRank(selectedStation.role) : null
@@ -239,8 +273,11 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
     // nadie -- se arma directamente desde los 2 puestos ya filtrados (misma fuente real,
     // solo otra forma de leerla). source:'REGISTRO' explicito: son asignaciones reales,
     // nunca sinteticas (isReal/"Quitar" de la tabla dependen de ese campo).
-    if (stationSource) return workstations.flatMap((w) => w.occupants.map((o) => ({ ...o, source: 'REGISTRO' })))
-    return memberIds.length ? getEffectiveTodayRoster().filter(r => memberIds.includes(r.areaId)) : []
+    if (stationSource)
+      return workstations.flatMap((w) => w.occupants.map((o) => ({ ...o, source: 'REGISTRO' })))
+    return memberIds.length
+      ? getEffectiveTodayRoster().filter((r) => memberIds.includes(r.areaId))
+      : []
   }, [stationSource, workstations, memberIds, version])
   // "PERSONAL SIN ESTACIÓN" (2026-08-28, "CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a
   // peticion explicita del usuario) -- 100% derivado, ver getPeopleWithoutStation
@@ -249,8 +286,9 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   // No aplica a una vista filtrada (stationSource): "sin estación" compararia contra solo 2
   // puestos de las 18 reales de Paletizado y mostraria a casi todo el mundo por error.
   const peopleWithoutStation = useMemo(
-    () => (stationSource ? [] : (memberIds.length ? getPeopleWithoutStation(memberIds, workstations) : [])),
-    [stationSource, memberIds, workstations]
+    () =>
+      stationSource ? [] : memberIds.length ? getPeopleWithoutStation(memberIds, workstations) : [],
+    [stationSource, memberIds, workstations],
   )
 
   if (!area || !staffing) return null
@@ -278,26 +316,52 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
   const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? DarkModeOutlinedIcon : WbSunnyOutlinedIcon
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen PaperProps={{ sx: { bgcolor: 'background.default' } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen
+      PaperProps={{ sx: { bgcolor: 'background.default' } }}
+    >
       {/* Header */}
-      <Box sx={{
-        px: { xs: 1.5, md: 3 }, py: 1.75, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-        borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper',
-      }}>
-        <IconButton onClick={onClose}><ArrowBackIcon /></IconButton>
-        <Typography sx={{ fontWeight: 800, fontSize: 20, letterSpacing: -0.4 }}>{area.name}</Typography>
+      <Box
+        sx={{
+          px: { xs: 1.5, md: 3 },
+          py: 1.75,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <IconButton onClick={onClose}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography sx={{ fontWeight: 800, fontSize: 20, letterSpacing: -0.4 }}>
+          {area.name}
+        </Typography>
         <Chip
           size="small"
-          label={areaStatusMeta ? areaStatusMeta.label : (people.length > 0 ? 'Con personal' : 'Sin personal hoy')}
+          label={
+            areaStatusMeta
+              ? areaStatusMeta.label
+              : people.length > 0
+                ? 'Con personal'
+                : 'Sin personal hoy'
+          }
           sx={{
             fontWeight: 700,
-            bgcolor: `${(areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#94A3B8'))}22`,
+            bgcolor: `${areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#94A3B8')}22`,
             color: areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#64748B'),
-            border: `1px solid ${(areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#94A3B8'))}55`,
+            border: `1px solid ${areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#94A3B8')}55`,
           }}
         />
         <Box sx={{ flex: 1 }} />
-        {onNavigate && <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />}
+        {onNavigate && (
+          <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
+        )}
         <Button
           variant="contained"
           startIcon={<PersonAddAlt1Icon />}
@@ -306,7 +370,9 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
         >
           {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
         </Button>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
       </Box>
 
       <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
@@ -316,51 +382,128 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
           <Grid container spacing={1.5} sx={{ mb: 2 }}>
             <Grid item xs={6} sm={3} md={2}>
               <Box sx={ps.kpiCard('blue')}>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Asignación actual</Typography>
-                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>{staffing.real} / {staffing.ideal}</Typography>
+                <Typography
+                  sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  Asignación actual
+                </Typography>
+                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>
+                  {staffing.real} / {staffing.ideal}
+                </Typography>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>personas</Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3} md={2}>
               <Box sx={ps.kpiCard('slate')}>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Dotación ideal</Typography>
-                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>{staffing.ideal}</Typography>
+                <Typography
+                  sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  Dotación ideal
+                </Typography>
+                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25 }}>
+                  {staffing.ideal}
+                </Typography>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>personas</Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3} md={2}>
               <Box sx={ps.kpiCard(staffing.diff < 0 ? 'red' : 'green')}>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                  {staffing.diff > 0 ? 'Personal adicional' : staffing.diff === 0 ? 'Cobertura' : 'Faltan'}
+                <Typography
+                  sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  {staffing.diff > 0
+                    ? 'Personal adicional'
+                    : staffing.diff === 0
+                      ? 'Cobertura'
+                      : 'Faltan'}
                 </Typography>
-                <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.25, color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}>
+                <Typography
+                  sx={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    mt: 0.25,
+                    color: staffing.diff < 0 ? '#EF4444' : '#10B981',
+                  }}
+                >
                   {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
                 </Typography>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                  {staffing.diff === 0 ? 'Completa' : `persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
+                  {staffing.diff === 0
+                    ? 'Completa'
+                    : `persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3} md={2.5}>
               <Box sx={ps.kpiCard('purple')}>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Turno actual</Typography>
+                <Typography
+                  sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  Turno actual
+                </Typography>
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
                   <ShiftIcon sx={{ fontSize: 18, color: '#A855F7' }} />
-                  <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{currentOfficialShift.label}</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800 }}>
+                    {currentOfficialShift.label}
+                  </Typography>
                 </Stack>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                  {formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
+                  {formatHour12(currentOfficialShift.start)} –{' '}
+                  {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={12} md={3.5}>
-              <Box sx={{ ...ps.kpiCard(coveragePct >= 100 ? 'green' : 'cyan'), display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  ...ps.kpiCard(coveragePct >= 100 ? 'green' : 'cyan'),
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>Cobertura del área</Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: 'text.secondary',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.4,
+                    }}
+                  >
+                    Cobertura del área
+                  </Typography>
                   <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{coveragePct}%</Typography>
                 </Box>
                 <Box sx={ps.progressBar}>
-                  <Box sx={ps.progressFill(coveragePct, coveragePct >= 100 ? '#10B981' : '#06B6D4')} />
+                  <Box
+                    sx={ps.progressFill(coveragePct, coveragePct >= 100 ? '#10B981' : '#06B6D4')}
+                  />
                 </Box>
               </Box>
             </Grid>
@@ -369,24 +512,44 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
 
         {/* Leyenda doble: Jerarquia/Rango + Estado de estacion. */}
         <Paper elevation={0} sx={{ ...ps.card, mb: 2, p: { xs: 1.5, md: 2 } }}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 }, alignItems: 'center' }}>
+          <Box
+            sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 }, alignItems: 'center' }}
+          >
             <HierarchyLegend />
-            <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' } }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            />
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+              <Typography
+                sx={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.4,
+                }}
+              >
                 Estado de estación
               </Typography>
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>Ocupada</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
+                  Ocupada
+                </Typography>
               </Stack>
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#F59E0B' }} />
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>Disponible</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
+                  Disponible
+                </Typography>
               </Stack>
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#94A3B8' }} />
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>Sin asignación</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
+                  Sin asignación
+                </Typography>
               </Stack>
             </Stack>
           </Box>
@@ -396,7 +559,11 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
           <EmployeeAssignSearchBar areaId={dataAreaId} />
         </Box>
 
-        {actionError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>{actionError}</Alert>}
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>
+            {actionError}
+          </Alert>
+        )}
 
         <Grid container spacing={2}>
           {/* Columna principal */}
@@ -405,7 +572,9 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
               <Box sx={ps.cardHeader}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography sx={ps.cardHeaderTitle}>Distribución de estaciones</Typography>
-                  <Typography sx={ps.cardHeaderSubtitle}>Toca (o arrastra a alguien) sobre una estación disponible</Typography>
+                  <Typography sx={ps.cardHeaderSubtitle}>
+                    Toca (o arrastra a alguien) sobre una estación disponible
+                  </Typography>
                 </Box>
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
                   <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary' }}>
@@ -420,32 +589,52 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
               <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {stationGroups.map((group) => {
                   const isLeadership = group.rank && LEADERSHIP_RANK_KEYS.has(group.rank.key)
-                  const sectionLabel = group.rank ? (RANK_SECTION_LABEL[group.rank.key] || group.rank.label) : 'Puestos generales'
+                  const sectionLabel = group.rank
+                    ? RANK_SECTION_LABEL[group.rank.key] || group.rank.label
+                    : 'Puestos generales'
                   const occupiedCount = group.stations.filter((w) => w.occupants.length > 0).length
                   return (
                     <Box
                       key={group.rank ? group.rank.key : 'sin-clasificar'}
                       sx={{
-                        border: '1px solid', borderColor: group.rank ? alpha(group.rank.color, 0.25) : 'divider',
-                        borderRadius: 2.5, overflow: 'hidden',
+                        border: '1px solid',
+                        borderColor: group.rank ? alpha(group.rank.color, 0.25) : 'divider',
+                        borderRadius: 2.5,
+                        overflow: 'hidden',
                       }}
                     >
-                      <Box sx={{
-                        display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.75,
-                        bgcolor: group.rank ? alpha(group.rank.color, 0.08) : 'action.hover',
-                      }}>
-                        {group.rank
-                          ? <RankIcon rank={group.rank} size={14} />
-                          : <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />}
-                        <Typography sx={{
-                          fontSize: 11, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase',
-                          color: group.rank ? group.rank.color : 'text.secondary',
-                        }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.75,
+                          px: 1.5,
+                          py: 0.75,
+                          bgcolor: group.rank ? alpha(group.rank.color, 0.08) : 'action.hover',
+                        }}
+                      >
+                        {group.rank ? (
+                          <RankIcon rank={group.rank} size={14} />
+                        ) : (
+                          <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                        )}
+                        <Typography
+                          sx={{
+                            fontSize: 11,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                            textTransform: 'uppercase',
+                            color: group.rank ? group.rank.color : 'text.secondary',
+                          }}
+                        >
                           {sectionLabel}
                         </Typography>
                         <Box sx={{ flex: 1 }} />
-                        <Typography sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 700 }}>
-                          {occupiedCount} / {group.stations.length} puesto{group.stations.length === 1 ? '' : 's'}
+                        <Typography
+                          sx={{ fontSize: 10.5, color: 'text.secondary', fontWeight: 700 }}
+                        >
+                          {occupiedCount} / {group.stations.length} puesto
+                          {group.stations.length === 1 ? '' : 's'}
                         </Typography>
                       </Box>
                       {isLeadership ? (
@@ -466,10 +655,14 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                           ))}
                         </Stack>
                       ) : (
-                        <Box sx={{
-                          p: 1.25, display: 'grid', gap: 1.25,
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                        }}>
+                        <Box
+                          sx={{
+                            p: 1.25,
+                            display: 'grid',
+                            gap: 1.25,
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                          }}
+                        >
                           {group.stations.map((w) => (
                             <LineStationCard
                               key={w.id}
@@ -496,23 +689,40 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
               <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
                 <Box sx={ps.cardHeader}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={ps.cardHeaderTitle}>Personal sin estación ({peopleWithoutStation.length})</Typography>
-                    <Typography sx={ps.cardHeaderSubtitle}>Siguen asignados a esta área, pero su puesto ya no existe en la configuración actual</Typography>
+                    <Typography sx={ps.cardHeaderTitle}>
+                      Personal sin estación ({peopleWithoutStation.length})
+                    </Typography>
+                    <Typography sx={ps.cardHeaderSubtitle}>
+                      Siguen asignados a esta área, pero su puesto ya no existe en la configuración
+                      actual
+                    </Typography>
                   </Box>
                 </Box>
                 <Stack spacing={1} sx={{ p: 2 }}>
                   {peopleWithoutStation.map((r) => (
-                    <Stack key={r.id} direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <Stack
+                      key={r.id}
+                      direction="row"
+                      alignItems="center"
+                      spacing={1.5}
+                      sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                    >
                       <EmployeeAvatar employee={r.employee} size={36} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: 13 }} noWrap>{r.employee?.name || '—'}</Typography>
+                        <Typography sx={{ fontWeight: 700, fontSize: 13 }} noWrap>
+                          {r.employee?.name || '—'}
+                        </Typography>
                         <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }} noWrap>
                           {r.stationId ? `Antes: ${r.stationId}` : 'Sin puesto registrado hoy'}
                         </Typography>
                       </Box>
                       <Button
-                        size="small" variant="outlined" startIcon={<PersonSearchIcon sx={{ fontSize: 16 }} />}
-                        onClick={() => setMoveTarget({ employee: r.employee, currentAssignment: r })}
+                        size="small"
+                        variant="outlined"
+                        startIcon={<PersonSearchIcon sx={{ fontSize: 16 }} />}
+                        onClick={() =>
+                          setMoveTarget({ employee: r.employee, currentAssignment: r })
+                        }
                         sx={{ textTransform: 'none', fontWeight: 700, flexShrink: 0 }}
                       >
                         Asignar a estación
@@ -525,7 +735,9 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
 
             <Paper elevation={0} sx={{ ...ps.card, mb: 2 }}>
               <Box sx={ps.cardHeader}>
-                <Typography sx={ps.cardHeaderTitle}>Personal asignado hoy ({roster.length})</Typography>
+                <Typography sx={ps.cardHeaderTitle}>
+                  Personal asignado hoy ({roster.length})
+                </Typography>
               </Box>
               <TableContainer sx={{ maxHeight: 340 }}>
                 <Table size="small" stickyHeader>
@@ -542,43 +754,79 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                   </TableHead>
                   <TableBody>
                     {roster.map((r, idx) => {
-                      const ws = workstations.find(w => w.name === r.stationId)
+                      const ws = workstations.find((w) => w.name === r.stationId)
                       const isReal = r.source === 'REGISTRO'
                       const rowRank = ws ? getPersonnelRank(ws.role) : null
                       return (
                         <TableRow key={r.id} sx={ps.tableRow(idx)} hover>
-                          <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>{formatEmployeeNumber(r.employeeNumber)}</TableCell>
+                          <TableCell
+                            sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}
+                          >
+                            {formatEmployeeNumber(r.employeeNumber)}
+                          </TableCell>
                           <TableCell sx={ps.cellText}>
-                            <DraggablePersonChip employeeId={r.employeeId}>{r.employee?.name || '—'}</DraggablePersonChip>
+                            <DraggablePersonChip employeeId={r.employeeId}>
+                              {r.employee?.name || '—'}
+                            </DraggablePersonChip>
                           </TableCell>
                           <TableCell sx={ps.cellTextSecondary}>{r.stationId || '—'}</TableCell>
                           <TableCell>
                             {rowRank ? (
                               <Chip
                                 size="small"
-                                icon={<RankIcon rank={rowRank} size={12} sx={{ ml: '4px !important' }} />}
+                                icon={
+                                  <RankIcon
+                                    rank={rowRank}
+                                    size={12}
+                                    sx={{ ml: '4px !important' }}
+                                  />
+                                }
                                 label={rowRank.label.toUpperCase()}
                                 sx={{
-                                  fontWeight: 700, fontSize: 10.5, bgcolor: alpha(rowRank.color, 0.12), color: rowRank.color,
+                                  fontWeight: 700,
+                                  fontSize: 10.5,
+                                  bgcolor: alpha(rowRank.color, 0.12),
+                                  color: rowRank.color,
                                   border: `1px solid ${alpha(rowRank.color, 0.3)}`,
                                 }}
                               />
                             ) : (
-                              <Typography sx={ps.cellTextSecondary}>{ws?.requiredRole || '—'}</Typography>
+                              <Typography sx={ps.cellTextSecondary}>
+                                {ws?.requiredRole || '—'}
+                              </Typography>
                             )}
                           </TableCell>
                           <TableCell sx={ps.cellTextSecondary}>{r.checkInAt || '—'}</TableCell>
                           <TableCell>
-                            {isReal
-                              ? <Chip size="small" label="Presente" sx={ps.statusChip('COMPLETADA')} />
-                              : <Chip size="small" label="Sin check-in hoy" sx={ps.statusChip('PENDIENTE')} />}
+                            {isReal ? (
+                              <Chip
+                                size="small"
+                                label="Presente"
+                                sx={ps.statusChip('COMPLETADA')}
+                              />
+                            ) : (
+                              <Chip
+                                size="small"
+                                label="Sin check-in hoy"
+                                sx={ps.statusChip('PENDIENTE')}
+                              />
+                            )}
                           </TableCell>
                           <TableCell align="right">
-                            <Button size="small" onClick={() => setHistoryEmployee(r.employee)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                            <Button
+                              size="small"
+                              onClick={() => setHistoryEmployee(r.employee)}
+                              sx={{ textTransform: 'none', fontWeight: 700 }}
+                            >
                               Ver detalle
                             </Button>
                             {isReal && (
-                              <Button size="small" color="error" onClick={() => dnd.requestRelease(r.employeeId)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => dnd.requestRelease(r.employeeId)}
+                                sx={{ textTransform: 'none', fontWeight: 700 }}
+                              >
                                 Quitar
                               </Button>
                             )}
@@ -589,15 +837,26 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                     {roster.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7}>
-                          <EmptyState compact title="Nadie asignado todavía" description="Usa 'Registrar personal', arrastra a alguien sobre una estación, o asigna un candidato sugerido a la derecha." />
+                          <EmptyState
+                            compact
+                            title="Nadie asignado todavía"
+                            description="Usa 'Registrar personal', arrastra a alguien sobre una estación, o asigna un candidato sugerido a la derecha."
+                          />
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
               </TableContainer>
-              <Box sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button size="small" startIcon={<HistoryIcon />} onClick={() => setLineHistoryOpen(true)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+              <Box
+                sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}
+              >
+                <Button
+                  size="small"
+                  startIcon={<HistoryIcon />}
+                  onClick={() => setLineHistoryOpen(true)}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
                   Ver historial del área
                 </Button>
               </Box>
@@ -617,65 +876,143 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                     {selectedStation ? `Detalle de estación` : 'Estación'}
                   </Typography>
                   {selectedStation && (
-                    <Typography sx={ps.cardHeaderSubtitle}>Posición {selectedStation.order} de {workstations.length}</Typography>
+                    <Typography sx={ps.cardHeaderSubtitle}>
+                      Posición {selectedStation.order} de {workstations.length}
+                    </Typography>
                   )}
                 </Box>
               </Box>
               <Box sx={{ p: 2 }}>
                 {!selectedStation && (
-                  <EmptyState compact title="Selecciona una estación" description="Toca cualquier estación para ver su detalle." />
+                  <EmptyState
+                    compact
+                    title="Selecciona una estación"
+                    description="Toca cualquier estación para ver su detalle."
+                  />
                 )}
                 {selectedStation && (
                   <>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                       {selectedStationRank && (
-                        <Box sx={{
-                          width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                          display: 'grid', placeItems: 'center', bgcolor: alpha(selectedStationRank.color, 0.14),
-                        }}>
+                        <Box
+                          sx={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: '50%',
+                            flexShrink: 0,
+                            display: 'grid',
+                            placeItems: 'center',
+                            bgcolor: alpha(selectedStationRank.color, 0.14),
+                          }}
+                        >
                           <RankIcon rank={selectedStationRank} size={14} />
                         </Box>
                       )}
-                      <Typography sx={{ fontWeight: 800, fontSize: 17, color: selectedStation.isAvailable ? '#B45309' : 'text.primary' }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: 17,
+                          color: selectedStation.isAvailable ? '#B45309' : 'text.primary',
+                        }}
+                      >
                         {selectedStation.name}
                       </Typography>
                     </Stack>
                     <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1 }}>
-                      Rol requerido: <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}/{selectedStation.capacity}
+                      Rol requerido: <b>{selectedStation.requiredRole}</b> ·{' '}
+                      {selectedStation.occupants.length}/{selectedStation.capacity}
                     </Typography>
                     <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: selectedStation.isAvailable ? '#F59E0B' : '#10B981' }} />
-                      <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.3, color: selectedStation.isAvailable ? '#B45309' : '#059669' }}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: selectedStation.isAvailable ? '#F59E0B' : '#10B981',
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          letterSpacing: 0.3,
+                          color: selectedStation.isAvailable ? '#B45309' : '#059669',
+                        }}
+                      >
                         {selectedStation.isAvailable ? 'DISPONIBLE' : 'OCUPADA'}
                       </Typography>
                     </Stack>
 
-                    <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Información del puesto</Typography>
+                    <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>
+                      Información del puesto
+                    </Typography>
                     <Stack spacing={0.75} sx={{ mb: 1.5 }}>
                       <Box>
-                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área</Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: 'text.secondary',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Área
+                        </Typography>
                         <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{area.name}</Typography>
                       </Box>
                       <Box>
-                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Tipo</Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: 'text.secondary',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Tipo
+                        </Typography>
                         <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Operativo</Typography>
                       </Box>
                       <Box>
-                        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Jerarquía</Typography>
-                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedStationRank?.label || 'Sin información disponible'}</Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: 'text.secondary',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Jerarquía
+                        </Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                          {selectedStationRank?.label || 'Sin información disponible'}
+                        </Typography>
                       </Box>
                     </Stack>
 
                     {selectedStation.occupants.length > 0 && (
                       <>
-                        <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>Empleado asignado</Typography>
+                        <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 0.75 }}>
+                          Empleado asignado
+                        </Typography>
                         <Stack spacing={1} sx={{ mb: 1.5 }}>
-                          {selectedStation.occupants.map(o => (
-                            <Stack key={o.id} direction="row" spacing={1.25} alignItems="center" onClick={() => setHistoryEmployee(o.employee)} sx={{ cursor: 'pointer' }}>
+                          {selectedStation.occupants.map((o) => (
+                            <Stack
+                              key={o.id}
+                              direction="row"
+                              spacing={1.25}
+                              alignItems="center"
+                              onClick={() => setHistoryEmployee(o.employee)}
+                              sx={{ cursor: 'pointer' }}
+                            >
                               <EmployeeAvatar employee={o.employee} size={36} />
                               <Box>
-                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{o.employeeNumber} — {o.employee?.name}</Typography>
-                                <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>Entrada {o.checkInAt}</Typography>
+                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+                                  {o.employeeNumber} — {o.employee?.name}
+                                </Typography>
+                                <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+                                  Entrada {o.checkInAt}
+                                </Typography>
                               </Box>
                             </Stack>
                           ))}
@@ -691,23 +1028,71 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                         {selectedStationRank?.key === 'PERSONAL_DE_APOYO' && (
                           <>
                             <Divider sx={{ my: 1.5 }} />
-                            <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 1 }}>Información adicional</Typography>
+                            <Typography sx={{ ...ps.sectionTitle, fontSize: 12.5, mb: 1 }}>
+                              Información adicional
+                            </Typography>
                             <Stack spacing={0.75} sx={{ mb: 1.5 }}>
                               <Box>
-                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Área de origen</Typography>
-                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedStation.role}</Typography>
+                                <Typography
+                                  sx={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  Área de origen
+                                </Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                                  {selectedStation.role}
+                                </Typography>
                               </Box>
                               <Box>
-                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Apoya en</Typography>
-                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{area.name}</Typography>
+                                <Typography
+                                  sx={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  Apoya en
+                                </Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                                  {area.name}
+                                </Typography>
                               </Box>
                               <Box>
-                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Tipo de apoyo</Typography>
-                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Transversal</Typography>
+                                <Typography
+                                  sx={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  Tipo de apoyo
+                                </Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                                  Transversal
+                                </Typography>
                               </Box>
                               <Box>
-                                <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Turno</Typography>
-                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{currentOfficialShift.label} ({formatHour12(currentOfficialShift.start)} – {formatHour12(currentOfficialShift.end)})</Typography>
+                                <Typography
+                                  sx={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  Turno
+                                </Typography>
+                                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                                  {currentOfficialShift.label} (
+                                  {formatHour12(currentOfficialShift.start)} –{' '}
+                                  {formatHour12(currentOfficialShift.end)})
+                                </Typography>
                               </Box>
                             </Stack>
                           </>
@@ -716,15 +1101,23 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                         <Divider sx={{ my: 1.5 }} />
                         <Stack direction="row" spacing={1}>
                           <Button
-                            size="small" variant="outlined" startIcon={<HistoryIcon />}
-                            onClick={() => setHistoryEmployee(selectedStation.occupants[0].employee)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<HistoryIcon />}
+                            onClick={() =>
+                              setHistoryEmployee(selectedStation.occupants[0].employee)
+                            }
                             sx={{ textTransform: 'none', fontWeight: 700, flex: 1 }}
                           >
                             Ver historial
                           </Button>
                           <Button
-                            size="small" variant="contained" startIcon={<SwapHorizIcon />}
-                            onClick={() => setHistoryEmployee(selectedStation.occupants[0].employee)}
+                            size="small"
+                            variant="contained"
+                            startIcon={<SwapHorizIcon />}
+                            onClick={() =>
+                              setHistoryEmployee(selectedStation.occupants[0].employee)
+                            }
                             sx={{ textTransform: 'none', fontWeight: 700, flex: 1 }}
                           >
                             Cambiar asignación
@@ -736,17 +1129,32 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
                     {selectedStation.isAvailable && (
                       <>
                         <Divider sx={{ my: 1.5 }} />
-                        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Personal sugerido</Typography>
+                        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>
+                          Personal sugerido
+                        </Typography>
                         {suggestions.length === 0 ? (
-                          <EmptyState compact title="Sin candidatos" description="Nadie presente hoy tiene esta habilidad registrada todavía." />
+                          <EmptyState
+                            compact
+                            title="Sin candidatos"
+                            description="Nadie presente hoy tiene esta habilidad registrada todavía."
+                          />
                         ) : (
                           <Stack spacing={1}>
-                            {suggestions.map(c => (
-                              <SuggestedEmployeeCard key={c.employee.id} candidate={c} onAssign={handleAssignSuggested} disabled={!c.present} />
+                            {suggestions.map((c) => (
+                              <SuggestedEmployeeCard
+                                key={c.employee.id}
+                                candidate={c}
+                                onAssign={handleAssignSuggested}
+                                disabled={!c.present}
+                              />
                             ))}
                           </Stack>
                         )}
-                        <Button size="small" onClick={() => setIncludeAbsent(v => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
+                        <Button
+                          size="small"
+                          onClick={() => setIncludeAbsent((v) => !v)}
+                          sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+                        >
                           {includeAbsent ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
                         </Button>
                       </>
@@ -779,10 +1187,29 @@ export default function LineLikeAreaDetail({ workCenterId, open, onClose, previo
         station={assignStation}
         onDone={() => {}}
       />
-      <RegisterPersonnelDialog open={registerOpen} onClose={() => setRegisterOpen(false)} fixedAreaId={dataAreaId} onDone={() => {}} />
-      <SelfAssignDialog open={selfAssignOpen} onClose={() => setSelfAssignOpen(false)} fixedAreaId={dataAreaId} onDone={() => {}} />
-      <EmployeeHistoryDialog employee={historyEmployee} open={Boolean(historyEmployee)} onClose={() => setHistoryEmployee(null)} onChanged={() => {}} />
-      <LineHistoryDialog lineId={dataAreaId} open={lineHistoryOpen} onClose={() => setLineHistoryOpen(false)} />
+      <RegisterPersonnelDialog
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        fixedAreaId={dataAreaId}
+        onDone={() => {}}
+      />
+      <SelfAssignDialog
+        open={selfAssignOpen}
+        onClose={() => setSelfAssignOpen(false)}
+        fixedAreaId={dataAreaId}
+        onDone={() => {}}
+      />
+      <EmployeeHistoryDialog
+        employee={historyEmployee}
+        open={Boolean(historyEmployee)}
+        onClose={() => setHistoryEmployee(null)}
+        onChanged={() => {}}
+      />
+      <LineHistoryDialog
+        lineId={dataAreaId}
+        open={lineHistoryOpen}
+        onClose={() => setLineHistoryOpen(false)}
+      />
       {moveTarget && (
         <MoveConfirmDialog
           open={Boolean(moveTarget)}

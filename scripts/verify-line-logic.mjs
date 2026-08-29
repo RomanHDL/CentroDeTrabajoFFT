@@ -7,13 +7,32 @@
 //
 // Uso: node --import ./scripts/_esm-extensionless-loader.mjs scripts/verify-line-logic.mjs
 import assert from 'node:assert/strict'
-import { buildLineRolePlan, LINE_BASE_ROLES, getWorkstationsForLine, buildCustomRolePlan, hasMultipleStations } from '../src/data/personnel/workstations.js'
 import {
-  OFFICIAL_SHIFTS, WORK_CENTERS, WORK_CENTER_NAVIGATION_ORDER, getWorkCenterNavContext,
-  getCurrentShift, getShiftSchedule, formatShiftSchedule,
-  getAreaDetailVariant, AREA_DETAIL_VARIANTS, OPERATIONAL_DETAIL_AREA_IDS, SUPPORT_DETAIL_AREA_IDS,
-  CUSTOM_STATION_PLANS, workCenterById, isWorkCenterActive, canonicalOperationalAreaId, operationalGroupMembers,
-  FFT_INDICATORS, AREA_STATION_SOURCE_OVERRIDE,
+  buildLineRolePlan,
+  LINE_BASE_ROLES,
+  getWorkstationsForLine,
+  buildCustomRolePlan,
+  hasMultipleStations,
+} from '../src/data/personnel/workstations.js'
+import {
+  OFFICIAL_SHIFTS,
+  WORK_CENTERS,
+  WORK_CENTER_NAVIGATION_ORDER,
+  getWorkCenterNavContext,
+  getCurrentShift,
+  getShiftSchedule,
+  formatShiftSchedule,
+  getAreaDetailVariant,
+  AREA_DETAIL_VARIANTS,
+  OPERATIONAL_DETAIL_AREA_IDS,
+  SUPPORT_DETAIL_AREA_IDS,
+  CUSTOM_STATION_PLANS,
+  workCenterById,
+  isWorkCenterActive,
+  canonicalOperationalAreaId,
+  operationalGroupMembers,
+  FFT_INDICATORS,
+  AREA_STATION_SOURCE_OVERRIDE,
 } from '../src/data/production/catalog.js'
 import { formatEmployeeNumber } from '../src/data/personnel/employeeDisplay.js'
 import { ROLE_TO_CATEGORY_KEY, LINE_VISUAL_TYPES } from '../src/data/personnel/lineVisualType.js'
@@ -37,14 +56,30 @@ check('plan de 7 posiciones = 5 roles base + 2 repetidos', () => {
   const plan = buildLineRolePlan('X', 7)
   assert.equal(plan.length, 7)
 })
-check('plan de 10 posiciones (DEFAULT_REPEAT_ORDER, 2026-08-28 tercera ronda: "Prueba eléctrica" ya no repite en ninguna linea) -- Prueba eléctrica se queda en 1, los 4 roles repetibles absorben los 5 extra (uno de ellos llega a 3)', () => {
-  const plan = buildLineRolePlan('X', 10)
-  assert.equal(plan.length, 10)
-  assert.equal(plan.filter((p) => p.role === 'Prueba eléctrica').length, 1, 'Prueba eléctrica nunca debe repetirse')
-  const counts = LINE_BASE_ROLES.filter((r) => r !== 'Prueba eléctrica').map((r) => plan.filter((p) => p.role === r).length)
-  assert.equal(counts.reduce((a, b) => a + b, 0), 9, '4 roles repetibles deben sumar 9 (10 total - 1 de Prueba eléctrica)')
-  assert.ok(counts.includes(3), 'con solo 4 roles repetibles para 5 extra, uno de ellos llega a 3 ocurrencias (round-robin)')
-})
+check(
+  'plan de 10 posiciones (DEFAULT_REPEAT_ORDER, 2026-08-28 tercera ronda: "Prueba eléctrica" ya no repite en ninguna linea) -- Prueba eléctrica se queda en 1, los 4 roles repetibles absorben los 5 extra (uno de ellos llega a 3)',
+  () => {
+    const plan = buildLineRolePlan('X', 10)
+    assert.equal(plan.length, 10)
+    assert.equal(
+      plan.filter((p) => p.role === 'Prueba eléctrica').length,
+      1,
+      'Prueba eléctrica nunca debe repetirse',
+    )
+    const counts = LINE_BASE_ROLES.filter((r) => r !== 'Prueba eléctrica').map(
+      (r) => plan.filter((p) => p.role === r).length,
+    )
+    assert.equal(
+      counts.reduce((a, b) => a + b, 0),
+      9,
+      '4 roles repetibles deben sumar 9 (10 total - 1 de Prueba eléctrica)',
+    )
+    assert.ok(
+      counts.includes(3),
+      'con solo 4 roles repetibles para 5 extra, uno de ellos llega a 3 ocurrencias (round-robin)',
+    )
+  },
+)
 check('nunca genera un rol fuera de los 5 base', () => {
   const plan = buildLineRolePlan('X', 10)
   plan.forEach((p) => assert.ok(LINE_BASE_ROLES.includes(p.role)))
@@ -64,86 +99,169 @@ check('cantidad de estaciones de cada WC LINEA real coincide con su idealHeadcou
   })
 })
 // 2026-08-28 ("ajustes controlados", a peticion explicita del usuario): Empaque en WC LINEA 0-10.
-check('WC LINEA 0 tiene 2 puestos de Empaque, WC LINEA 1..10 tienen 1 cada una (quinta ronda: "en LINEA1 elimina Empaque 2")', () => {
-  const two = ['PROYECTO']
-  const one = ['LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
-  two.forEach((id) => {
-    const empaques = getWorkstationsForLine(id).filter((s) => s.role === 'Empaque')
-    assert.deepEqual(empaques.map((s) => s.name), ['Empaque 1', 'Empaque 2'], id)
-  })
-  one.forEach((id) => {
-    const empaques = getWorkstationsForLine(id).filter((s) => s.role === 'Empaque')
-    assert.deepEqual(empaques.map((s) => s.name), ['Empaque'], id)
-  })
-})
-check('todos los puestos de Empaque usan rango "Ayudante General" (categoria APOYO, lineVisualType.js)', () => {
-  assert.equal(ROLE_TO_CATEGORY_KEY.Empaque, 'APOYO')
-  assert.equal(LINE_VISUAL_TYPES.APOYO.label, 'Ayudante General')
-})
-check('WC LINEA 1: exactamente 1 Montaje y 1 Etiquetado (Montaje 2/Etiquetado 2 eliminados a proposito)', () => {
-  const stations = getWorkstationsForLine('LINEA1')
-  assert.equal(stations.filter((s) => s.role === 'Montaje').length, 1)
-  assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 1)
-  assert.ok(!stations.some((s) => s.name === 'Montaje 2'))
-  assert.ok(!stations.some((s) => s.name === 'Etiquetado 2'))
-})
-check('"Prueba eléctrica" exactamente 1 vez en las 11 WC LINEA (2026-08-28, tercera ronda, a peticion explicita del usuario)', () => {
-  ;['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10'].forEach((id) => {
-    const stations = getWorkstationsForLine(id)
-    assert.equal(stations.filter((s) => s.role === 'Prueba eléctrica').length, 1, id)
-    assert.ok(!stations.some((s) => s.name === 'Prueba eléctrica 2'), id)
-  })
-})
-check('todos los roles operativos de WC LINEA (Montaje/Etiquetado/Limpieza de TV/Suministro/Prueba eléctrica/Empaque) son "Ayudante General" -- solo Calidad queda distinto', () => {
-  ;['Montaje', 'Etiquetado', 'Limpieza de TV', 'Suministro de Accesorios', 'Prueba eléctrica', 'Empaque'].forEach((role) => {
-    assert.equal(ROLE_TO_CATEGORY_KEY[role], 'APOYO', role)
-  })
-  assert.equal(ROLE_TO_CATEGORY_KEY['Calidad'], 'CALIDAD')
-})
-check('WC LINEA 0 (PROYECTO, cuarta ronda: "elimina Montaje 3, Limpieza de TV 2 y Suministro de Accesorios 2"): idealHeadcount baja de 13 a 10, plan base baja a 7 -- solo Montaje y Etiquetado se repiten (1 vez cada uno), "Montaje 3"/"Limpieza de TV 2"/"Suministro de Accesorios 2" ya no existen', () => {
-  const stations = getWorkstationsForLine('PROYECTO')
-  assert.equal(workCenterById('PROYECTO').idealHeadcount, 10)
-  assert.equal(stations.length, 10)
-  assert.equal(stations.filter((s) => s.role === 'Montaje').length, 2)
-  assert.deepEqual(stations.filter((s) => s.role === 'Montaje').map((s) => s.name), ['Montaje', 'Montaje 2'])
-  assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 2)
-  assert.deepEqual(stations.filter((s) => s.role === 'Etiquetado').map((s) => s.name), ['Etiquetado', 'Etiquetado 2'])
-  assert.equal(stations.filter((s) => s.role === 'Limpieza de TV').length, 1)
-  assert.equal(stations.filter((s) => s.role === 'Suministro de Accesorios').length, 1)
-  assert.ok(!stations.some((s) => s.name === 'Montaje 3'))
-  assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'))
-  assert.ok(!stations.some((s) => s.name === 'Suministro de Accesorios 2'))
-})
-check('WC LINEA 6..10 (cuarta ronda: "elimina Limpieza de TV 2"): idealHeadcount baja de 9 a 8, quedan identicas a WC LINEA 2-5 -- solo "Etiquetado" se repite una vez', () => {
-  ;['LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10'].forEach((id) => {
-    const stations = getWorkstationsForLine(id)
-    assert.equal(workCenterById(id).idealHeadcount, 8, id)
-    assert.equal(stations.length, 8, id)
-    assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 2, id)
-    assert.equal(stations.filter((s) => s.role === 'Limpieza de TV').length, 1, id)
-    assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'), id)
-  })
-})
-check('WC LINEA 1: nunca tuvo "Limpieza de TV 2" (su unica posicion repetida, inevitable por el piso minimo de 6, es "Suministro de Accesorios 2") -- quinta ronda ("elimina Empaque 2") baja idealHeadcount de 9 a 8 vía Empaque, no vía el plan base', () => {
-  const stations = getWorkstationsForLine('LINEA1')
-  assert.equal(workCenterById('LINEA1').idealHeadcount, 8)
-  assert.equal(stations.length, 8)
-  assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'))
-  assert.equal(stations.filter((s) => s.role === 'Suministro de Accesorios').length, 2)
-  assert.deepEqual(stations.filter((s) => s.role === 'Suministro de Accesorios').map((s) => s.name), ['Suministro de Accesorios', 'Suministro de Accesorios 2'])
-  assert.deepEqual(stations.filter((s) => s.role === 'Empaque').map((s) => s.name), ['Empaque'])
-})
-check('"Operador de Compatibilidad" (2026-08-28, tercera ronda) ya NO es excepcion -- cae en el fallback AYUDANTE_GENERAL, igual que cualquier otro puesto especifico de Grupo C', () => {
-  assert.equal(getPersonnelRank('Operador de Compatibilidad'), PERSONNEL_RANKS.AYUDANTE_GENERAL)
-})
-check('"Limpieza" en WC LINEA 0-10 ahora es "Limpieza de TV" (rol/nombre) -- nombre nunca revierte a "Limpieza"; rango es Ayudante General (2026-08-28, tercera ronda: "en las lineas solo hay puros ayudantes y una persona de calidad")', () => {
-  ;['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA10'].forEach((id) => {
-    const stations = getWorkstationsForLine(id)
-    assert.ok(stations.some((s) => s.role === 'Limpieza de TV'), id)
-    assert.ok(!stations.some((s) => s.role === 'Limpieza'), id)
-  })
-  assert.equal(ROLE_TO_CATEGORY_KEY['Limpieza de TV'], 'APOYO')
-})
+check(
+  'WC LINEA 0 tiene 2 puestos de Empaque, WC LINEA 1..10 tienen 1 cada una (quinta ronda: "en LINEA1 elimina Empaque 2")',
+  () => {
+    const two = ['PROYECTO']
+    const one = [
+      'LINEA1',
+      'LINEA2',
+      'LINEA3',
+      'LINEA4',
+      'LINEA5',
+      'LINEA6',
+      'LINEA7',
+      'LINEA8',
+      'LINEA9',
+      'LINEA10',
+    ]
+    two.forEach((id) => {
+      const empaques = getWorkstationsForLine(id).filter((s) => s.role === 'Empaque')
+      assert.deepEqual(
+        empaques.map((s) => s.name),
+        ['Empaque 1', 'Empaque 2'],
+        id,
+      )
+    })
+    one.forEach((id) => {
+      const empaques = getWorkstationsForLine(id).filter((s) => s.role === 'Empaque')
+      assert.deepEqual(
+        empaques.map((s) => s.name),
+        ['Empaque'],
+        id,
+      )
+    })
+  },
+)
+check(
+  'todos los puestos de Empaque usan rango "Ayudante General" (categoria APOYO, lineVisualType.js)',
+  () => {
+    assert.equal(ROLE_TO_CATEGORY_KEY.Empaque, 'APOYO')
+    assert.equal(LINE_VISUAL_TYPES.APOYO.label, 'Ayudante General')
+  },
+)
+check(
+  'WC LINEA 1: exactamente 1 Montaje y 1 Etiquetado (Montaje 2/Etiquetado 2 eliminados a proposito)',
+  () => {
+    const stations = getWorkstationsForLine('LINEA1')
+    assert.equal(stations.filter((s) => s.role === 'Montaje').length, 1)
+    assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 1)
+    assert.ok(!stations.some((s) => s.name === 'Montaje 2'))
+    assert.ok(!stations.some((s) => s.name === 'Etiquetado 2'))
+  },
+)
+check(
+  '"Prueba eléctrica" exactamente 1 vez en las 11 WC LINEA (2026-08-28, tercera ronda, a peticion explicita del usuario)',
+  () => {
+    ;[
+      'PROYECTO',
+      'LINEA1',
+      'LINEA2',
+      'LINEA3',
+      'LINEA4',
+      'LINEA5',
+      'LINEA6',
+      'LINEA7',
+      'LINEA8',
+      'LINEA9',
+      'LINEA10',
+    ].forEach((id) => {
+      const stations = getWorkstationsForLine(id)
+      assert.equal(stations.filter((s) => s.role === 'Prueba eléctrica').length, 1, id)
+      assert.ok(!stations.some((s) => s.name === 'Prueba eléctrica 2'), id)
+    })
+  },
+)
+check(
+  'todos los roles operativos de WC LINEA (Montaje/Etiquetado/Limpieza de TV/Suministro/Prueba eléctrica/Empaque) son "Ayudante General" -- solo Calidad queda distinto',
+  () => {
+    ;[
+      'Montaje',
+      'Etiquetado',
+      'Limpieza de TV',
+      'Suministro de Accesorios',
+      'Prueba eléctrica',
+      'Empaque',
+    ].forEach((role) => {
+      assert.equal(ROLE_TO_CATEGORY_KEY[role], 'APOYO', role)
+    })
+    assert.equal(ROLE_TO_CATEGORY_KEY['Calidad'], 'CALIDAD')
+  },
+)
+check(
+  'WC LINEA 0 (PROYECTO, cuarta ronda: "elimina Montaje 3, Limpieza de TV 2 y Suministro de Accesorios 2"): idealHeadcount baja de 13 a 10, plan base baja a 7 -- solo Montaje y Etiquetado se repiten (1 vez cada uno), "Montaje 3"/"Limpieza de TV 2"/"Suministro de Accesorios 2" ya no existen',
+  () => {
+    const stations = getWorkstationsForLine('PROYECTO')
+    assert.equal(workCenterById('PROYECTO').idealHeadcount, 10)
+    assert.equal(stations.length, 10)
+    assert.equal(stations.filter((s) => s.role === 'Montaje').length, 2)
+    assert.deepEqual(
+      stations.filter((s) => s.role === 'Montaje').map((s) => s.name),
+      ['Montaje', 'Montaje 2'],
+    )
+    assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 2)
+    assert.deepEqual(
+      stations.filter((s) => s.role === 'Etiquetado').map((s) => s.name),
+      ['Etiquetado', 'Etiquetado 2'],
+    )
+    assert.equal(stations.filter((s) => s.role === 'Limpieza de TV').length, 1)
+    assert.equal(stations.filter((s) => s.role === 'Suministro de Accesorios').length, 1)
+    assert.ok(!stations.some((s) => s.name === 'Montaje 3'))
+    assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'))
+    assert.ok(!stations.some((s) => s.name === 'Suministro de Accesorios 2'))
+  },
+)
+check(
+  'WC LINEA 6..10 (cuarta ronda: "elimina Limpieza de TV 2"): idealHeadcount baja de 9 a 8, quedan identicas a WC LINEA 2-5 -- solo "Etiquetado" se repite una vez',
+  () => {
+    ;['LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10'].forEach((id) => {
+      const stations = getWorkstationsForLine(id)
+      assert.equal(workCenterById(id).idealHeadcount, 8, id)
+      assert.equal(stations.length, 8, id)
+      assert.equal(stations.filter((s) => s.role === 'Etiquetado').length, 2, id)
+      assert.equal(stations.filter((s) => s.role === 'Limpieza de TV').length, 1, id)
+      assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'), id)
+    })
+  },
+)
+check(
+  'WC LINEA 1: nunca tuvo "Limpieza de TV 2" (su unica posicion repetida, inevitable por el piso minimo de 6, es "Suministro de Accesorios 2") -- quinta ronda ("elimina Empaque 2") baja idealHeadcount de 9 a 8 vía Empaque, no vía el plan base',
+  () => {
+    const stations = getWorkstationsForLine('LINEA1')
+    assert.equal(workCenterById('LINEA1').idealHeadcount, 8)
+    assert.equal(stations.length, 8)
+    assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'))
+    assert.equal(stations.filter((s) => s.role === 'Suministro de Accesorios').length, 2)
+    assert.deepEqual(
+      stations.filter((s) => s.role === 'Suministro de Accesorios').map((s) => s.name),
+      ['Suministro de Accesorios', 'Suministro de Accesorios 2'],
+    )
+    assert.deepEqual(
+      stations.filter((s) => s.role === 'Empaque').map((s) => s.name),
+      ['Empaque'],
+    )
+  },
+)
+check(
+  '"Operador de Compatibilidad" (2026-08-28, tercera ronda) ya NO es excepcion -- cae en el fallback AYUDANTE_GENERAL, igual que cualquier otro puesto especifico de Grupo C',
+  () => {
+    assert.equal(getPersonnelRank('Operador de Compatibilidad'), PERSONNEL_RANKS.AYUDANTE_GENERAL)
+  },
+)
+check(
+  '"Limpieza" en WC LINEA 0-10 ahora es "Limpieza de TV" (rol/nombre) -- nombre nunca revierte a "Limpieza"; rango es Ayudante General (2026-08-28, tercera ronda: "en las lineas solo hay puros ayudantes y una persona de calidad")',
+  () => {
+    ;['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA10'].forEach((id) => {
+      const stations = getWorkstationsForLine(id)
+      assert.ok(
+        stations.some((s) => s.role === 'Limpieza de TV'),
+        id,
+      )
+      assert.ok(!stations.some((s) => s.role === 'Limpieza'), id)
+    })
+    assert.equal(ROLE_TO_CATEGORY_KEY['Limpieza de TV'], 'APOYO')
+  },
+)
 
 // I/J/K -- los 3 turnos oficiales.
 check('Matutino = 07:00-17:10', () => {
@@ -167,22 +285,48 @@ check('todos los WORK_CENTERS.name empiezan con "WC " (rename CT->WC completo)',
   WORK_CENTERS.forEach((w) => assert.ok(w.name.startsWith('WC '), `${w.id}: "${w.name}"`))
 })
 check('los ids internos de WORK_CENTERS no cambiaron (rename fue solo del display name)', () => {
-  const knownIds = new Set(['LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10', 'PROYECTO', 'ACCESORIOS', 'PALETIZADO'])
+  const knownIds = new Set([
+    'LINEA1',
+    'LINEA2',
+    'LINEA3',
+    'LINEA4',
+    'LINEA5',
+    'LINEA6',
+    'LINEA7',
+    'LINEA8',
+    'LINEA9',
+    'LINEA10',
+    'PROYECTO',
+    'ACCESORIOS',
+    'PALETIZADO',
+  ])
   WORK_CENTERS.filter((w) => knownIds.has(w.id)).forEach((w) => assert.ok(knownIds.has(w.id)))
   assert.equal(WORK_CENTERS.filter((w) => knownIds.has(w.id)).length, knownIds.size)
 })
 
 // Navegacion Anterior/Siguiente entre Work Centers (2026-08-27).
 check('el recorrido empieza en PROYECTO (WC LINEA 0), luego LINEA1..10 en orden', () => {
-  assert.deepEqual(
-    WORK_CENTER_NAVIGATION_ORDER.slice(0, 11),
-    ['PROYECTO', 'LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
-  )
+  assert.deepEqual(WORK_CENTER_NAVIGATION_ORDER.slice(0, 11), [
+    'PROYECTO',
+    'LINEA1',
+    'LINEA2',
+    'LINEA3',
+    'LINEA4',
+    'LINEA5',
+    'LINEA6',
+    'LINEA7',
+    'LINEA8',
+    'LINEA9',
+    'LINEA10',
+  ])
 })
-check('SELLADO y PNP/POC/PEN nunca aparecen en el recorrido (sin detalle propio / sin WORK_CENTER real)', () => {
-  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SELLADO'))
-  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('PNP_POC_PEN'))
-})
+check(
+  'SELLADO y PNP/POC/PEN nunca aparecen en el recorrido (sin detalle propio / sin WORK_CENTER real)',
+  () => {
+    assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SELLADO'))
+    assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('PNP_POC_PEN'))
+  },
+)
 check('WC LINEA 0 -> siguiente = WC LINEA 1, sin anterior', () => {
   const ctx = getWorkCenterNavContext('PROYECTO')
   assert.equal(ctx.previous, null)
@@ -193,27 +337,39 @@ check('WC LINEA 1 -> anterior = WC LINEA 0, siguiente = WC LINEA 2', () => {
   assert.equal(ctx.previous.id, 'PROYECTO')
   assert.equal(ctx.next.id, 'LINEA2')
 })
-check('WC LINEA 10 -> siguiente = WC Conveyor General (2026-08-28, "corrección navegación Conveyor General": vuelve a ser parada propia)', () => {
-  const ctx = getWorkCenterNavContext('LINEA10')
-  assert.equal(ctx.next.id, 'CONVEYOR_PRINCIPAL')
-})
+check(
+  'WC LINEA 10 -> siguiente = WC Conveyor General (2026-08-28, "corrección navegación Conveyor General": vuelve a ser parada propia)',
+  () => {
+    const ctx = getWorkCenterNavContext('LINEA10')
+    assert.equal(ctx.next.id, 'CONVEYOR_PRINCIPAL')
+  },
+)
 check('WC Conveyor General -> siguiente = WC Midea/High Value', () => {
   const ctx = getWorkCenterNavContext('CONVEYOR_PRINCIPAL')
   assert.equal(ctx.next.id, 'HIGH_VALUE')
 })
-check('CONVEYOR_SECUNDARIO nunca aparece en el recorrido (fusionado en WC Conveyor General)', () => {
-  assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_SECUNDARIO'))
-  assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_PRINCIPAL'))
-})
-check('el ultimo Work Center del recorrido no tiene siguiente (navegacion lineal, nunca circular)', () => {
-  const lastId = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
-  const ctx = getWorkCenterNavContext(lastId)
-  assert.equal(ctx.next, null)
-})
-check('SELLADO resuelve su navegacion a traves de su id canonico (WC Conveyor General, 2026-08-28: vuelve a ser su propio canonico, ya no Paletizado)', () => {
-  assert.equal(getWorkCenterNavContext('SELLADO').current.id, 'CONVEYOR_PRINCIPAL')
-  assert.equal(getWorkCenterNavContext('CONVEYOR_SECUNDARIO').current.id, 'CONVEYOR_PRINCIPAL')
-})
+check(
+  'CONVEYOR_SECUNDARIO nunca aparece en el recorrido (fusionado en WC Conveyor General)',
+  () => {
+    assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_SECUNDARIO'))
+    assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('CONVEYOR_PRINCIPAL'))
+  },
+)
+check(
+  'el ultimo Work Center del recorrido no tiene siguiente (navegacion lineal, nunca circular)',
+  () => {
+    const lastId = WORK_CENTER_NAVIGATION_ORDER[WORK_CENTER_NAVIGATION_ORDER.length - 1]
+    const ctx = getWorkCenterNavContext(lastId)
+    assert.equal(ctx.next, null)
+  },
+)
+check(
+  'SELLADO resuelve su navegacion a traves de su id canonico (WC Conveyor General, 2026-08-28: vuelve a ser su propio canonico, ya no Paletizado)',
+  () => {
+    assert.equal(getWorkCenterNavContext('SELLADO').current.id, 'CONVEYOR_PRINCIPAL')
+    assert.equal(getWorkCenterNavContext('CONVEYOR_SECUNDARIO').current.id, 'CONVEYOR_PRINCIPAL')
+  },
+)
 check('recorrido completo: 0..10 + el resto de areas reales, sin huecos ni saltos rotos', () => {
   for (let i = 0; i < WORK_CENTER_NAVIGATION_ORDER.length - 1; i += 1) {
     const ctx = getWorkCenterNavContext(WORK_CENTER_NAVIGATION_ORDER[i])
@@ -253,7 +409,10 @@ check('placeholder "PROYECTO" ya literal -> PROYECTO', () => {
 // (correccion "Turnos oficiales"). Noche cruza medianoche: NUNCA implementada
 // como "hora >= 22:01 && hora <= 07:00" (eso nunca es true) -- se prueban
 // explicitamente los 8 casos limite que dio el usuario.
-function atTime(hh, mm) { const d = new Date(2026, 7, 26, hh, mm); return d }
+function atTime(hh, mm) {
+  const d = new Date(2026, 7, 26, hh, mm)
+  return d
+}
 check('06:59 -> Noche (un minuto antes de Matutino)', () => {
   assert.equal(getCurrentShift(atTime(6, 59)).id, 'NOCHE')
 })
@@ -283,9 +442,12 @@ check('getShiftSchedule encuentra por id y por label, nunca inventa un horario',
   assert.equal(getShiftSchedule('Matutino').end, '17:10')
   assert.equal(getShiftSchedule('NO_EXISTE'), null)
 })
-check('formatShiftSchedule -- Matutino se muestra "07:00 AM – 05:10 PM" (nunca 07:00-14:00)', () => {
-  assert.equal(formatShiftSchedule(getShiftSchedule('MATUTINO')), '07:00 AM – 05:10 PM')
-})
+check(
+  'formatShiftSchedule -- Matutino se muestra "07:00 AM – 05:10 PM" (nunca 07:00-14:00)',
+  () => {
+    assert.equal(formatShiftSchedule(getShiftSchedule('MATUTINO')), '07:00 AM – 05:10 PM')
+  },
+)
 check('formatShiftSchedule -- Noche cruza medianoche en el texto (10:01 PM – 07:00 AM)', () => {
   assert.equal(formatShiftSchedule(getShiftSchedule('NOCHE')), '10:01 PM – 07:00 AM')
 })
@@ -300,50 +462,92 @@ check('WC Calidad -> variante SUPPORT (ya no OPERATIONAL)', () => {
   assert.ok(SUPPORT_DETAIL_AREA_IDS.has('CALIDAD'))
 })
 check('las 7 cards inferiores (incluyendo Calidad) son SUPPORT', () => {
-  ['CALIDAD', 'CAPACITACION', 'TEAM_LEADER', 'SOPORTE', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR'].forEach((id) => {
+  ;[
+    'CALIDAD',
+    'CAPACITACION',
+    'TEAM_LEADER',
+    'SOPORTE',
+    'LIMPIEZA',
+    'GERENTE',
+    'SUPERVISOR',
+  ].forEach((id) => {
     assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.SUPPORT, id)
   })
 })
-check('CONVEYOR_PRINCIPAL (2026-08-28, "corrección navegación Conveyor General") vuelve a ser su PROPIO canonico, activo, variante LINE_LIKE -- ya NO resuelve a Paletizado', () => {
-  assert.equal(getAreaDetailVariant('CONVEYOR_PRINCIPAL'), AREA_DETAIL_VARIANTS.LINE_LIKE)
-  assert.equal(canonicalOperationalAreaId('CONVEYOR_PRINCIPAL'), 'CONVEYOR_PRINCIPAL')
-  assert.equal(isWorkCenterActive('CONVEYOR_PRINCIPAL'), true)
-  assert.equal(workCenterById('CONVEYOR_PRINCIPAL').idealHeadcount, null, 'idealHeadcount se queda null a proposito -- evita doble conteo en getStaffingTotals/SHOWN_AREA_IDS')
-  ;['CONVEYOR_SECUNDARIO', 'SELLADO'].forEach((id) => {
-    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
-    assert.equal(canonicalOperationalAreaId(id), 'CONVEYOR_PRINCIPAL', id)
-  })
-  assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_PRINCIPAL'))
-  assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_SECUNDARIO'))
-  assert.equal(isWorkCenterActive('CONVEYOR_SECUNDARIO'), false)
-})
-check('WC Paletizado sigue teniendo exactamente 2 puestos "Ayudante General de Conveyor" en su propia distribución (fuente real, sin cambio)', () => {
-  assert.deepEqual(operationalGroupMembers('PALETIZADO'), ['PALETIZADO'])
-  const stations = getWorkstationsForLine('PALETIZADO').filter((s) => s.role === 'Ayudante General de Conveyor')
-  assert.equal(stations.length, 2)
-  assert.deepEqual(stations.map((s) => s.name), ['Ayudante General de Conveyor 1', 'Ayudante General de Conveyor 2'])
-  assert.ok(!getWorkstationsForLine('PALETIZADO').some((s) => s.role === 'Conveyor'), 'el rol generico "Conveyor" ya no debe existir')
-})
-check('AREA_STATION_SOURCE_OVERRIDE: WC Conveyor General lee sus 2 puestos reales DESDE Paletizado (vista filtrada, una sola fuente real, sin WorkArea/Workstation propia)', () => {
-  assert.deepEqual(AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL, { sourceAreaId: 'PALETIZADO', roles: ['Ayudante General de Conveyor'] })
-  assert.deepEqual(getWorkstationsForLine('CONVEYOR_PRINCIPAL'), [], 'CONVEYOR_PRINCIPAL no genera puestos propios -- la UI los lee de Paletizado via el override')
-})
+check(
+  'CONVEYOR_PRINCIPAL (2026-08-28, "corrección navegación Conveyor General") vuelve a ser su PROPIO canonico, activo, variante LINE_LIKE -- ya NO resuelve a Paletizado',
+  () => {
+    assert.equal(getAreaDetailVariant('CONVEYOR_PRINCIPAL'), AREA_DETAIL_VARIANTS.LINE_LIKE)
+    assert.equal(canonicalOperationalAreaId('CONVEYOR_PRINCIPAL'), 'CONVEYOR_PRINCIPAL')
+    assert.equal(isWorkCenterActive('CONVEYOR_PRINCIPAL'), true)
+    assert.equal(
+      workCenterById('CONVEYOR_PRINCIPAL').idealHeadcount,
+      null,
+      'idealHeadcount se queda null a proposito -- evita doble conteo en getStaffingTotals/SHOWN_AREA_IDS',
+    )
+    ;['CONVEYOR_SECUNDARIO', 'SELLADO'].forEach((id) => {
+      assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
+      assert.equal(canonicalOperationalAreaId(id), 'CONVEYOR_PRINCIPAL', id)
+    })
+    assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_PRINCIPAL'))
+    assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('CONVEYOR_SECUNDARIO'))
+    assert.equal(isWorkCenterActive('CONVEYOR_SECUNDARIO'), false)
+  },
+)
+check(
+  'WC Paletizado sigue teniendo exactamente 2 puestos "Ayudante General de Conveyor" en su propia distribución (fuente real, sin cambio)',
+  () => {
+    assert.deepEqual(operationalGroupMembers('PALETIZADO'), ['PALETIZADO'])
+    const stations = getWorkstationsForLine('PALETIZADO').filter(
+      (s) => s.role === 'Ayudante General de Conveyor',
+    )
+    assert.equal(stations.length, 2)
+    assert.deepEqual(
+      stations.map((s) => s.name),
+      ['Ayudante General de Conveyor 1', 'Ayudante General de Conveyor 2'],
+    )
+    assert.ok(
+      !getWorkstationsForLine('PALETIZADO').some((s) => s.role === 'Conveyor'),
+      'el rol generico "Conveyor" ya no debe existir',
+    )
+  },
+)
+check(
+  'AREA_STATION_SOURCE_OVERRIDE: WC Conveyor General lee sus 2 puestos reales DESDE Paletizado (vista filtrada, una sola fuente real, sin WorkArea/Workstation propia)',
+  () => {
+    assert.deepEqual(AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL, {
+      sourceAreaId: 'PALETIZADO',
+      roles: ['Ayudante General de Conveyor'],
+    })
+    assert.deepEqual(
+      getWorkstationsForLine('CONVEYOR_PRINCIPAL'),
+      [],
+      'CONVEYOR_PRINCIPAL no genera puestos propios -- la UI los lee de Paletizado via el override',
+    )
+  },
+)
 check('WC Conveyor General sigue resolviendo por su id interno (para historial)', () => {
   assert.equal(workCenterById('CONVEYOR_PRINCIPAL').name, 'WC Conveyor General')
 })
-check('Accesorios/Paletizado/Insumos -> variante LINE_LIKE (2026-08-26, segunda ronda: "copia el diseño de WC LINEA")', () => {
-  ;['ACCESORIOS', 'PALETIZADO', 'INSUMOS'].forEach((id) => {
-    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
-    assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has(id), id)
-  })
-})
-check('BOX_PREP/SUMINISTRO_MATERIAL (fusionadas, archivadas) resuelven a LINE_LIKE via su id canonico (INSUMOS)', () => {
-  ;['BOX_PREP', 'SUMINISTRO_MATERIAL'].forEach((id) => {
-    assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
-    assert.equal(canonicalOperationalAreaId(id), 'INSUMOS', id)
-    assert.equal(isWorkCenterActive(id), false, id)
-  })
-})
+check(
+  'Accesorios/Paletizado/Insumos -> variante LINE_LIKE (2026-08-26, segunda ronda: "copia el diseño de WC LINEA")',
+  () => {
+    ;['ACCESORIOS', 'PALETIZADO', 'INSUMOS'].forEach((id) => {
+      assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
+      assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has(id), id)
+    })
+  },
+)
+check(
+  'BOX_PREP/SUMINISTRO_MATERIAL (fusionadas, archivadas) resuelven a LINE_LIKE via su id canonico (INSUMOS)',
+  () => {
+    ;['BOX_PREP', 'SUMINISTRO_MATERIAL'].forEach((id) => {
+      assert.equal(getAreaDetailVariant(id), AREA_DETAIL_VARIANTS.LINE_LIKE, id)
+      assert.equal(canonicalOperationalAreaId(id), 'INSUMOS', id)
+      assert.equal(isWorkCenterActive(id), false, id)
+    })
+  },
+)
 check('WC Midea/High Value -> variante LINE_LIKE (2026-08-26, ya no OPERATIONAL)', () => {
   assert.equal(getAreaDetailVariant('HIGH_VALUE'), AREA_DETAIL_VARIANTS.LINE_LIKE)
   assert.ok(!OPERATIONAL_DETAIL_AREA_IDS.has('HIGH_VALUE'))
@@ -360,64 +564,117 @@ check('WC LINEA 11 no existe en el catalogo (no se inventa)', () => {
 // Reestructuracion operativa FFT (2026-08-26): fusion Insumos, plantillas
 // por puesto, Midea tipo Linea, archivado de Soporte, WC Entrenador,
 // Gerente FFT, indicadores FFT.
-check('WC Insumos y Suministro de Material: ideal = suma real de CUSTOM_STATION_PLANS.INSUMOS (9)', () => {
-  assert.equal(workCenterById('INSUMOS').idealHeadcount, 9)
-  assert.equal(workCenterById('INSUMOS').name, 'WC Insumos y Suministro de Material')
-})
-check('"Dry Ice" ya no aparece en Insumos -- ahora es "Protectores Espuma" (2026-08-28, "ajustes controlados")', () => {
-  const roles = CUSTOM_STATION_PLANS.INSUMOS.map((r) => r.role)
-  assert.ok(!roles.some((r) => r.includes('Dry Ice')))
-  assert.ok(roles.includes('Ayudante General — Protectores Espuma'))
-})
+check(
+  'WC Insumos y Suministro de Material: ideal = suma real de CUSTOM_STATION_PLANS.INSUMOS (9)',
+  () => {
+    assert.equal(workCenterById('INSUMOS').idealHeadcount, 9)
+    assert.equal(workCenterById('INSUMOS').name, 'WC Insumos y Suministro de Material')
+  },
+)
+check(
+  '"Dry Ice" ya no aparece en Insumos -- ahora es "Protectores Espuma" (2026-08-28, "ajustes controlados")',
+  () => {
+    const roles = CUSTOM_STATION_PLANS.INSUMOS.map((r) => r.role)
+    assert.ok(!roles.some((r) => r.includes('Dry Ice')))
+    assert.ok(roles.includes('Ayudante General — Protectores Espuma'))
+  },
+)
 check('WC Accesorios: ideal = suma real de CUSTOM_STATION_PLANS.ACCESORIOS (18)', () => {
   assert.equal(workCenterById('ACCESORIOS').idealHeadcount, 18)
-  assert.equal(CUSTOM_STATION_PLANS.ACCESORIOS.reduce((s, r) => s + r.count, 0), 18)
+  assert.equal(
+    CUSTOM_STATION_PLANS.ACCESORIOS.reduce((s, r) => s + r.count, 0),
+    18,
+  )
 })
-check('WC Paletizado: ideal = suma real de CUSTOM_STATION_PLANS.PALETIZADO (18, 2026-08-28 "ajustes controlados": baja de 20 a 18 al consolidar el rol "Conveyor" x2 dentro de "Ayudante General de Conveyor" x2, ya existente)', () => {
-  assert.equal(workCenterById('PALETIZADO').idealHeadcount, 18)
-  assert.equal(CUSTOM_STATION_PLANS.PALETIZADO.reduce((s, r) => s + r.count, 0), 18)
-})
-check('puestos con count>1 generan slots individuales numerados desde 1 (Surtidor de Accesorios 1..7)', () => {
-  const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
-  const surtidores = plan.filter((p) => p.role === 'Surtidor de Accesorios').map((p) => p.name)
-  assert.deepEqual(surtidores, ['Surtidor de Accesorios 1', 'Surtidor de Accesorios 2', 'Surtidor de Accesorios 3', 'Surtidor de Accesorios 4', 'Surtidor de Accesorios 5', 'Surtidor de Accesorios 6', 'Surtidor de Accesorios 7'])
-})
+check(
+  'WC Paletizado: ideal = suma real de CUSTOM_STATION_PLANS.PALETIZADO (18, 2026-08-28 "ajustes controlados": baja de 20 a 18 al consolidar el rol "Conveyor" x2 dentro de "Ayudante General de Conveyor" x2, ya existente)',
+  () => {
+    assert.equal(workCenterById('PALETIZADO').idealHeadcount, 18)
+    assert.equal(
+      CUSTOM_STATION_PLANS.PALETIZADO.reduce((s, r) => s + r.count, 0),
+      18,
+    )
+  },
+)
+check(
+  'puestos con count>1 generan slots individuales numerados desde 1 (Surtidor de Accesorios 1..7)',
+  () => {
+    const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
+    const surtidores = plan.filter((p) => p.role === 'Surtidor de Accesorios').map((p) => p.name)
+    assert.deepEqual(surtidores, [
+      'Surtidor de Accesorios 1',
+      'Surtidor de Accesorios 2',
+      'Surtidor de Accesorios 3',
+      'Surtidor de Accesorios 4',
+      'Surtidor de Accesorios 5',
+      'Surtidor de Accesorios 6',
+      'Surtidor de Accesorios 7',
+    ])
+  },
+)
 check('puestos con count=1 NO llevan numero (Team Leader, no "Team Leader 1")', () => {
   const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
   const teamLeader = plan.find((p) => p.role === 'Team Leader')
   assert.equal(teamLeader.name, 'Team Leader')
 })
-check('no se duplica el tipo de rol en el catalogo: 7 slots de Surtidor comparten el mismo `role`', () => {
-  const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
-  const roles = new Set(plan.filter((p) => p.name.startsWith('Surtidor')).map((p) => p.role))
-  assert.equal(roles.size, 1)
-})
-check('WC Accesorios/Paletizado/Insumos tienen sus estaciones reales generadas (no un solo slot generico)', () => {
-  assert.equal(getWorkstationsForLine('ACCESORIOS').length, 18)
-  assert.equal(getWorkstationsForLine('PALETIZADO').length, 18)
-  assert.equal(getWorkstationsForLine('INSUMOS').length, 9)
-})
-check('el picker de estacion se activa por CANTIDAD real de estaciones, no por tipo de area', () => {
-  assert.equal(hasMultipleStations('ACCESORIOS'), true)
-  assert.equal(hasMultipleStations('PALETIZADO'), true)
-  assert.equal(hasMultipleStations('INSUMOS'), true)
-  assert.equal(hasMultipleStations('HIGH_VALUE'), true)
-  assert.equal(hasMultipleStations('LINEA1'), true)
-  assert.equal(hasMultipleStations('GERENTE'), false)
-})
-check('WC Midea/High Value: 1 slot por persona (capacity 1), cantidad = idealHeadcount real (16), sin nombres inventados', () => {
-  const stations = getWorkstationsForLine('HIGH_VALUE')
-  assert.equal(stations.length, workCenterById('HIGH_VALUE').idealHeadcount)
-  stations.forEach((s) => assert.equal(s.capacity, 1))
-  // Nunca se inventan puestos de linea (Montaje/Prueba electrica/etc.) para Midea.
-  const invented = ['Montaje', 'Prueba eléctrica', 'Limpieza de TV', 'Etiquetado', 'Suministro de Accesorios', 'Empaque']
-  stations.forEach((s) => assert.ok(!invented.includes(s.role), `puesto inventado detectado: ${s.role}`))
-})
-check('WC Soporte: archivada (active:false), pero el id sigue resolviendo (historial preservado)', () => {
-  assert.equal(isWorkCenterActive('SOPORTE'), false)
-  assert.ok(workCenterById('SOPORTE'), 'SOPORTE debe seguir existiendo en WORK_CENTERS para historial')
-  assert.equal(getAreaDetailVariant('SOPORTE'), AREA_DETAIL_VARIANTS.SUPPORT)
-})
+check(
+  'no se duplica el tipo de rol en el catalogo: 7 slots de Surtidor comparten el mismo `role`',
+  () => {
+    const plan = buildCustomRolePlan(CUSTOM_STATION_PLANS.ACCESORIOS)
+    const roles = new Set(plan.filter((p) => p.name.startsWith('Surtidor')).map((p) => p.role))
+    assert.equal(roles.size, 1)
+  },
+)
+check(
+  'WC Accesorios/Paletizado/Insumos tienen sus estaciones reales generadas (no un solo slot generico)',
+  () => {
+    assert.equal(getWorkstationsForLine('ACCESORIOS').length, 18)
+    assert.equal(getWorkstationsForLine('PALETIZADO').length, 18)
+    assert.equal(getWorkstationsForLine('INSUMOS').length, 9)
+  },
+)
+check(
+  'el picker de estacion se activa por CANTIDAD real de estaciones, no por tipo de area',
+  () => {
+    assert.equal(hasMultipleStations('ACCESORIOS'), true)
+    assert.equal(hasMultipleStations('PALETIZADO'), true)
+    assert.equal(hasMultipleStations('INSUMOS'), true)
+    assert.equal(hasMultipleStations('HIGH_VALUE'), true)
+    assert.equal(hasMultipleStations('LINEA1'), true)
+    assert.equal(hasMultipleStations('GERENTE'), false)
+  },
+)
+check(
+  'WC Midea/High Value: 1 slot por persona (capacity 1), cantidad = idealHeadcount real (16), sin nombres inventados',
+  () => {
+    const stations = getWorkstationsForLine('HIGH_VALUE')
+    assert.equal(stations.length, workCenterById('HIGH_VALUE').idealHeadcount)
+    stations.forEach((s) => assert.equal(s.capacity, 1))
+    // Nunca se inventan puestos de linea (Montaje/Prueba electrica/etc.) para Midea.
+    const invented = [
+      'Montaje',
+      'Prueba eléctrica',
+      'Limpieza de TV',
+      'Etiquetado',
+      'Suministro de Accesorios',
+      'Empaque',
+    ]
+    stations.forEach((s) =>
+      assert.ok(!invented.includes(s.role), `puesto inventado detectado: ${s.role}`),
+    )
+  },
+)
+check(
+  'WC Soporte: archivada (active:false), pero el id sigue resolviendo (historial preservado)',
+  () => {
+    assert.equal(isWorkCenterActive('SOPORTE'), false)
+    assert.ok(
+      workCenterById('SOPORTE'),
+      'SOPORTE debe seguir existiendo en WORK_CENTERS para historial',
+    )
+    assert.equal(getAreaDetailVariant('SOPORTE'), AREA_DETAIL_VARIANTS.SUPPORT)
+  },
+)
 check('WC Soporte ya no aparece en la navegacion Anterior/Siguiente activa', () => {
   assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('SOPORTE'))
   assert.ok(!WORK_CENTER_NAVIGATION_ORDER.includes('BOX_PREP'))
@@ -429,18 +686,43 @@ check('WC Entrenador existe, activo, clasificado SUPPORT, y aparece en la navega
   assert.equal(getAreaDetailVariant('ENTRENADOR'), AREA_DETAIL_VARIANTS.SUPPORT)
   assert.ok(WORK_CENTER_NAVIGATION_ORDER.includes('ENTRENADOR'))
 })
-check('WC Gerente ahora se muestra "WC Coordinador de Almacén" (2026-08-28, segundo rename), mismo id interno (GERENTE)', () => {
-  assert.equal(workCenterById('GERENTE').name, 'WC Coordinador de Almacén')
-})
-check('las 6 cards de soporte intercambiaron GERENTE <-> SUPERVISOR de posición (2026-08-28, a peticion explicita del usuario)', () => {
-  assert.deepEqual(SUPPORT_CARD_AREA_IDS, ['CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'SUPERVISOR', 'GERENTE'])
-})
+check(
+  'WC Gerente ahora se muestra "WC Coordinador de Almacén" (2026-08-28, segundo rename), mismo id interno (GERENTE)',
+  () => {
+    assert.equal(workCenterById('GERENTE').name, 'WC Coordinador de Almacén')
+  },
+)
+check(
+  'las 6 cards de soporte intercambiaron GERENTE <-> SUPERVISOR de posición (2026-08-28, a peticion explicita del usuario)',
+  () => {
+    assert.deepEqual(SUPPORT_CARD_AREA_IDS, [
+      'CAPACITACION',
+      'TEAM_LEADER',
+      'ENTRENADOR',
+      'LIMPIEZA',
+      'SUPERVISOR',
+      'GERENTE',
+    ])
+  },
+)
 check('operationalGroupMembers(INSUMOS) suma Box Prep + Suministro de material + Insumos', () => {
-  assert.deepEqual(operationalGroupMembers('INSUMOS'), ['INSUMOS', 'SUMINISTRO_MATERIAL', 'BOX_PREP'])
+  assert.deepEqual(operationalGroupMembers('INSUMOS'), [
+    'INSUMOS',
+    'SUMINISTRO_MATERIAL',
+    'BOX_PREP',
+  ])
 })
-check('indicadores FFT: orden oficial 1-4 (Eficiencia, Demoras, Produccion, Cumplimiento), ninguno con fuente real inventada', () => {
-  assert.deepEqual(FFT_INDICATORS.map((i) => i.id), ['EFICIENCIA', 'DEMORAS', 'PRODUCCION', 'CUMPLIMIENTO_PROGRAMAS'])
-  FFT_INDICATORS.forEach((i) => assert.equal(i.hasSource, false, `${i.id} no deberia tener fuente real todavia`))
-})
+check(
+  'indicadores FFT: orden oficial 1-4 (Eficiencia, Demoras, Produccion, Cumplimiento), ninguno con fuente real inventada',
+  () => {
+    assert.deepEqual(
+      FFT_INDICATORS.map((i) => i.id),
+      ['EFICIENCIA', 'DEMORAS', 'PRODUCCION', 'CUMPLIMIENTO_PROGRAMAS'],
+    )
+    FFT_INDICATORS.forEach((i) =>
+      assert.equal(i.hasSource, false, `${i.id} no deberia tener fuente real todavia`),
+    )
+  },
+)
 
 console.log(`\n${passed}/${passed} checks OK`)

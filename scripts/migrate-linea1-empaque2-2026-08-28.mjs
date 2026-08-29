@@ -14,17 +14,34 @@ import { prisma } from '../server-lib/prisma.js'
 
 async function deactivate(areaCode, name) {
   const wa = await prisma.workArea.findUnique({ where: { code: areaCode } })
-  if (!wa) { console.log(`  (omitido) WorkArea "${areaCode}" no existe`); return }
-  const w = await prisma.workstation.findUnique({ where: { workAreaId_name: { workAreaId: wa.id, name } } })
-  if (!w) { console.log(`  (omitido) ${areaCode}: "${name}" no existe`); return }
-  if (!w.active) { console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`); return }
-  const active = await prisma.dailyAssignment.count({ where: { workstationId: w.id, status: 'ACTIVE' } })
+  if (!wa) {
+    console.log(`  (omitido) WorkArea "${areaCode}" no existe`)
+    return
+  }
+  const w = await prisma.workstation.findUnique({
+    where: { workAreaId_name: { workAreaId: wa.id, name } },
+  })
+  if (!w) {
+    console.log(`  (omitido) ${areaCode}: "${name}" no existe`)
+    return
+  }
+  if (!w.active) {
+    console.log(`  OK (ya desactivado) ${areaCode}: "${name}"`)
+    return
+  }
+  const active = await prisma.dailyAssignment.count({
+    where: { workstationId: w.id, status: 'ACTIVE' },
+  })
   await prisma.workstation.update({ where: { id: w.id }, data: { active: false } })
-  console.log(`  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`)
+  console.log(
+    `  DESACTIVADO ${areaCode}: "${name}" (ocupacion activa preservada, nunca tocada: ${active})`,
+  )
 }
 
 console.log('--- WC LINEA 1: Empaque 2 ---')
 await deactivate('LINEA1', 'Empaque 2')
 
-console.log('\nListo. Siguiente paso: npm run seed-personnel (sincroniza role/category/active de TODAS las estaciones de WC LINEA con el generador actual).')
+console.log(
+  '\nListo. Siguiente paso: npm run seed-personnel (sincroniza role/category/active de TODAS las estaciones de WC LINEA con el generador actual).',
+)
 await prisma.$disconnect()

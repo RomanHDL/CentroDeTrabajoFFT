@@ -15,7 +15,10 @@ const AREAS = [
 ]
 
 async function main() {
-  const maxOrder = await prisma.workArea.findFirst({ orderBy: { displayOrder: 'desc' }, select: { displayOrder: true } })
+  const maxOrder = await prisma.workArea.findFirst({
+    orderBy: { displayOrder: 'desc' },
+    select: { displayOrder: true },
+  })
   let order = (maxOrder?.displayOrder ?? 0) + 1
 
   for (const a of AREAS) {
@@ -35,4 +38,7 @@ async function main() {
   await prisma.$disconnect()
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

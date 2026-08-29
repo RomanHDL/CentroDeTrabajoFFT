@@ -11,14 +11,22 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { workCenterById, hasLineStations } from '../../data/production/catalog'
-import { getPeopleByArea, getFftPeopleWithLine, getAreaStaffing } from '../../data/production/personnelByArea'
+import {
+  getPeopleByArea,
+  getFftPeopleWithLine,
+  getAreaStaffing,
+} from '../../data/production/personnelByArea'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
 
 function StaffingLine({ staffing }) {
   if (staffing.ideal == null) {
-    return <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mb: 2 }}>Sin plantilla definida</Typography>
+    return (
+      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mb: 2 }}>
+        Sin plantilla definida
+      </Typography>
+    )
   }
   const complete = staffing.status === 'COMPLETA'
   const missing = staffing.ideal - staffing.real
@@ -27,7 +35,13 @@ function StaffingLine({ staffing }) {
       <Chip
         size="small"
         label={`${staffing.real} / ${staffing.ideal}`}
-        sx={{ height: 20, fontSize: 11, fontWeight: 800, bgcolor: complete ? '#10B98122' : '#EF444422', color: complete ? '#047857' : '#B91C1C' }}
+        sx={{
+          height: 20,
+          fontSize: 11,
+          fontWeight: 800,
+          bgcolor: complete ? '#10B98122' : '#EF444422',
+          color: complete ? '#047857' : '#B91C1C',
+        }}
       />
       <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: complete ? '#10B981' : '#EF4444' }}>
         {complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
@@ -67,13 +81,18 @@ function PersonRow({ person, secondary, onClickSecondary }) {
       <Stack direction="row" spacing={1.25} alignItems="center">
         <EmployeeAvatar employee={{ name: person.name }} size={32} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>{person.name}</Typography>
+          <Typography noWrap sx={{ fontWeight: 700, fontSize: 13 }}>
+            {person.name}
+          </Typography>
         </Box>
         {secondary && (
           <Chip
             size="small"
             label={secondary}
-            onClick={(e) => { e.stopPropagation(); onClickSecondary?.() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onClickSecondary?.()
+            }}
             sx={{ height: 20, fontSize: 10, cursor: onClickSecondary ? 'pointer' : 'default' }}
           />
         )}
@@ -99,7 +118,11 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
   if (!selection) {
     return (
       <Box sx={{ p: 2.5 }}>
-        <EmptyState compact title="Selecciona un área" description="Haz click en cualquier zona del layout para ver quién trabaja ahí." />
+        <EmptyState
+          compact
+          title="Selecciona un área"
+          description="Haz click en cualquier zona del layout para ver quién trabaja ahí."
+        />
       </Box>
     )
   }
@@ -120,7 +143,10 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
   if (selection.type === 'zoneGroup') {
     const people = getFftPeopleWithLine()
     const visible = showAllFft ? people : people.slice(0, SAMPLE_LIMIT)
-    const idealSum = selection.areaIds.reduce((s, id) => s + (workCenterById(id)?.idealHeadcount ?? 0), 0)
+    const idealSum = selection.areaIds.reduce(
+      (s, id) => s + (workCenterById(id)?.idealHeadcount ?? 0),
+      0,
+    )
     const fftComplete = people.length >= idealSum
     const fftMissing = idealSum - people.length
     return (
@@ -130,7 +156,15 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
           <StatusChip hasPeople={people.length > 0} />
         </Stack>
 
-        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Typography
+          sx={{
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+          }}
+        >
           Total de personas
         </Typography>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
@@ -141,14 +175,24 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
           <Chip
             size="small"
             label={`${people.length} / ${idealSum}`}
-            sx={{ height: 20, fontSize: 11, fontWeight: 800, bgcolor: fftComplete ? '#10B98122' : '#EF444422', color: fftComplete ? '#047857' : '#B91C1C' }}
+            sx={{
+              height: 20,
+              fontSize: 11,
+              fontWeight: 800,
+              bgcolor: fftComplete ? '#10B98122' : '#EF444422',
+              color: fftComplete ? '#047857' : '#B91C1C',
+            }}
           />
-          <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: fftComplete ? '#10B981' : '#EF4444' }}>
+          <Typography
+            sx={{ fontSize: 11.5, fontWeight: 700, color: fftComplete ? '#10B981' : '#EF4444' }}
+          >
             {fftComplete ? 'Completa' : fftMissing === 1 ? 'Falta 1' : `Faltan ${fftMissing}`}
           </Typography>
         </Stack>
 
-        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Líneas ({selection.areaIds.length})</Typography>
+        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>
+          Líneas ({selection.areaIds.length})
+        </Typography>
         <Grid container spacing={1} sx={{ mb: 2 }}>
           {selection.areaIds.map((id) => {
             const staffing = getAreaStaffing(id)
@@ -158,12 +202,23 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
                 <Box
                   onClick={() => onSelectArea(id)}
                   sx={{
-                    cursor: 'pointer', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
-                    transition: 'border-color .15s ease', '&:hover': { borderColor: '#3B82F6' },
+                    cursor: 'pointer',
+                    p: 1,
+                    borderRadius: 1.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    transition: 'border-color .15s ease',
+                    '&:hover': { borderColor: '#3B82F6' },
                   }}
                 >
                   <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{line?.name}</Typography>
-                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: staffing.status === 'COMPLETA' ? '#10B981' : '#EF4444' }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: staffing.status === 'COMPLETA' ? '#10B981' : '#EF4444',
+                    }}
+                  >
                     {staffing.real} / {staffing.ideal}
                   </Typography>
                 </Box>
@@ -180,12 +235,21 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         ) : (
           <Stack spacing={1.25}>
             {visible.map((p) => (
-              <PersonRow key={p.id} person={p} secondary={p.lineName} onClickSecondary={() => onSelectArea(p.lineId)} />
+              <PersonRow
+                key={p.id}
+                person={p}
+                secondary={p.lineName}
+                onClickSecondary={() => onSelectArea(p.lineId)}
+              />
             ))}
           </Stack>
         )}
         {people.length > SAMPLE_LIMIT && (
-          <Button size="small" onClick={() => setShowAllFft((v) => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
+          <Button
+            size="small"
+            onClick={() => setShowAllFft((v) => !v)}
+            sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+          >
             {showAllFft ? 'Ver menos' : `Ver todo el personal (${people.length})`}
           </Button>
         )}
@@ -209,7 +273,13 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         <Stack direction="row" alignItems="center" spacing={0.25} sx={{ mb: 0.5 }}>
           <Typography
             onClick={() => onSelectArea('__FFT__')}
-            sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 700, cursor: 'pointer', '&:hover': { color: '#3B82F6' } }}
+            sx={{
+              fontSize: 11.5,
+              color: 'text.secondary',
+              fontWeight: 700,
+              cursor: 'pointer',
+              '&:hover': { color: '#3B82F6' },
+            }}
           >
             FFT
           </Typography>
@@ -221,7 +291,15 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         <StatusChip hasPeople={people.length > 0} />
       </Stack>
 
-      <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <Typography
+        sx={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
         Total de personas
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25, mb: 1 }}>
@@ -235,11 +313,17 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         <EmptyState compact title="Sin personal en el Excel para esta área" />
       ) : (
         <Stack spacing={1.25}>
-          {visible.map((p) => <PersonRow key={p.id} person={p} />)}
+          {visible.map((p) => (
+            <PersonRow key={p.id} person={p} />
+          ))}
         </Stack>
       )}
       {people.length > SAMPLE_LIMIT && (
-        <Button size="small" onClick={() => setShowAllPeople((v) => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
+        <Button
+          size="small"
+          onClick={() => setShowAllPeople((v) => !v)}
+          sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+        >
           {showAllPeople ? 'Ver menos' : `Ver todo el personal (${people.length})`}
         </Button>
       )}

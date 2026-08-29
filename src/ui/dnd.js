@@ -33,14 +33,20 @@ export function useEmployeeDragSource(employeeId) {
    el picker de estacion (nunca elige una sola). */
 export function useEmployeeDropTarget(areaId, { disabled = false } = {}) {
   const dnd = useDndAssign()
-  return useDropHandlers(areaId && !disabled ? (employeeId) => dnd.requestAssign(employeeId, areaId) : null)
+  return useDropHandlers(
+    areaId && !disabled ? (employeeId) => dnd.requestAssign(employeeId, areaId) : null,
+  )
 }
 
 /* Suelta sobre una estacion especifica ya conocida (tarjeta dentro de
    "Distribucion de estaciones") — solo aplica si esta disponible. */
 export function useEmployeeDropTargetStation(areaId, stationName, { disabled = false } = {}) {
   const dnd = useDndAssign()
-  return useDropHandlers(areaId && stationName && !disabled ? (employeeId) => dnd.requestAssignToStation(employeeId, areaId, stationName) : null)
+  return useDropHandlers(
+    areaId && stationName && !disabled
+      ? (employeeId) => dnd.requestAssignToStation(employeeId, areaId, stationName)
+      : null,
+  )
 }
 
 /* Suelta sobre "Personal disponible" (o una zona "Quitar

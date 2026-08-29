@@ -14,7 +14,10 @@ import UserModulePermissionsCard from './UserModulePermissionsCard'
    del usuario). `focusUserId`/`onFocusUserHandled` permiten que la tabla de
    usuarios de UsuariosPage salte directo al tab POR USUARIO con ese usuario
    ya preseleccionado al hacer click en 🔑 Permisos. */
-const PermissionsManagementCard = forwardRef(function PermissionsManagementCard({ users, focusUserId, onFocusUserHandled }, ref) {
+const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
+  { users, focusUserId, onFocusUserHandled },
+  ref,
+) {
   const [tab, setTab] = useState(0)
   const [selectedUserId, setSelectedUserId] = useState(null)
 
@@ -27,7 +30,11 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
   }, [focusUserId, onFocusUserHandled])
 
   return (
-    <Paper ref={ref} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}>
+    <Paper
+      ref={ref}
+      elevation={0}
+      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, mt: 3 }}
+    >
       <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 0.5 }}>Gestión de permisos</Typography>
       <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 1.5 }}>
         Qué módulos puede ver cada rol, y ajustes individuales por usuario.
@@ -43,7 +50,11 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
       </Box>
       <Box role="tabpanel" hidden={tab !== 1}>
         {tab === 1 && (
-          <UserModulePermissionsCard users={users} selectedUserId={selectedUserId} onSelectUser={setSelectedUserId} />
+          <UserModulePermissionsCard
+            users={users}
+            selectedUserId={selectedUserId}
+            onSelectUser={setSelectedUserId}
+          />
         )}
       </Box>
     </Paper>

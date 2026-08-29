@@ -71,27 +71,37 @@ export default function UsuariosPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const kpis = useMemo(() => ({
-    activos: users.filter((u) => u.active).length,
-    admins: users.filter((u) => u.role === 'ADMINISTRADOR').length,
-    supervisores: users.filter((u) => u.role === 'SUPERVISOR').length,
-    lideres: users.filter((u) => u.role === 'LIDER').length,
-  }), [users])
+  const kpis = useMemo(
+    () => ({
+      activos: users.filter((u) => u.active).length,
+      admins: users.filter((u) => u.role === 'ADMINISTRADOR').length,
+      supervisores: users.filter((u) => u.role === 'SUPERVISOR').length,
+      lideres: users.filter((u) => u.role === 'LIDER').length,
+    }),
+    [users],
+  )
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return users
-    return users.filter((u) =>
-      u.name?.toLowerCase().includes(q) ||
-      u.employeeNumber?.toLowerCase().includes(q) ||
-      u.username?.toLowerCase().includes(q)
+    return users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.employeeNumber?.toLowerCase().includes(q) ||
+        u.username?.toLowerCase().includes(q),
     )
   }, [users, search])
 
-  function openMenu(e, user) { setMenuState({ anchor: e.currentTarget, user }) }
-  function closeMenu() { setMenuState({ anchor: null, user: null }) }
+  function openMenu(e, user) {
+    setMenuState({ anchor: e.currentTarget, user })
+  }
+  function closeMenu() {
+    setMenuState({ anchor: null, user: null })
+  }
 
   async function handleDeactivate() {
     const user = confirmDeactivate
@@ -119,8 +129,13 @@ export default function UsuariosPage() {
     }
     setResetSaving(true)
     try {
-      await apiRequest(`/api/users/${user.id}/reset-password`, { method: 'POST', body: { password: manualPassword } })
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, mustChangePassword: false } : u)))
+      await apiRequest(`/api/users/${user.id}/reset-password`, {
+        method: 'POST',
+        body: { password: manualPassword },
+      })
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, mustChangePassword: false } : u)),
+      )
       showToast('Contraseña actualizada', 'success')
       closeResetChoice()
     } catch (err) {
@@ -135,10 +150,18 @@ export default function UsuariosPage() {
       <Typography sx={{ fontWeight: 800, fontSize: 20, mb: 2 }}>Usuarios del sistema</Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={3}><KpiCard title="Usuarios activos" value={kpis.activos} accent="blue" /></Grid>
-        <Grid item xs={6} sm={3}><KpiCard title="Administradores" value={kpis.admins} accent="purple" /></Grid>
-        <Grid item xs={6} sm={3}><KpiCard title="Supervisores" value={kpis.supervisores} accent="green" /></Grid>
-        <Grid item xs={6} sm={3}><KpiCard title="Líderes" value={kpis.lideres} accent="amber" /></Grid>
+        <Grid item xs={6} sm={3}>
+          <KpiCard title="Usuarios activos" value={kpis.activos} accent="blue" />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <KpiCard title="Administradores" value={kpis.admins} accent="purple" />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <KpiCard title="Supervisores" value={kpis.supervisores} accent="green" />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <KpiCard title="Líderes" value={kpis.lideres} accent="amber" />
+        </Grid>
       </Grid>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -148,17 +171,35 @@ export default function UsuariosPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ width: { xs: '100%', sm: 280 }, minWidth: 0 }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
         />
         <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateOpen(true)}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           Agregar usuario
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflowX: 'auto' }}>
+      <Paper
+        elevation={0}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflowX: 'auto' }}
+      >
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -173,10 +214,18 @@ export default function UsuariosPage() {
           </TableHead>
           <TableBody>
             {loading && (
-              <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}><CircularProgress size={24} /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <CircularProgress size={24} />
+                </TableCell>
+              </TableRow>
             )}
             {!loading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>Sin usuarios que coincidan</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                  Sin usuarios que coincidan
+                </TableCell>
+              </TableRow>
             )}
             {filtered.map((u) => (
               <TableRow key={u.id} hover>
@@ -185,13 +234,26 @@ export default function UsuariosPage() {
                 <TableCell>{u.username || '—'}</TableCell>
                 <TableCell>{ROLE_LABELS[u.role] || u.role}</TableCell>
                 <TableCell>
-                  <Chip size="small" label={u.active ? 'Activo' : 'Inactivo'} color={u.active ? 'success' : 'default'} variant={u.active ? 'filled' : 'outlined'} />
+                  <Chip
+                    size="small"
+                    label={u.active ? 'Activo' : 'Inactivo'}
+                    color={u.active ? 'success' : 'default'}
+                    variant={u.active ? 'filled' : 'outlined'}
+                  />
                 </TableCell>
-                <TableCell>{u.lastLoginAt ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm') : 'Nunca'}</TableCell>
+                <TableCell>
+                  {u.lastLoginAt ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm') : 'Nunca'}
+                </TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" title="Permisos" onClick={() => openPermissionsFor(u)}><VpnKeyIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" title="Editar" onClick={() => setEditUser(u)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" onClick={(e) => openMenu(e, u)}><MoreVertIcon fontSize="small" /></IconButton>
+                  <IconButton size="small" title="Permisos" onClick={() => openPermissionsFor(u)}>
+                    <VpnKeyIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" title="Editar" onClick={() => setEditUser(u)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={(e) => openMenu(e, u)}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -208,42 +270,80 @@ export default function UsuariosPage() {
       <AdminToolsCard />
 
       <Menu anchorEl={menuState.anchor} open={!!menuState.anchor} onClose={closeMenu}>
-        <MenuItem onClick={() => { setEditUser(menuState.user); closeMenu() }}>Editar</MenuItem>
-        <MenuItem onClick={() => { setEditUser(menuState.user); closeMenu() }}>Cambiar rol</MenuItem>
-        <MenuItem onClick={() => { setConfirmDeactivate(menuState.user); closeMenu() }} disabled={!menuState.user?.active}>
+        <MenuItem
+          onClick={() => {
+            setEditUser(menuState.user)
+            closeMenu()
+          }}
+        >
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setEditUser(menuState.user)
+            closeMenu()
+          }}
+        >
+          Cambiar rol
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setConfirmDeactivate(menuState.user)
+            closeMenu()
+          }}
+          disabled={!menuState.user?.active}
+        >
           Desactivar
         </MenuItem>
-        <MenuItem onClick={() => { setResetChoiceUser(menuState.user); closeMenu() }}>Restablecer contraseña</MenuItem>
+        <MenuItem
+          onClick={() => {
+            setResetChoiceUser(menuState.user)
+            closeMenu()
+          }}
+        >
+          Restablecer contraseña
+        </MenuItem>
       </Menu>
 
       <CreateUserDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(user) => { setUsers((prev) => [...prev, user]); setCreateOpen(false) }}
+        onCreated={(user) => {
+          setUsers((prev) => [...prev, user])
+          setCreateOpen(false)
+        }}
       />
 
       <EditUserDialog
         open={!!editUser}
         user={editUser}
         onClose={() => setEditUser(null)}
-        onSaved={(user) => { setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u))); setEditUser(null) }}
+        onSaved={(user) => {
+          setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)))
+          setEditUser(null)
+        }}
       />
 
       <Dialog open={!!confirmDeactivate} onClose={() => setConfirmDeactivate(null)}>
         <DialogTitle sx={{ fontWeight: 800 }}>Desactivar usuario</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Desactivar a <b>{confirmDeactivate?.name}</b>? No podrá iniciar sesión hasta que se reactive. Esto no elimina su cuenta.
+            ¿Desactivar a <b>{confirmDeactivate?.name}</b>? No podrá iniciar sesión hasta que se
+            reactive. Esto no elimina su cuenta.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setConfirmDeactivate(null)}>Cancelar</Button>
-          <Button color="error" variant="contained" onClick={handleDeactivate}>Desactivar</Button>
+          <Button color="error" variant="contained" onClick={handleDeactivate}>
+            Desactivar
+          </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={!!resetChoiceUser} onClose={closeResetChoice} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Restablecer contraseña de {resetChoiceUser?.name}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Restablecer contraseña de {resetChoiceUser?.name}
+        </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mb: 2 }}>
             Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.
@@ -285,7 +385,8 @@ export default function UsuariosPage() {
         <DialogTitle sx={{ fontWeight: 800 }}>Contraseña temporal generada</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Esta contraseña solo se muestra una vez. Entrégasela a {resetResult?.user?.name} de forma segura.
+            Esta contraseña solo se muestra una vez. Entrégasela a {resetResult?.user?.name} de
+            forma segura.
           </Alert>
           <TextField
             fullWidth
@@ -294,7 +395,11 @@ export default function UsuariosPage() {
               readOnly: true,
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={() => navigator.clipboard?.writeText(resetResult?.temporaryPassword || '')}>
+                  <IconButton
+                    onClick={() =>
+                      navigator.clipboard?.writeText(resetResult?.temporaryPassword || '')
+                    }
+                  >
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
@@ -303,7 +408,9 @@ export default function UsuariosPage() {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setResetResult(null)} variant="contained">Listo</Button>
+          <Button onClick={() => setResetResult(null)} variant="contained">
+            Listo
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

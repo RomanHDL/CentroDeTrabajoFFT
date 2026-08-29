@@ -16,7 +16,7 @@
 // confirmada) -- exactamente el mismo alcance que el cliente.
 import { prisma } from '../../server-lib/prisma.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
-import { todayDateOnly } from '../../server-lib/personnel.js'
+import { todayDateOnly } from '../../server-lib/personnel.ts'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -40,7 +40,10 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   const ids = candidates.map((c) => c.id)
 
   if (ids.length) {
-    await prisma.employee.updateMany({ where: { id: { in: ids } }, data: { baselineSuppressed: true } })
+    await prisma.employee.updateMany({
+      where: { id: { in: ids } },
+      data: { baselineSuppressed: true },
+    })
   }
   return res.status(200).json({ suppressedCount: ids.length, employeeIds: ids })
 })

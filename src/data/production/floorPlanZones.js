@@ -83,7 +83,12 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 // viceversa"): se intercambian solo las posiciones de estos 2 ids -- las
 // otras 4 cards no se mueven.
 export const SUPPORT_CARD_AREA_IDS = [
-  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'SUPERVISOR', 'GERENTE',
+  'CAPACITACION',
+  'TEAM_LEADER',
+  'ENTRENADOR',
+  'LIMPIEZA',
+  'SUPERVISOR',
+  'GERENTE',
 ]
 
 /* Zonas visibles en la imagen sin área de catálogo mapeada con confianza

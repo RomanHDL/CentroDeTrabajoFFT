@@ -40,7 +40,12 @@ export default function ToastHost() {
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >
       {current ? (
-        <Alert severity={current.severity} variant="filled" onClose={handleClose} sx={{ fontWeight: 600 }}>
+        <Alert
+          severity={current.severity}
+          variant="filled"
+          onClose={handleClose}
+          sx={{ fontWeight: 600 }}
+        >
           {current.message}
         </Alert>
       ) : undefined}

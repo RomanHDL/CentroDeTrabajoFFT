@@ -80,8 +80,10 @@ export function getShiftSchedule(shiftIdOrLabel) {
 export function getCurrentShift(date = new Date()) {
   const minutes = date.getHours() * 60 + date.getMinutes()
   const [matutino, tiempoExtra, noche] = OFFICIAL_SHIFTS
-  if (minutes >= minutesOfDay(matutino.start) && minutes <= minutesOfDay(matutino.end)) return matutino
-  if (minutes >= minutesOfDay(tiempoExtra.start) && minutes <= minutesOfDay(tiempoExtra.end)) return tiempoExtra
+  if (minutes >= minutesOfDay(matutino.start) && minutes <= minutesOfDay(matutino.end))
+    return matutino
+  if (minutes >= minutesOfDay(tiempoExtra.start) && minutes <= minutesOfDay(tiempoExtra.end))
+    return tiempoExtra
   return noche
 }
 
@@ -325,24 +327,128 @@ function sumStationPlan(plan) {
 // (getPeopleWithoutStation) sin que se toque su
 // DailyAssignment/EmployeeMovement real.
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 1 Empaque
-  { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA5', name: 'WC LINEA 5', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA6', name: 'WC LINEA 6', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA7', name: 'WC LINEA 7', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA8', name: 'WC LINEA 8', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA9', name: 'WC LINEA 9', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'LINEA10', name: 'WC LINEA 10', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
-  { id: 'PROYECTO', name: 'WC LINEA 0', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 10 }, // 7 + Calidad + 2 Empaque
+  {
+    id: 'LINEA1',
+    name: 'WC LINEA 1',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 1 Empaque
+  {
+    id: 'LINEA2',
+    name: 'WC LINEA 2',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA3',
+    name: 'WC LINEA 3',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA4',
+    name: 'WC LINEA 4',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA5',
+    name: 'WC LINEA 5',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA6',
+    name: 'WC LINEA 6',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA7',
+    name: 'WC LINEA 7',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA8',
+    name: 'WC LINEA 8',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA9',
+    name: 'WC LINEA 9',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'LINEA10',
+    name: 'WC LINEA 10',
+    kind: 'linea',
+    type: AREA_TYPES.PRODUCTION_LINE,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 8,
+  }, // 6 + Calidad + 1 Empaque
+  {
+    id: 'PROYECTO',
+    name: 'WC LINEA 0',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 10,
+  }, // 7 + Calidad + 2 Empaque
   /* Paletizado/Accesorios (2026-08-26, a peticion explicita del usuario):
      idealHeadcount ya NO es un numero mantenido a mano -- se deriva de
      CUSTOM_STATION_PLANS de arriba (suma de puestos reales configurados),
      para que nunca existan dos numeros (Dashboard vs Detail) que se
      puedan desincronizar (Parte 39 del pedido, "una sola fuente"). */
-  { id: 'PALETIZADO', name: 'WC Paletizado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.PALETIZADO) },
-  { id: 'ACCESORIOS', name: 'WC Accesorios', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.ACCESORIOS) },
+  {
+    id: 'PALETIZADO',
+    name: 'WC Paletizado',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.PALETIZADO),
+  },
+  {
+    id: 'ACCESORIOS',
+    name: 'WC Accesorios',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.ACCESORIOS),
+  },
   /* CONVEYOR se dividio en dos areas reales independientes (2026-08-25,
      a peticion explicita del usuario): el plano fisico (OperatingFloorPlan.jsx)
      dibuja "CONVEYOR PRINCIPAL"/"CONVEYOR SECUNDARIO" como dos barras
@@ -404,17 +510,58 @@ export const WORK_CENTERS = [
      filtrados por rol -- una VISTA, nunca una copia. WC Paletizado sigue
      mostrando esos mismos 2 puestos dentro de su propia distribucion
      completa exactamente igual que antes (sin cambio ahi). */
-  { id: 'CONVEYOR_PRINCIPAL', name: 'WC Conveyor General', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'CONVEYOR_SECUNDARIO', name: 'WC Conveyor Secundario', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
+  {
+    id: 'CONVEYOR_PRINCIPAL',
+    name: 'WC Conveyor General',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+  },
+  {
+    id: 'CONVEYOR_SECUNDARIO',
+    name: 'WC Conveyor Secundario',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+    active: false,
+  },
   /* Midea/HV: en el plano fisico real (pizarron del piso, confirmado
      por el usuario 2026-08-19) son UN solo bloque "CT MIDEA/HV", no
      dos areas separadas. Se fusiona DMT dentro de HIGH_VALUE (ideal
      14+2=16, el total general de plantilla no cambia). Quien tenga
      zona "DMT" en el snapshot de BASE se sigue contando aqui (ver
      personnelByArea.mapAreaZonaToId). */
-  { id: 'HIGH_VALUE', name: 'WC Midea / High Value', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: 16 },
-  { id: 'CALIDAD', name: 'WC Calidad', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
-  { id: 'SELLADO', name: 'WC Sellado', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null },
+  {
+    id: 'HIGH_VALUE',
+    name: 'WC Midea / High Value',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 16,
+  },
+  {
+    id: 'CALIDAD',
+    name: 'WC Calidad',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+  },
+  {
+    id: 'SELLADO',
+    name: 'WC Sellado',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+  },
   /* WC Insumos y Suministro de Material (2026-08-26, "Reestructuracion
      operativa FFT", a peticion explicita del usuario) -- fusion de PNP/POC/PEN
      (nunca tuvo WORK_CENTER propio, decoracion pura) + Box Prep + Insumos +
@@ -429,21 +576,71 @@ export const WORK_CENTERS = [
      DELETE") pero quedan `active:false` y su personal/plantilla se suma
      aqui via operationalGroupMembers, exactamente el mismo patron ya
      probado con SELLADO->CONVEYOR_PRINCIPAL. */
-  { id: 'INSUMOS', name: 'WC Insumos y Suministro de Material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.INSUMOS) },
-  { id: 'SUMINISTRO_MATERIAL', name: 'WC Suministro de material', kind: 'area', type: AREA_TYPES.WORK_AREA, isProduction: true, dailyTarget: null, idealHeadcount: null, active: false },
+  {
+    id: 'INSUMOS',
+    name: 'WC Insumos y Suministro de Material',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: sumStationPlan(CUSTOM_STATION_PLANS.INSUMOS),
+  },
+  {
+    id: 'SUMINISTRO_MATERIAL',
+    name: 'WC Suministro de material',
+    kind: 'area',
+    type: AREA_TYPES.WORK_AREA,
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+    active: false,
+  },
   /* BOX_PREP (2026-08-25): ver nota historica completa mas abajo en el
      comentario original -- 2026-08-26 se fusiono dentro de WC Insumos y
      Suministro de Material (ver AREA_DETAIL_GROUPS), `active:false` pero
      SIN borrar (tiene WorkArea real con historial en la DB). */
-  { id: 'BOX_PREP', name: 'WC Box Prep', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null, active: false },
-  { id: 'CAPACITACION', name: 'WC Capacitación', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
-  { id: 'TEAM_LEADER', name: 'WC Team Leader', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  {
+    id: 'BOX_PREP',
+    name: 'WC Box Prep',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: null,
+    active: false,
+  },
+  {
+    id: 'CAPACITACION',
+    name: 'WC Capacitación',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 2,
+  },
+  {
+    id: 'TEAM_LEADER',
+    name: 'WC Team Leader',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 2,
+  },
   /* ENTRENADOR (2026-08-26, WC nuevo a peticion explicita del usuario) --
      personal de entrenamiento/capacitacion correspondiente. idealHeadcount
      null: el usuario no dio un numero de plantilla oficial para esta area
      (solo nombres de personas a resolver), nunca se inventa uno -- se
      muestra "Sin definir" en la UI (misma regla que Calidad/Sellado). */
-  { id: 'ENTRENADOR', name: 'WC Entrenador', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: null },
+  {
+    id: 'ENTRENADOR',
+    name: 'WC Entrenador',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: null,
+  },
   /* SOPORTE (2026-08-26, a peticion explicita del usuario: "ELIMINAR WC
      SOPORTE" del esquema activo) -- `active:false`, NUNCA DELETE (tiene
      WorkArea real con historial/asignaciones en la DB -- Parte 21/51 del
@@ -451,16 +648,49 @@ export const WORK_CENTERS = [
      historicos, preferir archivar). Desaparece de layout/navegacion/
      Dashboard/conteos activos, pero el id sigue resolviendo (workCenterById)
      para cualquier referencia historica que lo necesite. */
-  { id: 'SOPORTE', name: 'WC Soporte', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 3, active: false },
-  { id: 'LIMPIEZA', name: 'WC Limpieza', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 2 },
+  {
+    id: 'SOPORTE',
+    name: 'WC Soporte',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 3,
+    active: false,
+  },
+  {
+    id: 'LIMPIEZA',
+    name: 'WC Limpieza',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 2,
+  },
   /* GERENTE (2026-08-26, a peticion explicita del usuario): solo cambia el
      `name` mostrado a "WC Gerente FFT" -- el id interno NO se toca (mismo
      criterio de siempre: renombrar visual nunca reescribe el id real).
      2026-08-28 (a peticion explicita del usuario): segundo rename visual,
      mismo criterio -- "WC Gerente FFT" -> "WC Coordinador de Almacén". El
      id interno GERENTE sigue igual (historial/asignaciones intactos). */
-  { id: 'GERENTE', name: 'WC Coordinador de Almacén', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
-  { id: 'SUPERVISOR', name: 'WC Supervisor', kind: 'area', type: AREA_TYPES.SUPPORT_AREA, isProduction: false, dailyTarget: null, idealHeadcount: 1 },
+  {
+    id: 'GERENTE',
+    name: 'WC Coordinador de Almacén',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 1,
+  },
+  {
+    id: 'SUPERVISOR',
+    name: 'WC Supervisor',
+    kind: 'area',
+    type: AREA_TYPES.SUPPORT_AREA,
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 1,
+  },
 ]
 
 /* `active` (2026-08-26, a peticion explicita del usuario -- "eliminar WC
@@ -475,9 +705,9 @@ export function isWorkCenterActive(id) {
   return workCenterById(id)?.active !== false
 }
 
-export const LINES_ONLY = WORK_CENTERS.filter(w => w.kind === 'linea')
-export const PRODUCTION_CENTERS = WORK_CENTERS.filter(w => w.isProduction && w.active !== false)
-export const SUPPORT_CENTERS = WORK_CENTERS.filter(w => !w.isProduction && w.active !== false)
+export const LINES_ONLY = WORK_CENTERS.filter((w) => w.kind === 'linea')
+export const PRODUCTION_CENTERS = WORK_CENTERS.filter((w) => w.isProduction && w.active !== false)
+export const SUPPORT_CENTERS = WORK_CENTERS.filter((w) => !w.isProduction && w.active !== false)
 
 /* Unica fuente de verdad de "esta area usa el template de
    estaciones de linea" — antes esto se asumia implicitamente para
@@ -542,9 +772,21 @@ export function hasLineStations(workCenterId) {
 // INSUMOS se excluyen de OPERATIONAL igual que HIGH_VALUE: pasan a
 // LINE_LIKE_AREA_IDS mas abajo, reutilizan LineDetailDrawer.jsx completo.
 export const OPERATIONAL_DETAIL_AREA_IDS = new Set(
-  WORK_CENTERS
-    .filter((w) => w.type === AREA_TYPES.WORK_AREA && w.active !== false && !['PROYECTO', 'CALIDAD', 'HIGH_VALUE', 'BOX_PREP', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'].includes(w.id))
-    .map((w) => w.id),
+  WORK_CENTERS.filter(
+    (w) =>
+      w.type === AREA_TYPES.WORK_AREA &&
+      w.active !== false &&
+      ![
+        'PROYECTO',
+        'CALIDAD',
+        'HIGH_VALUE',
+        'BOX_PREP',
+        'ACCESORIOS',
+        'PALETIZADO',
+        'INSUMOS',
+        'CONVEYOR_PRINCIPAL',
+      ].includes(w.id),
+  ).map((w) => w.id),
 )
 
 /* Grupos de detalle fusionado: la clave es el id "canonico" (el que se
@@ -580,7 +822,9 @@ export const AREA_DETAIL_GROUPS = {
    siempre resuelve a CONVEYOR_PRINCIPAL, cualquier otro id se devuelve
    tal cual (no pertenece a ningun grupo). */
 export function canonicalOperationalAreaId(workCenterId) {
-  const entry = Object.entries(AREA_DETAIL_GROUPS).find(([, members]) => members.includes(workCenterId))
+  const entry = Object.entries(AREA_DETAIL_GROUPS).find(([, members]) =>
+    members.includes(workCenterId),
+  )
   return entry ? entry[0] : workCenterId
 }
 
@@ -660,8 +904,17 @@ export const WORK_CENTER_NAVIGATION_ORDER = [
   'PROYECTO',
   ...LINES_ONLY.map((w) => w.id),
   'CONVEYOR_PRINCIPAL',
-  'HIGH_VALUE', 'PALETIZADO', 'INSUMOS', 'ACCESORIOS', 'CALIDAD',
-  'CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR',
+  'HIGH_VALUE',
+  'PALETIZADO',
+  'INSUMOS',
+  'ACCESORIOS',
+  'CALIDAD',
+  'CAPACITACION',
+  'TEAM_LEADER',
+  'ENTRENADOR',
+  'LIMPIEZA',
+  'GERENTE',
+  'SUPERVISOR',
 ].filter((id) => isWorkCenterActive(id) && WORK_CENTERS.some((w) => w.id === id))
 
 /* previous/current/next dentro de WORK_CENTER_NAVIGATION_ORDER --
@@ -677,7 +930,10 @@ export function getWorkCenterNavContext(currentAreaId) {
   return {
     previous: idx > 0 ? workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx - 1]) : null,
     current: workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx]),
-    next: idx < WORK_CENTER_NAVIGATION_ORDER.length - 1 ? workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx + 1]) : null,
+    next:
+      idx < WORK_CENTER_NAVIGATION_ORDER.length - 1
+        ? workCenterById(WORK_CENTER_NAVIGATION_ORDER[idx + 1])
+        : null,
   }
 }
 
@@ -716,7 +972,12 @@ export function getNextWorkCenter(currentAreaId) {
    WORK_CENTER real cae en exactamente una. NO se decide por nombre en
    ningun momento -- ver getAreaDetailVariant, unico punto de resolucion
    (AreaDetail.jsx lo consume, no reimplementa la logica). */
-export const AREA_DETAIL_VARIANTS = { LINE: 'LINE', LINE_LIKE: 'LINE_LIKE', OPERATIONAL: 'OPERATIONAL', SUPPORT: 'SUPPORT' }
+export const AREA_DETAIL_VARIANTS = {
+  LINE: 'LINE',
+  LINE_LIKE: 'LINE_LIKE',
+  OPERATIONAL: 'OPERATIONAL',
+  SUPPORT: 'SUPPORT',
+}
 
 export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
@@ -738,10 +999,19 @@ export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PR
    que getAreaDetailVariant siga resolviendo LINE_LIKE (misma pantalla
    LineLikeAreaDetail.jsx de siempre, ahora mostrando una vista filtrada
    sobre Paletizado -- ver AREA_STATION_SOURCE_OVERRIDE). */
-export const LINE_LIKE_AREA_IDS = new Set(['HIGH_VALUE', 'ACCESORIOS', 'PALETIZADO', 'INSUMOS', 'CONVEYOR_PRINCIPAL'])
+export const LINE_LIKE_AREA_IDS = new Set([
+  'HIGH_VALUE',
+  'ACCESORIOS',
+  'PALETIZADO',
+  'INSUMOS',
+  'CONVEYOR_PRINCIPAL',
+])
 
 export const SUPPORT_DETAIL_AREA_IDS = new Set([
-  ...WORK_CENTERS.filter((w) => w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id)).map((w) => w.id),
+  ...WORK_CENTERS.filter(
+    (w) =>
+      w.type === AREA_TYPES.SUPPORT_AREA && !['BOX_PREP', 'SUMINISTRO_MATERIAL'].includes(w.id),
+  ).map((w) => w.id),
   'CALIDAD',
 ])
 
@@ -754,7 +1024,14 @@ export const SUPPORT_DETAIL_AREA_IDS = new Set([
    exactamente igual que antes. Set separado (no se reutiliza
    SUPPORT_DETAIL_AREA_IDS) para que AreaDetail.jsx pueda distinguir sin
    tocar la lista existente. */
-export const SPECIAL_AREA_IDS = new Set(['CAPACITACION', 'TEAM_LEADER', 'ENTRENADOR', 'LIMPIEZA', 'GERENTE', 'SUPERVISOR'])
+export const SPECIAL_AREA_IDS = new Set([
+  'CAPACITACION',
+  'TEAM_LEADER',
+  'ENTRENADOR',
+  'LIMPIEZA',
+  'GERENTE',
+  'SUPERVISOR',
+])
 
 export function getAreaDetailVariant(workCenterId) {
   if (LINE_FAMILY_AREA_IDS.has(workCenterId)) return AREA_DETAIL_VARIANTS.LINE
@@ -763,9 +1040,11 @@ export function getAreaDetailVariant(workCenterId) {
   // ver AREA_DETAIL_GROUPS): sin esto, abrir el detalle de un miembro
   // fusionado caia por error en el defensivo de abajo (LINE) en vez de
   // LINE_LIKE. Mismo patron ya usado por el chequeo de SUPPORT mas abajo.
-  if (LINE_LIKE_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.LINE_LIKE
+  if (LINE_LIKE_AREA_IDS.has(canonicalOperationalAreaId(workCenterId)))
+    return AREA_DETAIL_VARIANTS.LINE_LIKE
   if (usesOperationalDetail(workCenterId)) return AREA_DETAIL_VARIANTS.OPERATIONAL
-  if (SUPPORT_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) return AREA_DETAIL_VARIANTS.SUPPORT
+  if (SUPPORT_DETAIL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId)))
+    return AREA_DETAIL_VARIANTS.SUPPORT
   // Defensivo: cualquier id futuro que no encaje en ninguna lista (no
   // deberia pasar hoy, las cuatro cubren el 100% de WORK_CENTERS) cae en
   // LINE -- LineDetailDrawer.jsx ya maneja correctamente cualquier area
@@ -813,7 +1092,7 @@ export const OPERATIONAL_STATUS = {
 }
 
 export function workCenterById(id) {
-  return WORK_CENTERS.find(w => w.id === id)
+  return WORK_CENTERS.find((w) => w.id === id)
 }
 
 /* Indicadores del area FFT (2026-08-26, "Reestructuracion operativa FFT",
@@ -831,5 +1110,10 @@ export const FFT_INDICATORS = [
   { id: 'EFICIENCIA', order: 1, label: 'Eficiencia del área FFT', hasSource: false },
   { id: 'DEMORAS', order: 2, label: 'Demoras en área FFT', hasSource: false },
   { id: 'PRODUCCION', order: 3, label: 'Indicador de producción', hasSource: false },
-  { id: 'CUMPLIMIENTO_PROGRAMAS', order: 4, label: 'Cumplimiento de programas área FFT', hasSource: false },
+  {
+    id: 'CUMPLIMIENTO_PROGRAMAS',
+    order: 4,
+    label: 'Cumplimiento de programas área FFT',
+    hasSource: false,
+  },
 ]

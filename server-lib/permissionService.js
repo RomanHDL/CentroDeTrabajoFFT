@@ -5,7 +5,12 @@
 // de "Administrador siempre tiene todo" / "reservado nunca se gestiona").
 import { prisma } from './prisma.js'
 import { resolveEffectiveAccess } from '../shared/permissions.js'
-import { ADMIN_ROLE, getModule, listPermissionProtectedModules, listAllModules } from '../shared/moduleRegistry.js'
+import {
+  ADMIN_ROLE,
+  getModule,
+  listPermissionProtectedModules,
+  listAllModules,
+} from '../shared/moduleRegistry.js'
 
 const ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 
@@ -54,7 +59,8 @@ export async function getUserOverrides(userId) {
 export async function setUserOverride(userId, moduleKey, effect, actingUserId) {
   const module = getModule(moduleKey)
   if (!module || !module.permissionProtected) throw new Error('Modulo invalido')
-  if (module.systemReserved) throw new Error('Este modulo es reservado y no admite overrides individuales')
+  if (module.systemReserved)
+    throw new Error('Este modulo es reservado y no admite overrides individuales')
   if (!['ALLOW', 'DENY', 'INHERIT'].includes(effect)) throw new Error('Efecto invalido')
 
   if (effect === 'INHERIT') {
@@ -96,17 +102,23 @@ export async function getEffectiveModulesForUser({ userId, role }) {
     prisma.userModulePermission.findMany({ where: { userId } }),
   ])
   const roleMap = {}
-  roleRows.forEach((r) => { roleMap[r.moduleKey] = r.allowed })
+  roleRows.forEach((r) => {
+    roleMap[r.moduleKey] = r.allowed
+  })
   const overrideMap = {}
-  overrideRows.forEach((r) => { overrideMap[r.moduleKey] = r.effect })
+  overrideRows.forEach((r) => {
+    overrideMap[r.moduleKey] = r.effect
+  })
 
   return modules
-    .filter((m) => resolveEffectiveAccess({
-      role,
-      module: m,
-      roleAllowed: roleMap[m.key] ?? false,
-      override: overrideMap[m.key] ?? null,
-    }))
+    .filter((m) =>
+      resolveEffectiveAccess({
+        role,
+        module: m,
+        roleAllowed: roleMap[m.key] ?? false,
+        override: overrideMap[m.key] ?? null,
+      }),
+    )
     .map((m) => m.key)
 }
 
@@ -123,14 +135,20 @@ export async function getUsersWithEffectiveAccess(moduleKey) {
     prisma.userModulePermission.findMany({ where: { moduleKey } }),
   ])
   const roleMap = {}
-  roleRows.forEach((r) => { roleMap[r.role] = r.allowed })
+  roleRows.forEach((r) => {
+    roleMap[r.role] = r.allowed
+  })
   const overrideByUser = {}
-  overrideRows.forEach((r) => { overrideByUser[r.userId] = r.effect })
+  overrideRows.forEach((r) => {
+    overrideByUser[r.userId] = r.effect
+  })
 
-  return users.filter((u) => resolveEffectiveAccess({
-    role: u.role,
-    module,
-    roleAllowed: roleMap[u.role] ?? false,
-    override: overrideByUser[u.id] ?? null,
-  }))
+  return users.filter((u) =>
+    resolveEffectiveAccess({
+      role: u.role,
+      module,
+      roleAllowed: roleMap[u.role] ?? false,
+      override: overrideByUser[u.id] ?? null,
+    }),
+  )
 }

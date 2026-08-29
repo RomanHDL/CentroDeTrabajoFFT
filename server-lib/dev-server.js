@@ -88,8 +88,14 @@ app.get('/api/dashboard/trends', wrapAsync(dashboardTrendsHandler))
 
 app.get('/api/work-areas/:code/workstations', withDynamicParams(workAreaWorkstationsIndexHandler))
 app.post('/api/work-areas/:code/workstations', withDynamicParams(workAreaWorkstationsIndexHandler))
-app.patch('/api/work-areas/:code/workstations/reorder', withDynamicParams(workAreaWorkstationsReorderHandler))
-app.patch('/api/work-areas/:code/workstations/:id', withDynamicParams(workAreaWorkstationByIdHandler))
+app.patch(
+  '/api/work-areas/:code/workstations/reorder',
+  withDynamicParams(workAreaWorkstationsReorderHandler),
+)
+app.patch(
+  '/api/work-areas/:code/workstations/:id',
+  withDynamicParams(workAreaWorkstationByIdHandler),
+)
 
 app.use((err, req, res, _next) => {
   console.error(err)

@@ -18,8 +18,13 @@ import { usePageStyles } from '../../ui/pageStyles'
 import { EmptyState } from '../../ui'
 import { CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
 import {
-  searchEmployees, getSuggestedCandidates, getCurrentAssignment, isPresentToday,
-  checkInEmployee, moveEmployee, hasSkill,
+  searchEmployees,
+  getSuggestedCandidates,
+  getCurrentAssignment,
+  isPresentToday,
+  checkInEmployee,
+  moveEmployee,
+  hasSkill,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import EmployeeAvatar from './EmployeeAvatar'
@@ -75,12 +80,18 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
 
   const searchResults = useMemo(() => {
     if (!open || !station || !query.trim()) return []
-    return searchEmployees(query).map((e) => ({
-      employee: e,
-      compatible: hasSkill(e.id, station.name),
-      assignment: getCurrentAssignment(e.id),
-      present: isPresentToday(e.id),
-    })).sort((a, b) => (Number(b.compatible) - Number(a.compatible)) || a.employee.name.localeCompare(b.employee.name))
+    return searchEmployees(query)
+      .map((e) => ({
+        employee: e,
+        compatible: hasSkill(e.id, station.name),
+        assignment: getCurrentAssignment(e.id),
+        present: isPresentToday(e.id),
+      }))
+      .sort(
+        (a, b) =>
+          Number(b.compatible) - Number(a.compatible) ||
+          a.employee.name.localeCompare(b.employee.name),
+      )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, query, station, version])
 
@@ -142,15 +153,33 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
       {step === 'SEARCH' && (
         <>
           <DialogTitle sx={{ fontWeight: 800 }}>Asignar personal — {station.name}</DialogTitle>
           <DialogContent>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
-              <Chip size="small" label={`Estación: ${station.name}`} sx={ps.metricChip('default')} />
-              <Chip size="small" label={`Rol requerido: ${station.requiredRole}`} sx={ps.metricChip('info')} />
-              <Chip size="small" label="Disponible" sx={{ bgcolor: '#F59E0B22', color: '#B45309', fontWeight: 700 }} />
+              <Chip
+                size="small"
+                label={`Estación: ${station.name}`}
+                sx={ps.metricChip('default')}
+              />
+              <Chip
+                size="small"
+                label={`Rol requerido: ${station.requiredRole}`}
+                sx={ps.metricChip('info')}
+              />
+              <Chip
+                size="small"
+                label="Disponible"
+                sx={{ bgcolor: '#F59E0B22', color: '#B45309', fontWeight: 700 }}
+              />
             </Stack>
 
             <TextField
@@ -160,7 +189,11 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por número de empleado o nombre..."
               InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ opacity: 0.5 }} /></InputAdornment>,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ opacity: 0.5 }} />
+                  </InputAdornment>
+                ),
               }}
               sx={{
                 mb: 2.5,
@@ -169,15 +202,32 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
               }}
             />
 
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
             {!query.trim() && (
               <>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    mb: 1,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.4,
+                  }}
+                >
                   Personal sugerido para {station.requiredRole}
                 </Typography>
                 {suggested.length === 0 ? (
-                  <EmptyState compact title="Sin candidatos" description="Nadie presente hoy tiene esta habilidad registrada todavía." />
+                  <EmptyState
+                    compact
+                    title="Sin candidatos"
+                    description="Nadie presente hoy tiene esta habilidad registrada todavía."
+                  />
                 ) : (
                   <Stack spacing={1}>
                     {suggested.map((c) => (
@@ -192,15 +242,23 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                     ))}
                   </Stack>
                 )}
-                <Button size="small" onClick={() => setShowAllSuggested((v) => !v)} sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}>
+                <Button
+                  size="small"
+                  onClick={() => setShowAllSuggested((v) => !v)}
+                  sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+                >
                   {showAllSuggested ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
                 </Button>
               </>
             )}
 
-            {query.trim() && (
-              searchResults.length === 0 ? (
-                <EmptyState compact title="No se encontró personal" description="No encontramos empleados que coincidan con esta búsqueda." />
+            {query.trim() &&
+              (searchResults.length === 0 ? (
+                <EmptyState
+                  compact
+                  title="No se encontró personal"
+                  description="No encontramos empleados que coincidan con esta búsqueda."
+                />
               ) : (
                 <Stack spacing={1}>
                   {searchResults.map((r) => (
@@ -214,8 +272,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                     />
                   ))}
                 </Stack>
-              )
-            )}
+              ))}
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
             <Button onClick={onClose}>Cerrar</Button>
@@ -227,28 +284,62 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
         <>
           <DialogTitle sx={{ fontWeight: 800 }}>Confirmar asignación</DialogTitle>
           <DialogContent>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
+            >
               Empleado seleccionado
             </Typography>
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ my: 1.5 }}>
               <EmployeeAvatar employee={selected} size={44} />
               <Box>
                 <Typography sx={{ fontWeight: 800, fontSize: 16 }}>{selected.name}</Typography>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Empleado #{selected.employeeNumber}</Typography>
+                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                  Empleado #{selected.employeeNumber}
+                </Typography>
               </Box>
             </Stack>
             <Divider sx={{ my: 1.5 }} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.75 }}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                mb: 0.75,
+              }}
+            >
               Asignación
             </Typography>
-            <Typography sx={{ fontSize: 14 }}>Estación: <b>{station.name}</b></Typography>
-            <Typography sx={{ fontSize: 14 }}>Rol requerido: <b>{station.requiredRole}</b></Typography>
-            <Typography sx={{ fontSize: 14 }}>Área: <b>{areaName}</b></Typography>
-            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+            <Typography sx={{ fontSize: 14 }}>
+              Estación: <b>{station.name}</b>
+            </Typography>
+            <Typography sx={{ fontSize: 14 }}>
+              Rol requerido: <b>{station.requiredRole}</b>
+            </Typography>
+            <Typography sx={{ fontSize: 14 }}>
+              Área: <b>{areaName}</b>
+            </Typography>
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
             <Button onClick={() => setStep('SEARCH')}>Cancelar</Button>
-            <Button variant="contained" disabled={submitting} onClick={handleAssign} sx={{ fontWeight: 700 }}>
+            <Button
+              variant="contained"
+              disabled={submitting}
+              onClick={handleAssign}
+              sx={{ fontWeight: 700 }}
+            >
               Asignar a {station.name}
             </Button>
           </DialogActions>
@@ -260,28 +351,53 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
           <DialogTitle sx={{ fontWeight: 800 }}>Este empleado ya está asignado</DialogTitle>
           <DialogContent>
             <Typography sx={{ fontWeight: 800, fontSize: 16 }}>{selected.name}</Typography>
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.5 }}>Empleado #{selected.employeeNumber}</Typography>
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.5 }}>
+              Empleado #{selected.employeeNumber}
+            </Typography>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
-              <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Actualmente</Typography>
-              <Typography sx={{ fontWeight: 700 }}>
-                {workCenterById(conflictAssignment.areaId)?.name || conflictAssignment.areaId} — {conflictAssignment.stationId}
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Actualmente
               </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Entrada: {conflictAssignment.checkInAt}</Typography>
+              <Typography sx={{ fontWeight: 700 }}>
+                {workCenterById(conflictAssignment.areaId)?.name || conflictAssignment.areaId} —{' '}
+                {conflictAssignment.stationId}
+              </Typography>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                Entrada: {conflictAssignment.checkInAt}
+              </Typography>
             </Box>
-            {conflictAssignment.areaId === areaId && conflictAssignment.stationId === station.name ? (
-              <Alert severity="info" sx={{ mt: 2 }}>Ya está asignado exactamente a esta estación.</Alert>
+            {conflictAssignment.areaId === areaId &&
+            conflictAssignment.stationId === station.name ? (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Ya está asignado exactamente a esta estación.
+              </Alert>
             ) : (
               <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 2 }}>
                 Nueva ubicación: <b>{areaName}</b> — {station.name}
               </Typography>
             )}
-            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5, flexWrap: 'wrap', gap: 1 }}>
             <Button onClick={() => setStep('SEARCH')}>Cancelar</Button>
             <Button
               variant="contained"
-              disabled={submitting || (conflictAssignment.areaId === areaId && conflictAssignment.stationId === station.name)}
+              disabled={
+                submitting ||
+                (conflictAssignment.areaId === areaId &&
+                  conflictAssignment.stationId === station.name)
+              }
               onClick={handleMove}
               sx={{ fontWeight: 700 }}
             >
@@ -294,12 +410,16 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
       {step === 'SUCCESS' && result && (
         <DialogContent sx={{ pt: 4, pb: 3, textAlign: 'center' }}>
           <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
-          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 1 }}>Asignado correctamente</Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 1 }}>
+            Asignado correctamente
+          </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: 17 }}>{result.employee.name}</Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2.5 }}>
             #{result.employee.employeeNumber} · {station.name}
           </Typography>
-          <Button variant="contained" onClick={onClose} sx={{ fontWeight: 700 }}>Cerrar</Button>
+          <Button variant="contained" onClick={onClose} sx={{ fontWeight: 700 }}>
+            Cerrar
+          </Button>
         </DialogContent>
       )}
     </Dialog>
@@ -309,20 +429,29 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
 function ResultRow({ employee, compatible, present, assignment, onSelect }) {
   const statusLabel = assignment
     ? `Asignado — ${assignment.stationId}`
-    : present ? 'Disponible hoy' : 'No registrado hoy'
+    : present
+      ? 'Disponible hoy'
+      : 'No registrado hoy'
   const statusColor = assignment ? '#B45309' : present ? '#047857' : 'text.secondary'
   return (
     <Stack
-      direction="row" spacing={1.5} alignItems="center"
+      direction="row"
+      spacing={1.5}
+      alignItems="center"
       sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
     >
       <EmployeeAvatar employee={employee} size={44} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }} noWrap>{employee.name}</Typography>
-        <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-          Empleado #{employee.employeeNumber}{compatible ? ' · Habilidad registrada' : ''}
+        <Typography sx={{ fontWeight: 700, fontSize: 14 }} noWrap>
+          {employee.name}
         </Typography>
-        <Typography sx={{ fontSize: 11, color: statusColor, fontWeight: 700 }}>{statusLabel}</Typography>
+        <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+          Empleado #{employee.employeeNumber}
+          {compatible ? ' · Habilidad registrada' : ''}
+        </Typography>
+        <Typography sx={{ fontSize: 11, color: statusColor, fontWeight: 700 }}>
+          {statusLabel}
+        </Typography>
       </Box>
       <Button
         size="medium"

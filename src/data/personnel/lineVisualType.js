@@ -40,7 +40,12 @@ export const LINE_VISUAL_TYPES = {
   LIDERAZGO: { key: 'LIDERAZGO', label: 'Team Leader', color: '#0D9488', iconKey: 'liderazgo' },
   CALIDAD: { key: 'CALIDAD', label: 'Calidad', color: '#DB2777', iconKey: 'calidad' },
   PRODUCCION: { key: 'PRODUCCION', label: 'Producción', color: '#2563EB', iconKey: 'produccion' },
-  TECNICO: { key: 'TECNICO', label: 'Técnico / Especializado', color: '#F59E0B', iconKey: 'tecnico' },
+  TECNICO: {
+    key: 'TECNICO',
+    label: 'Técnico / Especializado',
+    color: '#F59E0B',
+    iconKey: 'tecnico',
+  },
   SUMINISTRO: { key: 'SUMINISTRO', label: 'Suministro', color: '#7C3AED', iconKey: 'suministro' },
   APOYO: { key: 'APOYO', label: 'Ayudante General', color: '#64748B', iconKey: 'apoyo' },
 }
@@ -76,18 +81,19 @@ export const LINE_VISUAL_TYPE_ORDER = [
    categoria vieja. */
 export const ROLE_TO_CATEGORY_KEY = {
   'Team Leader': 'LIDERAZGO',
-  'Calidad': 'CALIDAD',
-  'Montaje': 'APOYO',
-  'Etiquetado': 'APOYO',
+  Calidad: 'CALIDAD',
+  Montaje: 'APOYO',
+  Etiquetado: 'APOYO',
   'Limpieza de TV': 'APOYO',
   'Suministro de Accesorios': 'APOYO',
   'Prueba eléctrica': 'APOYO',
-  'Empaque': 'APOYO',
+  Empaque: 'APOYO',
 }
 
 export function getPersonnelVisualType({ stationRole, actividad, category } = {}) {
   if (category && LINE_VISUAL_TYPES[category]) return LINE_VISUAL_TYPES[category]
   if (actividad === 'LIDER') return LINE_VISUAL_TYPES.LIDERAZGO
-  if (stationRole && ROLE_TO_CATEGORY_KEY[stationRole]) return LINE_VISUAL_TYPES[ROLE_TO_CATEGORY_KEY[stationRole]]
+  if (stationRole && ROLE_TO_CATEGORY_KEY[stationRole])
+    return LINE_VISUAL_TYPES[ROLE_TO_CATEGORY_KEY[stationRole]]
   return null
 }

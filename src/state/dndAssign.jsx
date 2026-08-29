@@ -9,7 +9,15 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
 import { getWorkstationsForLine, hasMultipleStations } from '../data/personnel/workstations'
-import { getCurrentAssignment, checkInEmployee, releaseAssignment, getEmployeeById, getLineWorkstationsWithOccupancy, getAssignmentsForArea, swapOrBumpStation } from '../data/personnel/repository'
+import {
+  getCurrentAssignment,
+  checkInEmployee,
+  releaseAssignment,
+  getEmployeeById,
+  getLineWorkstationsWithOccupancy,
+  getAssignmentsForArea,
+  swapOrBumpStation,
+} from '../data/personnel/repository'
 import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
@@ -57,13 +65,18 @@ export function DndAssignProvider({ children }) {
 
   function finalize(employee, current, targetAreaId, stationName) {
     const areaName = workCenterById(targetAreaId)?.name || targetAreaId
-    const alreadyHere = current && current.areaId === targetAreaId && current.stationId === stationName
+    const alreadyHere =
+      current && current.areaId === targetAreaId && current.stationId === stationName
     if (alreadyHere) {
       showToast(`${employee.name} ya está asignado a ${areaName}.`, 'info')
       return
     }
     if (current) {
-      setMoveTarget({ employee, currentAssignment: current, presetTo: { areaId: targetAreaId, stationId: stationName } })
+      setMoveTarget({
+        employee,
+        currentAssignment: current,
+        presetTo: { areaId: targetAreaId, stationId: stationName },
+      })
       return
     }
     const res = checkInEmployee({
@@ -109,12 +122,18 @@ export function DndAssignProvider({ children }) {
   function requestAssignToStation(employeeId, targetAreaId, stationName) {
     const employee = getEmployeeById(employeeId)
     if (!employee) return
-    const occupied = getAssignmentsForArea(targetAreaId).find(a => a.stationId === stationName)
+    const occupied = getAssignmentsForArea(targetAreaId).find((a) => a.stationId === stationName)
     if (occupied && occupied.employeeId !== employeeId) {
       const occupant = getEmployeeById(occupied.employeeId)
       if (occupant) {
         const current = getCurrentAssignment(employeeId)
-        setSwapTarget({ employeeA: employee, employeeB: occupant, current, targetAreaId, stationName })
+        setSwapTarget({
+          employeeA: employee,
+          employeeB: occupant,
+          current,
+          targetAreaId,
+          stationName,
+        })
         return
       }
     }
@@ -125,10 +144,16 @@ export function DndAssignProvider({ children }) {
   function confirmSwap() {
     if (!swapTarget) return
     const { employeeA, employeeB, targetAreaId, stationName } = swapTarget
-    const res = swapOrBumpStation({ employeeIdA: employeeA.id, toAreaId: targetAreaId, toStationId: stationName })
+    const res = swapOrBumpStation({
+      employeeIdA: employeeA.id,
+      toAreaId: targetAreaId,
+      toStationId: stationName,
+    })
     if (res.status === 'OK') {
       if (res.bumpedEmployeeId) {
-        showToast(`${employeeA.name} ocupó el puesto de ${employeeB.name}; ${employeeB.name} quedó sin asignación.`)
+        showToast(
+          `${employeeA.name} ocupó el puesto de ${employeeB.name}; ${employeeB.name} quedó sin asignación.`,
+        )
       } else {
         showToast(`${employeeA.name} y ${employeeB.name} intercambiaron de puesto.`)
       }
@@ -156,7 +181,10 @@ export function DndAssignProvider({ children }) {
     const current = getCurrentAssignment(employeeId)
     const effectiveAreaId = current?.areaId || getEffectiveAreaForEmployee(employeeId)
     if (!effectiveAreaId) return
-    setReleaseTarget({ employee, currentAssignment: current || { areaId: effectiveAreaId, stationId: null } })
+    setReleaseTarget({
+      employee,
+      currentAssignment: current || { areaId: effectiveAreaId, stationId: null },
+    })
   }
 
   function confirmRelease() {
@@ -174,13 +202,21 @@ export function DndAssignProvider({ children }) {
 
   const value = useMemo(() => ({ requestAssign, requestAssignToStation, requestRelease }), [])
 
-  const pickerStations = stationPicker ? getLineWorkstationsWithOccupancy(stationPicker.targetAreaId) : []
+  const pickerStations = stationPicker
+    ? getLineWorkstationsWithOccupancy(stationPicker.targetAreaId)
+    : []
 
   return (
     <DndAssignContext.Provider value={value}>
       {children}
 
-      <Dialog open={Boolean(stationPicker)} onClose={() => setStationPicker(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog
+        open={Boolean(stationPicker)}
+        onClose={() => setStationPicker(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         {stationPicker && (
           <>
             <DialogTitle sx={{ fontWeight: 800 }}>
@@ -191,8 +227,8 @@ export function DndAssignProvider({ children }) {
                 Asignando a <b>{stationPicker.employee.name}</b>
               </Typography>
               <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 2 }}>
-                No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b> · Soltar sobre la línea
-                no elige estación automáticamente — selecciona una disponible:
+                No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b> ·
+                Soltar sobre la línea no elige estación automáticamente — selecciona una disponible:
               </Typography>
               <Stack spacing={1}>
                 {pickerStations.map((s) => (
@@ -208,16 +244,30 @@ export function DndAssignProvider({ children }) {
                       finalize(employee, current, targetAreaId, s.name)
                     }}
                     sx={{
-                      p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider',
-                      cursor: s.isAvailable ? 'pointer' : 'not-allowed', opacity: s.isAvailable ? 1 : 0.5,
+                      p: 1.25,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      cursor: s.isAvailable ? 'pointer' : 'not-allowed',
+                      opacity: s.isAvailable ? 1 : 0.5,
                       '&:hover': s.isAvailable ? { borderColor: '#3B82F6' } : {},
                     }}
                   >
                     <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{s.name}</Typography>
                     <Chip
                       size="small"
-                      label={s.isAvailable ? 'Disponible' : `${s.occupants.length}/${s.capacity} completa`}
-                      sx={{ height: 20, fontSize: 10.5, fontWeight: 700, bgcolor: s.isAvailable ? '#10B98122' : '#94A3B822', color: s.isAvailable ? '#047857' : '#64748B' }}
+                      label={
+                        s.isAvailable
+                          ? 'Disponible'
+                          : `${s.occupants.length}/${s.capacity} completa`
+                      }
+                      sx={{
+                        height: 20,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        bgcolor: s.isAvailable ? '#10B98122' : '#94A3B822',
+                        color: s.isAvailable ? '#047857' : '#64748B',
+                      }}
                     />
                   </Stack>
                 ))}
@@ -238,11 +288,17 @@ export function DndAssignProvider({ children }) {
           currentAssignment={moveTarget.currentAssignment}
           presetTo={moveTarget.presetTo}
           onDone={(res) => {
-            const toName = workCenterById(moveTarget.presetTo.areaId)?.name || moveTarget.presetTo.areaId
+            const toName =
+              workCenterById(moveTarget.presetTo.areaId)?.name || moveTarget.presetTo.areaId
             if (res?.pending) {
-              showToast(`Solicitud de movimiento de ${moveTarget.employee.name} enviada para aprobación.`, 'info')
+              showToast(
+                `Solicitud de movimiento de ${moveTarget.employee.name} enviada para aprobación.`,
+                'info',
+              )
             } else {
-              const fromName = workCenterById(moveTarget.currentAssignment.areaId)?.name || moveTarget.currentAssignment.areaId
+              const fromName =
+                workCenterById(moveTarget.currentAssignment.areaId)?.name ||
+                moveTarget.currentAssignment.areaId
               showToast(`${moveTarget.employee.name} movido de ${fromName} a ${toName}.`)
               warnIfOverIdeal(moveTarget.presetTo.areaId)
             }
@@ -251,7 +307,13 @@ export function DndAssignProvider({ children }) {
         />
       )}
 
-      <Dialog open={Boolean(swapTarget)} onClose={() => setSwapTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog
+        open={Boolean(swapTarget)}
+        onClose={() => setSwapTarget(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         {swapTarget && (
           <>
             <DialogTitle sx={{ fontWeight: 800 }}>
@@ -260,16 +322,19 @@ export function DndAssignProvider({ children }) {
             <DialogContent>
               {swapTarget.current ? (
                 <Typography sx={{ fontSize: 14 }}>
-                  <b>{swapTarget.employeeA.name}</b> tomará el puesto de <b>{swapTarget.employeeB.name}</b> en{' '}
-                  <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}), y{' '}
-                  <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
+                  <b>{swapTarget.employeeA.name}</b> tomará el puesto de{' '}
+                  <b>{swapTarget.employeeB.name}</b> en{' '}
+                  <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}),
+                  y <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
                   <b>{swapTarget.employeeA.name}</b> en{' '}
-                  <b>{workCenterById(swapTarget.current.areaId)?.name}</b> ({swapTarget.current.stationId}).
+                  <b>{workCenterById(swapTarget.current.areaId)?.name}</b> (
+                  {swapTarget.current.stationId}).
                 </Typography>
               ) : (
                 <Typography sx={{ fontSize: 14 }}>
-                  <b>{swapTarget.stationName}</b> ya está ocupada por <b>{swapTarget.employeeB.name}</b>.
-                  Si continúas, <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
+                  <b>{swapTarget.stationName}</b> ya está ocupada por{' '}
+                  <b>{swapTarget.employeeB.name}</b>. Si continúas,{' '}
+                  <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
                   <b>{swapTarget.employeeB.name}</b> quedará sin asignación.
                 </Typography>
               )}
@@ -284,19 +349,34 @@ export function DndAssignProvider({ children }) {
         )}
       </Dialog>
 
-      <Dialog open={Boolean(releaseTarget)} onClose={() => setReleaseTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog
+        open={Boolean(releaseTarget)}
+        onClose={() => setReleaseTarget(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         {releaseTarget && (
           <>
             <DialogTitle sx={{ fontWeight: 800 }}>Quitar del área</DialogTitle>
             <DialogContent>
               <Typography sx={{ fontSize: 14 }}>
                 ¿Quitar a <b>{releaseTarget.employee.name}</b> de{' '}
-                <b>{workCenterById(releaseTarget.currentAssignment.areaId)?.name || releaseTarget.currentAssignment.areaId}</b>?
+                <b>
+                  {workCenterById(releaseTarget.currentAssignment.areaId)?.name ||
+                    releaseTarget.currentAssignment.areaId}
+                </b>
+                ?
               </Typography>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
               <Button onClick={() => setReleaseTarget(null)}>Cancelar</Button>
-              <Button variant="contained" color="error" onClick={confirmRelease} sx={{ fontWeight: 700 }}>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={confirmRelease}
+                sx={{ fontWeight: 700 }}
+              >
                 Quitar
               </Button>
             </DialogActions>

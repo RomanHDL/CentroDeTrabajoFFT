@@ -14,10 +14,25 @@ import Chip from '@mui/material/Chip'
 import { usePageStyles } from '../../ui/pageStyles'
 import { weeklyTotals } from '../../data/production/production'
 import { progressTone } from '../../data/production/selectors'
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+} from 'recharts'
 import { useTheme } from '@mui/material/styles'
 
-const ACCENT_HEX = { blue: '#3B82F6', green: '#10B981', amber: '#F59E0B', red: '#EF4444', slate: '#64748B' }
+const ACCENT_HEX = {
+  blue: '#3B82F6',
+  green: '#10B981',
+  amber: '#F59E0B',
+  red: '#EF4444',
+  slate: '#64748B',
+}
 
 function mondayOfThisWeek() {
   const d = dayjs()
@@ -36,7 +51,7 @@ export default function ProduccionSemanalTab() {
   const weekStart = useMemo(() => mondayOfThisWeek(), [])
   const totals = useMemo(() => weeklyTotals(), [])
 
-  const chartData = totals.map(t => ({ ...t, accent: progressTone(t.cumplimiento).accent }))
+  const chartData = totals.map((t) => ({ ...t, accent: progressTone(t.cumplimiento).accent }))
   const weekTotal = totals.reduce((s, r) => s + r.production, 0)
   const weekTarget = totals.reduce((s, r) => s + r.target, 0)
   const weekCumplimiento = weekTarget > 0 ? Math.round((weekTotal / weekTarget) * 100) : 0
@@ -51,20 +66,56 @@ export default function ProduccionSemanalTab() {
       <Grid container spacing={1.5} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={4}>
           <Paper elevation={0} sx={ps.kpiCard('blue')}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Producción semanal</Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{weekTotal.toLocaleString('es-MX')}</Typography>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+              }}
+            >
+              Producción semanal
+            </Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
+              {weekTotal.toLocaleString('es-MX')}
+            </Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={4}>
           <Paper elevation={0} sx={ps.kpiCard('slate')}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Meta semanal</Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{weekTarget.toLocaleString('es-MX')}</Typography>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+              }}
+            >
+              Meta semanal
+            </Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
+              {weekTarget.toLocaleString('es-MX')}
+            </Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Paper elevation={0} sx={ps.kpiCard(progressTone(weekTarget > 0 ? weekCumplimiento : null).accent)}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>Cumplimiento</Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{weekTarget > 0 ? `${weekCumplimiento}%` : '—'}</Typography>
+          <Paper
+            elevation={0}
+            sx={ps.kpiCard(progressTone(weekTarget > 0 ? weekCumplimiento : null).accent)}
+          >
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+              }}
+            >
+              Cumplimiento
+            </Typography>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
+              {weekTarget > 0 ? `${weekCumplimiento}%` : '—'}
+            </Typography>
           </Paper>
         </Grid>
       </Grid>
@@ -91,10 +142,18 @@ export default function ProduccionSemanalTab() {
                     return (
                       <TableRow key={row.day} sx={ps.tableRow(idx)}>
                         <TableCell sx={{ ...ps.cellText, fontWeight: 600 }}>{row.day}</TableCell>
-                        <TableCell align="right" sx={ps.cellText}>{row.production.toLocaleString('es-MX')}</TableCell>
-                        <TableCell align="right" sx={ps.cellTextSecondary}>{row.target.toLocaleString('es-MX')}</TableCell>
+                        <TableCell align="right" sx={ps.cellText}>
+                          {row.production.toLocaleString('es-MX')}
+                        </TableCell>
+                        <TableCell align="right" sx={ps.cellTextSecondary}>
+                          {row.target.toLocaleString('es-MX')}
+                        </TableCell>
                         <TableCell align="right">
-                          <Chip size="small" label={`${row.cumplimiento}%`} sx={ps.metricChip(tone.tone)} />
+                          <Chip
+                            size="small"
+                            label={`${row.cumplimiento}%`}
+                            sx={ps.metricChip(tone.tone)}
+                          />
                         </TableCell>
                       </TableRow>
                     )
@@ -114,10 +173,23 @@ export default function ProduccionSemanalTab() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke={gridColor} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: axisColor }} axisLine={{ stroke: gridColor }} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} width={44} />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 11, fill: axisColor }}
+                    axisLine={{ stroke: gridColor }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: axisColor }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={44}
+                  />
                   <Tooltip
-                    formatter={(value, name, props) => [`${value.toLocaleString('es-MX')} (${props.payload.cumplimiento}%)`, 'Producción']}
+                    formatter={(value, name, props) => [
+                      `${value.toLocaleString('es-MX')} (${props.payload.cumplimiento}%)`,
+                      'Producción',
+                    ]}
                     cursor={{ fill: d ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)' }}
                   />
                   <Bar dataKey="production" radius={[4, 4, 0, 0]} maxBarSize={44}>

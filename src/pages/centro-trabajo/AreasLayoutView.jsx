@@ -50,14 +50,20 @@ export default function AreasLayoutView({ onOpenLine }) {
     setSelection({ type: 'area', id })
   }
 
-  const panel = <AreaDetailPanel selection={selection} onSelectArea={handleSelectArea} onOpenFullDrawer={onOpenLine} />
+  const panel = (
+    <AreaDetailPanel
+      selection={selection}
+      onSelectArea={handleSelectArea}
+      onOpenFullDrawer={onOpenLine}
+    />
+  )
 
   return (
     <Box>
       <Typography sx={{ fontSize: 11, color: 'text.secondary', mb: 1.5 }}>
-        Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {BASE_SNAPSHOT_DATE}. Arrastrar o
-        asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot. Números de empleado
-        pendientes: BASE no trae esa columna todavía.
+        Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {BASE_SNAPSHOT_DATE}.
+        Arrastrar o asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot.
+        Números de empleado pendientes: BASE no trae esa columna todavía.
       </Typography>
 
       {/* Sin cardHeader propio (2026-08-25): OperatingFloorPlan ya trae su
@@ -81,12 +87,20 @@ export default function AreasLayoutView({ onOpenLine }) {
             : { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85vh' },
         }}
       >
-        <Box sx={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          p: 1.5, borderBottom: '1px solid', borderColor: 'divider',
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            p: 1.5,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
           <Typography sx={{ fontWeight: 800, fontSize: 15 }}>Detalle del área</Typography>
-          <IconButton onClick={() => setSelection(null)}><CloseIcon /></IconButton>
+          <IconButton onClick={() => setSelection(null)}>
+            <CloseIcon />
+          </IconButton>
         </Box>
         {panel}
       </Drawer>

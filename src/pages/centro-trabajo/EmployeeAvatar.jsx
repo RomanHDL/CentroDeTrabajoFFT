@@ -25,32 +25,49 @@ export default function EmployeeAvatar({ employee, size = 56, dashed = false }) 
 
   if (!employee) {
     return (
-      <Avatar sx={{
-        width: size, height: size,
-        bgcolor: 'transparent',
-        border: '2px dashed',
-        borderColor: 'divider',
-        color: 'text.disabled',
-      }}>
+      <Avatar
+        sx={{
+          width: size,
+          height: size,
+          bgcolor: 'transparent',
+          border: '2px dashed',
+          borderColor: 'divider',
+          color: 'text.disabled',
+        }}
+      >
         <PersonIcon sx={{ fontSize: size * 0.5 }} />
       </Avatar>
     )
   }
 
   if (photoUrl) {
-    return <Avatar src={photoUrl} alt={name} sx={{ width: size, height: size, border: dashed ? '2px dashed' : 'none', borderColor: 'divider' }} />
+    return (
+      <Avatar
+        src={photoUrl}
+        alt={name}
+        sx={{
+          width: size,
+          height: size,
+          border: dashed ? '2px dashed' : 'none',
+          borderColor: 'divider',
+        }}
+      />
+    )
   }
 
   const color = colorForName(name || employee.employeeNumber || '')
   return (
-    <Avatar sx={{
-      width: size, height: size,
-      bgcolor: alpha(color, 0.15),
-      color,
-      fontWeight: 800,
-      fontSize: size * 0.34,
-      border: `1px solid ${alpha(color, 0.3)}`,
-    }}>
+    <Avatar
+      sx={{
+        width: size,
+        height: size,
+        bgcolor: alpha(color, 0.15),
+        color,
+        fontWeight: 800,
+        fontSize: size * 0.34,
+        border: `1px solid ${alpha(color, 0.3)}`,
+      }}
+    >
       {initialsOf(name) || <PersonIcon sx={{ fontSize: size * 0.5 }} />}
     </Avatar>
   )

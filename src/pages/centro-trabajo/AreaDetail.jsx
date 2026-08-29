@@ -1,4 +1,10 @@
-import { getAreaDetailVariant, AREA_DETAIL_VARIANTS, getWorkCenterNavContext, canonicalOperationalAreaId, SPECIAL_AREA_IDS } from '../../data/production/catalog'
+import {
+  getAreaDetailVariant,
+  AREA_DETAIL_VARIANTS,
+  getWorkCenterNavContext,
+  canonicalOperationalAreaId,
+  SPECIAL_AREA_IDS,
+} from '../../data/production/catalog'
 import LineDetailDrawer from './LineDetailDrawer'
 import LineLikeAreaDetail from './LineLikeAreaDetail'
 import OperationalAreaDetail from './OperationalAreaDetail'
@@ -48,21 +54,43 @@ import SpecialAreaDetail from './SpecialAreaDetail'
    mismo useSelectedWorkCenter -- ver ese archivo). ───────────────────────────────────────────── */
 export default function AreaDetail({ workCenterId, open, onClose, onNavigate }) {
   const variant = workCenterId ? getAreaDetailVariant(workCenterId) : null
-  const { previous, next } = workCenterId ? getWorkCenterNavContext(workCenterId) : { previous: null, next: null }
+  const { previous, next } = workCenterId
+    ? getWorkCenterNavContext(workCenterId)
+    : { previous: null, next: null }
   const navProps = { previous, next, onNavigate }
 
   if (variant === AREA_DETAIL_VARIANTS.OPERATIONAL) {
-    return <OperationalAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+    return (
+      <OperationalAreaDetail
+        workCenterId={workCenterId}
+        open={open}
+        onClose={onClose}
+        {...navProps}
+      />
+    )
   }
   if (variant === AREA_DETAIL_VARIANTS.SUPPORT) {
     if (SPECIAL_AREA_IDS.has(canonicalOperationalAreaId(workCenterId))) {
-      return <SpecialAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+      return (
+        <SpecialAreaDetail
+          workCenterId={workCenterId}
+          open={open}
+          onClose={onClose}
+          {...navProps}
+        />
+      )
     }
-    return <SupportAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+    return (
+      <SupportAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+    )
   }
   if (variant === AREA_DETAIL_VARIANTS.LINE_LIKE) {
-    return <LineLikeAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+    return (
+      <LineLikeAreaDetail workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+    )
   }
   // LINE: unica variante restante -- WC LINEA 0-10, diseño intacto.
-  return <LineDetailDrawer workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+  return (
+    <LineDetailDrawer workCenterId={workCenterId} open={open} onClose={onClose} {...navProps} />
+  )
 }

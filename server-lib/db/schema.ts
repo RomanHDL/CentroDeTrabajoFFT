@@ -1,0 +1,796 @@
+// Fase 3 (MI Stack Reference, Prisma -> Drizzle): generado por
+// `drizzle-kit introspect` contra la base Neon REAL en producción (nunca
+// escrito a mano) -- garantiza que coincide exactamente con lo que Prisma
+// ya creó, cero riesgo de definicion divergente. `_prisma_migrations` se
+// excluye a proposito (ver tablesFilter en drizzle.config.ts) -- es
+// bookkeeping interno de Prisma, no una tabla de dominio.
+//
+// UNICO cambio manual sobre la salida cruda de introspect: todas las
+// columnas `date`/`timestamp` usan `{ mode: 'date' }` (introspect las deja
+// en modo string por defecto) -- Prisma siempre devolvia objetos Date de
+// JS para estos campos, y varios call-sites (todayDateOnly/parseDateOnly
+// en server-lib/personnel.js, entre otros) construyen/comparan Date
+// directamente. Mantener el mismo tipo evita cambios de comportamiento
+// silenciosos al portar cada archivo.
+//
+// server-lib/db/client.ts es el punto de entrada real (equivalente de
+// server-lib/prisma.js) -- este archivo nunca se importa directo fuera de
+// ahi. relations.ts (mismo directorio) tiene el mismo origen/regla.
+//
+// SEGUNDO cambio manual: cada `id` agrega `.$defaultFn(() => cuid())`.
+// `@default(cuid())` en el schema Prisma original NUNCA fue un default de
+// Postgres (confirmado con un insert de prueba real que fallo con "null
+// value in column id") -- Prisma generaba el id en su propio cliente
+// antes de mandar el INSERT. `cuid` (paquete original v1, NO cuid2) es el
+// que produce el mismo formato exacto que los ids ya existentes en la
+// base real (25 caracteres, empieza con "c" -- verificado generando ids
+// de prueba y comparandolos contra filas reales). Sin este default,
+// CUALQUIER insert nuevo via Drizzle fallaria igual que el de prueba.
+import {
+  pgTable,
+  uniqueIndex,
+  index,
+  foreignKey,
+  text,
+  boolean,
+  timestamp,
+  integer,
+  date,
+  pgEnum,
+} from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import cuid from 'cuid'
+
+export const assignmentEndReason = pgEnum('AssignmentEndReason', [
+  'MOVED',
+  'RELEASED',
+  'SHIFT_END',
+  'CORRECTION',
+])
+export const attendanceStatus = pgEnum('AttendanceStatus', ['PRESENTE', 'AUSENTE', 'RETARDO'])
+export const bajaConflictStatus = pgEnum('BajaConflictStatus', [
+  'PENDING',
+  'CONFIRMED_SAME_PERSON',
+  'CONFIRMED_DIFFERENT_PERSON',
+  'IGNORED',
+])
+export const dailyAssignmentStatus = pgEnum('DailyAssignmentStatus', ['ACTIVE', 'ENDED'])
+export const employeeReconciliationStatus = pgEnum('EmployeeReconciliationStatus', [
+  'PENDING',
+  'CONFIRMED_SAME_PERSON',
+  'CONFIRMED_DIFFERENT_PERSON',
+  'IGNORED',
+])
+export const employeeSkillSource = pgEnum('EmployeeSkillSource', ['IMPORTED', 'MANUAL'])
+export const importBatchStatus = pgEnum('ImportBatchStatus', ['RUNNING', 'COMPLETED', 'FAILED'])
+export const pendingMoveStatus = pgEnum('PendingMoveStatus', ['PENDING', 'APPROVED', 'REJECTED'])
+export const skillLevel = pgEnum('SkillLevel', ['PUEDE_CUBRIR', 'INTERMEDIO', 'EXPERTO'])
+export const userPermissionEffect = pgEnum('UserPermissionEffect', ['ALLOW', 'DENY'])
+export const userRole = pgEnum('UserRole', ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'])
+export const workstationCategory = pgEnum('WorkstationCategory', [
+  'LIDERAZGO',
+  'CALIDAD',
+  'PRODUCCION',
+  'TECNICO',
+  'SUMINISTRO',
+  'APOYO',
+])
+
+export const user = pgTable(
+  'User',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeNumber: text(),
+    username: text(),
+    name: text().notNull(),
+    passwordHash: text().notNull(),
+    role: userRole().notNull(),
+    active: boolean().default(true).notNull(),
+    mustChangePassword: boolean().default(false).notNull(),
+    lastLoginAt: timestamp({ precision: 3, mode: 'date' }),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    employeeId: text(),
+  },
+  (table) => [
+    uniqueIndex('User_employeeId_key').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('User_employeeNumber_key').using(
+      'btree',
+      table.employeeNumber.asc().nullsLast().op('text_ops'),
+    ),
+    index('User_role_idx').using('btree', table.role.asc().nullsLast().op('enum_ops')),
+    uniqueIndex('User_username_key').using(
+      'btree',
+      table.username.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'User_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const importedAttendanceReference = pgTable(
+  'ImportedAttendanceReference',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    employeeImportSourceId: text().notNull(),
+    rawCode: text().notNull(),
+    importedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    index('ImportedAttendanceReference_employeeId_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('ImportedAttendanceReference_employeeImportSourceId_key').using(
+      'btree',
+      table.employeeImportSourceId.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'ImportedAttendanceReference_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.employeeImportSourceId],
+      foreignColumns: [employeeImportSource.id],
+      name: 'ImportedAttendanceReference_employeeImportSourceId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)
+
+export const roleModuleAccess = pgTable('RoleModuleAccess', {
+  role: userRole().primaryKey().notNull(),
+  modules: text().array(),
+})
+
+export const workstation = pgTable(
+  'Workstation',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    workAreaId: text().notNull(),
+    name: text().notNull(),
+    requiredSkillId: text(),
+    capacity: integer().default(1).notNull(),
+    displayOrder: integer().default(0).notNull(),
+    active: boolean().default(true).notNull(),
+    category: workstationCategory(),
+    requiredRoleLabel: text(),
+    role: text(),
+  },
+  (table) => [
+    uniqueIndex('Workstation_workAreaId_name_key').using(
+      'btree',
+      table.workAreaId.asc().nullsLast().op('text_ops'),
+      table.name.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.workAreaId],
+      foreignColumns: [workArea.id],
+      name: 'Workstation_workAreaId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.requiredSkillId],
+      foreignColumns: [skill.id],
+      name: 'Workstation_requiredSkillId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const importBatch = pgTable(
+  'ImportBatch',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    fileName: text().notNull(),
+    fileHash: text().notNull(),
+    sheet: text().notNull(),
+    startedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    finishedAt: timestamp({ precision: 3, mode: 'date' }),
+    totalRows: integer().default(0).notNull(),
+    newEmployees: integer().default(0).notNull(),
+    updatedEmployees: integer().default(0).notNull(),
+    skippedRows: integer().default(0).notNull(),
+    conflictsFound: integer().default(0).notNull(),
+    status: importBatchStatus().default('RUNNING').notNull(),
+    triggeredByUserId: text().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ImportBatch_fileHash_key').using(
+      'btree',
+      table.fileHash.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.triggeredByUserId],
+      foreignColumns: [user.id],
+      name: 'ImportBatch_triggeredByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)
+
+export const employeeImportSource = pgTable(
+  'EmployeeImportSource',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    importBatchId: text().notNull(),
+    sourceSheet: text().notNull(),
+    sourceRowNumber: integer().notNull(),
+    rawZona: text(),
+    rawActividad: text(),
+    rawAsistencia: text(),
+    rawPrestamo: text(),
+    importedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    index('EmployeeImportSource_employeeId_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('text_ops'),
+    ),
+    index('EmployeeImportSource_importBatchId_idx').using(
+      'btree',
+      table.importBatchId.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('EmployeeImportSource_importBatchId_sourceSheet_sourceRowNum_key').using(
+      'btree',
+      table.importBatchId.asc().nullsLast().op('int4_ops'),
+      table.sourceSheet.asc().nullsLast().op('text_ops'),
+      table.sourceRowNumber.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'EmployeeImportSource_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.importBatchId],
+      foreignColumns: [importBatch.id],
+      name: 'EmployeeImportSource_importBatchId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)
+
+export const employeeSkill = pgTable(
+  'EmployeeSkill',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    skillId: text().notNull(),
+    level: skillLevel(),
+    source: employeeSkillSource().default('IMPORTED').notNull(),
+    active: boolean().default(true).notNull(),
+    addedByUserId: text(),
+    deactivatedAt: timestamp({ precision: 3, mode: 'date' }),
+    deactivatedByUserId: text(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    uniqueIndex('EmployeeSkill_employeeId_skillId_key').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('text_ops'),
+      table.skillId.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'EmployeeSkill_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.skillId],
+      foreignColumns: [skill.id],
+      name: 'EmployeeSkill_skillId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.addedByUserId],
+      foreignColumns: [user.id],
+      name: 'EmployeeSkill_addedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+    foreignKey({
+      columns: [table.deactivatedByUserId],
+      foreignColumns: [user.id],
+      name: 'EmployeeSkill_deactivatedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const bajaConflict = pgTable(
+  'BajaConflict',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text(),
+    bajaFullName: text().notNull(),
+    bajaRowNumber: integer().notNull(),
+    importBatchId: text().notNull(),
+    status: bajaConflictStatus().default('PENDING').notNull(),
+    resolvedByUserId: text(),
+    resolvedAt: timestamp({ precision: 3, mode: 'date' }),
+    notes: text(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    index('BajaConflict_importBatchId_idx').using(
+      'btree',
+      table.importBatchId.asc().nullsLast().op('text_ops'),
+    ),
+    index('BajaConflict_status_idx').using('btree', table.status.asc().nullsLast().op('enum_ops')),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'BajaConflict_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+    foreignKey({
+      columns: [table.importBatchId],
+      foreignColumns: [importBatch.id],
+      name: 'BajaConflict_importBatchId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.resolvedByUserId],
+      foreignColumns: [user.id],
+      name: 'BajaConflict_resolvedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const skill = pgTable(
+  'Skill',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    code: text().notNull(),
+    description: text(),
+    active: boolean().default(true).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    uniqueIndex('Skill_code_key').using('btree', table.code.asc().nullsLast().op('text_ops')),
+  ],
+)
+
+export const employeeReconciliationCandidate = pgTable(
+  'EmployeeReconciliationCandidate',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    existingEmployeeId: text().notNull(),
+    importBatchId: text().notNull(),
+    candidateSourceRowNumber: integer().notNull(),
+    candidateFullName: text().notNull(),
+    candidateEmployeeNumber: text(),
+    candidateRawZona: text(),
+    candidateRawActividad: text(),
+    candidateRawAsistencia: text(),
+    candidateRawPrestamo: text(),
+    status: employeeReconciliationStatus().default('PENDING').notNull(),
+    resolvedByUserId: text(),
+    resolvedAt: timestamp({ precision: 3, mode: 'date' }),
+    notes: text(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    index('EmployeeReconciliationCandidate_existingEmployeeId_idx').using(
+      'btree',
+      table.existingEmployeeId.asc().nullsLast().op('text_ops'),
+    ),
+    index('EmployeeReconciliationCandidate_importBatchId_idx').using(
+      'btree',
+      table.importBatchId.asc().nullsLast().op('text_ops'),
+    ),
+    index('EmployeeReconciliationCandidate_status_idx').using(
+      'btree',
+      table.status.asc().nullsLast().op('enum_ops'),
+    ),
+    foreignKey({
+      columns: [table.existingEmployeeId],
+      foreignColumns: [employee.id],
+      name: 'EmployeeReconciliationCandidate_existingEmployeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.importBatchId],
+      foreignColumns: [importBatch.id],
+      name: 'EmployeeReconciliationCandidate_importBatchId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.resolvedByUserId],
+      foreignColumns: [user.id],
+      name: 'EmployeeReconciliationCandidate_resolvedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const workArea = pgTable(
+  'WorkArea',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    code: text().notNull(),
+    name: text().notNull(),
+    displayOrder: integer().default(0).notNull(),
+    active: boolean().default(true).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    uniqueIndex('WorkArea_code_key').using('btree', table.code.asc().nullsLast().op('text_ops')),
+  ],
+)
+
+export const dailyAssignment = pgTable(
+  'DailyAssignment',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    date: date({ mode: 'date' }).notNull(),
+    shift: text().default('GENERAL').notNull(),
+    workstationId: text().notNull(),
+    status: dailyAssignmentStatus().default('ACTIVE').notNull(),
+    assignedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    assignedByUserId: text().notNull(),
+    endedAt: timestamp({ precision: 3, mode: 'date' }),
+    endedByUserId: text(),
+    endReason: assignmentEndReason(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+  },
+  (table) => [
+    index('DailyAssignment_employeeId_date_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('date_ops'),
+      table.date.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('DailyAssignment_employeeId_date_key')
+      .using(
+        'btree',
+        table.employeeId.asc().nullsLast().op('date_ops'),
+        table.date.asc().nullsLast().op('date_ops'),
+      )
+      .where(sql`(status = 'ACTIVE'::"DailyAssignmentStatus")`),
+    index('DailyAssignment_workstationId_date_idx').using(
+      'btree',
+      table.workstationId.asc().nullsLast().op('date_ops'),
+      table.date.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'DailyAssignment_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.workstationId],
+      foreignColumns: [workstation.id],
+      name: 'DailyAssignment_workstationId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.assignedByUserId],
+      foreignColumns: [user.id],
+      name: 'DailyAssignment_assignedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.endedByUserId],
+      foreignColumns: [user.id],
+      name: 'DailyAssignment_endedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const employeeMovement = pgTable(
+  'EmployeeMovement',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    date: date({ mode: 'date' }).notNull(),
+    fromWorkstationId: text(),
+    toWorkstationId: text().notNull(),
+    movedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    movedByUserId: text().notNull(),
+  },
+  (table) => [
+    index('EmployeeMovement_employeeId_date_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('date_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+    ),
+    index('EmployeeMovement_toWorkstationId_date_idx').using(
+      'btree',
+      table.toWorkstationId.asc().nullsLast().op('text_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'EmployeeMovement_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.fromWorkstationId],
+      foreignColumns: [workstation.id],
+      name: 'EmployeeMovement_fromWorkstationId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+    foreignKey({
+      columns: [table.toWorkstationId],
+      foreignColumns: [workstation.id],
+      name: 'EmployeeMovement_toWorkstationId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.movedByUserId],
+      foreignColumns: [user.id],
+      name: 'EmployeeMovement_movedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)
+
+export const attendance = pgTable(
+  'Attendance',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    date: date({ mode: 'date' }).notNull(),
+    shift: text().default('GENERAL').notNull(),
+    checkInAt: timestamp({ precision: 3, mode: 'date' }),
+    status: attendanceStatus().notNull(),
+    registeredByUserId: text().notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    index('Attendance_date_idx').using('btree', table.date.asc().nullsLast().op('date_ops')),
+    uniqueIndex('Attendance_employeeId_date_shift_key').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('date_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+      table.shift.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'Attendance_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.registeredByUserId],
+      foreignColumns: [user.id],
+      name: 'Attendance_registeredByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)
+
+export const employee = pgTable(
+  'Employee',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeNumber: text(),
+    fullName: text().notNull(),
+    photoUrl: text(),
+    active: boolean().default(true).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    actividad: text(),
+    areaZona: text(),
+    baseAsistencia: text(),
+    baselineSuppressed: boolean().default(false).notNull(),
+    fechaIngreso: text(),
+    rawZona: text(),
+  },
+  (table) => [
+    uniqueIndex('Employee_employeeNumber_key').using(
+      'btree',
+      table.employeeNumber.asc().nullsLast().op('text_ops'),
+    ),
+    index('Employee_fullName_idx').using('btree', table.fullName.asc().nullsLast().op('text_ops')),
+  ],
+)
+
+export const pendingMove = pgTable(
+  'PendingMove',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    date: date({ mode: 'date' }).notNull(),
+    fromWorkstationId: text(),
+    toWorkstationId: text().notNull(),
+    shift: text().default('GENERAL').notNull(),
+    requestedByUserId: text().notNull(),
+    requestedAt: timestamp({ precision: 3, mode: 'date' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    status: pendingMoveStatus().default('PENDING').notNull(),
+    resolvedByUserId: text(),
+    resolvedAt: timestamp({ precision: 3, mode: 'date' }),
+  },
+  (table) => [
+    index('PendingMove_employeeId_date_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('date_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+    ),
+    index('PendingMove_status_date_idx').using(
+      'btree',
+      table.status.asc().nullsLast().op('enum_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'PendingMove_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.fromWorkstationId],
+      foreignColumns: [workstation.id],
+      name: 'PendingMove_fromWorkstationId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+    foreignKey({
+      columns: [table.toWorkstationId],
+      foreignColumns: [workstation.id],
+      name: 'PendingMove_toWorkstationId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.requestedByUserId],
+      foreignColumns: [user.id],
+      name: 'PendingMove_requestedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.resolvedByUserId],
+      foreignColumns: [user.id],
+      name: 'PendingMove_resolvedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
+  ],
+)
+
+export const roleModulePermission = pgTable(
+  'RoleModulePermission',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    role: userRole().notNull(),
+    moduleKey: text().notNull(),
+    allowed: boolean().default(true).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    updatedByUserId: text(),
+  },
+  (table) => [
+    uniqueIndex('RoleModulePermission_role_moduleKey_key').using(
+      'btree',
+      table.role.asc().nullsLast().op('text_ops'),
+      table.moduleKey.asc().nullsLast().op('text_ops'),
+    ),
+  ],
+)
+
+export const userModulePermission = pgTable(
+  'UserModulePermission',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    userId: text().notNull(),
+    moduleKey: text().notNull(),
+    effect: userPermissionEffect().notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    updatedByUserId: text(),
+  },
+  (table) => [
+    uniqueIndex('UserModulePermission_userId_moduleKey_key').using(
+      'btree',
+      table.userId.asc().nullsLast().op('text_ops'),
+      table.moduleKey.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: 'UserModulePermission_userId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+  ],
+)
