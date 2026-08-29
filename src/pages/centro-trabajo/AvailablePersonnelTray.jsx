@@ -1,23 +1,16 @@
+import { GripVertical, Search, X } from 'lucide-react'
 import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import IconButton from '@mui/material/IconButton'
-import SearchIcon from '@mui/icons-material/Search'
-import CloseIcon from '@mui/icons-material/Close'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import { alpha } from '@mui/material/styles'
-import { getAvailablePersonnelToday } from '../../data/production/personnelByArea'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { getAvailablePersonnelToday } from '../../data/production/personnelByArea'
 import { useDndAssign } from '../../state/dndAssign'
-import { useEmployeeDropTargetRelease } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { EmptyState } from '../../ui'
-import EmployeeAvatar from './EmployeeAvatar'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTargetRelease } from '../../ui/dnd'
 import EmployeeAvailableDetailDialog from './EmployeeAvailableDetailDialog'
+import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
    Banda de personal disponible para asignar — fuente principal del
@@ -49,7 +42,7 @@ export default function AvailablePersonnelTray({
   title = 'Personal disponible para asignar',
   hideTitle = false,
 }) {
-  const version = usePersonnelVersion()
+  usePersonnelVersion()
   const dnd = useDndAssign()
   const people = getAvailablePersonnelToday()
   const { isOver, dropProps } = useEmployeeDropTargetRelease()
@@ -71,70 +64,52 @@ export default function AvailablePersonnelTray({
     : people
 
   return (
-    <Box
+    <div
       {...dropProps}
-      sx={{
-        p: 1,
-        borderRadius: 2,
-        border: '1.5px dashed',
-        borderColor: isOver ? '#3B82F6' : 'transparent',
-        bgcolor: (t) =>
-          isOver ? alpha('#3B82F6', t.palette.mode === 'dark' ? 0.18 : 0.08) : 'transparent',
-        transition: 'all .15s ease',
-      }}
+      className={cn(
+        'rounded-[20px] border-[1.5px] border-dashed p-2 transition-all duration-150',
+        isOver
+          ? 'border-[#3B82F6] bg-[rgba(59,130,246,0.08)] dark:bg-[rgba(59,130,246,0.18)]'
+          : 'border-transparent',
+      )}
     >
       {!hideTitle && (
-        <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mb: 1 }} flexWrap="wrap">
-          <Typography
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 800,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
+        <div className="mb-2 flex flex-wrap items-baseline gap-1.5">
+          <p className="text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
             {title} ({people.length})
-          </Typography>
+          </p>
           {q && (
-            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+            <p className="text-[11px] text-muted-foreground">
               · {filtered.length} resultado{filtered.length === 1 ? '' : 's'}
-            </Typography>
+            </p>
           )}
-        </Stack>
+        </div>
       )}
       {isOver && (
-        <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: '#3B82F6', mb: 1 }}>
+        <p className="mb-2 text-[11.5px] font-bold text-[#3B82F6]">
           Soltar aquí para quitar la asignación
-        </Typography>
+        </p>
       )}
 
       {people.length > 0 && (
-        <TextField
-          fullWidth
-          size="small"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre o número de empleado..."
-          sx={{
-            mb: 1.25,
-            '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 18, opacity: 0.5 }} />
-              </InputAdornment>
-            ),
-            endAdornment: query && (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setQuery('')}>
-                  <CloseIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+        <div className="relative mb-2.5">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground opacity-50" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre o número de empleado..."
+            className="h-9 rounded-[20px] bg-card pl-9 pr-9 text-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-black/[.06] dark:hover:bg-white/[.08]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       )}
 
       {people.length === 0 ? (
@@ -150,51 +125,26 @@ export default function AvailablePersonnelTray({
           description="Prueba con otro nombre o número."
         />
       ) : (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            overflowX: 'auto',
-            pb: 0.5,
-            '&::-webkit-scrollbar': { height: 6 },
-          }}
-        >
+        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1.5">
           {filtered.map((p) => (
             <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ flexShrink: 0 }}>
-              <Stack
-                direction="row"
-                spacing={0.75}
-                alignItems="center"
+              <button
+                type="button"
                 onClick={() => setDetailPerson(p)}
-                sx={{
-                  p: 0.75,
-                  pl: 1,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                  minWidth: 0,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    borderColor: '#3B82F6',
-                    bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05),
-                  },
-                }}
+                className="flex min-w-0 items-center gap-1.5 rounded-[20px] border border-border bg-card p-1.5 pl-2 text-left transition-colors hover:border-[#3B82F6] hover:bg-[rgba(59,130,246,0.05)] dark:hover:bg-[rgba(59,130,246,0.1)]"
               >
                 <EmployeeAvatar employee={p} size={30} />
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {p.name}
-                  </Typography>
-                  <Typography sx={{ fontSize: 10, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                <div className="min-w-0">
+                  <p className="whitespace-nowrap text-[12px] font-bold">{p.name}</p>
+                  <p className="whitespace-nowrap text-[10px] text-muted-foreground">
                     {formatEmployeeNumber(p.employeeNumber)}
-                  </Typography>
-                </Box>
-                <DragIndicatorIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
-              </Stack>
+                  </p>
+                </div>
+                <GripVertical className="h-[15px] w-[15px] shrink-0 text-muted-foreground/60" />
+              </button>
             </DraggablePersonChip>
           ))}
-        </Box>
+        </div>
       )}
 
       <EmployeeAvailableDetailDialog
@@ -211,6 +161,6 @@ export default function AvailablePersonnelTray({
             : undefined
         }
       />
-    </Box>
+    </div>
   )
 }

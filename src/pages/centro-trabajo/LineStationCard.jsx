@@ -1,13 +1,9 @@
-import React from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import PersonOffIcon from '@mui/icons-material/PersonOffOutlined'
-import { alpha, useTheme } from '@mui/material/styles'
-import { useEmployeeDropTargetStation } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
-import EmployeeAvatar from './EmployeeAvatar'
+import { UserX } from 'lucide-react'
+import { cn, hexToRgba } from '@/lib/utils'
 import { getPersonnelRank } from '../../data/personnel/rankSystem'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTargetStation } from '../../ui/dnd'
+import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
    Tarjeta de estacion para el rediseño de CT LINEA (2026-08-26, a
@@ -24,7 +20,17 @@ import { getPersonnelRank } from '../../data/personnel/rankSystem'
    dentro de una tarjeta angosta y un click normal para SELECCIONAR la
    estacion podia liberar a alguien por accidente -- inaceptable en una
    herramienta de produccion real. Quitar/mover sigue disponible por la
-   tabla ("Quitar") y por el panel lateral (click en el ocupante). */
+   tabla ("Quitar") y por el panel lateral (click en el ocupante).
+
+   Fase 6c: convertido de MUI (Paper/Box/Typography + sx) a Tailwind.
+   Los colores de acento/borde/fondo dependen del estado (isOver/
+   selected/occupant) Y del modo claro/oscuro (antes alpha(color,
+   theme.palette.mode==='dark'?a:b) via useTheme) -- se resuelven ahora
+   con el mismo patron de pares de variables CSS --*-light/--*-dark ya
+   establecido en DashboardExecKpiCard.jsx (fijadas en runtime via
+   style, consumidas por clases estaticas bg-[var(...)]/
+   dark:bg-[var(...)]), para no perder la distincion light/dark del
+   original. */
 export default function LineStationCard({
   workAreaId,
   workstation,
@@ -33,8 +39,6 @@ export default function LineStationCard({
   onEmployeeClick,
   lineLike = false,
 }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
   // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- por
@@ -55,95 +59,57 @@ export default function LineStationCard({
   // (dndAssign.jsx) detecta la ocupacion y decide swap vs asignacion.
   const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
 
-  const accent = isOver ? '#3B82F6' : selected ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+  const highlighted = isOver || selected
+  const accent = highlighted ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+
+  const cardStyle = {
+    '--ls-border-light': highlighted ? accent : hexToRgba(accent, 0.35),
+    '--ls-border-dark': highlighted ? accent : hexToRgba(accent, 0.4),
+    '--ls-bg-light': isOver ? hexToRgba(accent, 0.08) : occupant ? '#F7FEFB' : '#FFFCF5',
+    '--ls-bg-dark': isOver ? hexToRgba(accent, 0.18) : hexToRgba(accent, occupant ? 0.06 : 0.05),
+    '--ls-accent-bg-light': hexToRgba(accent, 0.14),
+    '--ls-accent-bg-dark': hexToRgba(accent, 0.22),
+  }
 
   return (
-    <Paper
-      elevation={0}
+    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- contiene un area interactiva anidada (click en el ocupante, mas abajo) y es blanco de drop de HTML5 DnD (dropProps); ambos casos son incompatibles con un <button> nativo, por eso usa role/tabIndex/onKeyDown manuales (mismo criterio que LeadershipRow.jsx).
+    <div
       {...dropProps}
       onClick={() => onSelect(workstation)}
-      sx={{
-        position: 'relative',
-        p: 1.5,
-        borderRadius: 3,
-        cursor: 'pointer',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.75,
-        border: '1.5px solid',
-        borderStyle: available && !occupant ? 'dashed' : 'solid',
-        borderColor:
-          isOver || selected
-            ? '#3B82F6'
-            : occupant
-              ? alpha('#10B981', d ? 0.4 : 0.35)
-              : alpha('#F59E0B', d ? 0.4 : 0.35),
-        bgcolor: isOver
-          ? alpha('#3B82F6', d ? 0.18 : 0.08)
-          : occupant
-            ? d
-              ? alpha('#10B981', 0.06)
-              : '#F7FEFB'
-            : d
-              ? alpha('#F59E0B', 0.05)
-              : '#FFFCF5',
-        transition: 'all .15s ease',
-        '&:hover': {
-          borderColor: '#3B82F6',
-          boxShadow: d ? '0 4px 16px rgba(0,0,0,.35)' : '0 4px 16px rgba(0,0,0,.08)',
-        },
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(workstation)
+        }
       }}
+      style={cardStyle}
+      className={cn(
+        'relative flex h-full cursor-pointer flex-col gap-1.5 rounded-[30px] border-[1.5px] p-3 transition-all duration-150',
+        'border-[color:var(--ls-border-light)] bg-[var(--ls-bg-light)] dark:border-[color:var(--ls-border-dark)] dark:bg-[var(--ls-bg-dark)]',
+        'hover:border-[#3B82F6] hover:shadow-[0_4px_16px_rgba(0,0,0,.08)] dark:hover:shadow-[0_4px_16px_rgba(0,0,0,.35)]',
+        available && !occupant ? 'border-dashed' : 'border-solid',
+      )}
     >
       {/* 2026-08-28, a peticion explicita del usuario ("hay mucho de Ayudante
           General pero son de diferentes roles, identificalos"): el nombre ya
           NO se trunca a una linea (antes "Ayudante General..." ocultaba cual
           era -- Paletizador/Conveyor/Flejado/Escaneador). Ahora se permite
           hasta 2 lineas completas antes de recortar. */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 20,
-            height: 20,
-            borderRadius: '50%',
-            flexShrink: 0,
-            display: 'grid',
-            placeItems: 'center',
-            fontSize: 10.5,
-            fontWeight: 800,
-            bgcolor: alpha(accent, d ? 0.22 : 0.14),
-            color: accent,
-          }}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <div
+          className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--ls-accent-bg-light)] text-[10.5px] font-extrabold dark:bg-[var(--ls-accent-bg-dark)]"
+          style={{ color: accent }}
         >
           {workstation.order}
-        </Box>
-        <Typography
-          sx={{
-            fontWeight: 800,
-            fontSize: 11.5,
-            lineHeight: 1.2,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word',
-          }}
-        >
+        </div>
+        <p className="line-clamp-2 break-words text-[11.5px] font-extrabold leading-[1.2]">
           {workstation.name}
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 0.5,
-        }}
-      >
+      <div className="flex flex-1 flex-col items-center justify-center py-1">
         {occupant ? (
           // 2026-08-27, a peticion explicita del usuario ("quiero arrastrarlos
           // entre ahí y que se cambien"): antes solo la fila de la tabla de
@@ -156,51 +122,46 @@ export default function LineStationCard({
             employeeId={occupant.employee?.id}
             sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
           >
-            <Box
+            {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya esta anidado dentro de la tarjeta que tambien tiene role="button" arriba, y dentro de DraggablePersonChip (draggable=true nativo); un <button> anidado en otro seria HTML invalido y podria alterar el drag & drop de HTML5 (mismo criterio que LeadershipRow.jsx). */}
+            <div
               onClick={(e) => {
                 e.stopPropagation()
                 onEmployeeClick(occupant.employee)
               }}
-              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onEmployeeClick(occupant.employee)
+                }
+              }}
+              className="flex flex-col items-center gap-1"
             >
-              <Box sx={{ position: 'relative' }}>
+              <div className="relative">
                 <EmployeeAvatar employee={occupant.employee} size={40} />
                 {rank && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: -2,
-                      borderRadius: '50%',
-                      border: '2px solid',
-                      borderColor: rank.color,
-                      pointerEvents: 'none',
-                    }}
+                  <div
+                    className="pointer-events-none absolute -inset-0.5 rounded-full border-2"
+                    style={{ borderColor: rank.color }}
                   />
                 )}
-              </Box>
-              <Typography
-                sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2, textAlign: 'center' }}
-                noWrap
-              >
+              </div>
+              <p className="truncate text-center text-[12px] font-bold leading-[1.2]">
                 {occupant.employee?.name || '—'}
-              </Typography>
+              </p>
               {rank && (
-                <Typography
-                  sx={{
-                    fontSize: 8.5,
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.3,
-                    px: 0.75,
-                    py: 0.15,
-                    borderRadius: 5,
-                    bgcolor: alpha(rank.color, d ? 0.22 : 0.12),
+                <span
+                  className="truncate rounded-[50px] bg-[var(--rank-bg-light)] px-1.5 py-[1.2px] text-[8.5px] font-extrabold uppercase tracking-[0.3px] dark:bg-[var(--rank-bg-dark)]"
+                  style={{
                     color: rank.color,
+                    '--rank-bg-light': hexToRgba(rank.color, 0.12),
+                    '--rank-bg-dark': hexToRgba(rank.color, 0.22),
                   }}
-                  noWrap
                 >
                   {rank.label}
-                </Typography>
+                </span>
               )}
               {/* 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion
                   explicita del usuario, "diferenciar rango y funcion"): rango (badge de arriba)
@@ -209,44 +170,30 @@ export default function LineStationCard({
                   es la unica forma de saber QUE hace realmente esta persona. Nunca reemplaza al
                   badge de rango, se muestra debajo. */}
               {rank && workstation.role && (
-                <Typography
-                  sx={{
-                    fontSize: 10,
-                    color: 'text.secondary',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                  }}
-                  noWrap
-                >
+                <p className="truncate text-center text-[10px] leading-[1.2] text-muted-foreground">
                   {workstation.role}
-                </Typography>
+                </p>
               )}
-            </Box>
+            </div>
           </DraggablePersonChip>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-            <PersonOffIcon sx={{ fontSize: 26, color: alpha('#F59E0B', d ? 0.7 : 0.55) }} />
-            <Typography
-              sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.3, textAlign: 'center' }}
-              noWrap
-            >
+          <div className="flex flex-col items-center gap-1">
+            <UserX className="h-[26px] w-[26px] text-[rgba(245,158,11,0.55)] dark:text-[rgba(245,158,11,0.7)]" />
+            <p className="truncate text-center text-[10.5px] leading-[1.3] text-muted-foreground">
               {workstation.requiredRole}
-            </Typography>
-          </Box>
+            </p>
+          </div>
         )}
-      </Box>
+      </div>
 
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          textAlign: 'center',
-          letterSpacing: 0.3,
-          color: occupant ? '#059669' : '#B45309',
-        }}
+      <p
+        className={cn(
+          'text-center text-[10px] font-extrabold tracking-[0.3px]',
+          occupant ? 'text-[#059669]' : 'text-[#B45309]',
+        )}
       >
         {occupant ? 'OCUPADA' : 'DISPONIBLE'}
-      </Typography>
-    </Paper>
+      </p>
+    </div>
   )
 }
