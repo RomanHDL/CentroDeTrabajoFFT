@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { db, user } from '../../server-lib/db/client.ts'
+import { db, user } from '../../server-lib/db/client.js'
 import { requireAuth, publicUser } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {

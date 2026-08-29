@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs'
 import { eq, or } from 'drizzle-orm'
-import { db, user } from '../../server-lib/db/client.ts'
+import { db, user } from '../../server-lib/db/client.js'
 import { signSessionToken, buildSessionCookie, publicUser } from '../../server-lib/auth.js'
-import { getEffectiveModulesForUser } from '../../server-lib/permissionService.ts'
+import { getEffectiveModulesForUser } from '../../server-lib/permissionService.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

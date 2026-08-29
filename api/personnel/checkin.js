@@ -1,8 +1,8 @@
 // Equivalente real de checkInEmployee (repository.js).
 import { eq } from 'drizzle-orm'
-import { db, employee as employeeTable } from '../../server-lib/db/client.ts'
+import { db, employee as employeeTable } from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.ts'
+import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

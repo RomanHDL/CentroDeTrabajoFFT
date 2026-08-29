@@ -3,7 +3,7 @@ import {
   resolveWorkArea,
   reorderWorkstations,
   serializeWorkstation,
-} from '../../../../server-lib/workstationConfig.ts'
+} from '../../../../server-lib/workstationConfig.js'
 
 // Reordena en bloque (drag/flechas en el drawer de configuracion) -- solo ADMINISTRADOR.
 export default requireRole(['ADMINISTRADOR'], async (req, res) => {

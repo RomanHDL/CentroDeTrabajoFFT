@@ -23,7 +23,7 @@
 //   filas del snapshot (ninguna fila sin numero es indistinguible de otra por este criterio), asi
 //   que este script se puede correr varias veces sin duplicar personal.
 import { and, eq, isNull } from 'drizzle-orm'
-import { db, workArea as workAreaTable, workstation, employee } from '../server-lib/db/client.ts'
+import { db, workArea as workAreaTable, workstation, employee } from '../server-lib/db/client.js'
 import { WORK_CENTERS } from '../src/data/production/catalog.js'
 import { getWorkstationsForLine } from '../src/data/personnel/workstations.js'
 import { REAL_PERSONNEL_SNAPSHOT } from '../src/data/production/realPersonnelSnapshot.js'
@@ -134,7 +134,11 @@ for (const p of REAL_PERSONNEL_SNAPSHOT) {
   ]) {
     matchConditions.push(val === null ? isNull(col) : eq(col, val))
   }
-  const [existing] = await db.select().from(employee).where(and(...matchConditions)).limit(1)
+  const [existing] = await db
+    .select()
+    .from(employee)
+    .where(and(...matchConditions))
+    .limit(1)
   if (existing) {
     await db
       .update(employee)

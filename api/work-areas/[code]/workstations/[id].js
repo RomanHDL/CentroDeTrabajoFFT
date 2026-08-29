@@ -3,7 +3,7 @@ import {
   updateWorkstation,
   deactivateWorkstation,
   serializeWorkstation,
-} from '../../../../server-lib/workstationConfig.ts'
+} from '../../../../server-lib/workstationConfig.js'
 
 const VALID_CATEGORIES = ['LIDERAZGO', 'CALIDAD', 'PRODUCCION', 'TECNICO', 'SUMINISTRO', 'APOYO']
 

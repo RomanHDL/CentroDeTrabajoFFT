@@ -3,7 +3,7 @@
 // EmployeeMovement -- ese modelo exige toWorkstationId NOT NULL (append-only de movimientos con
 // destino real) y un release no tiene destino.
 import { and, eq } from 'drizzle-orm'
-import { db, dailyAssignment } from '../../server-lib/db/client.ts'
+import { db, dailyAssignment } from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {

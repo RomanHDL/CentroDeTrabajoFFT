@@ -5,7 +5,7 @@
 // "vaciar", nunca mas ni menos. No toca a nadie con una asignacion real de hoy (esas personas ya
 // no dependen del snapshot historico, restaurar el flag no les afecta en nada).
 import { and, eq, inArray, like, or } from 'drizzle-orm'
-import { db, employee } from '../../server-lib/db/client.ts'
+import { db, employee } from '../../server-lib/db/client.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {

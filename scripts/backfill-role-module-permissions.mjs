@@ -2,8 +2,8 @@
 // RoleModulePermission (tabla nueva, una fila por rol+modulo) -- migra los
 // valores REALES que ya estaban en la DB, sin inventar defaults nuevos. No
 // borra RoleModuleAccess ni inserta filas allowed:false (ausencia de fila ya
-// significa false por convencion, ver server-lib/permissionService.ts).
-import { db, roleModuleAccess, roleModulePermission } from '../server-lib/db/client.ts'
+// significa false por convencion, ver server-lib/permissionService.js).
+import { db, roleModuleAccess, roleModulePermission } from '../server-lib/db/client.js'
 
 const rows = await db.select().from(roleModuleAccess)
 

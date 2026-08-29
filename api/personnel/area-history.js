@@ -10,7 +10,14 @@
 // "asignacion" de "reasignacion".
 import { desc, eq, or } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
-import { db, employeeMovement, employee, user, workstation, workArea } from '../../server-lib/db/client.ts'
+import {
+  db,
+  employeeMovement,
+  employee,
+  user,
+  workstation,
+  workArea,
+} from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
 
 // fromWorkstation/toWorkstation son ambas FKs a la MISMA tabla Workstation (y cada una necesita

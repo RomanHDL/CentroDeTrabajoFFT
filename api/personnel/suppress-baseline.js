@@ -15,9 +15,9 @@
 // tenga areaZona "LINEA N" (cualquier numero) o "PRODUCCION" (generico, sin linea especifica
 // confirmada) -- exactamente el mismo alcance que el cliente.
 import { and, eq, inArray, like, notInArray, or } from 'drizzle-orm'
-import { db, dailyAssignment, employee } from '../../server-lib/db/client.ts'
+import { db, dailyAssignment, employee } from '../../server-lib/db/client.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
-import { todayDateOnly } from '../../server-lib/personnel.ts'
+import { todayDateOnly } from '../../server-lib/personnel.js'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

@@ -16,8 +16,7 @@ import {
   attendance,
   pendingMove,
   userModulePermission,
-} from './schema.ts'
-
+} from './schema.js'
 export const userRelations = relations(user, ({ one, many }) => ({
   employee: one(employee, {
     fields: [user.employeeId],
@@ -48,7 +47,6 @@ export const userRelations = relations(user, ({ one, many }) => ({
   }),
   userModulePermissions: many(userModulePermission),
 }))
-
 export const employeeRelations = relations(employee, ({ many }) => ({
   users: many(user),
   importedAttendanceReferences: many(importedAttendanceReference),
@@ -61,7 +59,6 @@ export const employeeRelations = relations(employee, ({ many }) => ({
   attendances: many(attendance),
   pendingMoves: many(pendingMove),
 }))
-
 export const importedAttendanceReferenceRelations = relations(
   importedAttendanceReference,
   ({ one }) => ({
@@ -75,7 +72,6 @@ export const importedAttendanceReferenceRelations = relations(
     }),
   }),
 )
-
 export const employeeImportSourceRelations = relations(employeeImportSource, ({ one, many }) => ({
   importedAttendanceReferences: many(importedAttendanceReference),
   employee: one(employee, {
@@ -87,7 +83,6 @@ export const employeeImportSourceRelations = relations(employeeImportSource, ({ 
     references: [importBatch.id],
   }),
 }))
-
 export const workstationRelations = relations(workstation, ({ one, many }) => ({
   workArea: one(workArea, {
     fields: [workstation.workAreaId],
@@ -111,16 +106,13 @@ export const workstationRelations = relations(workstation, ({ one, many }) => ({
     relationName: 'pendingMove_toWorkstationId_workstation_id',
   }),
 }))
-
 export const workAreaRelations = relations(workArea, ({ many }) => ({
   workstations: many(workstation),
 }))
-
 export const skillRelations = relations(skill, ({ many }) => ({
   workstations: many(workstation),
   employeeSkills: many(employeeSkill),
 }))
-
 export const importBatchRelations = relations(importBatch, ({ one, many }) => ({
   user: one(user, {
     fields: [importBatch.triggeredByUserId],
@@ -130,7 +122,6 @@ export const importBatchRelations = relations(importBatch, ({ one, many }) => ({
   bajaConflicts: many(bajaConflict),
   employeeReconciliationCandidates: many(employeeReconciliationCandidate),
 }))
-
 export const employeeSkillRelations = relations(employeeSkill, ({ one }) => ({
   employee: one(employee, {
     fields: [employeeSkill.employeeId],
@@ -151,7 +142,6 @@ export const employeeSkillRelations = relations(employeeSkill, ({ one }) => ({
     relationName: 'employeeSkill_deactivatedByUserId_user_id',
   }),
 }))
-
 export const bajaConflictRelations = relations(bajaConflict, ({ one }) => ({
   employee: one(employee, {
     fields: [bajaConflict.employeeId],
@@ -166,7 +156,6 @@ export const bajaConflictRelations = relations(bajaConflict, ({ one }) => ({
     references: [user.id],
   }),
 }))
-
 export const employeeReconciliationCandidateRelations = relations(
   employeeReconciliationCandidate,
   ({ one }) => ({
@@ -184,7 +173,6 @@ export const employeeReconciliationCandidateRelations = relations(
     }),
   }),
 )
-
 export const dailyAssignmentRelations = relations(dailyAssignment, ({ one }) => ({
   employee: one(employee, {
     fields: [dailyAssignment.employeeId],
@@ -205,7 +193,6 @@ export const dailyAssignmentRelations = relations(dailyAssignment, ({ one }) => 
     relationName: 'dailyAssignment_endedByUserId_user_id',
   }),
 }))
-
 export const employeeMovementRelations = relations(employeeMovement, ({ one }) => ({
   employee: one(employee, {
     fields: [employeeMovement.employeeId],
@@ -226,7 +213,6 @@ export const employeeMovementRelations = relations(employeeMovement, ({ one }) =
     references: [user.id],
   }),
 }))
-
 export const attendanceRelations = relations(attendance, ({ one }) => ({
   employee: one(employee, {
     fields: [attendance.employeeId],
@@ -237,7 +223,6 @@ export const attendanceRelations = relations(attendance, ({ one }) => ({
     references: [user.id],
   }),
 }))
-
 export const pendingMoveRelations = relations(pendingMove, ({ one }) => ({
   employee: one(employee, {
     fields: [pendingMove.employeeId],
@@ -264,7 +249,6 @@ export const pendingMoveRelations = relations(pendingMove, ({ one }) => ({
     relationName: 'pendingMove_resolvedByUserId_user_id',
   }),
 }))
-
 export const userModulePermissionRelations = relations(userModulePermission, ({ one }) => ({
   user: one(user, {
     fields: [userModulePermission.userId],

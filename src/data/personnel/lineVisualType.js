@@ -16,7 +16,7 @@
 
    Prioridad de clasificacion (nunca por nombre de persona):
    1. `category` EXPLICITA de la estacion (dato real, ver Workstation.category
-      / server-lib/workstationConfig.ts) -- fuente principal.
+      / server-lib/workstationConfig.js) -- fuente principal.
    2. Empleado con actividad real "LIDER" (BASE, getActividadForEmployee en
       personnelByArea.js) -- regla ya existente antes de esta ampliacion, se
       conserva como respaldo para no perder clasificacion en datos vistos

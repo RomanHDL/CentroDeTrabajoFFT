@@ -24,7 +24,7 @@
 //
 // Uso: node --env-file=.env.local --import ./scripts/_esm-extensionless-loader.mjs scripts/migrate-limpieza-tv2-montaje3-2026-08-28.mjs
 import { and, eq, sql } from 'drizzle-orm'
-import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.ts'
+import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.js'
 
 async function deactivate(areaCode, name) {
   const [wa] = await db.select().from(workArea).where(eq(workArea.code, areaCode)).limit(1)

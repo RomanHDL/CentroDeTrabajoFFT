@@ -4,7 +4,7 @@
 // usuario (2026-08-21). ADMINISTRADOR y SUPERVISOR mantienen el mismo acceso
 // que ya tenian antes de este cambio (dashboard + centro-trabajo +
 // registro-personal); "/usuarios" no vive aqui (ver nota en schema.prisma).
-import { db, roleModuleAccess } from '../server-lib/db/client.ts'
+import { db, roleModuleAccess } from '../server-lib/db/client.js'
 
 const DEFAULTS = {
   ADMINISTRADOR: ['/dashboard', '/centro-trabajo', '/registro-personal'],

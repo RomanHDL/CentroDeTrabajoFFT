@@ -1,6 +1,6 @@
 import { requireModuleAccess, publicUser } from '../../../../server-lib/auth.js'
 import { getModule } from '../../../../shared/moduleRegistry.js'
-import { getUsersWithEffectiveAccess } from '../../../../server-lib/permissionService.ts'
+import { getUsersWithEffectiveAccess } from '../../../../server-lib/permissionService.js'
 
 // GET -- TODOS los usuarios ACTIVOS con acceso EFECTIVO a este modulo (no
 // solo por rol: incluye overrides ALLOW individuales, excluye a quien tenga

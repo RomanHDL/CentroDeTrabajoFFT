@@ -8,7 +8,7 @@
 import readline from 'node:readline'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { db, user } from '../server-lib/db/client.ts'
+import { db, user } from '../server-lib/db/client.js'
 
 function ask(query) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
