@@ -1,24 +1,20 @@
-import { useEffect, useState, useCallback } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import Checkbox from '@mui/material/Checkbox'
-import Tooltip from '@mui/material/Tooltip'
-import Button from '@mui/material/Button'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import List from '@mui/material/List'
-import ListItem from '@mui/material/ListItem'
-import ListItemText from '@mui/material/ListItemText'
-import { apiRequest } from '../../../state/auth'
+import { Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ROLE_LABELS } from '../../../layout/roleLabels'
+import { apiRequest } from '../../../state/auth'
 import { showToast } from '../../../ui/toast'
 import { getModuleIcon } from './moduleIcons'
 
@@ -108,47 +104,45 @@ export default function RoleModulePermissionsCard() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-        <CircularProgress size={24} />
-      </Box>
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
   return (
-    <Box>
+    <div>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert variant="destructive" className="mb-4">
           {error}
         </Alert>
       )}
-      <Box sx={{ overflowX: 'auto' }}>
-        <Table size="small" sx={{ minWidth: 640 }}>
-          <TableHead>
+      <div className="overflow-x-auto">
+        <Table className="min-w-[640px]">
+          <TableHeader>
             <TableRow>
-              <TableCell>Módulos del sistema</TableCell>
+              <TableHead>Módulos del sistema</TableHead>
               {ROLES.map((role) => (
-                <TableCell key={role} align="center">
+                <TableHead key={role} className="text-center">
                   {ROLE_LABELS[role]}
-                </TableCell>
+                </TableHead>
               ))}
-              <TableCell align="right">Acciones</TableCell>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {modules.map((m) => {
               const Icon = getModuleIcon(m.icon)
               return (
-                <TableRow key={m.key} hover>
+                <TableRow key={m.key}>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Icon fontSize="small" sx={{ color: 'text.secondary' }} />
-                      <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{m.name}</Typography>
-                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                          {m.description}
-                        </Typography>
-                      </Box>
-                    </Box>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[13.5px] font-bold">{m.name}</p>
+                        <p className="text-[11.5px] text-muted-foreground">{m.description}</p>
+                      </div>
+                    </div>
                   </TableCell>
                   {ROLES.map((role) => {
                     const isAdmin = role === 'ADMINISTRADOR'
@@ -156,19 +150,26 @@ export default function RoleModulePermissionsCard() {
                     const savingId = `${role}:${m.key}`
                     const checkbox = (
                       <Checkbox
-                        size="small"
                         checked={checked}
                         disabled={isAdmin}
-                        onChange={(e) => toggle(role, m.key, e.target.checked)}
+                        onCheckedChange={(value) => toggle(role, m.key, value === true)}
                       />
                     )
                     return (
-                      <TableCell key={role} align="center">
+                      <TableCell key={role} className="text-center">
                         {savingKey === savingId ? (
-                          <CircularProgress size={16} />
+                          <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
                         ) : isAdmin ? (
-                          <Tooltip title="El rol Administrador tiene acceso completo.">
-                            <span>{checkbox}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              {/* biome-ignore lint/a11y/noNoninteractiveTabindex: wrapper needed so Tooltip can trigger on a disabled Checkbox */}
+                              <span className="inline-flex" tabIndex={0}>
+                                {checkbox}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              El rol Administrador tiene acceso completo.
+                            </TooltipContent>
                           </Tooltip>
                         ) : (
                           checkbox
@@ -176,12 +177,8 @@ export default function RoleModulePermissionsCard() {
                       </TableCell>
                     )
                   })}
-                  <TableCell align="right">
-                    <Button
-                      size="small"
-                      onClick={() => openUsersDialog(m)}
-                      sx={{ textTransform: 'none', fontWeight: 700 }}
-                    >
+                  <TableCell className="text-right">
+                    <Button variant="link" size="sm" onClick={() => openUsersDialog(m)}>
                       Usuarios con acceso
                     </Button>
                   </TableCell>
@@ -190,37 +187,41 @@ export default function RoleModulePermissionsCard() {
             })}
           </TableBody>
         </Table>
-      </Box>
+      </div>
 
-      <Dialog open={!!usersDialog} onClose={() => setUsersDialog(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          {usersDialog?.module ? `Usuarios con acceso a ${usersDialog.module.name}` : ''}
-        </DialogTitle>
+      <Dialog open={!!usersDialog} onOpenChange={(next) => !next && setUsersDialog(null)}>
         <DialogContent>
-          {usersDialog?.loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={20} />
-            </Box>
-          ) : usersDialog?.error ? (
-            <Alert severity="error">{usersDialog.error}</Alert>
-          ) : usersDialog?.users.length === 0 ? (
-            <Typography sx={{ color: 'text.secondary', fontSize: 13.5 }}>
-              Nadie tiene acceso a este módulo actualmente.
-            </Typography>
-          ) : (
-            <List dense>
-              {usersDialog?.users.map((u) => (
-                <ListItem key={u.id} disableGutters>
-                  <ListItemText
-                    primary={u.name}
-                    secondary={`${ROLE_LABELS[u.role] || u.role}${u.employeeNumber ? ` · ${u.employeeNumber}` : ''}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
+          <DialogHeader>
+            <DialogTitle>
+              {usersDialog?.module ? `Usuarios con acceso a ${usersDialog.module.name}` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto px-6 pb-6">
+            {usersDialog?.loading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : usersDialog?.error ? (
+              <Alert variant="destructive">{usersDialog.error}</Alert>
+            ) : usersDialog?.users.length === 0 ? (
+              <p className="text-[13.5px] text-muted-foreground">
+                Nadie tiene acceso a este módulo actualmente.
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {usersDialog?.users.map((u) => (
+                  <div key={u.id} className="py-1">
+                    <p className="text-sm font-medium">{u.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {`${ROLE_LABELS[u.role] || u.role}${u.employeeNumber ? ` · ${u.employeeNumber}` : ''}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   )
 }

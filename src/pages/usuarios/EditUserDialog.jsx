@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Alert from '@mui/material/Alert'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
-import { apiRequest } from '../../state/auth'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ROLE_LABELS } from '../../layout/roleLabels'
+import { apiRequest } from '../../state/auth'
 
 export default function EditUserDialog({ open, user, onClose, onSaved }) {
   const [form, setForm] = useState(null)
@@ -63,62 +66,76 @@ export default function EditUserDialog({ open, user, onClose, onSaved }) {
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ fontWeight: 800 }}>Editar usuario</DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-          <TextField
-            label="Número de empleado"
-            value={form.employeeNumber}
-            onChange={(e) => set('employeeNumber', e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Username"
-            value={form.username}
-            onChange={(e) => set('username', e.target.value)}
-            fullWidth
-          />
-        </Box>
-        <TextField
-          label="Nombre completo"
-          value={form.name}
-          onChange={(e) => set('name', e.target.value)}
-          fullWidth
-        />
-        <TextField
-          select
-          label="Rol"
-          value={form.role}
-          onChange={(e) => set('role', e.target.value)}
-          fullWidth
-        >
-          {Object.entries(ROLE_LABELS).map(([value, label]) => (
-            <MenuItem key={value} value={value}>
-              {label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
-          label="Estado"
-          value={form.active ? '1' : '0'}
-          onChange={(e) => set('active', e.target.value === '1')}
-          fullWidth
-        >
-          <MenuItem value="1">Activo</MenuItem>
-          <MenuItem value="0">Inactivo</MenuItem>
-        </TextField>
-        {error && <Alert severity="error">{error}</Alert>}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-[560px]">
+        <DialogHeader>
+          <DialogTitle>Editar usuario</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-6 pb-2">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="edit-user-employee-number">Número de empleado</Label>
+              <Input
+                id="edit-user-employee-number"
+                value={form.employeeNumber}
+                onChange={(e) => set('employeeNumber', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="edit-user-username">Username</Label>
+              <Input
+                id="edit-user-username"
+                value={form.username}
+                onChange={(e) => set('username', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-user-name">Nombre completo</Label>
+            <Input
+              id="edit-user-name"
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-user-role">Rol</Label>
+            <Select value={form.role} onValueChange={(v) => set('role', v)}>
+              <SelectTrigger id="edit-user-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-user-active">Estado</Label>
+            <Select value={form.active ? '1' : '0'} onValueChange={(v) => set('active', v === '1')}>
+              <SelectTrigger id="edit-user-active">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Activo</SelectItem>
+                <SelectItem value="0">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {error && <Alert variant="destructive">{error}</Alert>}
+        </div>
+        <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar cambios'}
+          </Button>
+        </div>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancelar
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
-          {submitting ? <CircularProgress size={20} /> : 'Guardar cambios'}
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 }

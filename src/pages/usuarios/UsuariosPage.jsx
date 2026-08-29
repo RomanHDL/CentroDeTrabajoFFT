@@ -1,41 +1,33 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Paper from '@mui/material/Paper'
-import Grid from '@mui/material/Grid'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import Button from '@mui/material/Button'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import Chip from '@mui/material/Chip'
-import IconButton from '@mui/material/IconButton'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-import SearchIcon from '@mui/icons-material/Search'
-import AddIcon from '@mui/icons-material/Add'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import VpnKeyIcon from '@mui/icons-material/VpnKey'
-import EditIcon from '@mui/icons-material/Edit'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import dayjs from 'dayjs'
-import { apiRequest } from '../../state/auth'
-import { showToast } from '../../ui/toast'
+import { Copy, KeyRound, Loader2, MoreVertical, Pencil, Plus, Search } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ROLE_LABELS } from '../../layout/roleLabels'
+import { apiRequest } from '../../state/auth'
 import { KpiCard } from '../../ui'
+import { showToast } from '../../ui/toast'
+import AdminToolsCard from './AdminToolsCard'
 import CreateUserDialog from './CreateUserDialog'
 import EditUserDialog from './EditUserDialog'
 import PermissionsManagementCard from './permissions/PermissionsManagementCard'
-import AdminToolsCard from './AdminToolsCard'
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState([])
@@ -44,7 +36,6 @@ export default function UsuariosPage() {
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState(null)
-  const [menuState, setMenuState] = useState({ anchor: null, user: null })
   const [resetResult, setResetResult] = useState(null)
   const [resetChoiceUser, setResetChoiceUser] = useState(null)
   const [manualPassword, setManualPassword] = useState('')
@@ -96,13 +87,6 @@ export default function UsuariosPage() {
     )
   }, [users, search])
 
-  function openMenu(e, user) {
-    setMenuState({ anchor: e.currentTarget, user })
-  }
-  function closeMenu() {
-    setMenuState({ anchor: null, user: null })
-  }
-
   async function handleDeactivate() {
     const user = confirmDeactivate
     setConfirmDeactivate(null)
@@ -146,120 +130,131 @@ export default function UsuariosPage() {
   }
 
   return (
-    <Box>
-      <Typography sx={{ fontWeight: 800, fontSize: 20, mb: 2 }}>Usuarios del sistema</Typography>
+    <div>
+      <p className="mb-4 text-[20px] font-extrabold">Usuarios del sistema</p>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={3}>
-          <KpiCard title="Usuarios activos" value={kpis.activos} accent="blue" />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <KpiCard title="Administradores" value={kpis.admins} accent="purple" />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <KpiCard title="Supervisores" value={kpis.supervisores} accent="green" />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <KpiCard title="Líderes" value={kpis.lideres} accent="amber" />
-        </Grid>
-      </Grid>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <KpiCard title="Usuarios activos" value={kpis.activos} accent="blue" />
+        <KpiCard title="Administradores" value={kpis.admins} accent="purple" />
+        <KpiCard title="Supervisores" value={kpis.supervisores} accent="green" />
+        <KpiCard title="Líderes" value={kpis.lideres} accent="amber" />
+      </div>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          size="small"
-          placeholder="Buscar por nombre, número o username"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 280 }, minWidth: 0 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateOpen(true)}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <div className="relative w-full sm:w-[280px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre, número o username"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="hidden flex-1 sm:block" />
+        <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4" />
           Agregar usuario
         </Button>
-      </Box>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert variant="destructive" className="mb-4">
           {error}
         </Alert>
       )}
 
-      <Paper
-        elevation={0}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflowX: 'auto' }}
-      >
-        <Table size="small">
-          <TableHead>
+      <div className="overflow-x-auto rounded-[20px] border border-border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell>Número empleado</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Username</TableCell>
-              <TableCell>Rol</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Último acceso</TableCell>
-              <TableCell align="right">Acciones</TableCell>
+              <TableHead>Número empleado</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Username</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Último acceso</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={24} />
+                <TableCell colSpan={7} className="py-8 text-center">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             )}
             {!loading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   Sin usuarios que coincidan
                 </TableCell>
               </TableRow>
             )}
             {filtered.map((u) => (
-              <TableRow key={u.id} hover>
+              <TableRow key={u.id}>
                 <TableCell>{u.employeeNumber || '—'}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{u.name}</TableCell>
+                <TableCell className="font-semibold">{u.name}</TableCell>
                 <TableCell>{u.username || '—'}</TableCell>
                 <TableCell>{ROLE_LABELS[u.role] || u.role}</TableCell>
                 <TableCell>
-                  <Chip
-                    size="small"
-                    label={u.active ? 'Activo' : 'Inactivo'}
-                    color={u.active ? 'success' : 'default'}
-                    variant={u.active ? 'filled' : 'outlined'}
-                  />
+                  <Badge variant={u.active ? 'success' : 'outline'}>
+                    {u.active ? 'Activo' : 'Inactivo'}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   {u.lastLoginAt ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm') : 'Nunca'}
                 </TableCell>
-                <TableCell align="right">
-                  <IconButton size="small" title="Permisos" onClick={() => openPermissionsFor(u)}>
-                    <VpnKeyIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" title="Editar" onClick={() => setEditUser(u)}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={(e) => openMenu(e, u)}>
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <button
+                      type="button"
+                      title="Permisos"
+                      onClick={() => openPermissionsFor(u)}
+                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Editar"
+                      onClick={() => setEditUser(u)}
+                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditUser(u)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditUser(u)}>
+                          Cambiar rol
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={!u.active}
+                          onClick={() => setConfirmDeactivate(u)}
+                        >
+                          Desactivar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setResetChoiceUser(u)}>
+                          Restablecer contraseña
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </Paper>
+      </div>
 
       <PermissionsManagementCard
         ref={permissionsCardRef}
@@ -268,42 +263,6 @@ export default function UsuariosPage() {
         onFocusUserHandled={() => setFocusUserId(null)}
       />
       <AdminToolsCard />
-
-      <Menu anchorEl={menuState.anchor} open={!!menuState.anchor} onClose={closeMenu}>
-        <MenuItem
-          onClick={() => {
-            setEditUser(menuState.user)
-            closeMenu()
-          }}
-        >
-          Editar
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setEditUser(menuState.user)
-            closeMenu()
-          }}
-        >
-          Cambiar rol
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setConfirmDeactivate(menuState.user)
-            closeMenu()
-          }}
-          disabled={!menuState.user?.active}
-        >
-          Desactivar
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setResetChoiceUser(menuState.user)
-            closeMenu()
-          }}
-        >
-          Restablecer contraseña
-        </MenuItem>
-      </Menu>
 
       <CreateUserDialog
         open={createOpen}
@@ -324,95 +283,97 @@ export default function UsuariosPage() {
         }}
       />
 
-      <Dialog open={!!confirmDeactivate} onClose={() => setConfirmDeactivate(null)}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Desactivar usuario</DialogTitle>
-        <DialogContent>
-          <Typography>
+      <Dialog
+        open={!!confirmDeactivate}
+        onOpenChange={(next) => !next && setConfirmDeactivate(null)}
+      >
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Desactivar usuario</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-2 text-sm">
             ¿Desactivar a <b>{confirmDeactivate?.name}</b>? No podrá iniciar sesión hasta que se
             reactive. Esto no elimina su cuenta.
-          </Typography>
+          </div>
+          <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
+            <Button variant="ghost" onClick={() => setConfirmDeactivate(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeactivate}>
+              Desactivar
+            </Button>
+          </div>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setConfirmDeactivate(null)}>Cancelar</Button>
-          <Button color="error" variant="contained" onClick={handleDeactivate}>
-            Desactivar
-          </Button>
-        </DialogActions>
       </Dialog>
 
-      <Dialog open={!!resetChoiceUser} onClose={closeResetChoice} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          Restablecer contraseña de {resetChoiceUser?.name}
-        </DialogTitle>
-        <DialogContent>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mb: 2 }}>
-            Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.
-          </Typography>
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => handleResetRandom(resetChoiceUser)}
-            sx={{ mb: 2.5, textTransform: 'none' }}
-          >
-            Generar aleatoria
-          </Button>
-          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', mb: 1 }}>
-            O define la contraseña manualmente
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Mínimo 8 caracteres"
-            value={manualPassword}
-            onChange={(e) => setManualPassword(e.target.value)}
-            helperText={manualPassword && manualPassword.length < 8 ? 'Mínimo 8 caracteres' : ' '}
-            error={!!manualPassword && manualPassword.length < 8}
-          />
+      <Dialog open={!!resetChoiceUser} onOpenChange={(next) => !next && closeResetChoice()}>
+        <DialogContent className="max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Restablecer contraseña de {resetChoiceUser?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-2">
+            <p className="mb-4 text-[13.5px] text-muted-foreground">
+              Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.
+            </p>
+            <Button
+              variant="outline"
+              className="mb-5 w-full font-normal normal-case"
+              onClick={() => handleResetRandom(resetChoiceUser)}
+            >
+              Generar aleatoria
+            </Button>
+            <p className="mb-2 text-xs font-bold text-muted-foreground">
+              O define la contraseña manualmente
+            </p>
+            <Input
+              placeholder="Mínimo 8 caracteres"
+              value={manualPassword}
+              onChange={(e) => setManualPassword(e.target.value)}
+            />
+            <p className="mt-1 h-4 text-xs text-destructive">
+              {manualPassword && manualPassword.length < 8 ? 'Mínimo 8 caracteres' : ' '}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
+            <Button variant="ghost" onClick={closeResetChoice}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={resetSaving || manualPassword.length < 8}
+              onClick={() => handleResetManual(resetChoiceUser)}
+            >
+              {resetSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar contraseña'}
+            </Button>
+          </div>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={closeResetChoice}>Cancelar</Button>
-          <Button
-            variant="contained"
-            disabled={resetSaving || manualPassword.length < 8}
-            onClick={() => handleResetManual(resetChoiceUser)}
-          >
-            {resetSaving ? <CircularProgress size={16} /> : 'Guardar contraseña'}
-          </Button>
-        </DialogActions>
       </Dialog>
 
-      <Dialog open={!!resetResult} onClose={() => setResetResult(null)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Contraseña temporal generada</DialogTitle>
-        <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Esta contraseña solo se muestra una vez. Entrégasela a {resetResult?.user?.name} de
-            forma segura.
-          </Alert>
-          <TextField
-            fullWidth
-            value={resetResult?.temporaryPassword || ''}
-            InputProps={{
-              readOnly: true,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() =>
-                      navigator.clipboard?.writeText(resetResult?.temporaryPassword || '')
-                    }
-                  >
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+      <Dialog open={!!resetResult} onOpenChange={(next) => !next && setResetResult(null)}>
+        <DialogContent className="max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Contraseña temporal generada</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-2">
+            <Alert variant="destructive" className="mb-4">
+              Esta contraseña solo se muestra una vez. Entrégasela a {resetResult?.user?.name} de
+              forma segura.
+            </Alert>
+            <div className="relative">
+              <Input readOnly value={resetResult?.temporaryPassword || ''} className="pr-10" />
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(resetResult?.temporaryPassword || '')}
+                className="absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end px-6 pb-6 pt-2">
+            <Button onClick={() => setResetResult(null)}>Listo</Button>
+          </div>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setResetResult(null)} variant="contained">
-            Listo
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   )
 }

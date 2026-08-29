@@ -1,12 +1,5 @@
-import React from 'react'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import { useTheme, alpha } from '@mui/material/styles'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import TrendingDownIcon from '@mui/icons-material/TrendingDown'
+import { TrendingDown, TrendingUp } from 'lucide-react'
+import { cn, hexToRgba } from '@/lib/utils'
 
 const ACCENTS = {
   blue: '#3B82F6',
@@ -29,112 +22,94 @@ export default function KpiCard({
   onClick,
   compact = false,
 }) {
-  const theme = useTheme()
-  const d = theme.palette.mode === 'dark'
   const color = ACCENTS[accent] || ACCENTS.blue
   const isPositive = trend > 0
+  const trendColor = isPositive ? '#10B981' : '#EF4444'
 
   return (
-    <Paper
-      elevation={0}
+    // biome-ignore lint/a11y/noStaticElementInteractions: role/tabIndex/onKeyDown de abajo ya cubren teclado cuando onClick esta presente, biome no evalua el ternario en runtime
+    <div
       onClick={onClick}
-      sx={{
-        p: compact ? 1.75 : 2.5,
-        height: '100%',
-        borderRadius: 3,
-        borderLeft: `3px solid ${color}`,
-        bgcolor: alpha(color, d ? 0.04 : 0.02),
-        border: `1px solid ${alpha(color, d ? 0.18 : 0.12)}`,
-        borderLeftWidth: 3,
-        borderLeftColor: color,
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'all .2s cubic-bezier(.4,0,.2,1)',
-        cursor: onClick ? 'pointer' : 'default',
-        '&:hover': onClick
-          ? {
-              transform: 'translateY(-2px)',
-              boxShadow: `0 8px 24px ${alpha(color, 0.12)}`,
-              borderColor: color,
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick(e)
+              }
             }
-          : {},
+          : undefined
+      }
+      className={cn(
+        'relative h-full overflow-hidden rounded-2xl border border-l-[3px] border-[color:var(--kpi-border)] bg-[color:var(--kpi-bg)] transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        compact ? 'p-3.5' : 'p-5',
+        onClick &&
+          'cursor-pointer hover:-translate-y-0.5 hover:border-[color:var(--kpi-accent)] hover:shadow-[0_8px_24px_var(--kpi-border)]',
+      )}
+      style={{
+        '--kpi-accent': color,
+        '--kpi-border': hexToRgba(color, 0.12),
+        '--kpi-bg': hexToRgba(color, 0.02),
+        borderLeftColor: color,
       }}
     >
       {icon && (
-        <Box
-          sx={{
-            width: compact ? 32 : 38,
-            height: compact ? 32 : 38,
-            borderRadius: 2,
-            flexShrink: 0,
-            mb: 1.25,
-            bgcolor: alpha(color, 0.1),
-            display: 'grid',
-            placeItems: 'center',
+        <div
+          className={cn(
+            'mb-2.5 grid shrink-0 place-items-center rounded-lg border',
+            compact
+              ? 'h-8 w-8 [&>svg]:h-4 [&>svg]:w-4'
+              : 'h-[38px] w-[38px] [&>svg]:h-[18px] [&>svg]:w-[18px]',
+          )}
+          style={{
+            backgroundColor: hexToRgba(color, 0.1),
             color,
-            border: `1px solid ${alpha(color, 0.15)}`,
-            '& .MuiSvgIcon-root': { fontSize: compact ? 16 : 18 },
+            borderColor: hexToRgba(color, 0.15),
           }}
         >
           {icon}
-        </Box>
+        </div>
       )}
-      <Typography
-        sx={{
-          fontSize: compact ? 10 : 11,
-          fontWeight: 700,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.6,
-          mb: 0.5,
-        }}
+      <p
+        className={cn(
+          'mb-1 font-bold uppercase tracking-[0.6px] text-muted-foreground',
+          compact ? 'text-[10px]' : 'text-[11px]',
+        )}
       >
         {title}
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: compact ? 22 : 28,
-          fontWeight: 800,
-          color: 'text.primary',
-          lineHeight: 1,
-          mb: 0.5,
-          letterSpacing: -0.5,
-        }}
+      </p>
+      <p
+        className={cn(
+          'mb-1 font-extrabold leading-none tracking-[-0.5px] text-foreground',
+          compact ? 'text-[22px]' : 'text-[28px]',
+        )}
       >
         {value}
-      </Typography>
+      </p>
       {(subtitle || typeof trend === 'number') && (
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
-          {subtitle && (
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
-              {subtitle}
-            </Typography>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {subtitle && <p className="text-xs font-medium text-muted-foreground">{subtitle}</p>}
           {typeof trend === 'number' && trend !== 0 && (
-            <Chip
-              size="small"
-              icon={
-                isPositive ? (
-                  <TrendingUpIcon sx={{ fontSize: '13px !important' }} />
-                ) : (
-                  <TrendingDownIcon sx={{ fontSize: '13px !important' }} />
-                )
-              }
-              label={`${isPositive ? '+' : ''}${trend} ${trendLabel}`}
-              sx={{
-                height: 20,
-                fontSize: 10,
-                fontWeight: 700,
-                bgcolor: alpha(isPositive ? '#10B981' : '#EF4444', 0.08),
-                color: isPositive ? '#10B981' : '#EF4444',
-                border: `1px solid ${alpha(isPositive ? '#10B981' : '#EF4444', 0.18)}`,
-                '& .MuiChip-label': { px: 0.5 },
-                '& .MuiChip-icon': { ml: 0.25 },
+            <span
+              className="inline-flex h-5 items-center gap-0.5 rounded-full border px-1 text-[10px] font-bold"
+              style={{
+                backgroundColor: hexToRgba(trendColor, 0.08),
+                color: trendColor,
+                borderColor: hexToRgba(trendColor, 0.18),
               }}
-            />
+            >
+              {isPositive ? (
+                <TrendingUp className="h-[13px] w-[13px]" />
+              ) : (
+                <TrendingDown className="h-[13px] w-[13px]" />
+              )}
+              {`${isPositive ? '+' : ''}${trend} ${trendLabel}`}
+            </span>
           )}
-        </Stack>
+        </div>
       )}
-    </Paper>
+    </div>
   )
 }
