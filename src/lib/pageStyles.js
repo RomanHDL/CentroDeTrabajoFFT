@@ -136,3 +136,37 @@ export const emptyTextClass =
 export function alertSuccessClass() {
   return cn('relative w-full rounded-lg border px-4 py-3 text-sm', METRIC_CHIP_TONES.ok)
 }
+
+// Fase 6c (Centro de Trabajo -- LineLikeAreaDetail): reemplaza ps.kpiCard(accent)
+// -- mismo mapa de 7 acentos (border/borde-izquierdo/fondo/glow de hover) copiado
+// literal de src/ui/pageStyles.js, como className. El borde izquierdo de 3px usa
+// las utilidades direccionales border-l-* de Tailwind (no colisionan con el
+// border de los otros 3 lados via tailwind-merge, son grupos distintos).
+const KPI_ACCENT_CLASS = {
+  blue: 'border-[#DBEAFE] border-l-[3px] border-l-[#3B82F6] bg-[rgba(59,130,246,.02)] hover:border-[#3B82F6] hover:shadow-[0_8px_24px_rgba(59,130,246,.08)] dark:border-[rgba(59,130,246,.18)] dark:bg-[rgba(59,130,246,.04)] dark:hover:shadow-[0_8px_24px_rgba(59,130,246,.08),0_0_0_1px_rgba(59,130,246,.18)]',
+  green:
+    'border-[#A7F3D0] border-l-[3px] border-l-[#10B981] bg-[rgba(16,185,129,.02)] hover:border-[#10B981] hover:shadow-[0_8px_24px_rgba(16,185,129,.08)] dark:border-[rgba(16,185,129,.18)] dark:bg-[rgba(16,185,129,.04)] dark:hover:shadow-[0_8px_24px_rgba(16,185,129,.08),0_0_0_1px_rgba(16,185,129,.18)]',
+  red: 'border-[#FEE2E2] border-l-[3px] border-l-[#EF4444] bg-[rgba(239,68,68,.02)] hover:border-[#EF4444] hover:shadow-[0_8px_24px_rgba(239,68,68,.08)] dark:border-[rgba(239,68,68,.18)] dark:bg-[rgba(239,68,68,.04)] dark:hover:shadow-[0_8px_24px_rgba(239,68,68,.08),0_0_0_1px_rgba(239,68,68,.18)]',
+  amber:
+    'border-[#FEF3C7] border-l-[3px] border-l-[#F59E0B] bg-[rgba(245,158,11,.02)] hover:border-[#F59E0B] hover:shadow-[0_8px_24px_rgba(245,158,11,.08)] dark:border-[rgba(245,158,11,.18)] dark:bg-[rgba(245,158,11,.04)] dark:hover:shadow-[0_8px_24px_rgba(245,158,11,.08),0_0_0_1px_rgba(245,158,11,.18)]',
+  purple:
+    'border-[#EDE9FE] border-l-[3px] border-l-[#A855F7] bg-[rgba(168,85,247,.02)] hover:border-[#A855F7] hover:shadow-[0_8px_24px_rgba(168,85,247,.08)] dark:border-[rgba(168,85,247,.18)] dark:bg-[rgba(168,85,247,.04)] dark:hover:shadow-[0_8px_24px_rgba(168,85,247,.08),0_0_0_1px_rgba(168,85,247,.18)]',
+  cyan: 'border-[#A5F3FC] border-l-[3px] border-l-[#06B6D4] bg-[rgba(6,182,212,.02)] hover:border-[#06B6D4] hover:shadow-[0_8px_24px_rgba(6,182,212,.08)] dark:border-[rgba(6,182,212,.18)] dark:bg-[rgba(6,182,212,.04)] dark:hover:shadow-[0_8px_24px_rgba(6,182,212,.08),0_0_0_1px_rgba(6,182,212,.18)]',
+  slate:
+    'border-[#E2E8F0] border-l-[3px] border-l-[#64748B] bg-[rgba(100,116,139,.03)] hover:border-[#64748B] hover:shadow-[0_8px_24px_rgba(100,116,139,.08)] dark:border-[rgba(100,116,139,.22)] dark:bg-[rgba(100,116,139,.05)] dark:hover:shadow-[0_8px_24px_rgba(100,116,139,.08),0_0_0_1px_rgba(100,116,139,.22)]',
+}
+
+export function kpiCardClass(accent = 'blue') {
+  return cn(
+    'relative h-full overflow-hidden rounded-[30px] border p-5 transition-all duration-200 ease-[cubic-bezier(.4,0,.2,1)] hover:-translate-y-0.5',
+    KPI_ACCENT_CLASS[accent] || KPI_ACCENT_CLASS.blue,
+  )
+}
+
+// progressBar/progressFill: reemplaza ps.progressBar (track) -- el color/ancho
+// del relleno son valores en tiempo de ejecucion (pct, color), asi que el
+// relleno se sigue aplicando via style inline en el llamador (mismo patron ya
+// usado en SupportAreaDetail.jsx para la barra de cobertura), esta clase solo
+// cubre el track estatico.
+export const progressBarClass =
+  'h-1.5 overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.06]'
