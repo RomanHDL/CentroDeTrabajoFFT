@@ -1,61 +1,58 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import SearchIcon from '@mui/icons-material/Search'
-import CloseIcon from '@mui/icons-material/Close'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
-import GroupsIcon from '@mui/icons-material/Groups'
-import WbSunnyIcon from '@mui/icons-material/WbSunny'
-import BackHandIcon from '@mui/icons-material/BackHand'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import StarIcon from '@mui/icons-material/Star'
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates'
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
-import ShowChartIcon from '@mui/icons-material/ShowChart'
-import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer } from 'recharts'
-import { alpha } from '@mui/material/styles'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
 import {
-  getCurrentShift,
-  formatShiftSchedule,
-  workCenterById,
+  ArrowLeft,
+  GripVertical,
+  Hand,
+  Lightbulb,
+  LineChart,
+  Search,
+  Star,
+  Sun,
+  UserCog,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from 'recharts'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { cardClass, metricChipClass, progressBarClass } from '@/lib/pageStyles'
+import { cn, hexToRgba } from '@/lib/utils'
+import { getCurrentAssignment, reconcileLineAssignments } from '../../data/personnel/repository'
+import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { hasMultipleStations } from '../../data/personnel/workstations'
+import {
   canonicalOperationalAreaId,
+  formatShiftSchedule,
+  getCurrentShift,
   operationalGroupMembers,
+  workCenterById,
 } from '../../data/production/catalog'
 import {
-  getAvailablePersonnelToday,
-  getGroupAreaStaffing,
-  getGroupPeople,
   AREA_STATUS_META,
   classifyAreaStatus,
   getActividadForEmployee,
+  getAvailablePersonnelToday,
+  getGroupAreaStaffing,
+  getGroupPeople,
 } from '../../data/production/personnelByArea'
-import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { reconcileLineAssignments, getCurrentAssignment } from '../../data/personnel/repository'
-import { hasMultipleStations } from '../../data/personnel/workstations'
-import { useEmployeeDropTarget } from '../../ui/dnd'
-import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useDndAssign } from '../../state/dndAssign'
 import { useRoleMode } from '../../state/roleMode'
+import { EmptyState } from '../../ui'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTarget } from '../../ui/dnd'
+import AssignedPersonChip from './AssignedPersonChip'
+import EmployeeAvatar from './EmployeeAvatar'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
-import EmployeeAvatar from './EmployeeAvatar'
-import AssignedPersonChip from './AssignedPersonChip'
 import WorkCenterNavControls from './WorkCenterNavControls'
 
 /* ─────────────────────────────────────────────
@@ -75,7 +72,17 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    mismas fuentes reales que ya usa el resto del sistema. Nunca una
    copia de real/ideal/faltante/cobertura: todo sale de
    getAreaStaffing/getPeopleByArea (personnelByArea.js), igual que el
-   plano 2D y "Resumen por área". ───────────────────────────────────────────── */
+   plano 2D y "Resumen por área".
+
+   Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. El "gauge"
+   circular de cobertura (antes ps.gauge(pct,color), unico consumidor
+   en todo el repo) se reescribe con 2 capas Tailwind + conic-gradient
+   inline (pct/color son valores en tiempo de ejecucion): un aro base
+   bg-muted, un conic-gradient superpuesto para el progreso, y un
+   circulo interior bg-background para el "agujero" -- evita tener que
+   replicar a mano el chequeo de modo claro/oscuro que hacia el original
+   via theme.palette.mode, ya que bg-muted/bg-background resuelven solo
+   por los tokens CSS compartidos. */
 
 const PIE_PALETTE = ['#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#06B6D4', '#EC4899', '#64748B']
 
@@ -94,102 +101,60 @@ function relativeTimeEs(iso) {
    el unico fetch de arriba -- limit=8 -- nunca una segunda consulta). */
 function HistoryRow({ h }) {
   return (
-    <Stack direction="row" spacing={1} alignItems="flex-start">
-      <Box
-        sx={{
-          width: 24,
-          height: 24,
-          borderRadius: '50%',
-          flexShrink: 0,
-          mt: 0.1,
-          bgcolor: alpha('#10B981', 0.14),
-          display: 'grid',
-          placeItems: 'center',
-          color: '#10B981',
-        }}
+    <div className="flex items-start gap-2">
+      <div
+        className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full"
+        style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
       >
-        <PersonAddAlt1Icon sx={{ fontSize: 13 }} />
-      </Box>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography sx={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3 }} noWrap>
+        <UserPlus className="h-[13px] w-[13px]" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-bold leading-[1.3]">
           {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
-        </Typography>
-        <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
+        </p>
+        <p className="text-[10.5px] text-muted-foreground">
           {h.byName ? `Por ${h.byName} · ` : ''}
           {relativeTimeEs(h.movedAt)}
-        </Typography>
-      </Box>
-    </Stack>
+        </p>
+      </div>
+    </div>
   )
 }
 
 function MetricBlock({ label, children, borderLeft }) {
   return (
-    <Box
-      sx={{
-        px: { xs: 1.5, md: 2.25 },
-        py: 1,
-        flex: 1,
-        minWidth: 130,
-        ...(borderLeft ? { borderLeft: '1px solid', borderColor: 'divider' } : {}),
-      }}
+    <div
+      className={cn(
+        'min-w-[130px] flex-1 px-3 py-2 md:px-[18px]',
+        borderLeft && 'border-t border-border md:border-l md:border-t-0',
+      )}
     >
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          mb: 0.5,
-        }}
-      >
+      <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
         {label}
-      </Typography>
+      </p>
       {children}
-    </Box>
+    </div>
   )
 }
 
 function DropZone({ areaId, label }) {
   const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
-    <Paper
-      elevation={0}
+    <div
       {...dropProps}
-      sx={{
-        minHeight: 180,
-        borderRadius: '16px',
-        border: '2px dashed',
-        borderColor: isOver ? '#3B82F6' : alpha('#3B82F6', 0.4),
-        bgcolor: (t) =>
-          alpha(
-            '#3B82F6',
-            isOver
-              ? t.palette.mode === 'dark'
-                ? 0.16
-                : 0.08
-              : t.palette.mode === 'dark'
-                ? 0.04
-                : 0.02,
-          ),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 1,
-        p: 2,
-        transition: 'all .15s ease',
-      }}
+      className={cn(
+        'flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-4 transition-all duration-150',
+        isOver
+          ? 'border-[#3B82F6] bg-[#3B82F6]/[0.08] dark:bg-[#3B82F6]/[0.16]'
+          : 'border-[#3B82F6]/40 bg-[#3B82F6]/[0.02] dark:bg-[#3B82F6]/[0.04]',
+      )}
     >
-      <BackHandIcon sx={{ fontSize: 30, color: '#3B82F6' }} />
-      <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: '#3B82F6', textAlign: 'center' }}>
+      <Hand className="h-[30px] w-[30px] text-[#3B82F6]" />
+      <p className="text-center text-[13.5px] font-extrabold text-[#3B82F6]">
         {isOver ? 'Soltar aquí' : 'Arrastra empleados aquí'}
-      </Typography>
-      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', textAlign: 'center' }}>
-        para asignarlos a {label}
-      </Typography>
-    </Paper>
+      </p>
+      <p className="text-center text-[11.5px] text-muted-foreground">para asignarlos a {label}</p>
+    </div>
   )
 }
 
@@ -197,34 +162,18 @@ function AvailableCandidateRow({ person, areaId }) {
   const dnd = useDndAssign()
   return (
     <DraggablePersonChip employeeId={person.id} sx={{ display: 'block' }}>
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
+      <button
+        type="button"
         onClick={() => dnd.requestAssign(person.id, areaId)}
-        sx={{
-          p: 0.9,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          '&:hover': {
-            borderColor: '#3B82F6',
-            bgcolor: (t) => alpha('#3B82F6', t.palette.mode === 'dark' ? 0.1 : 0.05),
-          },
-        }}
+        className="flex w-full items-center gap-2 rounded-lg border border-border p-[7.2px] text-left hover:border-[#3B82F6] hover:bg-[#3B82F6]/5 dark:hover:bg-[#3B82F6]/10"
       >
         <EmployeeAvatar employee={person} size={32} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700, fontSize: 12.5 }}>
-            {person.name}
-          </Typography>
-          <Typography noWrap sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-            #{person.employeeNumber}
-          </Typography>
-        </Box>
-        <DragIndicatorIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
-      </Stack>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[12.5px] font-bold">{person.name}</p>
+          <p className="truncate text-[10.5px] text-muted-foreground">#{person.employeeNumber}</p>
+        </div>
+        <GripVertical className="h-[17px] w-[17px] shrink-0 text-muted-foreground/50" />
+      </button>
     </DraggablePersonChip>
   )
 }
@@ -252,19 +201,14 @@ function RoleDistributionCard({ people }) {
 
   if (withData < 2 || counts.size < 2) {
     return (
-      <Paper
-        elevation={0}
-        sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
-      >
-        <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
-          Distribución por tipo de puesto
-        </Typography>
+      <div className={cn(cardClass, 'p-4')}>
+        <p className="mb-3 text-[14.5px] font-extrabold">Distribución por tipo de puesto</p>
         <EmptyState
           compact
           title="Sin información suficiente"
           description="Todavía no hay suficientes registros de actividad/puesto por empleado para esta área."
         />
-      </Paper>
+      </div>
     )
   }
 
@@ -275,18 +219,13 @@ function RoleDistributionCard({ people }) {
   }))
 
   return (
-    <Paper
-      elevation={0}
-      sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 0.25 }}>
-        Distribución por tipo de puesto
-      </Typography>
-      <Typography sx={{ fontSize: 10.5, color: 'text.secondary', mb: 1 }}>
+    <div className={cn(cardClass, 'p-4')}>
+      <p className="text-[14.5px] font-extrabold">Distribución por tipo de puesto</p>
+      <p className="mb-2 text-[10.5px] text-muted-foreground">
         Código de actividad real, sin interpretar (BASE)
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ minHeight: 160 }}>
-        <Box sx={{ position: 'relative', flex: '0 0 140px' }}>
+      </p>
+      <div className="flex min-h-[160px] gap-4">
+        <div className="relative flex-[0_0_140px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -305,37 +244,27 @@ function RoleDistributionCard({ people }) {
               <RTooltip formatter={(v, n) => [`${v} persona${v === 1 ? '' : 's'}`, n]} />
             </PieChart>
           </ResponsiveContainer>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%,-50%)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            <Typography sx={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>
-              {withData}
-            </Typography>
-            <Typography sx={{ fontSize: 9, color: 'text.secondary' }}>personas</Typography>
-          </Box>
-        </Box>
-        <Stack spacing={0.75} justifyContent="center" sx={{ flex: 1, minWidth: 0 }}>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+            <p className="text-xl font-extrabold leading-none">{withData}</p>
+            <p className="text-[9px] text-muted-foreground">personas</p>
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
           {data.map((row) => (
-            <Stack key={row.codigo} direction="row" spacing={0.75} alignItems="center">
-              <Box
-                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }}
+            <div key={row.codigo} className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: row.color }}
               />
-              <Typography sx={{ fontSize: 12, fontWeight: 700, flex: 1 }}>{row.codigo}</Typography>
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+              <p className="flex-1 text-xs font-bold">{row.codigo}</p>
+              <p className="text-[11.5px] text-muted-foreground">
                 {row.value} ({((row.value / withData) * 100).toFixed(0)}%)
-              </Typography>
-            </Stack>
+              </p>
+            </div>
           ))}
-        </Stack>
-      </Stack>
-    </Paper>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -390,7 +319,6 @@ export default function OperationalAreaDetail({
   next,
   onNavigate,
 }) {
-  const ps = usePageStyles()
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -406,6 +334,7 @@ export default function OperationalAreaDetail({
      Siguiente, 2026-08-27) -- el Dialog ya no se desmonta entre areas.
      `history` no hace falta reiniciarlo aqui: su propio useEffect de
      abajo ya depende de [workCenterId, ...] y lo vuelve a cargar solo. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     setRegisterOpen(false)
     setSelfAssignOpen(false)
@@ -425,14 +354,17 @@ export default function OperationalAreaDetail({
   const memberIds = workCenterId ? operationalGroupMembers(workCenterId) : []
 
   const area = canonicalId ? workCenterById(canonicalId) : null
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const staffing = useMemo(
     () => (memberIds.length ? getGroupAreaStaffing(memberIds) : null),
     [workCenterId, version],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const people = useMemo(
     () => (memberIds.length ? getGroupPeople(memberIds) : []),
     [workCenterId, version],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
 
   /* Reconciliacion de puestos reales al abrir el area (2026-08-26, a
@@ -451,6 +383,7 @@ export default function OperationalAreaDetail({
      estaciones reales de INSUMOS -- su gente pasa a tener una asignacion
      real en INSUMOS con puesto especifico, en vez de quedar "atrapada"
      en su bucket de snapshot original sin puesto. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: memberIds se recalcula desde workCenterId en cada render, incluirlo forzaria un loop -- mismo patron en todo este folder
   useEffect(() => {
     if (!open || !canonicalId || !hasMultipleStations(canonicalId)) return
     const ids = memberIds
@@ -459,7 +392,6 @@ export default function OperationalAreaDetail({
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map((p) => p.id)
     reconcileLineAssignments(canonicalId, ids)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalId, open])
   const filteredAvailable = useMemo(() => {
     const q = availableQuery.trim().toLowerCase()
@@ -473,6 +405,10 @@ export default function OperationalAreaDetail({
     )
   }, [available, availableQuery])
 
+  // memberIds/version fuerzan refrescar el historial al cambiar de area o
+  // tras una asignacion/movimiento, aunque no se lean todos dentro del
+  // callback -- mismo patron ya usado en otros archivos de este folder.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   useEffect(() => {
     if (!open || !memberIds.length) return
     let cancelled = false
@@ -523,6 +459,15 @@ export default function OperationalAreaDetail({
   const tip = classifyForTip(staffing.real, staffing.ideal)
   const currentShift = getCurrentShift()
   const shiftRange = formatShiftSchedule(currentShift)
+  const headerColor = statusMeta?.color || '#10B981'
+  const gaugeColor =
+    coveragePct >= 100
+      ? '#10B981'
+      : coveragePct >= 90
+        ? '#3B82F6'
+        : coveragePct >= 50
+          ? '#F59E0B'
+          : '#EF4444'
 
   function scrollToAvailable() {
     availableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -531,241 +476,176 @@ export default function OperationalAreaDetail({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullScreen
-      PaperProps={{ sx: { bgcolor: 'background.default' } }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          px: { xs: 1.5, md: 3 },
-          py: 1.5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          flexWrap: 'wrap',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
-        <IconButton onClick={onClose}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography sx={{ fontWeight: 800, fontSize: 19, letterSpacing: -0.4 }}>
-              {area.name}
-            </Typography>
-            <Chip
-              size="small"
-              label={headerLabel}
-              sx={{
-                fontWeight: 700,
-                bgcolor: alpha(statusMeta?.color || '#10B981', 0.14),
-                color: statusMeta?.color || '#10B981',
-                border: `1px solid ${alpha(statusMeta?.color || '#10B981', 0.35)}`,
-              }}
-            />
-          </Stack>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-            Centro de Trabajo • Área de producción
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1 }} />
-        {onNavigate && (
-          <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
-        )}
-        <Button
-          variant="contained"
-          startIcon={<PersonAddAlt1Icon />}
-          onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
-          sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-        >
-          {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
-        </Button>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      <Box key={workCenterId} sx={{ p: { xs: 1.5, md: 3 }, overflowY: 'auto' }}>
-        {/* Estado del area -- 2026-08-26, mockup aprobado: seccion con
-            titulo propio envolviendo la card horizontal de metricas
-            (antes la card no tenia un titulo de seccion encima). Cuando
-            no hay plantilla ideal, se explica con texto en vez de "—"
-            (peticion explicita del usuario: "Sin meta"/"Sin definir"/
-            "No calculable" en vez de un guion sin contexto) -- nunca se
-            inventa un numero. */}
-        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>Estado del área</Typography>
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: 'divider',
-            mb: 2.5,
-            overflow: 'hidden',
-          }}
-        >
-          <Stack direction={{ xs: 'column', md: 'row' }} divider={false}>
-            <Box
-              sx={{
-                px: { xs: 1.5, md: 2.25 },
-                py: 1.25,
-                flex: '1 1 180px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.25,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: '50%',
-                  bgcolor: alpha('#3B82F6', 0.12),
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: '#3B82F6',
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="inset-0 left-0 top-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 rounded-none bg-background">
+        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[19px] font-extrabold tracking-[-0.4px]">{area.name}</p>
+              <span
+                className="inline-flex h-6 items-center rounded-full border px-2 text-xs font-bold"
+                style={{
+                  backgroundColor: hexToRgba(headerColor, 0.14),
+                  color: headerColor,
+                  borderColor: hexToRgba(headerColor, 0.35),
                 }}
               >
-                <GroupsIcon />
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                  {staffing.ideal != null ? `${staffing.real} / ${staffing.ideal}` : staffing.real}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                  personas asignadas
-                </Typography>
-                {missing > 0 && (
-                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#EF4444' }}>
-                    Faltan {missing}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
+                {headerLabel}
+              </span>
+            </div>
+            <p className="text-[11.5px] text-muted-foreground">
+              Centro de Trabajo • Área de producción
+            </p>
+          </div>
+          <div className="flex-1" />
+          {onNavigate && (
+            <WorkCenterNavControls previous={previous} next={next} onNavigate={onNavigate} />
+          )}
+          <Button
+            onClick={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
+            className="rounded-[20px] font-bold"
+          >
+            <UserPlus className="h-4 w-4" />
+            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+          </Button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-            <MetricBlock label="Cobertura actual" borderLeft>
-              <Typography
-                sx={{
-                  fontSize: coveragePct != null ? 21 : 14,
-                  fontWeight: 800,
-                  color:
+        <div key={workCenterId} className="overflow-y-auto p-3 md:p-6">
+          {/* Estado del area */}
+          <p className="mb-2.5 text-[15px] font-extrabold">Estado del área</p>
+          <div className="mb-5 overflow-hidden rounded-2xl border border-border">
+            <div className="flex flex-col md:flex-row">
+              <div className="flex flex-[1_1_180px] items-center gap-2.5 px-3 py-2.5 md:px-[18px]">
+                <div
+                  className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full"
+                  style={{ backgroundColor: hexToRgba('#3B82F6', 0.12), color: '#3B82F6' }}
+                >
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[22px] font-extrabold leading-none">
+                    {staffing.ideal != null
+                      ? `${staffing.real} / ${staffing.ideal}`
+                      : staffing.real}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">personas asignadas</p>
+                  {missing > 0 && (
+                    <p className="text-[11px] font-bold text-[#EF4444]">Faltan {missing}</p>
+                  )}
+                </div>
+              </div>
+
+              <MetricBlock label="Cobertura actual" borderLeft>
+                <p
+                  className={cn(
+                    'leading-[1.2] font-extrabold',
+                    coveragePct != null ? 'text-[21px]' : 'text-sm',
                     coveragePct != null && coveragePct >= 100
-                      ? '#10B981'
+                      ? 'text-[#10B981]'
                       : coveragePct != null
-                        ? '#3B82F6'
-                        : 'text.secondary',
-                  lineHeight: 1.2,
-                }}
-              >
-                {coveragePct != null ? `${coveragePct}%` : 'Sin meta'}
-              </Typography>
-              {coveragePct != null && (
-                <>
-                  <Box
-                    sx={{
-                      height: 5,
-                      borderRadius: 999,
-                      bgcolor: 'action.hover',
-                      overflow: 'hidden',
-                      my: 0.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: `${coverageBarPct}%`,
-                        height: '100%',
-                        bgcolor: coveragePct >= 100 ? '#10B981' : '#3B82F6',
-                        borderRadius: 999,
-                      }}
-                    />
-                  </Box>
-                  <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-                    {staffing.real} de {staffing.ideal}
-                  </Typography>
-                </>
-              )}
-            </MetricBlock>
+                        ? 'text-[#3B82F6]'
+                        : 'text-muted-foreground',
+                  )}
+                >
+                  {coveragePct != null ? `${coveragePct}%` : 'Sin meta'}
+                </p>
+                {coveragePct != null && (
+                  <>
+                    <div className={cn(progressBarClass, 'my-1')}>
+                      <div
+                        className="h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(.4,0,.2,1)]"
+                        style={{
+                          width: `${coverageBarPct}%`,
+                          backgroundColor: coveragePct >= 100 ? '#10B981' : '#3B82F6',
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10.5px] text-muted-foreground">
+                      {staffing.real} de {staffing.ideal}
+                    </p>
+                  </>
+                )}
+              </MetricBlock>
 
-            <MetricBlock label="Plantilla ideal" borderLeft>
-              <Typography
-                sx={{
-                  fontSize: staffing.ideal != null ? 21 : 14,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  color: staffing.ideal != null ? 'text.primary' : 'text.secondary',
-                }}
-              >
-                {staffing.ideal != null ? staffing.ideal : 'Sin definir'}
-              </Typography>
-              {staffing.ideal != null && (
-                <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
-              )}
-            </MetricBlock>
+              <MetricBlock label="Plantilla ideal" borderLeft>
+                <p
+                  className={cn(
+                    'leading-[1.2] font-extrabold',
+                    staffing.ideal != null ? 'text-[21px]' : 'text-sm',
+                    staffing.ideal != null ? 'text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  {staffing.ideal != null ? staffing.ideal : 'Sin definir'}
+                </p>
+                {staffing.ideal != null && (
+                  <p className="text-[10.5px] text-muted-foreground">personas</p>
+                )}
+              </MetricBlock>
 
-            <MetricBlock label="Faltante" borderLeft>
-              <Typography
-                sx={{
-                  fontSize: staffing.ideal != null ? 21 : 14,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  color:
+              <MetricBlock label="Faltante" borderLeft>
+                <p
+                  className={cn(
+                    'leading-[1.2] font-extrabold',
+                    staffing.ideal != null ? 'text-[21px]' : 'text-sm',
                     staffing.ideal == null
-                      ? 'text.secondary'
+                      ? 'text-muted-foreground'
                       : missing > 0
-                        ? '#EF4444'
-                        : 'text.primary',
-                }}
-              >
-                {staffing.ideal != null ? missing : 'No calculable'}
-              </Typography>
-              {staffing.ideal != null && (
-                <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>personas</Typography>
-              )}
-            </MetricBlock>
+                        ? 'text-[#EF4444]'
+                        : 'text-foreground',
+                  )}
+                >
+                  {staffing.ideal != null ? missing : 'No calculable'}
+                </p>
+                {staffing.ideal != null && (
+                  <p className="text-[10.5px] text-muted-foreground">personas</p>
+                )}
+              </MetricBlock>
 
-            <MetricBlock label="Estado del área" borderLeft>
-              <Stack direction="row" spacing={0.6} alignItems="center">
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    bgcolor: statusMeta?.color || '#94A3B8',
-                  }}
-                />
-                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{headerLabel}</Typography>
-              </Stack>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>
-                {status === 'COMPLETA' || status === null ? 'Al día' : 'Requiere atención'}
-              </Typography>
-            </MetricBlock>
+              <MetricBlock label="Estado del área" borderLeft>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: statusMeta?.color || '#94A3B8' }}
+                  />
+                  <p className="text-[15px] font-extrabold">{headerLabel}</p>
+                </div>
+                <p className="text-[10.5px] text-muted-foreground">
+                  {status === 'COMPLETA' || status === null ? 'Al día' : 'Requiere atención'}
+                </p>
+              </MetricBlock>
 
-            <MetricBlock label="Turno actual" borderLeft>
-              <Stack direction="row" spacing={0.6} alignItems="center">
-                <WbSunnyIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 800 }}>{currentShift.label}</Typography>
-              </Stack>
-              <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>{shiftRange}</Typography>
-            </MetricBlock>
-          </Stack>
-        </Paper>
+              <MetricBlock label="Turno actual" borderLeft>
+                <div className="flex items-center gap-1.5">
+                  <Sun className="h-4 w-4 text-[#F59E0B]" />
+                  <p className="text-[15px] font-extrabold">{currentShift.label}</p>
+                </div>
+                <p className="text-[10.5px] text-muted-foreground">{shiftRange}</p>
+              </MetricBlock>
+            </div>
+          </div>
 
-        {/* Personal asignado + Distribucion por tipo de puesto */}
-        <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
-          <Grid item xs={12} lg={8}>
-            <Paper
-              elevation={0}
-              sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider', p: 2 }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
+          {/* Personal asignado + Distribucion por tipo de puesto */}
+          <div className="mb-5 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+            <div className={cn(cardClass, 'p-4 lg:col-span-2')}>
+              <p className="mb-3 text-[14.5px] font-extrabold">
                 Personal asignado ({people.length})
-              </Typography>
+              </p>
               {people.length === 0 ? (
                 <EmptyState
                   compact
@@ -773,86 +653,48 @@ export default function OperationalAreaDetail({
                   description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'."
                 />
               ) : (
-                <Grid container spacing={1.25} sx={{ maxHeight: 420, overflowY: 'auto', pr: 0.5 }}>
+                <div className="grid max-h-[420px] grid-cols-1 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 md:grid-cols-3">
                   {people.map((p) => (
-                    <Grid item xs={12} sm={6} md={4} key={p.id}>
-                      <AssignedPersonChip
-                        employeeId={p.id}
-                        name={p.name}
-                        subtitle={getCurrentAssignment(p.id)?.stationId}
-                      />
-                    </Grid>
+                    <AssignedPersonChip
+                      key={p.id}
+                      employeeId={p.id}
+                      name={p.name}
+                      subtitle={getCurrentAssignment(p.id)?.stationId}
+                    />
                   ))}
-                </Grid>
+                </div>
               )}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} lg={4}>
+            </div>
             <RoleDistributionCard people={people} />
-          </Grid>
-        </Grid>
+          </div>
 
-        {/* Gestion de personal -- 2026-08-26, mockup aprobado: las tres
-            columnas (Disponibles / Drop zone / Resumen+Historial) ahora
-            viven dentro de UNA sola seccion envolvente (titulo propio +
-            un Paper de fondo compartido) para que "se sientan parte de
-            una misma seccion", en vez de 4 cards sueltas al mismo nivel
-            que el resto de la pagina. La correccion de altura de la
-            tarea anterior sigue siendo la misma y NO se revierte:
-            alignItems="flex-start" en el Grid interno (el Grid de MUI
-            estira por defecto todos los hermanos de una fila a la altura
-            del mas alto -- con Disponibles renderizando su lista sin
-            limite, eso forzaba Drop zone/Resumen/Historial a crecer
-            igual de gigantes). Cada columna sigue teniendo su propio
-            limite: Disponibles con maxHeight+overflowY local, Resumen +
-            Historial apilados en la tercera columna (su suma vertical es
-            lo que ahora se alinea con las otras dos, en vez de 4 columnas
-            iguales forzadas). */}
-        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.25 }}>
-          Gestión de personal
-        </Typography>
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '16px',
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: (t) =>
-              t.palette.mode === 'dark' ? alpha('#fff', 0.02) : alpha('#000', 0.012),
-            p: { xs: 1.5, md: 2 },
-            mb: 2.5,
-          }}
-        >
-          <Grid container spacing={2} alignItems="flex-start">
-            <Grid item xs={12} md={4}>
-              <Paper
+          {/* Gestion de personal -- las tres columnas (Disponibles / Drop
+              zone / Resumen+Historial) viven dentro de una sola seccion
+              envolvente (titulo propio + fondo compartido). items-start en
+              el grid: sin eso, Disponibles (sin limite propio de altura
+              antes de su max-h local) forzaria a las otras dos columnas a
+              estirarse igual de altas. */}
+          <p className="mb-2.5 text-[15px] font-extrabold">Gestión de personal</p>
+          <div className="mb-5 rounded-2xl border border-border bg-black/[.012] p-3 dark:bg-white/[.02] md:p-4">
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
+              <div
                 ref={availableRef}
-                elevation={0}
-                sx={{
-                  borderRadius: '16px',
-                  border: '1px solid',
-                  borderColor: highlightAvailable ? '#3B82F6' : 'divider',
-                  p: 2,
-                  transition: 'border-color .3s ease',
-                  bgcolor: 'background.paper',
-                  boxShadow: highlightAvailable
-                    ? (t) =>
-                        `0 0 0 3px ${alpha('#3B82F6', t.palette.mode === 'dark' ? 0.25 : 0.15)}`
-                    : 'none',
-                }}
+                className={cn(
+                  'rounded-2xl border bg-card p-4 transition-colors duration-300',
+                  highlightAvailable
+                    ? 'border-[#3B82F6] shadow-[0_0_0_3px_rgba(59,130,246,0.15)] dark:shadow-[0_0_0_3px_rgba(59,130,246,0.25)]'
+                    : 'border-border',
+                )}
               >
-                <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1 }}>
+                <p className="mb-2 text-[14.5px] font-extrabold">
                   Disponibles para asignar ({available.length})
                   {availableQuery.trim() && (
-                    <Typography
-                      component="span"
-                      sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', ml: 0.75 }}
-                    >
+                    <span className="ml-1.5 text-[11.5px] font-bold text-muted-foreground">
                       · {filteredAvailable.length} resultado
                       {filteredAvailable.length === 1 ? '' : 's'}
-                    </Typography>
+                    </span>
                   )}
-                </Typography>
+                </p>
                 {available.length === 0 ? (
                   <EmptyState
                     compact
@@ -861,25 +703,15 @@ export default function OperationalAreaDetail({
                   />
                 ) : (
                   <>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={availableQuery}
-                      onChange={(e) => setAvailableQuery(e.target.value)}
-                      placeholder="Buscar por nombre o número..."
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon sx={{ fontSize: 17, opacity: 0.5 }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        mb: 1,
-                        '& .MuiInputBase-input': { fontSize: 12.5, py: 0.9 },
-                        '& .MuiOutlinedInput-root': { borderRadius: 2 },
-                      }}
-                    />
+                    <div className="relative mb-2">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-muted-foreground opacity-50" />
+                      <Input
+                        value={availableQuery}
+                        onChange={(e) => setAvailableQuery(e.target.value)}
+                        placeholder="Buscar por nombre o número..."
+                        className="h-9 rounded-lg pl-9 text-[12.5px]"
+                      />
+                    </div>
                     {filteredAvailable.length === 0 ? (
                       <EmptyState
                         compact
@@ -887,38 +719,22 @@ export default function OperationalAreaDetail({
                         description="Nadie disponible coincide con la búsqueda."
                       />
                     ) : (
-                      <Stack
-                        spacing={1}
-                        sx={{ maxHeight: { xs: 300, md: 340 }, overflowY: 'auto', pr: 0.5 }}
-                      >
+                      <div className="flex max-h-[300px] flex-col gap-2 overflow-y-auto pr-1 md:max-h-[340px]">
                         {filteredAvailable.map((p) => (
                           <AvailableCandidateRow key={p.id} person={p} areaId={canonicalId} />
                         ))}
-                      </Stack>
+                      </div>
                     )}
                   </>
                 )}
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
+              </div>
+
               <DropZone areaId={canonicalId} label={area.name} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Stack spacing={2}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    borderRadius: '16px',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    p: 2,
-                    bgcolor: 'background.paper',
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 800, fontSize: 14.5, mb: 1.5 }}>
-                    Resumen rápido
-                  </Typography>
-                  <Stack spacing={1}>
+
+              <div className="flex flex-col gap-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="mb-3 text-[14.5px] font-extrabold">Resumen rápido</p>
+                  <div className="flex flex-col gap-2">
                     {[
                       ['Total en el área', staffing.real],
                       ['Plantilla ideal', staffing.ideal != null ? staffing.ideal : 'Sin definir'],
@@ -926,60 +742,30 @@ export default function OperationalAreaDetail({
                       ['Cobertura', coveragePct != null ? `${coveragePct}%` : 'Sin meta'],
                       ['Disponibles', available.length],
                     ].map(([label, value]) => (
-                      <Stack key={label} direction="row" justifyContent="space-between">
-                        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                          {label}
-                        </Typography>
-                        <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>{value}</Typography>
-                      </Stack>
+                      <div key={label} className="flex justify-between">
+                        <p className="text-[12.5px] text-muted-foreground">{label}</p>
+                        <p className="text-[12.5px] font-extrabold">{value}</p>
+                      </div>
                     ))}
-                  </Stack>
-                </Paper>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    borderRadius: '16px',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    p: 2,
-                    bgcolor: 'background.paper',
-                  }}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ mb: 1.5 }}
-                  >
-                    <Typography sx={{ fontWeight: 800, fontSize: 14.5 }}>
-                      Historial reciente
-                    </Typography>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-[14.5px] font-extrabold">Historial reciente</p>
                     {history.items.length > 5 && (
-                      <Typography
-                        component="button"
+                      <button
+                        type="button"
                         onClick={() => setHistoryDialogOpen(true)}
-                        sx={{
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          color: '#3B82F6',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          p: 0,
-                        }}
+                        className="text-[11.5px] font-bold text-[#3B82F6]"
                       >
                         Ver todo
-                      </Typography>
+                      </button>
                     )}
-                  </Stack>
+                  </div>
                   {history.loading ? (
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                      Cargando…
-                    </Typography>
+                    <p className="text-xs text-muted-foreground">Cargando…</p>
                   ) : history.error ? (
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                      No se pudo cargar el historial.
-                    </Typography>
+                    <p className="text-xs text-muted-foreground">No se pudo cargar el historial.</p>
                   ) : history.items.length === 0 ? (
                     <EmptyState
                       compact
@@ -987,67 +773,40 @@ export default function OperationalAreaDetail({
                       description="Todavía no hay asignaciones o movimientos registrados para esta área."
                     />
                   ) : (
-                    <Stack spacing={1.25}>
+                    <div className="flex flex-col gap-2.5">
                       {history.items.slice(0, 5).map((h) => (
                         <HistoryRow key={h.id} h={h} />
                       ))}
-                    </Stack>
+                    </div>
                   )}
-                </Paper>
-              </Stack>
-            </Grid>
-          </Grid>
-        </Paper>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <Divider sx={{ mb: 2.5 }} />
+          <div className="mb-5 border-t border-border" />
 
-        {/* Analisis del area */}
-        <Typography sx={{ fontWeight: 800, fontSize: 15, mb: 1.5 }}>Análisis del área</Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} lg={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-                textAlign: 'center',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5, textAlign: 'left' }}>
-                Cobertura vs ideal
-              </Typography>
+          {/* Analisis del area */}
+          <p className="mb-3 text-[15px] font-extrabold">Análisis del área</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={cn(cardClass, 'p-4 text-center')}>
+              <p className="mb-3 text-left text-[13.5px] font-extrabold">Cobertura vs ideal</p>
               {coveragePct != null ? (
                 <>
-                  <Box
-                    sx={{
-                      ...ps.gauge(
-                        coverageBarPct,
-                        coveragePct >= 100
-                          ? '#10B981'
-                          : coveragePct >= 90
-                            ? '#3B82F6'
-                            : coveragePct >= 50
-                              ? '#F59E0B'
-                              : '#EF4444',
-                      ),
-                      mx: 'auto',
-                    }}
-                  >
-                    <Typography
-                      sx={{ position: 'relative', zIndex: 1, fontSize: 17, fontWeight: 800 }}
-                    >
-                      {coveragePct}%
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 1 }}>
-                    Cobertura actual
-                  </Typography>
-                  <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                  <div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full bg-muted">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: `conic-gradient(${gaugeColor} ${coverageBarPct * 3.6}deg, transparent 0deg)`,
+                      }}
+                    />
+                    <div className="absolute inset-[6px] rounded-full bg-background" />
+                    <p className="relative z-10 text-[17px] font-extrabold">{coveragePct}%</p>
+                  </div>
+                  <p className="mt-2 text-[11.5px] text-muted-foreground">Cobertura actual</p>
+                  <p className="text-[11px] text-muted-foreground">
                     {staffing.real} de {staffing.ideal} personas
-                  </Typography>
+                  </p>
                 </>
               ) : (
                 <EmptyState
@@ -1056,26 +815,13 @@ export default function OperationalAreaDetail({
                   description="No hay meta definida para calcular cobertura."
                 />
               )}
-            </Paper>
-          </Grid>
+            </div>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-              }}
-            >
-              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
-                <ShowChartIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
-                  Tendencia de cobertura (7 días)
-                </Typography>
-              </Stack>
+            <div className={cn(cardClass, 'p-4')}>
+              <div className="mb-3 flex items-center gap-1.5">
+                <LineChart className="h-4 w-4 text-muted-foreground" />
+                <p className="text-[13.5px] font-extrabold">Tendencia de cobertura (7 días)</p>
+              </div>
               {/* Investigado (2026-08-25): el headcount real de cada dia pasado
                   viene mayormente de un snapshot SIN fecha (REAL_PERSONNEL_SNAPSHOT),
                   no de un registro historico por dia -- DailyAssignment solo tiene
@@ -1088,140 +834,95 @@ export default function OperationalAreaDetail({
                 title="Aún no hay suficiente historial"
                 description="Todavía no hay suficiente historial para calcular la tendencia de cobertura de esta área."
               />
-            </Paper>
-          </Grid>
+            </div>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 13.5, mb: 1.5 }}>
-                Clasificación del área
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <StarIcon sx={{ fontSize: 18, color: '#F59E0B', mt: 0.2 }} />
-                <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{tip.label}</Typography>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.5 }}>
-                    {tip.tip}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
-          </Grid>
+            <div className={cn(cardClass, 'p-4')}>
+              <p className="mb-3 text-[13.5px] font-extrabold">Clasificación del área</p>
+              <div className="flex items-start gap-2">
+                <Star className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#F59E0B]" />
+                <div>
+                  <p className="text-[13px] font-extrabold">{tip.label}</p>
+                  <p className="mt-1 text-[11.5px] text-muted-foreground">{tip.tip}</p>
+                </div>
+              </div>
+            </div>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'divider',
-                p: 2,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1 }}>
-                <AssignmentIndIcon sx={{ fontSize: 17, color: '#3B82F6' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
-                  Recomendación automática
-                </Typography>
-              </Stack>
-              {missing > 0 ? (
-                <Chip
-                  size="small"
-                  label={
-                    missing >= 5
-                      ? 'Prioridad alta'
-                      : missing >= 2
-                        ? 'Prioridad media'
-                        : 'Prioridad baja'
-                  }
-                  sx={{
-                    alignSelf: 'flex-start',
-                    mb: 1,
-                    fontWeight: 700,
-                    bgcolor: alpha('#F59E0B', 0.15),
-                    color: '#B45309',
-                  }}
-                />
-              ) : null}
-              <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 1.5, flex: 1 }}>
+            <div className={cn(cardClass, 'flex flex-col p-4')}>
+              <div className="mb-2 flex items-center gap-1.5">
+                <UserCog className="h-[17px] w-[17px] text-[#3B82F6]" />
+                <p className="text-[13.5px] font-extrabold">Recomendación automática</p>
+              </div>
+              {missing > 0 && (
+                <span className={cn(metricChipClass('warn'), 'mb-2 self-start')}>
+                  {missing >= 5
+                    ? 'Prioridad alta'
+                    : missing >= 2
+                      ? 'Prioridad media'
+                      : 'Prioridad baja'}
+                </span>
+              )}
+              <p className="mb-3 flex-1 text-xs text-muted-foreground">
                 {missing > 0
                   ? `Se requieren ${missing} persona${missing === 1 ? '' : 's'} adicionales para alcanzar la plantilla ideal.`
                   : staffing.ideal != null
                     ? 'Esta área ya alcanzó su plantilla ideal. No se requieren acciones.'
                     : 'Esta área no tiene una plantilla ideal definida todavía.'}
-              </Typography>
+              </p>
               {missing > 0 && (
                 <Button
-                  size="small"
+                  variant="ghost"
+                  size="sm"
                   onClick={scrollToAvailable}
-                  startIcon={<TipsAndUpdatesIcon sx={{ fontSize: 16 }} />}
-                  sx={{ textTransform: 'none', fontWeight: 700, alignSelf: 'flex-start' }}
+                  className="self-start font-bold"
                 >
+                  <Lightbulb className="h-4 w-4" />
                   Ver candidatos disponibles
                 </Button>
               )}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
+            </div>
+          </div>
+        </div>
 
-      <RegisterPersonnelDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        fixedAreaId={canonicalId}
-        onDone={() => {}}
-      />
-      <SelfAssignDialog
-        open={selfAssignOpen}
-        onClose={() => setSelfAssignOpen(false)}
-        fixedAreaId={canonicalId}
-        onDone={() => {}}
-      />
+        <RegisterPersonnelDialog
+          open={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          fixedAreaId={canonicalId}
+          onDone={() => {}}
+        />
+        <SelfAssignDialog
+          open={selfAssignOpen}
+          onClose={() => setSelfAssignOpen(false)}
+          fixedAreaId={canonicalId}
+          onDone={() => {}}
+        />
 
-      {/* "Ver todo" del historial -- 2026-08-26, mockup aprobado. Reutiliza
-          los mismos `history.items` ya obtenidos (fetch limit=8), nunca una
-          segunda consulta: la vista compacta de arriba solo corta a 5. */}
-      <Dialog
-        open={historyDialogOpen}
-        onClose={() => setHistoryDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontWeight: 800,
-            fontSize: 16,
-          }}
+        {/* "Ver todo" del historial -- reutiliza los mismos `history.items`
+            ya obtenidos (fetch limit=8), nunca una segunda consulta: la
+            vista compacta de arriba solo corta a 5. */}
+        <Dialog
+          open={historyDialogOpen}
+          onOpenChange={(next) => !next && setHistoryDialogOpen(false)}
         >
-          Historial de {area.name}
-          <IconButton size="small" onClick={() => setHistoryDialogOpen(false)}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={1.5} sx={{ pb: 1 }}>
-            {history.items.map((h) => (
-              <HistoryRow key={h.id} h={h} />
-            ))}
-          </Stack>
-        </DialogContent>
-      </Dialog>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="text-base">Historial de {area.name}</DialogTitle>
+              <DialogClose asChild>
+                <button
+                  type="button"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </DialogClose>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 px-6 pb-5">
+              {history.items.map((h) => (
+                <HistoryRow key={h.id} h={h} />
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
     </Dialog>
   )
 }
