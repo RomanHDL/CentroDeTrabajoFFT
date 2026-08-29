@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { asc } from 'drizzle-orm'
-import { db, user } from '../../server-lib/db/client.ts'
+import { db, user } from '../../server-lib/db/client.js'
 import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']

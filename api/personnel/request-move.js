@@ -7,9 +7,9 @@ import {
   employee as employeeTable,
   dailyAssignment,
   pendingMove as pendingMoveTable,
-} from '../../server-lib/db/client.ts'
+} from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { resolveWorkstation, todayDateOnly } from '../../server-lib/personnel.ts'
+import { resolveWorkstation, todayDateOnly } from '../../server-lib/personnel.js'
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

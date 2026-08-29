@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { db, user } from '../../../server-lib/db/client.ts'
+import { db, user } from '../../../server-lib/db/client.js'
 import { requireModuleAccess } from '../../../server-lib/auth.js'
 
 // POST body opcional { password?: string }. Sin password: comportamiento de

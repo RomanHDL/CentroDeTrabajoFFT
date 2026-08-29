@@ -5,11 +5,11 @@
 // snapshot que solo tienen nombre (esas se reportan como omitidas, no se tocan).
 //
 // Corre UNA vez (mismo estilo que seed-role-module-access.mjs) para activar el bloqueo real de
-// BAJA en checkin/move/approve-move (ver server-lib/personnel.ts, placeEmployee). Es seguro
+// BAJA en checkin/move/approve-move (ver server-lib/personnel.js, placeEmployee). Es seguro
 // volver a correrlo despues (upsert idempotente vía update simple, no falla si ya esta en
 // active=false).
 import { eq } from 'drizzle-orm'
-import { db, employee } from '../server-lib/db/client.ts'
+import { db, employee } from '../server-lib/db/client.js'
 
 // Copiados a mano de realPersonnelSnapshot.js (grep de "status": "BAJA" con employeeNumber
 // presente) -- NO son un numero inventado, son los 5 de los 10 registros BAJA del snapshot que

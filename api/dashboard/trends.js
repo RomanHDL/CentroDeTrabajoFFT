@@ -10,7 +10,7 @@
 // un bug real (dias/horas desalineados con la tarde/noche real de Mexico) -- se detecto y corrigio
 // en la primera verificacion visual de este rediseño.
 import { asc, gte } from 'drizzle-orm'
-import { db, employeeMovement } from '../../server-lib/db/client.ts'
+import { db, employeeMovement } from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, user } from '../../../server-lib/db/client.ts'
+import { db, user } from '../../../server-lib/db/client.js'
 import { requireModuleAccess, publicUser } from '../../../server-lib/auth.js'
 
 export default requireModuleAccess('/usuarios', async (req, res) => {

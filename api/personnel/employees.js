@@ -1,5 +1,5 @@
 import { asc } from 'drizzle-orm'
-import { db, employee } from '../../server-lib/db/client.ts'
+import { db, employee } from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
 
 export default requireAuth(async (req, res) => {

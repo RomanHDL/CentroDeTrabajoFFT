@@ -18,23 +18,20 @@ import {
   attendance,
   workstation,
   workArea,
-} from './db/client.ts'
-
-export function todayDateOnly(): Date {
+} from './db/client.js'
+export function todayDateOnly() {
   return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`)
 }
-
 // Acepta "YYYY-MM-DD"; null si el formato es invalido. Sin querystring -> hoy.
-export function parseDateOnly(value?: string | null): Date | null {
+export function parseDateOnly(value) {
   if (!value) return todayDateOnly()
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   return new Date(`${value}T00:00:00.000Z`)
 }
-
 // `workAreaIdOrCode` acepta tanto el id real de WorkArea como su `code` (LINEA1, PALETIZADO, ...
 // -- el mismo id que ya usa catalog.js en el frontend), para que quien llame a la API no necesite
 // resolver primero un cuid interno que todavia no conoce.
-export async function resolveWorkstation(workAreaIdOrCode: string, stationName: string) {
+export async function resolveWorkstation(workAreaIdOrCode, stationName) {
   const [area] = await db
     .select()
     .from(workArea)
@@ -48,15 +45,6 @@ export async function resolveWorkstation(workAreaIdOrCode: string, stationName: 
     .limit(1)
   return station || null
 }
-
-type PlaceEmployeeInput = {
-  employeeId: string
-  workstationId: string
-  shift?: string | null
-  actingUserId: string
-  mode: 'CHECKIN' | 'MOVE'
-}
-
 /**
  * Coloca a un empleado en una estacion HOY -- equivalente real de checkInEmployee/moveEmployee
  * (repository.js). Corre dentro de una transaccion que hace `SELECT ... FOR UPDATE` sobre la
@@ -79,16 +67,9 @@ type PlaceEmployeeInput = {
  * tocar nada. Un CHECKIN exitoso ademas registra Attendance (pase de lista real, atomico con la
  * asignacion); un CHECKIN en CONFLICT devuelve la Attendance existente de hoy si ya hay una.
  */
-export async function placeEmployee({
-  employeeId,
-  workstationId,
-  shift,
-  actingUserId,
-  mode,
-}: PlaceEmployeeInput) {
+export async function placeEmployee({ employeeId, workstationId, shift, actingUserId, mode }) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT id FROM "Workstation" WHERE id = ${workstationId} FOR UPDATE`)
-
     // BAJA real (Employee.active=false) nunca puede registrarse/asignarse/moverse, sin importar
     // el modo -- cubre checkin/move/approve-move desde un solo lugar (los 3 pasan por aqui).
     const [emp] = await tx
@@ -96,8 +77,7 @@ export async function placeEmployee({
       .from(employee)
       .where(eq(employee.id, employeeId))
       .limit(1)
-    if (!emp || !emp.active) return { status: 'INACTIVE_EMPLOYEE' as const }
-
+    if (!emp || !emp.active) return { status: 'INACTIVE_EMPLOYEE' }
     const today = todayDateOnly()
     const effectiveShift = shift || 'GENERAL'
     // Bug real encontrado 2026-08-27 ("Cesar Hernandez Hernandez"/"Migdalia Georgina Ramirez
@@ -114,7 +94,6 @@ export async function placeEmployee({
       .from(dailyAssignment)
       .where(and(eq(dailyAssignment.employeeId, employeeId), eq(dailyAssignment.status, 'ACTIVE')))
       .limit(1)
-
     if (mode === 'CHECKIN' && current) {
       const [existingAttendance] = await tx
         .select()
@@ -128,13 +107,12 @@ export async function placeEmployee({
         )
         .limit(1)
       return {
-        status: 'CONFLICT' as const,
+        status: 'CONFLICT',
         assignment: current,
         existingAttendance: existingAttendance || null,
       }
     }
-    if (mode === 'MOVE' && !current) return { status: 'NO_CURRENT_ASSIGNMENT' as const }
-
+    if (mode === 'MOVE' && !current) return { status: 'NO_CURRENT_ASSIGNMENT' }
     // Cierra cualquier OTRA fila ACTIVE de este empleado que no sea `current` (que arriba solo
     // se busca con date: today). Bug real encontrado 2026-08-27: si la ultima asignacion real de
     // un empleado quedo fechada un dia distinto a "hoy" (nadie la toco el dia que cambio --
@@ -166,10 +144,8 @@ export async function placeEmployee({
         updatedAt: new Date(),
       })
       .where(and(...closeOthersConditions))
-
     if (current && current.workstationId === workstationId)
-      return { status: 'OK' as const, assignment: current }
-
+      return { status: 'OK', assignment: current }
     const [station] = await tx
       .select()
       .from(workstation)
@@ -178,19 +154,18 @@ export async function placeEmployee({
     // Mismo motivo que `current` arriba: sin date:today, para que un ocupante con asignacion
     // ACTIVE de un dia anterior siga contando de verdad contra la capacidad real de la estacion.
     const [{ occupied }] = await tx
-      .select({ occupied: sql<number>`count(*)::int` })
+      .select({ occupied: sql`count(*)::int` })
       .from(dailyAssignment)
       .where(
         and(eq(dailyAssignment.workstationId, workstationId), eq(dailyAssignment.status, 'ACTIVE')),
       )
     if (occupied >= station.capacity) {
       return {
-        status: 'STATION_FULL' as const,
+        status: 'STATION_FULL',
         occupiedCount: occupied,
         capacity: station.capacity,
       }
     }
-
     if (current) {
       await tx
         .update(dailyAssignment)
@@ -203,7 +178,6 @@ export async function placeEmployee({
         })
         .where(eq(dailyAssignment.id, current.id))
     }
-
     const [assignment] = await tx
       .insert(dailyAssignment)
       .values({
@@ -216,7 +190,6 @@ export async function placeEmployee({
         updatedAt: new Date(),
       })
       .returning()
-
     await tx.insert(employeeMovement).values({
       employeeId,
       date: today,
@@ -224,12 +197,10 @@ export async function placeEmployee({
       toWorkstationId: workstationId,
       movedByUserId: actingUserId,
     })
-
     await tx
       .update(employee)
       .set({ baselineSuppressed: false, updatedAt: new Date() })
       .where(and(eq(employee.id, employeeId), eq(employee.baselineSuppressed, true)))
-
     // Un CHECKIN exitoso siempre es la primera asignacion del dia para este empleado (si ya
     // tuviera una, la rama de arriba habria devuelto CONFLICT antes de llegar aqui) -- por eso
     // el pase de lista real (Attendance) se registra aqui, atomico con la asignacion.
@@ -248,7 +219,6 @@ export async function placeEmployee({
         })
         .onConflictDoNothing({ target: [attendance.employeeId, attendance.date, attendance.shift] })
     }
-
-    return { status: 'OK' as const, assignment }
+    return { status: 'OK', assignment }
   })
 }

@@ -13,7 +13,7 @@
 // directamente. Mantener el mismo tipo evita cambios de comportamiento
 // silenciosos al portar cada archivo.
 //
-// server-lib/db/client.ts es el punto de entrada real (equivalente de
+// server-lib/db/client.js es el punto de entrada real (equivalente de
 // server-lib/prisma.js) -- este archivo nunca se importa directo fuera de
 // ahi. relations.ts (mismo directorio) tiene el mismo origen/regla.
 //
@@ -40,7 +40,6 @@ import {
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import cuid from 'cuid'
-
 export const assignmentEndReason = pgEnum('AssignmentEndReason', [
   'MOVED',
   'RELEASED',
@@ -75,7 +74,6 @@ export const workstationCategory = pgEnum('WorkstationCategory', [
   'SUMINISTRO',
   'APOYO',
 ])
-
 export const user = pgTable(
   'User',
   {
@@ -118,7 +116,6 @@ export const user = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const importedAttendanceReference = pgTable(
   'ImportedAttendanceReference',
   {
@@ -156,12 +153,10 @@ export const importedAttendanceReference = pgTable(
       .onDelete('restrict'),
   ],
 )
-
 export const roleModuleAccess = pgTable('RoleModuleAccess', {
   role: userRole().primaryKey().notNull(),
   modules: text().array(),
 })
-
 export const workstation = pgTable(
   'Workstation',
   {
@@ -201,7 +196,6 @@ export const workstation = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const importBatch = pgTable(
   'ImportBatch',
   {
@@ -236,7 +230,6 @@ export const importBatch = pgTable(
       .onDelete('restrict'),
   ],
 )
-
 export const employeeImportSource = pgTable(
   'EmployeeImportSource',
   {
@@ -285,7 +278,6 @@ export const employeeImportSource = pgTable(
       .onDelete('restrict'),
   ],
 )
-
 export const employeeSkill = pgTable(
   'EmployeeSkill',
   {
@@ -339,7 +331,6 @@ export const employeeSkill = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const bajaConflict = pgTable(
   'BajaConflict',
   {
@@ -386,7 +377,6 @@ export const bajaConflict = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const skill = pgTable(
   'Skill',
   {
@@ -403,7 +393,6 @@ export const skill = pgTable(
     uniqueIndex('Skill_code_key').using('btree', table.code.asc().nullsLast().op('text_ops')),
   ],
 )
-
 export const employeeReconciliationCandidate = pgTable(
   'EmployeeReconciliationCandidate',
   {
@@ -462,7 +451,6 @@ export const employeeReconciliationCandidate = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const workArea = pgTable(
   'WorkArea',
   {
@@ -480,7 +468,6 @@ export const workArea = pgTable(
     uniqueIndex('WorkArea_code_key').using('btree', table.code.asc().nullsLast().op('text_ops')),
   ],
 )
-
 export const dailyAssignment = pgTable(
   'DailyAssignment',
   {
@@ -549,7 +536,6 @@ export const dailyAssignment = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const employeeMovement = pgTable(
   'EmployeeMovement',
   {
@@ -605,7 +591,6 @@ export const employeeMovement = pgTable(
       .onDelete('restrict'),
   ],
 )
-
 export const attendance = pgTable(
   'Attendance',
   {
@@ -645,7 +630,6 @@ export const attendance = pgTable(
       .onDelete('restrict'),
   ],
 )
-
 export const employee = pgTable(
   'Employee',
   {
@@ -674,7 +658,6 @@ export const employee = pgTable(
     index('Employee_fullName_idx').using('btree', table.fullName.asc().nullsLast().op('text_ops')),
   ],
 )
-
 export const pendingMove = pgTable(
   'PendingMove',
   {
@@ -743,7 +726,6 @@ export const pendingMove = pgTable(
       .onDelete('set null'),
   ],
 )
-
 export const roleModulePermission = pgTable(
   'RoleModulePermission',
   {
@@ -765,7 +747,6 @@ export const roleModulePermission = pgTable(
     ),
   ],
 )
-
 export const userModulePermission = pgTable(
   'UserModulePermission',
   {

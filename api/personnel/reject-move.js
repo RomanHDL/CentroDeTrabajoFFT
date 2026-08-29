@@ -6,7 +6,7 @@
 // usuarios resuelven la misma solicitud casi al mismo tiempo, solo uno gana; el otro recibe 409
 // "ya fue atendida" en vez de un rechazo fantasma sobre una solicitud que otro ya aprobo.
 import { and, eq } from 'drizzle-orm'
-import { db, pendingMove } from '../../server-lib/db/client.ts'
+import { db, pendingMove } from '../../server-lib/db/client.js'
 import { requireRole } from '../../server-lib/auth.js'
 
 export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => {

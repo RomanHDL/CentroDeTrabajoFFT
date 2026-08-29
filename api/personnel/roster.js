@@ -28,9 +28,9 @@
 // en los ultimos 3 minutos) -- src/data/personnel/apiSync.js los fusiona en cada poll de 7s para
 // que una solicitud de un LIDER y su resolucion lleguen a otros dispositivos sin recargar.
 import { eq } from 'drizzle-orm'
-import { db, employee as employeeTable } from '../../server-lib/db/client.ts'
+import { db, employee as employeeTable } from '../../server-lib/db/client.js'
 import { requireAuth } from '../../server-lib/auth.js'
-import { parseDateOnly } from '../../server-lib/personnel.ts'
+import { parseDateOnly } from '../../server-lib/personnel.js'
 
 // Reordena el resultado de la relational query de Drizzle (nombres de relacion auto-generados,
 // ambiguos por tener 2 FKs a la MISMA tabla Workstation/User, ver server-lib/db/relations.ts:

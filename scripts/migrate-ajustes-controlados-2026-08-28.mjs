@@ -33,7 +33,7 @@
 //
 // Uso: node --env-file=.env.local --import ./scripts/_esm-extensionless-loader.mjs scripts/migrate-ajustes-controlados-2026-08-28.mjs
 import { and, eq, sql } from 'drizzle-orm'
-import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.ts'
+import { db, workArea, workstation, dailyAssignment } from '../server-lib/db/client.js'
 
 async function findArea(code) {
   const [wa] = await db.select().from(workArea).where(eq(workArea.code, code)).limit(1)

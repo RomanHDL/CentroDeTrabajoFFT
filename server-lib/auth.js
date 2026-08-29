@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import { stringifySetCookie, parseCookie } from 'cookie'
 import { eq } from 'drizzle-orm'
-import { db, user as userTable } from './db/client.ts'
-import { canUserAccessModule } from './permissionService.ts'
+import { db, user as userTable } from './db/client.js'
+import { canUserAccessModule } from './permissionService.js'
 import { captureException } from './sentry.js'
 
 const COOKIE_NAME = 'fft_session'

@@ -11,9 +11,9 @@
 // falla despues de ganar el claim, se revierte el claim (vuelve a PENDING) para no perder la
 // solicitud.
 import { and, eq } from 'drizzle-orm'
-import { db, pendingMove } from '../../server-lib/db/client.ts'
+import { db, pendingMove } from '../../server-lib/db/client.js'
 import { requireRole } from '../../server-lib/auth.js'
-import { placeEmployee } from '../../server-lib/personnel.ts'
+import { placeEmployee } from '../../server-lib/personnel.js'
 
 export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

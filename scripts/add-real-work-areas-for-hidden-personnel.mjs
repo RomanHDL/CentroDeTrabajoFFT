@@ -7,7 +7,7 @@
 // alguien HACIA esas areas fallaria en el sync con "Area/estacion invalida"
 // (bug real encontrado durante la verificacion manual de este mismo cambio).
 import { desc, eq } from 'drizzle-orm'
-import { db, workArea, workstation } from '../server-lib/db/client.ts'
+import { db, workArea, workstation } from '../server-lib/db/client.js'
 
 const AREAS = [
   { code: 'BOX_PREP', name: 'CT Box Prep' },

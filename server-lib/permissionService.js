@@ -8,9 +8,9 @@
 // linea por linea que el archivo original (ver git history) -- solo
 // cambia el ORM. RoleModulePermission/UserModulePermission tienen
 // `updatedAt` sin default de Postgres (igual que DailyAssignment/Employee
-// en server-lib/personnel.ts) -- se pone a mano en cada create/update.
+// en server-lib/personnel.js) -- se pone a mano en cada create/update.
 import { and, eq } from 'drizzle-orm'
-import { db, roleModulePermission, userModulePermission, user } from './db/client.ts'
+import { db, roleModulePermission, userModulePermission, user } from './db/client.js'
 import { resolveEffectiveAccess } from '../shared/permissions.js'
 import {
   ADMIN_ROLE,
@@ -18,12 +18,10 @@ import {
   listPermissionProtectedModules,
   listAllModules,
 } from '../shared/moduleRegistry.js'
-
-const ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'] as const
-
+const ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 export async function getRoleModulePermissionsMap() {
   const rows = await db.select().from(roleModulePermission)
-  const map: Record<string, Record<string, boolean>> = {}
+  const map = {}
   for (const role of ROLES) map[role] = {}
   for (const m of listPermissionProtectedModules()) {
     for (const role of ROLES) map[role][m.key] = false
@@ -39,25 +37,18 @@ export async function getRoleModulePermissionsMap() {
   }
   return map
 }
-
-export async function setRoleModulePermission(
-  role: string,
-  moduleKey: string,
-  allowed: boolean,
-  actingUserId?: string | null,
-) {
-  if (!ROLES.includes(role as (typeof ROLES)[number])) throw new Error('Rol invalido')
+export async function setRoleModulePermission(role, moduleKey, allowed, actingUserId) {
+  if (!ROLES.includes(role)) throw new Error('Rol invalido')
   const module = getModule(moduleKey)
   if (!module || !module.permissionProtected) throw new Error('Modulo invalido')
   if (module.systemReserved) throw new Error('Este modulo es reservado y no se gestiona por rol')
   if (role === ADMIN_ROLE && allowed === false) {
     throw new Error('ADMINISTRADOR siempre debe tener acceso completo')
   }
-
   const [row] = await db
     .insert(roleModulePermission)
     .values({
-      role: role as any,
+      role: role,
       moduleKey,
       allowed,
       updatedByUserId: actingUserId ?? null,
@@ -70,29 +61,21 @@ export async function setRoleModulePermission(
     .returning()
   return row
 }
-
-export async function getUserOverrides(userId: string) {
+export async function getUserOverrides(userId) {
   const rows = await db
     .select()
     .from(userModulePermission)
     .where(eq(userModulePermission.userId, userId))
-  const map: Record<string, string> = {}
+  const map = {}
   for (const row of rows) map[row.moduleKey] = row.effect
   return map
 }
-
-export async function setUserOverride(
-  userId: string,
-  moduleKey: string,
-  effect: 'ALLOW' | 'DENY' | 'INHERIT',
-  actingUserId?: string | null,
-) {
+export async function setUserOverride(userId, moduleKey, effect, actingUserId) {
   const module = getModule(moduleKey)
   if (!module || !module.permissionProtected) throw new Error('Modulo invalido')
   if (module.systemReserved)
     throw new Error('Este modulo es reservado y no admite overrides individuales')
   if (!['ALLOW', 'DENY', 'INHERIT'].includes(effect)) throw new Error('Efecto invalido')
-
   if (effect === 'INHERIT') {
     await db
       .delete(userModulePermission)
@@ -101,7 +84,6 @@ export async function setUserOverride(
       )
     return null
   }
-
   const [row] = await db
     .insert(userModulePermission)
     .values({
@@ -118,29 +100,16 @@ export async function setUserOverride(
     .returning()
   return row
 }
-
-export async function canUserAccessModule({
-  userId,
-  role,
-  moduleKey,
-}: {
-  userId: string
-  role: string
-  moduleKey: string
-}) {
+export async function canUserAccessModule({ userId, role, moduleKey }) {
   const module = getModule(moduleKey)
   if (!module) return false
   if (role === ADMIN_ROLE) return true
-
   const [[roleRow], [overrideRow]] = await Promise.all([
     db
       .select()
       .from(roleModulePermission)
       .where(
-        and(
-          eq(roleModulePermission.role, role as any),
-          eq(roleModulePermission.moduleKey, moduleKey),
-        ),
+        and(eq(roleModulePermission.role, role), eq(roleModulePermission.moduleKey, moduleKey)),
       )
       .limit(1),
     db
@@ -151,7 +120,6 @@ export async function canUserAccessModule({
       )
       .limit(1),
   ])
-
   return resolveEffectiveAccess({
     role,
     module,
@@ -159,33 +127,21 @@ export async function canUserAccessModule({
     override: overrideRow?.effect ?? null,
   })
 }
-
-export async function getEffectiveModulesForUser({
-  userId,
-  role,
-}: {
-  userId: string
-  role: string
-}) {
+export async function getEffectiveModulesForUser({ userId, role }) {
   const modules = listAllModules().filter((m) => m.permissionProtected)
   if (role === ADMIN_ROLE) return modules.map((m) => m.key)
-
   const [roleRows, overrideRows] = await Promise.all([
-    db
-      .select()
-      .from(roleModulePermission)
-      .where(eq(roleModulePermission.role, role as any)),
+    db.select().from(roleModulePermission).where(eq(roleModulePermission.role, role)),
     db.select().from(userModulePermission).where(eq(userModulePermission.userId, userId)),
   ])
-  const roleMap: Record<string, boolean> = {}
+  const roleMap = {}
   roleRows.forEach((r) => {
     roleMap[r.moduleKey] = r.allowed
   })
-  const overrideMap: Record<string, string> = {}
+  const overrideMap = {}
   overrideRows.forEach((r) => {
     overrideMap[r.moduleKey] = r.effect
   })
-
   return modules
     .filter((m) =>
       resolveEffectiveAccess({
@@ -197,28 +153,25 @@ export async function getEffectiveModulesForUser({
     )
     .map((m) => m.key)
 }
-
 // Acceso efectivo de TODOS los usuarios activos a un modulo dado -- usado por
 // el boton "Ver N usuarios" de la matriz Por Rol (acceso EFECTIVO, no solo
 // por rol: incluye a quien tenga un override ALLOW individual).
-export async function getUsersWithEffectiveAccess(moduleKey: string) {
+export async function getUsersWithEffectiveAccess(moduleKey) {
   const module = getModule(moduleKey)
   if (!module || !module.permissionProtected) return []
-
   const users = await db.select().from(user).where(eq(user.active, true))
   const [roleRows, overrideRows] = await Promise.all([
     db.select().from(roleModulePermission).where(eq(roleModulePermission.moduleKey, moduleKey)),
     db.select().from(userModulePermission).where(eq(userModulePermission.moduleKey, moduleKey)),
   ])
-  const roleMap: Record<string, boolean> = {}
+  const roleMap = {}
   roleRows.forEach((r) => {
     roleMap[r.role] = r.allowed
   })
-  const overrideByUser: Record<string, string> = {}
+  const overrideByUser = {}
   overrideRows.forEach((r) => {
     overrideByUser[r.userId] = r.effect
   })
-
   return users.filter((u) =>
     resolveEffectiveAccess({
       role: u.role,
