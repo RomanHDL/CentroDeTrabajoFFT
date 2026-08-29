@@ -1,19 +1,27 @@
+import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Chip from '@mui/material/Chip'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableBody from '@mui/material/TableBody'
-import TableContainer from '@mui/material/TableContainer'
-import SearchIcon from '@mui/icons-material/Search'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  cardClass,
+  cardHeaderClass,
+  cardHeaderSubtitleClass,
+  cardHeaderTitleClass,
+  cellTextClass,
+  cellTextSecondaryClass,
+  statusChipClass,
+  tableHeaderRowClass,
+  tableRowClass,
+} from '@/lib/pageStyles'
 import { getBajaEmployees } from '../../data/personnel/repository'
+import { EmptyState } from '../../ui'
 
 /* Personal ya no asignable (2026-08-24, a peticion explicita del
    usuario): las 8 personas marcadas status "BAJA" en
@@ -24,9 +32,10 @@ import { getBajaEmployees } from '../../data/personnel/repository'
    searchEmployees() ya las excluye automaticamente via el campo
    `eligible` de directory.js -- esta pestaña NO cambia esa exclusion,
    solo la hace visible en vez de silenciosa. Nunca se ofrece
-   asignar/mover/registrar desde aqui. */
+   asignar/mover/registrar desde aqui.
+
+   Fase 6c (Centro de Trabajo, primer lote): portado de MUI a Tailwind. */
 export default function BajasTab() {
-  const ps = usePageStyles()
   const [query, setQuery] = useState('')
 
   const baja = useMemo(() => getBajaEmployees(), [])
@@ -39,46 +48,48 @@ export default function BajasTab() {
   }, [baja, query])
 
   return (
-    <Paper elevation={0} sx={{ ...ps.card, mt: 2 }}>
-      <Box sx={ps.cardHeader}>
-        <Typography sx={ps.cardHeaderTitle}>Personal no asignable</Typography>
-        <Typography sx={ps.cardHeaderSubtitle}>
-          Personal marcado como baja — no se puede registrar, mover ni asignar a ninguna estación
-        </Typography>
-      </Box>
-      <Box sx={{ px: 2.5, pt: 2 }}>
-        <TextField
-          size="small"
-          fullWidth
-          placeholder="Buscar por nombre o número..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, opacity: 0.5, fontSize: 20 }} /> }}
-          sx={ps.inputSx}
-        />
-      </Box>
-      <TableContainer sx={{ maxHeight: 560, mt: 1 }}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow sx={ps.tableHeaderRow}>
-              <TableCell>Empleado</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Última área/puesto conocido</TableCell>
-              <TableCell>Fecha de ingreso</TableCell>
-              <TableCell>Estado</TableCell>
+    <div className={`${cardClass} mt-4`}>
+      <div className={cardHeaderClass}>
+        <div>
+          <p className={cardHeaderTitleClass}>Personal no asignable</p>
+          <p className={cardHeaderSubtitleClass}>
+            Personal marcado como baja — no se puede registrar, mover ni asignar a ninguna estación
+          </p>
+        </div>
+      </div>
+      <div className="px-5 pt-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 opacity-50" />
+          <Input
+            placeholder="Buscar por nombre o número..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="bg-card pl-10"
+          />
+        </div>
+      </div>
+      <div className="mt-2 max-h-[560px] overflow-y-auto">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-card">
+            <TableRow className={tableHeaderRowClass}>
+              <TableHead>Empleado</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Última área/puesto conocido</TableHead>
+              <TableHead>Fecha de ingreso</TableHead>
+              <TableHead>Estado</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {filtered.map((e, idx) => (
-              <TableRow key={e.id} sx={ps.tableRow(idx)}>
-                <TableCell sx={{ ...ps.cellText, fontFamily: 'monospace', fontWeight: 600 }}>
+              <TableRow key={e.id} className={tableRowClass(idx)}>
+                <TableCell className={`${cellTextClass} font-mono font-semibold`}>
                   {e.employeeNumber}
                 </TableCell>
-                <TableCell sx={ps.cellText}>{e.name}</TableCell>
-                <TableCell sx={ps.cellTextSecondary}>{e.areaHistorica || '—'}</TableCell>
-                <TableCell sx={ps.cellTextSecondary}>{e.fechaIngreso || '—'}</TableCell>
+                <TableCell className={cellTextClass}>{e.name}</TableCell>
+                <TableCell className={cellTextSecondaryClass}>{e.areaHistorica || '—'}</TableCell>
+                <TableCell className={cellTextSecondaryClass}>{e.fechaIngreso || '—'}</TableCell>
                 <TableCell>
-                  <Chip size="small" label="Baja" sx={ps.statusChip('CANCELADA')} />
+                  <span className={statusChipClass('CANCELADA')}>Baja</span>
                 </TableCell>
               </TableRow>
             ))}
@@ -95,7 +106,7 @@ export default function BajasTab() {
             )}
           </TableBody>
         </Table>
-      </TableContainer>
-    </Paper>
+      </div>
+    </div>
   )
 }

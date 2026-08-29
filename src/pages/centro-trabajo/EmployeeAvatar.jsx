@@ -1,7 +1,5 @@
-import React from 'react'
-import Avatar from '@mui/material/Avatar'
-import PersonIcon from '@mui/icons-material/Person'
-import { alpha } from '@mui/material/styles'
+import { User } from 'lucide-react'
+import { hexToRgba } from '@/lib/utils'
 
 function initialsOf(name) {
   if (!name) return ''
@@ -18,57 +16,54 @@ function colorForName(name) {
 
 /* Avatar de empleado — foto si existe (employee.photoUrl),
    si no iniciales sobre color estable, y si no hay ni
-   nombre, icono generico. Nunca rompe la UI por falta de foto. */
+   nombre, icono generico. Nunca rompe la UI por falta de foto.
+
+   Fase 6c: convertido directo a Tailwind (no una copia paralela) --
+   es un primitivo visual autocontenido con 23 consumidores en toda la
+   app (incluyendo src/components/OperatingFloorPlan.jsx/WorkAreaMap.jsx,
+   fuera de src/pages/centro-trabajo), asi que su conversion beneficia de
+   una sola vez a archivos que todavia no tienen su turno de Fase 6. */
 export default function EmployeeAvatar({ employee, size = 56, dashed = false }) {
   const name = employee?.name
   const photoUrl = employee?.photoUrl
+  const style = { width: size, height: size }
 
   if (!employee) {
     return (
-      <Avatar
-        sx={{
-          width: size,
-          height: size,
-          bgcolor: 'transparent',
-          border: '2px dashed',
-          borderColor: 'divider',
-          color: 'text.disabled',
-        }}
+      <div
+        className="grid shrink-0 place-items-center rounded-full border-2 border-dashed border-border text-muted-foreground"
+        style={style}
       >
-        <PersonIcon sx={{ fontSize: size * 0.5 }} />
-      </Avatar>
+        <User style={{ width: size * 0.5, height: size * 0.5 }} />
+      </div>
     )
   }
 
   if (photoUrl) {
     return (
-      <Avatar
+      <img
         src={photoUrl}
         alt={name}
-        sx={{
-          width: size,
-          height: size,
-          border: dashed ? '2px dashed' : 'none',
-          borderColor: 'divider',
-        }}
+        className="shrink-0 rounded-full object-cover"
+        style={{ ...style, border: dashed ? '2px dashed hsl(var(--border))' : 'none' }}
       />
     )
   }
 
   const color = colorForName(name || employee.employeeNumber || '')
+  const initials = initialsOf(name)
   return (
-    <Avatar
-      sx={{
-        width: size,
-        height: size,
-        bgcolor: alpha(color, 0.15),
+    <div
+      className="grid shrink-0 place-items-center rounded-full font-extrabold"
+      style={{
+        ...style,
+        backgroundColor: hexToRgba(color, 0.15),
         color,
-        fontWeight: 800,
         fontSize: size * 0.34,
-        border: `1px solid ${alpha(color, 0.3)}`,
+        border: `1px solid ${hexToRgba(color, 0.3)}`,
       }}
     >
-      {initialsOf(name) || <PersonIcon sx={{ fontSize: size * 0.5 }} />}
-    </Avatar>
+      {initials || <User style={{ width: size * 0.5, height: size * 0.5 }} />}
+    </div>
   )
 }

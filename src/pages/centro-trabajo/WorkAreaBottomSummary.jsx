@@ -1,5 +1,3 @@
-import Grid from '@mui/material/Grid'
-import Stack from '@mui/material/Stack'
 import AreaCoverageSummaryCard from './AreaCoverageSummaryCard'
 import UnassignedPersonnelCard from './UnassignedPersonnelCard'
 
@@ -19,15 +17,15 @@ import UnassignedPersonnelCard from './UnassignedPersonnelCard'
    tal cual, a peticion explicita del usuario. */
 export default function WorkAreaBottomSummary({ onSelectArea, sinZona }) {
   return (
-    <Grid container spacing={2} sx={{ mt: 0.5 }}>
-      <Grid item xs={12} md={8} lg={8.2} sx={{ minWidth: 0 }}>
+    <div className="mt-1 grid grid-cols-1 gap-4 md:grid-cols-[8fr_4fr] lg:grid-cols-[8.2fr_3.8fr]">
+      <div className="min-w-0">
         <AreaCoverageSummaryCard onSelectArea={onSelectArea} />
-      </Grid>
-      <Grid item xs={12} md={4} lg={3.8} sx={{ minWidth: 0 }}>
-        <Stack spacing={1.75}>
+      </div>
+      <div className="min-w-0">
+        <div className="flex flex-col gap-3.5">
           <UnassignedPersonnelCard people={sinZona} />
-        </Stack>
-      </Grid>
-    </Grid>
+        </div>
+      </div>
+    </div>
   )
 }

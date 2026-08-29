@@ -1,9 +1,5 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Divider from '@mui/material/Divider'
-import { usePageStyles } from '../../ui/pageStyles'
+import { cardClass, sectionTitleClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 
 /* ─────────────────────────────────────────────
    "Resumen del área" (2026-08-28, "REFINAMIENTO VISUAL Grupo C", a
@@ -14,50 +10,37 @@ import { usePageStyles } from '../../ui/pageStyles'
    paralelo. `total`/`ideal`/`diff` = los mismos numeros que ya muestran
    los KPIs de arriba (staffing.real/ideal/diff), nunca inventados aqui. */
 export default function AreaStaffSummary({ groups, total, ideal, diff }) {
-  const ps = usePageStyles()
   return (
-    <Paper elevation={0} sx={{ ...ps.card, p: 2 }}>
-      <Typography sx={{ ...ps.sectionTitle, fontSize: 13.5, mb: 1.25 }}>
-        Resumen del área
-      </Typography>
-      <Stack spacing={0.85}>
+    <div className={cn(cardClass, 'p-4')}>
+      <p className={cn(sectionTitleClass, 'mb-2.5 text-[13.5px]')}>Resumen del área</p>
+      <div className="flex flex-col gap-[6.8px]">
         {groups.map((g) => (
-          <Stack key={g.key} direction="row" alignItems="center" spacing={1}>
-            <Box
-              sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: g.color, flexShrink: 0 }}
-            />
-            <Typography sx={{ fontSize: 12.5, flex: 1 }} noWrap>
-              {g.label}
-            </Typography>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>
+          <div key={g.key} className="flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
+            <p className="flex-1 truncate text-[12.5px]">{g.label}</p>
+            <span className="text-[12.5px] font-bold">
               {g.occupied} / {g.total}
-            </Typography>
-          </Stack>
+            </span>
+          </div>
         ))}
-      </Stack>
+      </div>
       {ideal != null && (
         <>
-          <Divider sx={{ my: 1.25 }} />
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 800, flex: 1 }}>
-              Total asignado
-            </Typography>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 800 }}>
+          <div className="my-2.5 border-t border-border" />
+          <div className="flex items-center gap-2">
+            <p className="flex-1 text-[12.5px] font-extrabold">Total asignado</p>
+            <span className="text-[12.5px] font-extrabold">
               {total} / {ideal}
-            </Typography>
-          </Stack>
+            </span>
+          </div>
           {diff < 0 && (
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
-              <Typography sx={{ fontSize: 12, color: '#EF4444', flex: 1 }}>
-                Faltan por cubrir
-              </Typography>
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#EF4444' }}>
-                {Math.abs(diff)}
-              </Typography>
-            </Stack>
+            <div className="mt-1 flex items-center gap-2">
+              <p className="flex-1 text-xs text-[#EF4444]">Faltan por cubrir</p>
+              <span className="text-xs font-bold text-[#EF4444]">{Math.abs(diff)}</span>
+            </div>
           )}
         </>
       )}
-    </Paper>
+    </div>
   )
 }
