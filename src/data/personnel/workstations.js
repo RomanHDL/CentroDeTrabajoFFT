@@ -178,17 +178,21 @@ export const LINE_STATION_OVERRIDES = {
    explicita del usuario) -- mismo patron ya probado con Calidad: puesto(s)
    REAL(es) adicional(es), FUERA del plan de 5 roles base/repeticion
    (buildLineRolePlan), nunca compitiendo por esas posiciones. Cantidad fija
-   por linea (regla definitiva dada explicitamente): 2 en LINEA 0 y 1, 1 en
-   LINEA 2..10. WORK_CENTERS.idealHeadcount de cada linea sube exactamente
-   este numero (ver catalog.js) -- LINEA1 incluida (8 -> 9): el piso de 6
-   posiciones del plan base (ver LINE_STATION_OVERRIDES.LINEA1 arriba)
-   deja 1 posicion repetida que ya no puede ser Montaje/Etiquetado, asi
-   que el total real no baja lo suficiente para "absorber" las 2 de
-   Empaque sin subir idealHeadcount -- subirlo es lo que mantiene
-   sincronizados "Dotación ideal" y la cantidad real de estaciones. */
+   por linea (regla definitiva dada explicitamente): 2 en LINEA 0, 1 en
+   LINEA 1..10. WORK_CENTERS.idealHeadcount de cada linea sube exactamente
+   este numero (ver catalog.js).
+
+   2026-08-28 (quinta ronda, a peticion explicita del usuario -- "en WC
+   LINEA 1 elimina Empaque 2"): LINEA1 baja de 2 a 1 -- queda igual que
+   LINEA2..10 (1 solo Empaque). idealHeadcount de LINEA1 baja de 9 a 8
+   (catalog.js) para mantener sincronizados "Dotación ideal" y la cantidad
+   real de estaciones (1 Calidad + 6 plan base, piso minimo -- ver
+   LINE_STATION_OVERRIDES.LINEA1 -- + 1 Empaque = 8). LINEA1 sigue siendo
+   la unica linea (junto con PROYECTO) donde el plan base no reparte su
+   repeticion en Etiquetado -- eso no cambia con este ajuste. */
 export const EMPAQUE_COUNT_BY_LINE = {
-  PROYECTO: 2, LINEA1: 2,
-  LINEA2: 1, LINEA3: 1, LINEA4: 1, LINEA5: 1, LINEA6: 1, LINEA7: 1, LINEA8: 1, LINEA9: 1, LINEA10: 1,
+  PROYECTO: 2,
+  LINEA1: 1, LINEA2: 1, LINEA3: 1, LINEA4: 1, LINEA5: 1, LINEA6: 1, LINEA7: 1, LINEA8: 1, LINEA9: 1, LINEA10: 1,
 }
 
 /* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para

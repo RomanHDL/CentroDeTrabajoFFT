@@ -304,7 +304,7 @@ function sumStationPlan(plan) {
 // - PROYECTO/LINEA0: 13 -> 10 (plan base pasa de 10 a 7 posiciones: solo
 //   "Montaje" y "Etiquetado" se repiten una vez cada uno -- "Montaje 3",
 //   "Limpieza de TV 2" y "Suministro de Accesorios 2" desaparecen).
-// - LINEA1: SIN CAMBIO, se queda en 9 (a diferencia de las anteriores, su
+// - LINEA1: se quedo en 9 en esta ronda (a diferencia de las anteriores, su
 //   plan base YA estaba en el piso minimo de 6 posiciones -- 5 roles + 1
 //   repetido, inevitable por el piso "min 6 personas por linea" ya
 //   confirmado -- asi que no tenia margen para bajar sin desincronizar
@@ -314,12 +314,18 @@ function sumStationPlan(plan) {
 //   "Suministro de Accesorios 2" (sin ocupante real, ver migracion
 //   correspondiente) -- reportado explicitamente al usuario en vez de
 //   adivinar un cambio.
+//
+// 2026-08-28 (quinta ronda, a peticion explicita del usuario -- "en WC
+// LINEA 1 elimina Empaque 2"): LINEA1 SI baja ahora, 9 -> 8 -- no por el
+// plan base (sigue igual, 1 posicion repetida por el piso minimo), sino
+// porque EMPAQUE_COUNT_BY_LINE.LINEA1 baja de 2 a 1 (workstations.js),
+// quedando igual que LINEA2..10 (1 solo Empaque).
 // Nadie se pierde: quien ocupaba una de las posiciones eliminadas en
 // LINEA6-10/PROYECTO aparece en "Personal sin estación"
 // (getPeopleWithoutStation) sin que se toque su
 // DailyAssignment/EmployeeMovement real.
 export const WORK_CENTERS = [
-  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 9 }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 2 Empaque
+  { id: 'LINEA1', name: 'WC LINEA 1', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 1 Empaque
   { id: 'LINEA2', name: 'WC LINEA 2', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
   { id: 'LINEA3', name: 'WC LINEA 3', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque
   { id: 'LINEA4', name: 'WC LINEA 4', kind: 'linea', type: AREA_TYPES.PRODUCTION_LINE, isProduction: true, dailyTarget: null, idealHeadcount: 8 }, // 6 + Calidad + 1 Empaque

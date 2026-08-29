@@ -64,9 +64,9 @@ check('cantidad de estaciones de cada WC LINEA real coincide con su idealHeadcou
   })
 })
 // 2026-08-28 ("ajustes controlados", a peticion explicita del usuario): Empaque en WC LINEA 0-10.
-check('WC LINEA 0/1 tienen 2 puestos de Empaque, WC LINEA 2..10 tienen 1 cada una', () => {
-  const two = ['PROYECTO', 'LINEA1']
-  const one = ['LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
+check('WC LINEA 0 tiene 2 puestos de Empaque, WC LINEA 1..10 tienen 1 cada una (quinta ronda: "en LINEA1 elimina Empaque 2")', () => {
+  const two = ['PROYECTO']
+  const one = ['LINEA1', 'LINEA2', 'LINEA3', 'LINEA4', 'LINEA5', 'LINEA6', 'LINEA7', 'LINEA8', 'LINEA9', 'LINEA10']
   two.forEach((id) => {
     const empaques = getWorkstationsForLine(id).filter((s) => s.role === 'Empaque')
     assert.deepEqual(empaques.map((s) => s.name), ['Empaque 1', 'Empaque 2'], id)
@@ -124,13 +124,14 @@ check('WC LINEA 6..10 (cuarta ronda: "elimina Limpieza de TV 2"): idealHeadcount
     assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'), id)
   })
 })
-check('WC LINEA 1 (cuarta ronda): SIN CAMBIO a proposito -- idealHeadcount se queda en 9, nunca tuvo "Limpieza de TV 2" (su unica posicion repetida, inevitable por el piso minimo de 6, es "Suministro de Accesorios 2")', () => {
+check('WC LINEA 1: nunca tuvo "Limpieza de TV 2" (su unica posicion repetida, inevitable por el piso minimo de 6, es "Suministro de Accesorios 2") -- quinta ronda ("elimina Empaque 2") baja idealHeadcount de 9 a 8 vía Empaque, no vía el plan base', () => {
   const stations = getWorkstationsForLine('LINEA1')
-  assert.equal(workCenterById('LINEA1').idealHeadcount, 9)
-  assert.equal(stations.length, 9)
+  assert.equal(workCenterById('LINEA1').idealHeadcount, 8)
+  assert.equal(stations.length, 8)
   assert.ok(!stations.some((s) => s.name === 'Limpieza de TV 2'))
   assert.equal(stations.filter((s) => s.role === 'Suministro de Accesorios').length, 2)
   assert.deepEqual(stations.filter((s) => s.role === 'Suministro de Accesorios').map((s) => s.name), ['Suministro de Accesorios', 'Suministro de Accesorios 2'])
+  assert.deepEqual(stations.filter((s) => s.role === 'Empaque').map((s) => s.name), ['Empaque'])
 })
 check('"Operador de Compatibilidad" (2026-08-28, tercera ronda) ya NO es excepcion -- cae en el fallback AYUDANTE_GENERAL, igual que cualquier otro puesto especifico de Grupo C', () => {
   assert.equal(getPersonnelRank('Operador de Compatibilidad'), PERSONNEL_RANKS.AYUDANTE_GENERAL)
