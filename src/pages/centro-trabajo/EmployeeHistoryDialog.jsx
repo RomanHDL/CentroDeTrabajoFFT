@@ -1,27 +1,27 @@
-import React, { useMemo, useState } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
-import Alert from '@mui/material/Alert'
 import dayjs from 'dayjs'
-import { usePageStyles } from '../../ui/pageStyles'
-import { EmptyState } from '../../ui'
-import { workCenterById } from '../../data/production/catalog'
+import { X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
-  getMovementsForEmployee,
+  alertSuccessClass,
+  emptyTextClass,
+  metricChipClass,
+  sectionTitleClass,
+} from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
+import {
   getAssignmentHistory,
   getCurrentAssignment,
+  getMovementsForEmployee,
   getSkillsForEmployee,
   releaseAssignment,
   todayISO,
 } from '../../data/personnel/repository'
+import { workCenterById } from '../../data/production/catalog'
 import { useRoleMode } from '../../state/roleMode'
+import { EmptyState } from '../../ui'
 import EmployeeAvatar from './EmployeeAvatar'
 import MoveConfirmDialog from './MoveConfirmDialog'
 
@@ -32,24 +32,31 @@ function areaLabel(id) {
 const MOVEMENT_LABEL = { CHECK_IN: 'Entrada', MOVE: 'Movimiento', RELEASE: 'Puesto liberado' }
 
 export default function EmployeeHistoryDialog({ employee, open, onClose, onChanged }) {
-  const ps = usePageStyles()
   const { isSupervisor } = useRoleMode()
   const today = todayISO()
   const [moveOpen, setMoveOpen] = useState(false)
   const [feedback, setFeedback] = useState('')
 
+  // `open`/`feedback` fuerzan refrescar estos datos cada vez que el dialogo se
+  // reabre o cambia el feedback (tras liberar/mover), aunque no se lean dentro
+  // del callback -- comportamiento original preservado tal cual (mismo criterio
+  // que LineHistoryDialog.jsx).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const currentAssignment = useMemo(
     () => (employee ? getCurrentAssignment(employee.id) : null),
     [employee, open, feedback],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const skills = useMemo(
     () => (employee ? getSkillsForEmployee(employee.id) : []),
     [employee, open],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const todaysMovements = useMemo(
     () => (employee ? getMovementsForEmployee(employee.id, today) : []),
     [employee, today, open, feedback],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const pastAssignments = useMemo(
     () => (employee ? getAssignmentHistory(employee.id).filter((a) => a.date !== today) : []),
     [employee, today, open],
@@ -61,179 +68,147 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
     const res = releaseAssignment(employee.id)
     if (res.status === 'OK') {
       setFeedback('Puesto liberado. El empleado sigue presente hoy, sin asignación.')
-      onChanged && onChanged()
+      onChanged?.()
     }
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <EmployeeAvatar employee={employee} size={44} />
-        <Box>
-          <Typography sx={{ fontWeight: 800 }}>
-            {employee.employeeNumber} — {employee.name}
-          </Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-            {currentAssignment
-              ? `${areaLabel(currentAssignment.areaId)} · ${currentAssignment.stationId}`
-              : 'Sin asignación actual'}
-          </Typography>
-        </Box>
-      </DialogTitle>
-      <DialogContent dividers>
-        {feedback && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setFeedback('')}>
-            {feedback}
-          </Alert>
-        )}
-
-        {currentAssignment && (
-          <Stack direction="row" spacing={3} flexWrap="wrap" rowGap={1} sx={{ mb: 2 }}>
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-[600px]">
+        <div className="flex items-center gap-3 px-6 py-4">
+          <EmployeeAvatar employee={employee} size={44} />
+          <div>
+            <DialogTitle className="font-extrabold">
+              {employee.employeeNumber} — {employee.name}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {currentAssignment
+                ? `${areaLabel(currentAssignment.areaId)} · ${currentAssignment.stationId}`
+                : 'Sin asignación actual'}
+            </p>
+          </div>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto border-y border-border px-6 py-4">
+          {feedback && (
+            <Alert className={cn(alertSuccessClass(), 'mb-4 pr-9')}>
+              {feedback}
+              <button
+                type="button"
+                onClick={() => setFeedback('')}
+                className="absolute right-2 top-2 rounded-full p-1 hover:bg-black/[.06] dark:hover:bg-white/[.08]"
               >
-                Ubicación actual
-              </Typography>
-              <Typography sx={{ fontWeight: 700 }}>
-                {areaLabel(currentAssignment.areaId)} · {currentAssignment.stationId}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Entrada
-              </Typography>
-              <Typography sx={{ fontWeight: 700 }}>{currentAssignment.checkInAt}</Typography>
-            </Box>
-          </Stack>
-        )}
+                <X className="h-4 w-4" />
+              </button>
+            </Alert>
+          )}
 
-        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1 }}>Habilidades</Typography>
-        {skills.length === 0 ? (
-          <Typography sx={{ ...ps.emptyText, py: 1.5, textAlign: 'left' }}>
-            Sin habilidades registradas todavía.
-          </Typography>
-        ) : (
-          <Stack direction="row" spacing={0.75} flexWrap="wrap" rowGap={0.75} sx={{ mb: 2 }}>
-            {skills.map((s) => (
-              <Chip key={s.id} size="small" label={s.stationName} sx={ps.metricChip('info')} />
-            ))}
-          </Stack>
-        )}
+          {currentAssignment && (
+            <div className="mb-4 flex flex-wrap gap-x-6 gap-y-2">
+              <div>
+                <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
+                  Ubicación actual
+                </p>
+                <p className="font-bold">
+                  {areaLabel(currentAssignment.areaId)} · {currentAssignment.stationId}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Entrada</p>
+                <p className="font-bold">{currentAssignment.checkInAt}</p>
+              </div>
+            </div>
+          )}
 
-        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1, mt: 2 }}>
-          Historial hoy
-        </Typography>
-        {todaysMovements.length === 0 ? (
-          <EmptyState
-            compact
-            title="Sin movimientos hoy"
-            description="Este empleado no se ha registrado hoy."
-          />
-        ) : (
-          <Stack spacing={1} sx={{ mb: 2 }}>
-            {todaysMovements.map((m) => (
-              <Box
-                key={m.id}
-                sx={{ display: 'flex', gap: 1.5, p: 1.1, borderRadius: 2, bgcolor: 'action.hover' }}
-              >
-                <Typography sx={{ fontWeight: 800, fontSize: 13, minWidth: 44 }}>
-                  {m.movedAt}
-                </Typography>
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
-                    {MOVEMENT_LABEL[m.type] || m.type}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                    {m.fromAreaId
-                      ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
-                      : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        )}
+          <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>Habilidades</p>
+          {skills.length === 0 ? (
+            <p className={cn(emptyTextClass, 'py-3 text-left')}>
+              Sin habilidades registradas todavía.
+            </p>
+          ) : (
+            <div className="mb-4 flex flex-wrap gap-x-1.5 gap-y-1.5">
+              {skills.map((s) => (
+                <span key={s.id} className={metricChipClass('info')}>
+                  {s.stationName}
+                </span>
+              ))}
+            </div>
+          )}
 
-        <Typography sx={{ ...ps.sectionTitle, fontSize: 13, mb: 1, mt: 2 }}>
-          Días anteriores
-        </Typography>
-        {pastAssignments.length === 0 ? (
-          <EmptyState
-            compact
-            title="Sin historial previo"
-            description="No hay asignaciones registradas en días anteriores."
-          />
-        ) : (
-          <Stack spacing={1}>
-            {pastAssignments.map((a) => (
-              <Box
-                key={a.id}
-                sx={{
-                  display: 'flex',
-                  gap: 1.5,
-                  p: 1.1,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
+          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>Historial hoy</p>
+          {todaysMovements.length === 0 ? (
+            <EmptyState
+              compact
+              title="Sin movimientos hoy"
+              description="Este empleado no se ha registrado hoy."
+            />
+          ) : (
+            <div className="mb-4 flex flex-col gap-2">
+              {todaysMovements.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex gap-3 rounded-[20px] bg-black/[.04] p-[8.8px] dark:bg-white/[.08]"
+                >
+                  <p className="min-w-[44px] text-[13px] font-extrabold">{m.movedAt}</p>
+                  <div>
+                    <p className="text-[13px] font-bold">{MOVEMENT_LABEL[m.type] || m.type}</p>
+                    <p className="text-[12.5px] text-muted-foreground">
+                      {m.fromAreaId
+                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
+                        : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>Días anteriores</p>
+          {pastAssignments.length === 0 ? (
+            <EmptyState
+              compact
+              title="Sin historial previo"
+              description="No hay asignaciones registradas en días anteriores."
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {pastAssignments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex gap-3 rounded-[20px] border border-border p-[8.8px]"
+                >
+                  <p className="min-w-[60px] text-[13px] font-extrabold">
+                    {dayjs(a.date).format('DD/MM')}
+                  </p>
+                  <div>
+                    <p className="text-[13px] font-bold">{areaLabel(a.areaId)}</p>
+                    <p className="text-[12.5px] text-muted-foreground">{a.stationId}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 px-6 py-4">
+          {isSupervisor && currentAssignment && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={handleRelease}
+                className="font-bold text-destructive hover:text-destructive"
               >
-                <Typography sx={{ fontWeight: 800, fontSize: 13, minWidth: 60 }}>
-                  {dayjs(a.date).format('DD/MM')}
-                </Typography>
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
-                    {areaLabel(a.areaId)}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-                    {a.stationId}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        )}
+                Liberar asignación
+              </Button>
+              <Button variant="outline" onClick={() => setMoveOpen(true)} className="font-bold">
+                Mover empleado
+              </Button>
+            </>
+          )}
+          <div className="flex-1" />
+          <Button variant="ghost" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2, flexWrap: 'wrap', gap: 1 }}>
-        {isSupervisor && currentAssignment && (
-          <>
-            <Button
-              color="error"
-              onClick={handleRelease}
-              sx={{ fontWeight: 700, textTransform: 'none' }}
-            >
-              Liberar asignación
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => setMoveOpen(true)}
-              sx={{ fontWeight: 700, textTransform: 'none' }}
-            >
-              Mover empleado
-            </Button>
-          </>
-        )}
-        <Box sx={{ flex: 1 }} />
-        <Button onClick={onClose}>Cerrar</Button>
-      </DialogActions>
 
       <MoveConfirmDialog
         open={moveOpen}
@@ -242,7 +217,7 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
         currentAssignment={currentAssignment}
         onDone={() => {
           setFeedback('Empleado movido correctamente.')
-          onChanged && onChanged()
+          onChanged?.()
         }}
       />
     </Dialog>

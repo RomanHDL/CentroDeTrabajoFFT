@@ -1,28 +1,27 @@
-import React, { useMemo, useState } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
-import Alert from '@mui/material/Alert'
-import Chip from '@mui/material/Chip'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { usePageStyles } from '../../ui/pageStyles'
-import { WORK_CENTERS, CURRENT_SHIFT, workCenterById } from '../../data/production/catalog'
+import { CheckCircle2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import {
-  getLineWorkstationsWithOccupancy,
-  getLineCapacitySummary,
-  getCurrentAssignment,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { alertToneClass, metricChipClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
+import { STRICT_SKILL_VALIDATION } from '../../data/personnel/config'
+import {
   checkInEmployee,
+  getCurrentAssignment,
+  getLineCapacitySummary,
+  getLineWorkstationsWithOccupancy,
   hasSkill,
 } from '../../data/personnel/repository'
-import { STRICT_SKILL_VALIDATION } from '../../data/personnel/config'
-import EmployeeAvatar from './EmployeeAvatar'
+import { CURRENT_SHIFT, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import EmployeeSearchField from './EmployeeSearchField'
 
 /**
@@ -32,7 +31,6 @@ import EmployeeSearchField from './EmployeeSearchField'
  * realmente disponibles (respeta capacidad).
  */
 export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, onDone }) {
-  const ps = usePageStyles()
   const [employee, setEmployee] = useState(null)
   const [notFoundNumber, setNotFoundNumber] = useState('')
   const [areaId, setAreaId] = useState(fixedAreaId || WORK_CENTERS[0].id)
@@ -45,7 +43,13 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
     () => (employee ? getCurrentAssignment(employee.id) : null),
     [employee],
   )
+  // `open`/`result` fuerzan recalcular ocupacion/capacidad cuando el dialogo
+  // se reabre o justo despues de un registro exitoso, aunque no se lean
+  // dentro del callback -- comportamiento original preservado tal cual (ver
+  // mismo patron en LineHistoryDialog.jsx).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const lineCapacity = useMemo(() => getLineCapacitySummary(areaId), [areaId, open, result])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ver comentario arriba
   const workstations = useMemo(
     () => getLineWorkstationsWithOccupancy(areaId),
     [areaId, open, result],
@@ -87,7 +91,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
     setSubmitting(false)
     if (res.status === 'OK') {
       setResult(res)
-      onDone && onDone()
+      onDone?.()
     } else if (res.status === 'STATION_FULL') {
       setError(res.message)
     } else if (res.status === 'CONFLICT') {
@@ -103,50 +107,38 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
-    >
-      {result ? (
-        <>
-          <DialogContent sx={{ pt: 4, pb: 2, textAlign: 'center' }}>
-            <CheckCircleIcon sx={{ fontSize: 48, color: '#10B981', mb: 1 }} />
-            <Typography sx={{ fontWeight: 800, fontSize: 16, mb: 2 }}>
-              Registro realizado
-            </Typography>
-            <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
-              {result.employee.employeeNumber} — {result.employee.name}
-            </Typography>
-            <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1 }}>
-              <Chip
-                size="small"
-                label={workCenterById(result.assignment.areaId)?.name}
-                sx={ps.metricChip('info')}
-              />
-              <Chip
-                size="small"
-                label={result.assignment.stationId}
-                sx={ps.metricChip('default')}
-              />
-            </Stack>
-            <Typography sx={{ mt: 1, fontSize: 13, color: 'text.secondary' }}>
-              Entrada: {result.assignment.checkInAt}
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'center' }}>
-            <Button variant="contained" onClick={handleClose} sx={{ fontWeight: 700 }}>
-              Cerrar
-            </Button>
-          </DialogActions>
-        </>
-      ) : (
-        <>
-          <DialogTitle sx={{ fontWeight: 800 }}>Registrarme / Autoasignarme</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 0.5 }}>
+    <Dialog open={open} onOpenChange={(next) => !next && handleClose()}>
+      <DialogContent>
+        {result ? (
+          <>
+            <div className="px-6 pb-4 pt-8 text-center">
+              <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
+              <p className="mb-4 text-base font-extrabold">Registro realizado</p>
+              <p className="text-lg font-extrabold">
+                {result.employee.employeeNumber} — {result.employee.name}
+              </p>
+              <div className="mt-2 flex flex-row justify-center gap-1.5">
+                <span className={metricChipClass('info')}>
+                  {workCenterById(result.assignment.areaId)?.name}
+                </span>
+                <span className={metricChipClass('default')}>{result.assignment.stationId}</span>
+              </div>
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                Entrada: {result.assignment.checkInAt}
+              </p>
+            </div>
+            <div className="flex justify-center px-6 pb-5">
+              <Button onClick={handleClose} className="font-bold">
+                Cerrar
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Registrarme / Autoasignarme</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 px-6 pb-2 pt-1">
               <EmployeeSearchField
                 autoFocus
                 value={employee}
@@ -155,14 +147,14 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
               />
 
               {notFoundNumber && !employee && (
-                <Alert severity="warning">
+                <Alert className={alertToneClass('warning')}>
                   No encontramos a "{notFoundNumber}". Pide a tu supervisor que te dé de alta.
                 </Alert>
               )}
 
               {employee && currentAssignment && (
-                <Alert severity="info">
-                  <Typography sx={{ fontWeight: 800 }}>Ya tienes una asignación</Typography>
+                <Alert className={alertToneClass('info')}>
+                  <p className="font-extrabold">Ya tienes una asignación</p>
                   {workCenterById(currentAssignment.areaId)?.name} — {currentAssignment.stationId} ·
                   Entrada {currentAssignment.checkInAt}
                   <br />
@@ -172,78 +164,88 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
 
               {employee && !currentAssignment && (
                 <>
-                  <Alert severity="info" sx={{ py: 0.5 }}>
+                  <Alert className={cn(alertToneClass('info'), 'py-1')}>
                     Hoy todavía no tienes asignación.
                   </Alert>
 
-                  <TextField
-                    select
-                    fullWidth
-                    label="Línea / Área"
-                    value={areaId}
-                    disabled={Boolean(fixedAreaId)}
-                    onChange={(e) => {
-                      setAreaId(e.target.value)
-                      setStationId('')
-                    }}
-                  >
-                    {WORK_CENTERS.map((w) => (
-                      <MenuItem key={w.id} value={w.id}>
-                        {w.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="self-assign-area">Línea / Área</Label>
+                    <Select
+                      value={areaId}
+                      disabled={Boolean(fixedAreaId)}
+                      onValueChange={(v) => {
+                        setAreaId(v)
+                        setStationId('')
+                      }}
+                    >
+                      <SelectTrigger id="self-assign-area">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WORK_CENTERS.map((w) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   {lineCapacity.isFull ? (
-                    <Alert severity="warning">
-                      <Typography sx={{ fontWeight: 800 }}>LÍNEA COMPLETA</Typography>
+                    <Alert className={alertToneClass('warning')}>
+                      <p className="font-extrabold">LÍNEA COMPLETA</p>
                       Actualmente no hay estaciones disponibles en {workCenterById(areaId)?.name}.
                       Consulta con tu supervisor o elige otra línea.
                     </Alert>
                   ) : (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Puesto disponible"
-                      value={stationId}
-                      onChange={(e) => setStationId(e.target.value)}
-                    >
-                      {availableStations.map((s) => (
-                        <MenuItem key={s.id} value={s.name}>
-                          {s.name}{' '}
-                          {hasSkill(employee.id, s.name) ? '· compatible con tus habilidades' : ''}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="self-assign-station">Puesto disponible</Label>
+                      <Select value={stationId} onValueChange={(v) => setStationId(v)}>
+                        <SelectTrigger id="self-assign-station">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableStations.map((s) => (
+                            <SelectItem key={s.id} value={s.name}>
+                              {s.name}{' '}
+                              {hasSkill(employee.id, s.name)
+                                ? '· compatible con tus habilidades'
+                                : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
 
                   {stationId && !skillOk && (
-                    <Alert severity="warning">
+                    <Alert className={alertToneClass('warning')}>
                       No tienes este rol registrado como habilidad
                       {STRICT_SKILL_VALIDATION ? '' : ', pero puedes continuar'}.
                     </Alert>
                   )}
 
-                  {error && <Alert severity="error">{error}</Alert>}
+                  {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
                 </>
               )}
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2.5 }}>
-            <Button onClick={handleClose}>Cancelar</Button>
-            {employee && !currentAssignment && (
-              <Button
-                variant="contained"
-                onClick={handleConfirm}
-                disabled={!stationId || submitting || (STRICT_SKILL_VALIDATION && !skillOk)}
-                sx={{ fontWeight: 700 }}
-              >
-                Asignarme aquí
+            </div>
+            <div className="flex justify-end gap-2 px-6 pb-5 pt-2">
+              <Button variant="ghost" onClick={handleClose}>
+                Cancelar
               </Button>
-            )}
-          </DialogActions>
-        </>
-      )}
+              {employee && !currentAssignment && (
+                <Button
+                  onClick={handleConfirm}
+                  disabled={!stationId || submitting || (STRICT_SKILL_VALIDATION && !skillOk)}
+                  className="font-bold"
+                >
+                  Asignarme aquí
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </DialogContent>
     </Dialog>
   )
 }
