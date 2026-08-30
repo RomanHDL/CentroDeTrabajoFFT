@@ -4,89 +4,65 @@
 // Asistencia/Auditoría están marcados "próximamente" a propósito, son
 // placeholders reales en el código (ComingSoonPage), no se inventa
 // funcionalidad que todavía no existe.
+//
+// Textos traducibles movidos a public/locales/*/docs.json (namespace
+// "docs", sub-objeto "userManualData") -- este archivo solo guarda
+// estructura/IDs estables (nameKey/statusLabelKey/bodyKey). `status` sigue
+// siendo un literal 'disponible' / 'próximamente' SIN traducir -- es un
+// código interno de lógica que UserManualPage.jsx compara para elegir el
+// variant del Badge (`mod.status === 'disponible' ? 'success' : 'outline'`).
+// Como ese mismo valor también se muestra como texto del Badge,
+// `statusLabelKey` aparte resuelve la etiqueta visible traducible sin tocar
+// el literal de lógica. `nameKey` referencia claves YA existentes en
+// public/locales/*/navigation.json (mismo texto exacto, ya extraído ahí).
 
 export const MODULES = [
   {
-    name: 'Dashboard',
+    nameKey: 'dashboard',
     status: 'disponible',
-    body: `
-Vista general del estado operativo: personas asignadas hoy vs. plantilla
-ideal, cobertura por área, movimientos del día, indicadores FFT
-(Eficiencia/Demoras/Producción/Cumplimiento) y gráficas de distribución
-por turno/área. Es de solo lectura -- para asignar o mover personal, usa
-Centro de Trabajo.
-    `.trim(),
+    statusLabelKey: 'statusDisponible',
+    bodyKey: 'dashboardBody',
   },
   {
-    name: 'Centro de Trabajo',
+    nameKey: 'centroDeTrabajo',
     status: 'disponible',
-    body: `
-El módulo principal. Tres pestañas:
-
-- Estaciones: mapa operativo de todas las WC (Líneas 0-10, Paletizado,
-  Accesorios, Insumos, Midea/High Value, Conveyor y áreas de soporte).
-  Haz clic en cualquier área para ver el detalle de sus puestos y quién
-  los ocupa.
-- Personal: buscador de personas y su ubicación actual, con historial de
-  movimientos.
-- Bajas: personal marcado como baja (ya no forma parte de la plantilla
-  activa) -- nunca se borra del sistema, solo se marca inactivo.
-
-Dentro del detalle de cada área puedes: registrar a alguien en un puesto
-libre, mover a alguien de puesto, liberar un puesto, y (si tu rol lo
-permite) configurar los puestos de esa área. Un LIDER que pide un
-movimiento necesita aprobación de un SUPERVISOR o ADMINISTRADOR antes de
-que se aplique -- esa solicitud pendiente aparece señalada hasta que se
-resuelve.
-    `.trim(),
+    statusLabelKey: 'statusDisponible',
+    bodyKey: 'centroTrabajoBody',
   },
   {
-    name: 'Usuarios',
+    nameKey: 'usuarios',
     status: 'disponible',
-    body: `
-Solo visible para quien tiene el módulo "Usuarios" habilitado (típicamente
-ADMINISTRADOR). Crear/editar/desactivar cuentas, restablecer contraseñas,
-y configurar qué módulos puede ver cada rol o cada persona en particular
-(los overrides individuales ganan sobre el permiso general del rol).
-    `.trim(),
+    statusLabelKey: 'statusDisponible',
+    bodyKey: 'usuariosBody',
   },
   {
-    name: 'Registro de personal',
+    nameKey: 'registroDePersonal',
     status: 'disponible',
-    body: `
-Pantalla pensada para check-in rápido en tablet/piso: buscar a una persona
-y asignarla a un puesto libre en pocos toques, sin pasar por el detalle
-completo de Centro de Trabajo.
-    `.trim(),
+    statusLabelKey: 'statusDisponible',
+    bodyKey: 'registroPersonalBody',
   },
   {
-    name: "KPI's",
+    nameKey: 'kpis',
     status: 'próximamente',
-    body: 'Módulo en construcción -- todavía no tiene funcionalidad propia.',
+    statusLabelKey: 'statusProximamente',
+    bodyKey: 'kpisBody',
   },
   {
-    name: 'Asistencia',
+    nameKey: 'asistencia',
     status: 'próximamente',
-    body: 'Módulo en construcción -- todavía no tiene funcionalidad propia.',
+    statusLabelKey: 'statusProximamente',
+    bodyKey: 'asistenciaBody',
   },
   {
-    name: 'Auditoría',
+    nameKey: 'auditoria',
     status: 'próximamente',
-    body: 'Módulo en construcción -- todavía no tiene funcionalidad propia.',
+    statusLabelKey: 'statusProximamente',
+    bodyKey: 'auditoriaBody',
   },
 ]
 
 export const FAQ = [
-  [
-    '¿Por qué no puedo ver un módulo que antes sí veía?',
-    'Un ADMINISTRADOR puede cambiar en cualquier momento qué módulos ve tu rol o tu cuenta específicamente, desde Usuarios → Gestión de permisos. Si crees que es un error, pide que lo revisen ahí.',
-  ],
-  [
-    '¿Qué significa que a alguien le falte "estación"?',
-    'Pasa cuando la estación donde estaba asignada esa persona ya no existe en la configuración actual del área (por ejemplo, un administrador la eliminó o renombró). La persona nunca desaparece del sistema -- aparece en "Personal sin estación" hasta que alguien la reasigne a un puesto real.',
-  ],
-  [
-    '¿Se puede deshacer un movimiento?',
-    'El historial de movimientos nunca se borra ni se edita (es un registro permanente). Para corregir una ubicación, simplemente se hace un nuevo movimiento -- el sistema no "reescribe" el pasado.',
-  ],
+  { questionKey: 'faq1Question', answerKey: 'faq1Answer' },
+  { questionKey: 'faq2Question', answerKey: 'faq2Answer' },
+  { questionKey: 'faq3Question', answerKey: 'faq3Answer' },
 ]

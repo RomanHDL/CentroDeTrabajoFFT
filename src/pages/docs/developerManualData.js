@@ -5,70 +5,24 @@
 // Fuente de verdad: server-lib/db/schema.ts -- si el schema cambia, este
 // archivo debe actualizarse en el mismo PR (no hay generación automática
 // todavía).
+//
+// i18n (namespace "docs"): el texto en español visible al usuario vive en
+// public/locales/*/docs.json bajo "developerManualData". ARCHITECTURE_OVERVIEW
+// y AUTH_OVERVIEW se traducen directamente en DeveloperManualPage.jsx (solo
+// se usan una vez cada uno, no vale la pena una constante aquí). Cada
+// `purpose` de DATA_DICTIONARY se reemplaza por `purposeKey` (clave i18n
+// completa) y cada descripción de API_MAP se reemplaza por su clave i18n
+// completa -- el renderer resuelve ambos con t(). Las notas de `fields` se
+// dejan tal cual (sin traducir en esta pasada): son las más técnicas, las
+// más numerosas (~40+) y las de menor valor de traducción de este archivo.
 
-export const ARCHITECTURE_OVERVIEW = `
-Centro de Trabajo FFT es una app de gestión de personal de piso de
-producción: quién está asignado a qué estación hoy, historial de
-movimientos, asistencia, importación de la plantilla oficial (Excel) y
-permisos por rol/módulo.
-
-Stack actual: React 18 + Vite (JS, tsconfig permisivo desde la Fase 1 de
-compliance) + MUI + Drizzle ORM sobre Postgres (Neon) + autenticación
-propia por cookie firmada (JWT) + despliegue automático en Vercel
-(GitHub → Preview en cada push a desarrollo-personal, Producción en cada
-push a main).
-
-Capa de datos (server-lib/db/): schema.ts + relations.ts se generaron con
-"drizzle-kit introspect" directo contra la base real (nunca escritos a
-mano) -- 18 tablas/12 enums. client.ts exporta "db" (singleton, mismo
-patrón que el antiguo cliente Prisma) más cada tabla, para import directo
-desde cualquier archivo del servidor. Migrado desde Prisma en la Fase 3 de
-compliance (ver CHANGELOG.md) -- mismo comportamiento de negocio,
-verificado archivo por archivo.
-
-Frontend (src/): páginas por módulo en src/pages/<modulo>/, estado de
-sesión en src/state/auth.jsx, capa de datos de personal en
-src/data/personnel/ y src/data/production/ (catálogo de áreas/turnos,
-snapshot base importado, etc.).
-
-Backend (api/, server-lib/): cada archivo bajo api/**/*.js es una función
-serverless de Vercel (ruteo por convención de carpetas, sin config
-adicional en vercel.json). server-lib/dev-server.js monta esas mismas
-funciones 1:1 sobre Express para desarrollo local
-(concurrently "vite" + "node server-lib/dev-server.js"). server-lib/auth.js
-concentra autenticación (getSessionUser) y los 3 wrappers de autorización
-(requireAuth/requireRole/requireModuleAccess) que envuelven casi todos los
-endpoints -- ese es el único chokepoint que Sentry usa para capturar
-errores sin tocar cada endpoint por separado.
-
-Scripts de mantenimiento (scripts/*.mjs): migraciones puntuales
-idempotentes (soft-delete de estaciones obsoletas, nunca DELETE físico) y
-scripts/seed-personnel.mjs, que sincroniza Workstation con el generador
-puro src/data/personnel/workstations.js. scripts/verify-line-logic.mjs es
-la suite de verificación de lógica pura del proyecto (no hay Vitest/
-Playwright todavía) -- se corre después de cualquier cambio a catalog.js/
-workstations.js.
-`.trim()
-
-export const AUTH_OVERVIEW = `
-Autenticación hoy: login por employeeNumber o username (no existe campo
-email en el modelo User), contraseña con bcrypt, cookie httpOnly
-"fft_session" firmada con JWT (8 horas de sesión). getSessionUser siempre
-re-consulta el User real en base de datos en cada request -- nunca confía
-en el rol/estado que el token dice tener, solo en el userId.
-
-Migración planeada (ver checklist de credenciales): reemplazo por SSO real
-de Nextcloud (OIDC). Los 25 archivos que llaman a requireAuth/requireRole/
-requireModuleAccess NO cambian con esa migración -- solo cambia cómo se
-puebla req.user en api/auth/login.js y api/auth/session.js.
-`.trim()
-
-// Cada modelo: nombre, propósito en 1 línea, y campos reales (nombre, tipo
-// Prisma, notas). Los enums se listan aparte para no repetirlos por modelo.
+// Cada modelo: nombre, propósito en 1 línea (clave i18n), y campos reales
+// (nombre, tipo Prisma, notas). Los enums se listan aparte para no
+// repetirlos por modelo.
 export const DATA_DICTIONARY = [
   {
     model: 'User',
-    purpose: 'Cuenta de acceso al sistema (login) -- separada por completo de Employee.',
+    purposeKey: 'developerManualData.dataDictionary_User_purpose',
     fields: [
       ['id', 'String (cuid)', 'PK'],
       ['employeeNumber', 'String?', 'único, uno de los dos identificadores de login'],
@@ -84,7 +38,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'Employee',
-    purpose: 'Catálogo real de personal de piso, alimentado por el import de LAYOUT FFT.xlsx.',
+    purposeKey: 'developerManualData.dataDictionary_Employee_purpose',
     fields: [
       ['id', 'String (cuid)', 'PK'],
       ['employeeNumber', 'String?', 'único'],
@@ -109,7 +63,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'ImportBatch',
-    purpose: 'Cada corrida de importación de LAYOUT FFT.xlsx -- idempotente por fileHash.',
+    purposeKey: 'developerManualData.dataDictionary_ImportBatch_purpose',
     fields: [
       ['fileHash', 'String', 'único -- re-subir el mismo archivo nunca duplica nada'],
       ['sheet', 'String', ''],
@@ -124,7 +78,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'EmployeeImportSource',
-    purpose: 'Fila cruda de BASE/BAJAS que originó o actualizó un Employee (trazabilidad).',
+    purposeKey: 'developerManualData.dataDictionary_EmployeeImportSource_purpose',
     fields: [
       ['sourceSheet', 'String', '"BASE" | "BAJAS"'],
       ['sourceRowNumber', 'Int', ''],
@@ -137,8 +91,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'Skill',
-    purpose:
-      'Catálogo de habilidades/actividades (code = código crudo del Excel: LC, EM, L, PE...).',
+    purposeKey: 'developerManualData.dataDictionary_Skill_purpose',
     fields: [
       ['code', 'String', 'único'],
       ['description', 'String?', 'null hasta que un admin la documente manualmente'],
@@ -147,7 +100,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'EmployeeSkill',
-    purpose: 'Habilidad de un empleado. Retirar una es SIEMPRE soft-delete, nunca DELETE físico.',
+    purposeKey: 'developerManualData.dataDictionary_EmployeeSkill_purpose',
     fields: [
       ['level', 'SkillLevel?', 'PUEDE_CUBRIR | INTERMEDIO | EXPERTO'],
       ['source', 'EmployeeSkillSource', 'IMPORTED | MANUAL'],
@@ -157,8 +110,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'BajaConflict',
-    purpose:
-      'Cola de revisión admin: posible coincidencia de nombre entre BASE y BAJAS. Nunca se resuelve sola.',
+    purposeKey: 'developerManualData.dataDictionary_BajaConflict_purpose',
     fields: [
       [
         'status',
@@ -170,8 +122,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'EmployeeReconciliationCandidate',
-    purpose:
-      'Cola de revisión admin: posible duplicado entre un Employee existente y una fila nueva de import.',
+    purposeKey: 'developerManualData.dataDictionary_EmployeeReconciliationCandidate_purpose',
     fields: [
       [
         'status',
@@ -183,13 +134,12 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'ImportedAttendanceReference',
-    purpose:
-      'Código crudo de ASISTENCIA (A/F/I/V) tal como venía en el Excel -- SIN relación con Attendance real.',
+    purposeKey: 'developerManualData.dataDictionary_ImportedAttendanceReference_purpose',
     fields: [['rawCode', 'String', '"A" | "F" | "I" | "V" tal cual']],
   },
   {
     model: 'Attendance',
-    purpose: 'Pase de lista real, generado día a día por la app (no por el Excel).',
+    purposeKey: 'developerManualData.dataDictionary_Attendance_purpose',
     fields: [
       ['date', 'DateTime @db.Date', ''],
       ['shift', 'String', 'default "GENERAL"'],
@@ -199,7 +149,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'WorkArea',
-    purpose: 'Área de trabajo física (línea, paletizado, accesorios, etc.).',
+    purposeKey: 'developerManualData.dataDictionary_WorkArea_purpose',
     fields: [
       ['code', 'String', 'único, ej. "L1".."L10", "PAL", "ACC"'],
       ['name', 'String', ''],
@@ -209,8 +159,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'Workstation',
-    purpose:
-      'Puesto físico dentro de un WorkArea. name es el identificador técnico real (usado por DailyAssignment/EmployeeMovement).',
+    purposeKey: 'developerManualData.dataDictionary_Workstation_purpose',
     fields: [
       ['workAreaId', 'String (FK WorkArea)', ''],
       ['name', 'String', 'único por área ([workAreaId, name]) -- identidad técnica real'],
@@ -234,8 +183,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'DailyAssignment',
-    purpose:
-      'Dónde está cada persona HOY. Solo una ACTIVE por empleado/día (índice único parcial).',
+    purposeKey: 'developerManualData.dataDictionary_DailyAssignment_purpose',
     fields: [
       ['employeeId / workstationId', 'FK', ''],
       ['date', 'DateTime @db.Date', ''],
@@ -246,8 +194,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'EmployeeMovement',
-    purpose:
-      'Historial de movimientos -- append-only, la API nunca debe exponer UPDATE/DELETE sobre esta tabla.',
+    purposeKey: 'developerManualData.dataDictionary_EmployeeMovement_purpose',
     fields: [
       ['fromWorkstationId', 'String? (FK)', 'null si es la primera asignación del día'],
       ['toWorkstationId', 'String (FK)', ''],
@@ -256,8 +203,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'PendingMove',
-    purpose:
-      'Solicitud de movimiento hecha por un LIDER, pendiente de aprobación de SUPERVISOR/ADMINISTRADOR.',
+    purposeKey: 'developerManualData.dataDictionary_PendingMove_purpose',
     fields: [
       ['status', 'PendingMoveStatus', 'PENDING | APPROVED | REJECTED'],
       ['requestedByUserId / resolvedByUserId', 'FK User', ''],
@@ -265,7 +211,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'RoleModulePermission',
-    purpose: 'Permiso de un ROL sobre un módulo (dinámico, editable desde Usuarios).',
+    purposeKey: 'developerManualData.dataDictionary_RoleModulePermission_purpose',
     fields: [
       ['role', 'UserRole', ''],
       ['moduleKey', 'String', 'ver shared/moduleRegistry.js'],
@@ -274,8 +220,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'UserModulePermission',
-    purpose:
-      'Override individual de un usuario sobre un módulo. ALLOW/DENY gana sobre el permiso del rol.',
+    purposeKey: 'developerManualData.dataDictionary_UserModulePermission_purpose',
     fields: [
       ['userId / moduleKey', 'FK / String', 'único [userId, moduleKey]'],
       ['effect', 'UserPermissionEffect', 'ALLOW | DENY'],
@@ -283,8 +228,7 @@ export const DATA_DICTIONARY = [
   },
   {
     model: 'RoleModuleAccess',
-    purpose:
-      'LEGACY -- reemplazado en la práctica por RoleModulePermission, se conserva sin usar como respaldo histórico.',
+    purposeKey: 'developerManualData.dataDictionary_RoleModuleAccess_purpose',
     fields: [
       ['role', 'UserRole', 'PK'],
       ['modules', 'String[]', ''],
@@ -293,21 +237,15 @@ export const DATA_DICTIONARY = [
 ]
 
 export const API_MAP = [
-  ['/api/auth/{login,logout,session,change-password}', 'Autenticación -- ver AUTH_OVERVIEW'],
+  ['/api/auth/{login,logout,session,change-password}', 'developerManualData.apiMap_auth'],
+  ['/api/personnel/*', 'developerManualData.apiMap_personnel'],
+  ['/api/users/*', 'developerManualData.apiMap_users'],
+  ['/api/work-areas/[code]/workstations/*', 'developerManualData.apiMap_workAreaWorkstations'],
+  ['/api/role-permissions/*', 'developerManualData.apiMap_rolePermissions'],
   [
-    '/api/personnel/*',
-    'El grupo más pesado: checkin, move, release, roster, area-history, approve/reject-move, employees, suppress/restore-baseline',
+    '/api/permissions/modules/[moduleKey]/users',
+    'developerManualData.apiMap_permissionModuleUsers',
   ],
-  [
-    '/api/users/*',
-    'CRUD de cuentas User + reset-password + permisos individuales (requireModuleAccess("/usuarios"))',
-  ],
-  [
-    '/api/work-areas/[code]/workstations/*',
-    'Configuración de puestos por administrador (crear/editar/eliminar/reordenar)',
-  ],
-  ['/api/role-permissions/*', 'Permisos por rol'],
-  ['/api/permissions/modules/[moduleKey]/users', 'Qué usuarios tienen acceso a un módulo'],
-  ['/api/dashboard/trends', 'Métricas agregadas para el Dashboard'],
-  ['/api/modules', 'Lista de módulos habilitados para el usuario actual (useEffectiveModules)'],
+  ['/api/dashboard/trends', 'developerManualData.apiMap_dashboardTrends'],
+  ['/api/modules', 'developerManualData.apiMap_modules'],
 ]
