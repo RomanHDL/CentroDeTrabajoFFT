@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   Area,
   AreaChart,
@@ -25,29 +26,31 @@ const AXIS_COLOR = 'hsl(var(--muted-foreground))'
    (100% verídico, aunque el volumen sea bajo mientras la app se usa poco
    para movimientos entre líneas). */
 function ChartTooltip({ active, payload, label }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="mb-0.5 text-[12.5px] font-bold">{label}</div>
       <div className="text-xs text-muted-foreground">
-        {payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}
+        {t('movementsHourlyCard.movementCount', { count: payload[0].value })}
       </div>
     </div>
   )
 }
 
 export default function MovementsHourlyCard({ hourlyToday, loading, error, onRetry }) {
+  const { t } = useTranslation('dashboard')
   const lineColor = '#3B82F6'
 
   return (
     <ChartCard
-      title="Movimientos por hora (hoy)"
-      subtitle="Check-ins y movimientos reales registrados durante el turno"
+      title={t('movementsHourlyCard.title')}
+      subtitle={t('movementsHourlyCard.subtitle')}
       loading={loading}
       error={error}
       onRetry={onRetry}
       empty={!error && hourlyToday.length === 0}
-      emptyMessage="Todavía no se ha registrado ningún movimiento hoy."
+      emptyMessage={t('movementsHourlyCard.emptyMessage')}
     >
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">

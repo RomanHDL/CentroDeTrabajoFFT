@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import { Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,29 +35,46 @@ function buildSheet(rows, columns) {
 }
 
 export default function DashboardExportButton({ metrics }) {
+  const { t } = useTranslation('dashboard')
+
   function handleExport() {
     const dateISO = dayjs().format('YYYY-MM-DD')
     const wb = XLSX.utils.book_new()
 
     const resumenWs = buildSheet(
       [
-        { metrica: 'Personal actual', valor: metrics.kpis.personalActual },
-        { metrica: 'Plantilla ideal', valor: metrics.kpis.personalIdeal },
-        { metrica: 'Personal faltante', valor: metrics.kpis.personalFaltante },
-        { metrica: 'Cobertura general (%)', valor: metrics.kpis.coveragePct ?? '' },
         {
-          metrica: 'Líneas operando',
+          metrica: t('dashboardExportButton.metricPersonalActual'),
+          valor: metrics.kpis.personalActual,
+        },
+        {
+          metrica: t('dashboardExportButton.metricPlantillaIdeal'),
+          valor: metrics.kpis.personalIdeal,
+        },
+        {
+          metrica: t('dashboardExportButton.metricPersonalFaltante'),
+          valor: metrics.kpis.personalFaltante,
+        },
+        {
+          metrica: t('dashboardExportButton.metricCoberturaGeneral'),
+          valor: metrics.kpis.coveragePct ?? '',
+        },
+        {
+          metrica: t('dashboardExportButton.metricLineasOperando'),
           valor: `${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`,
         },
-        { metrica: 'Movimientos hoy', valor: metrics.movementsToday },
-        { metrica: 'Movimientos pendientes de aprobación', valor: metrics.pendingMovesCount },
+        { metrica: t('dashboardExportButton.metricMovimientosHoy'), valor: metrics.movementsToday },
+        {
+          metrica: t('dashboardExportButton.metricMovimientosPendientes'),
+          valor: metrics.pendingMovesCount,
+        },
       ],
       [
-        { key: 'metrica', header: 'Métrica', width: 32 },
-        { key: 'valor', header: 'Valor', width: 16 },
+        { key: 'metrica', header: t('dashboardExportButton.metricColumnHeader'), width: 32 },
+        { key: 'valor', header: t('dashboardExportButton.valueColumnHeader'), width: 16 },
       ],
     )
-    XLSX.utils.book_append_sheet(wb, resumenWs, 'Resumen')
+    XLSX.utils.book_append_sheet(wb, resumenWs, t('dashboardExportButton.summarySheetName'))
 
     const coberturaWs = buildSheet(
       metrics.areas.map((a) => ({
@@ -65,27 +83,27 @@ export default function DashboardExportButton({ metrics }) {
         ideal: a.ideal ?? '',
         faltante: a.missing ?? '',
         cobertura: a.coveragePct != null ? `${a.coveragePct}%` : '',
-        estado: a.status || 'Sin plantilla',
+        estado: a.status || t('dashboardExportButton.noTemplateStatus'),
       })),
       [
-        { key: 'area', header: 'Área', width: 28 },
-        { key: 'actual', header: 'Actual', width: 10 },
-        { key: 'ideal', header: 'Ideal', width: 10 },
-        { key: 'faltante', header: 'Faltante', width: 10 },
-        { key: 'cobertura', header: 'Cobertura', width: 12 },
-        { key: 'estado', header: 'Estado', width: 16 },
+        { key: 'area', header: t('dashboardExportButton.areaColumnHeader'), width: 28 },
+        { key: 'actual', header: t('dashboardExportButton.actualColumnHeader'), width: 10 },
+        { key: 'ideal', header: t('dashboardExportButton.idealColumnHeader'), width: 10 },
+        { key: 'faltante', header: t('dashboardExportButton.faltanteColumnHeader'), width: 10 },
+        { key: 'cobertura', header: t('dashboardExportButton.coberturaColumnHeader'), width: 12 },
+        { key: 'estado', header: t('dashboardExportButton.estadoColumnHeader'), width: 16 },
       ],
     )
-    XLSX.utils.book_append_sheet(wb, coberturaWs, 'Áreas')
+    XLSX.utils.book_append_sheet(wb, coberturaWs, t('dashboardExportButton.areasSheetName'))
 
     const turnosWs = buildSheet(
       metrics.shifts.map((s) => ({ turno: s.label, personas: s.count })),
       [
-        { key: 'turno', header: 'Turno', width: 24 },
-        { key: 'personas', header: 'Personas', width: 12 },
+        { key: 'turno', header: t('dashboardExportButton.turnoColumnHeader'), width: 24 },
+        { key: 'personas', header: t('dashboardExportButton.personasColumnHeader'), width: 12 },
       ],
     )
-    XLSX.utils.book_append_sheet(wb, turnosWs, 'Turnos')
+    XLSX.utils.book_append_sheet(wb, turnosWs, t('dashboardExportButton.shiftsSheetName'))
 
     const movements = getMovementsForDate(dateISO)
     if (movements.length > 0) {
@@ -94,19 +112,23 @@ export default function DashboardExportButton({ metrics }) {
           hora: m.movedAt || '',
           empleado: getEmployeeById(m.employeeId)?.name || m.employeeNumber || '',
           tipo:
-            m.type === 'CHECK_IN' ? 'Registro' : m.type === 'RELEASE' ? 'Liberación' : 'Movimiento',
+            m.type === 'CHECK_IN'
+              ? t('dashboardExportButton.movementTypeCheckIn')
+              : m.type === 'RELEASE'
+                ? t('dashboardExportButton.movementTypeRelease')
+                : t('dashboardExportButton.movementTypeMovement'),
           desde: m.fromAreaId ? workCenterById(m.fromAreaId)?.name || m.fromAreaId : '',
           hacia: m.toAreaId ? workCenterById(m.toAreaId)?.name || m.toAreaId : '',
         })),
         [
-          { key: 'hora', header: 'Hora', width: 10 },
-          { key: 'empleado', header: 'Empleado', width: 30 },
-          { key: 'tipo', header: 'Tipo', width: 14 },
-          { key: 'desde', header: 'Desde', width: 24 },
-          { key: 'hacia', header: 'Hacia', width: 24 },
+          { key: 'hora', header: t('dashboardExportButton.horaColumnHeader'), width: 10 },
+          { key: 'empleado', header: t('dashboardExportButton.empleadoColumnHeader'), width: 30 },
+          { key: 'tipo', header: t('dashboardExportButton.tipoColumnHeader'), width: 14 },
+          { key: 'desde', header: t('dashboardExportButton.desdeColumnHeader'), width: 24 },
+          { key: 'hacia', header: t('dashboardExportButton.haciaColumnHeader'), width: 24 },
         ],
       )
-      XLSX.utils.book_append_sheet(wb, movWs, 'Movimientos')
+      XLSX.utils.book_append_sheet(wb, movWs, t('dashboardExportButton.movementsSheetName'))
     }
 
     const attendance = getAttendanceForDate(dateISO)
@@ -119,13 +141,17 @@ export default function DashboardExportButton({ metrics }) {
           turno: a.shift || '',
         })),
         [
-          { key: 'empleado', header: 'Empleado', width: 30 },
-          { key: 'numero', header: 'No. empleado', width: 14 },
-          { key: 'hora', header: 'Hora de entrada', width: 16 },
-          { key: 'turno', header: 'Turno', width: 14 },
+          { key: 'empleado', header: t('dashboardExportButton.empleadoColumnHeader'), width: 30 },
+          {
+            key: 'numero',
+            header: t('dashboardExportButton.employeeNumberColumnHeader'),
+            width: 14,
+          },
+          { key: 'hora', header: t('dashboardExportButton.checkInTimeColumnHeader'), width: 16 },
+          { key: 'turno', header: t('dashboardExportButton.turnoColumnHeader'), width: 14 },
         ],
       )
-      XLSX.utils.book_append_sheet(wb, attWs, 'Asistencia')
+      XLSX.utils.book_append_sheet(wb, attWs, t('dashboardExportButton.attendanceSheetName'))
     }
 
     XLSX.writeFile(wb, `Dashboard_${dateISO}.xlsx`)
@@ -138,7 +164,7 @@ export default function DashboardExportButton({ metrics }) {
       className="h-10 shrink-0 rounded-[20px] px-5 font-semibold normal-case"
     >
       <Download className="h-4 w-4" />
-      Descargar Excel
+      {t('dashboardExportButton.buttonLabel')}
     </Button>
   )
 }

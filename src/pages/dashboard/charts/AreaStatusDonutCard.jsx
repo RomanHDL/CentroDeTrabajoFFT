@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { AREA_STATUS_META } from '../../../data/dashboard/dashboardMetrics'
 import ChartCard from '../ChartCard'
@@ -9,19 +10,21 @@ import ChartCard from '../ChartCard'
    incorrecto (Parte 12 del prompt exige semantica correcta). El centro
    muestra el total de areas clasificadas, no personas. */
 function ChartTooltip({ active, payload }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="text-[12.5px] font-bold">{row.label}</div>
       <div className="text-xs text-muted-foreground">
-        {row.value} área{row.value === 1 ? '' : 's'} ({row.pct.toFixed(0)}%)
+        {t('areaStatusDonutCard.areaCountPct', { count: row.value, pct: row.pct.toFixed(0) })}
       </div>
     </div>
   )
 }
 
 export default function AreaStatusDonutCard({ statusCounts, loading }) {
+  const { t } = useTranslation('dashboard')
   const total = Object.values(statusCounts).reduce((s, v) => s + v, 0)
   const data = Object.values(AREA_STATUS_META).map((meta) => ({
     ...meta,
@@ -31,11 +34,11 @@ export default function AreaStatusDonutCard({ statusCounts, loading }) {
 
   return (
     <ChartCard
-      title="Estado de las áreas"
-      subtitle="Áreas con plantilla ideal definida, por estado de cobertura"
+      title={t('areaStatusDonutCard.title')}
+      subtitle={t('areaStatusDonutCard.subtitle')}
       loading={loading}
       empty={total === 0}
-      emptyMessage="Ninguna área tiene todavía una plantilla ideal definida."
+      emptyMessage={t('areaStatusDonutCard.emptyMessage')}
     >
       <div className="flex flex-1 min-h-0 flex-row gap-4">
         <div className="relative min-w-0 flex-1">
@@ -60,7 +63,9 @@ export default function AreaStatusDonutCard({ statusCounts, loading }) {
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="text-[10px] font-semibold text-muted-foreground">Total</p>
+            <p className="text-[10px] font-semibold text-muted-foreground">
+              {t('areaStatusDonutCard.totalLabel')}
+            </p>
             <p className="text-2xl font-extrabold leading-none">{total}</p>
           </div>
         </div>
@@ -75,7 +80,10 @@ export default function AreaStatusDonutCard({ statusCounts, loading }) {
               <div className="min-w-0">
                 <p className="text-[11.5px] font-bold leading-tight">{row.label}</p>
                 <p className="text-[10.5px] leading-tight text-muted-foreground">
-                  {row.value} área{row.value === 1 ? '' : 's'} ({row.pct.toFixed(0)}%)
+                  {t('areaStatusDonutCard.areaCountPct', {
+                    count: row.value,
+                    pct: row.pct.toFixed(0),
+                  })}
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cardClass, cardHeaderClass, cardHeaderTitleClass } from '@/lib/pageStyles'
 
 /* "Resumen rápido del centro de trabajo" (2026-08-26) -- franja
@@ -28,34 +29,46 @@ function Item({ label, value, loading }) {
 }
 
 export default function DashboardQuickSummaryStrip({ metrics, loading }) {
+  const { t } = useTranslation('dashboard')
   const areasTotal = metrics?.areas?.length ?? 0
-  const coverage = metrics?.kpis?.coveragePct != null ? `${metrics.kpis.coveragePct}%` : 'Sin meta'
+  const coverage =
+    metrics?.kpis?.coveragePct != null
+      ? `${metrics.kpis.coveragePct}%`
+      : t('dashboardQuickSummaryStrip.noCoverageGoal')
 
   return (
     <div className={`${cardClass} mt-4`}>
       <div className={cardHeaderClass}>
-        <p className={cardHeaderTitleClass}>Resumen rápido del centro de trabajo</p>
+        <p className={cardHeaderTitleClass}>{t('dashboardQuickSummaryStrip.headerTitle')}</p>
       </div>
       <div className="flex flex-col sm:flex-row">
-        <Item label="Áreas totales" value={areasTotal} loading={loading} />
         <Item
-          label="Personal en turno"
+          label={t('dashboardQuickSummaryStrip.totalAreasLabel')}
+          value={areasTotal}
+          loading={loading}
+        />
+        <Item
+          label={t('dashboardQuickSummaryStrip.personnelOnShiftLabel')}
           value={metrics?.kpis?.personalActual ?? 0}
           loading={loading}
         />
         <Item
-          label="Personas faltantes"
+          label={t('dashboardQuickSummaryStrip.missingPersonnelLabel')}
           value={metrics?.kpis?.personalFaltante ?? 0}
           loading={loading}
         />
         <Item
-          label="Líneas operativas"
+          label={t('dashboardQuickSummaryStrip.operatingLinesLabel')}
           value={metrics ? `${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}` : '—'}
           loading={loading}
         />
-        <Item label="Cobertura general" value={coverage} loading={loading} />
         <Item
-          label="Movimientos hoy"
+          label={t('dashboardQuickSummaryStrip.overallCoverageLabel')}
+          value={coverage}
+          loading={loading}
+        />
+        <Item
+          label={t('dashboardQuickSummaryStrip.movementsTodayLabel')}
           value={metrics?.dailyMovements?.total ?? 0}
           loading={loading}
         />

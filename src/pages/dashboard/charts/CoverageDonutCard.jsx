@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import ChartCard from '../ChartCard'
 import { colorForIndex } from './chartPalette'
@@ -9,19 +10,21 @@ import { colorForIndex } from './chartPalette'
    tendria sentido sumado). El numero central SI es cobertura real
    (actual/ideal del total, mismo dato que ya usa el resto del sistema). */
 function ChartTooltip({ active, payload }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="mb-0.5 text-[12.5px] font-bold">{row.name}</div>
       <div className="text-xs text-muted-foreground">
-        {row.actual} personas · {row.share.toFixed(1)}% del personal actual
+        {t('coverageDonutCard.tooltipText', { actual: row.actual, share: row.share.toFixed(1) })}
       </div>
     </div>
   )
 }
 
 export default function CoverageDonutCard({ areas, coveragePct, loading }) {
+  const { t } = useTranslation('dashboard')
   const withPeople = areas.filter((a) => a.actual > 0).sort((a, b) => b.actual - a.actual)
   const totalActual = withPeople.reduce((sum, a) => sum + a.actual, 0)
   const data = withPeople.map((a, i) => ({
@@ -32,11 +35,11 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
 
   return (
     <ChartCard
-      title="Cobertura por área"
-      subtitle="Distribución del personal actual entre áreas"
+      title={t('coverageDonutCard.title')}
+      subtitle={t('coverageDonutCard.subtitle')}
       loading={loading}
       empty={data.length === 0}
-      emptyMessage="Todavía no hay personal asignado en ninguna área."
+      emptyMessage={t('coverageDonutCard.emptyMessage')}
     >
       <div className="flex flex-1 min-h-0 flex-row gap-4">
         <div className="relative min-w-0 flex-1">
@@ -62,7 +65,9 @@ export default function CoverageDonutCard({ areas, coveragePct, loading }) {
             <p className="text-2xl font-extrabold leading-none">
               {coveragePct != null ? `${coveragePct}%` : '—'}
             </p>
-            <p className="text-[10px] font-semibold text-muted-foreground">Cobertura total</p>
+            <p className="text-[10px] font-semibold text-muted-foreground">
+              {t('coverageDonutCard.totalCoverageLabel')}
+            </p>
           </div>
         </div>
 

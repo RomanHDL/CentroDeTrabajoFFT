@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import { Cog, RefreshCw, Shield, Sun, Target, Users, UserX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   cardClass,
   metricChipClass,
@@ -53,6 +54,7 @@ import RecentActivityCard from './RecentActivityCard'
    reemplaza PrecisionManufacturingIcon, ya consistente con el resto de
    Fase 6). */
 export default function DashboardPage() {
+  const { t } = useTranslation('dashboard')
   const metrics = useDashboardMetrics()
   const today = dayjs()
   const currentShift = getCurrentShift()
@@ -63,18 +65,18 @@ export default function DashboardPage() {
       <div className={`${cardClass} mb-4`}>
         <div className="flex flex-col items-start gap-3 border-b border-border bg-black/[.015] px-5 py-3.5 dark:bg-white/[.02] md:flex-row md:items-center">
           <div className="flex-1">
-            <p className={pageTitleClass}>Dashboard</p>
-            <p className={pageSubtitleClass}>Resumen general del centro de trabajo</p>
+            <p className={pageTitleClass}>{t('dashboardPage.pageTitle')}</p>
+            <p className={pageSubtitleClass}>{t('dashboardPage.pageSubtitle')}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className={metricChipClass('info')}>
               <Sun className="mr-1 h-4 w-4" />
-              {`Turno: ${currentShift.label}`}
+              {t('dashboardPage.shiftLabel', { shift: currentShift.label })}
             </span>
-            <span
-              className={metricChipClass('default')}
-            >{`Hoy: ${today.format('DD MMMM YYYY')}`}</span>
+            <span className={metricChipClass('default')}>
+              {t('dashboardPage.todayLabel', { date: today.format('DD MMMM YYYY') })}
+            </span>
             <DashboardExportButton metrics={metrics} />
           </div>
         </div>
@@ -87,52 +89,57 @@ export default function DashboardPage() {
         <DashboardExecKpiCard
           icon={<Users />}
           accent="#3B82F6"
-          title="Personal actual"
+          title={t('dashboardPage.kpiPersonalActualTitle')}
           value={metrics.kpis.personalActual}
-          unit="personas en turno"
-          footerLabel="Ideal"
+          unit={t('dashboardPage.kpiPersonalActualUnit')}
+          footerLabel={t('dashboardPage.kpiFooterIdeal')}
           footerValue={metrics.kpis.personalIdeal}
         />
         <DashboardExecKpiCard
           icon={<UserX />}
           accent="#EF4444"
-          title="Personal faltante"
+          title={t('dashboardPage.kpiPersonalFaltanteTitle')}
           value={metrics.kpis.personalFaltante}
-          unit="personas faltantes"
+          unit={t('dashboardPage.kpiPersonalFaltanteUnit')}
           footerLabel={
             metrics.kpis.faltantePct != null
-              ? `${metrics.kpis.faltantePct}% del ideal`
-              : 'Sin plantilla ideal'
+              ? t('dashboardPage.kpiFaltantePctFooter', { pct: metrics.kpis.faltantePct })
+              : t('dashboardPage.kpiNoIdealFooter')
           }
         />
         <DashboardExecKpiCard
           icon={<Target />}
           accent="#A855F7"
-          title="Plantilla ideal"
+          title={t('dashboardPage.kpiPlantillaIdealTitle')}
           value={metrics.kpis.personalIdeal}
-          unit="personas"
-          footerLabel="Total ideal definida"
+          unit={t('dashboardPage.kpiPersonasUnit')}
+          footerLabel={t('dashboardPage.kpiTotalIdealFooter')}
         />
         <DashboardExecKpiCard
           icon={<Cog />}
           accent="#06B6D4"
-          title="Líneas operando"
+          title={t('dashboardPage.kpiLineasOperandoTitle')}
           value={`${metrics.kpis.lineasOperando} / ${metrics.kpis.lineasTotal}`}
-          unit="líneas operativas"
+          unit={t('dashboardPage.kpiLineasUnit')}
           footerLabel={
             metrics.kpis.lineasTotal > 0
-              ? `${Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100)}% de las líneas`
+              ? t('dashboardPage.kpiLineasPctFooter', {
+                  pct: Math.round((metrics.kpis.lineasOperando / metrics.kpis.lineasTotal) * 100),
+                })
               : ''
           }
         />
         <DashboardExecKpiCard
           icon={<Shield />}
           accent="#10B981"
-          title="Cobertura total"
+          title={t('dashboardPage.kpiCoberturaTotalTitle')}
           value={metrics.kpis.coveragePct != null ? `${metrics.kpis.coveragePct}%` : '—'}
-          unit="de cobertura general"
+          unit={t('dashboardPage.kpiCoberturaUnit')}
           progressPct={metrics.kpis.coverageBarPct}
-          footerLabel={`${metrics.totals.realTotal} / ${metrics.totals.idealTotal} del ideal`}
+          footerLabel={t('dashboardPage.kpiCoberturaFooter', {
+            real: metrics.totals.realTotal,
+            ideal: metrics.totals.idealTotal,
+          })}
         />
       </div>
 
@@ -170,7 +177,9 @@ export default function DashboardPage() {
       {/* Ultima actualizacion -- discreto, nunca una card grande */}
       <div className="mt-3 flex items-center justify-end gap-1 opacity-65">
         <RefreshCw className="h-[13px] w-[13px]" />
-        <p className="text-[11px]">Última actualización: {metrics.updatedAt.format('hh:mm A')}</p>
+        <p className="text-[11px]">
+          {t('dashboardPage.lastUpdatedLabel', { time: metrics.updatedAt.format('hh:mm A') })}
+        </p>
       </div>
     </div>
   )
