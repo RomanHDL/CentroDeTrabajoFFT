@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -47,6 +48,7 @@ export default function LineStationConfigDrawer({
   editStationId,
   onChanged,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingDbId, setEditingDbId] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -115,7 +117,7 @@ export default function LineStationConfigDrawer({
 
   async function submitCreate() {
     if (!form.name.trim()) {
-      setError('El nombre de la estación es obligatorio.')
+      setError(t('lineStationConfigDrawer.nameRequired'))
       return
     }
     setBusy(true)
@@ -131,7 +133,7 @@ export default function LineStationConfigDrawer({
       cancelForm()
       onChanged?.()
     } catch (e) {
-      setError(e.message || 'No se pudo crear el puesto.')
+      setError(e.message || t('lineStationConfigDrawer.createError'))
     } finally {
       setBusy(false)
     }
@@ -139,7 +141,7 @@ export default function LineStationConfigDrawer({
 
   async function submitEdit() {
     if (!form.name.trim()) {
-      setError('El nombre de la estación es obligatorio.')
+      setError(t('lineStationConfigDrawer.nameRequired'))
       return
     }
     setBusy(true)
@@ -154,7 +156,7 @@ export default function LineStationConfigDrawer({
       cancelForm()
       onChanged?.()
     } catch (e) {
-      setError(e.message || 'No se pudo guardar el puesto.')
+      setError(e.message || t('lineStationConfigDrawer.saveError'))
     } finally {
       setBusy(false)
     }
@@ -174,7 +176,7 @@ export default function LineStationConfigDrawer({
       await deactivateLineStation(lineId, w.id)
       onChanged?.()
     } catch (e) {
-      setError(e.message || 'No se pudo eliminar el puesto.')
+      setError(e.message || t('lineStationConfigDrawer.deleteError'))
     } finally {
       setBusy(false)
     }
@@ -194,7 +196,7 @@ export default function LineStationConfigDrawer({
       )
       onChanged?.()
     } catch (e) {
-      setError(e.message || 'No se pudo reordenar.')
+      setError(e.message || t('lineStationConfigDrawer.reorderError'))
     } finally {
       setBusy(false)
     }
@@ -205,11 +207,13 @@ export default function LineStationConfigDrawer({
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="left-auto top-0 right-0 bottom-0 flex w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-none sm:w-[460px]">
-        <DialogTitle className="sr-only">Configuración de puestos — {areaName}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('lineStationConfigDrawer.dialogTitle', { areaName })}
+        </DialogTitle>
 
         <div className="flex items-center gap-2 border-b border-border p-4">
           <div className="min-w-0 flex-1">
-            <p className="text-base font-extrabold">Configuración de puestos</p>
+            <p className="text-base font-extrabold">{t('lineStationConfigDrawer.headerTitle')}</p>
             <p className="truncate text-[12.5px] text-muted-foreground">{areaName}</p>
           </div>
           <button
@@ -237,33 +241,34 @@ export default function LineStationConfigDrawer({
 
           {confirmTarget && (
             <div className="flex flex-col gap-3">
-              <p className="text-[14px] font-extrabold">Eliminar "{confirmTarget.name}"</p>
+              <p className="text-[14px] font-extrabold">
+                {t('lineStationConfigDrawer.deleteConfirmTitle', { name: confirmTarget.name })}
+              </p>
               {confirmTarget.occupants?.length > 0 ? (
                 <Alert className={alertToneClass('warning')}>
                   <p className="mb-1 text-[13px] font-bold">
-                    Este puesto tiene a{' '}
-                    {confirmTarget.occupants.length === 1
-                      ? '1 persona asignada'
-                      : `${confirmTarget.occupants.length} personas asignadas`}
-                    :
+                    {t('lineStationConfigDrawer.occupantsWarning', {
+                      count: confirmTarget.occupants.length,
+                    })}
                   </p>
                   <div className="mb-1.5 flex flex-col gap-0.5">
                     {confirmTarget.occupants.map((o) => (
                       <p key={o.id} className="text-[12.5px]">
-                        • {o.employee?.name || 'Empleado'}
+                        • {o.employee?.name || t('lineStationConfigDrawer.employeeFallback')}
                       </p>
                     ))}
                   </div>
                   <p className="text-[12.5px]">
-                    Al eliminar este puesto,{' '}
-                    {confirmTarget.occupants.length === 1 ? 'pasará' : 'pasarán'} a{' '}
-                    <b>Personal sin estación</b> dentro de esta línea, sin perder su asignación real
-                    ni su historial.
+                    {t('lineStationConfigDrawer.willMoveNotice', {
+                      count: confirmTarget.occupants.length,
+                    })}{' '}
+                    <b>{t('lineStationConfigDrawer.noStationLabel')}</b>{' '}
+                    {t('lineStationConfigDrawer.willMoveSuffix')}
                   </p>
                 </Alert>
               ) : (
                 <p className="text-[12.5px] text-muted-foreground">
-                  Este puesto está disponible, no tiene personal asignado.
+                  {t('lineStationConfigDrawer.availableNotice')}
                 </p>
               )}
               <div className="border-t border-border" />
@@ -274,7 +279,7 @@ export default function LineStationConfigDrawer({
                   disabled={busy}
                   className="flex-1 font-bold"
                 >
-                  Cancelar
+                  {t('lineStationConfigDrawer.cancelButton')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -282,7 +287,7 @@ export default function LineStationConfigDrawer({
                   onClick={confirmDeactivate}
                   className="flex-1 font-bold"
                 >
-                  Eliminar puesto
+                  {t('lineStationConfigDrawer.deletePosButton')}
                 </Button>
               </div>
             </div>
@@ -300,7 +305,9 @@ export default function LineStationConfigDrawer({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-bold">{w.name}</p>
                         <p className="truncate text-[11.5px] text-muted-foreground">
-                          Rol requerido: {w.requiredRole || '—'}
+                          {t('lineStationConfigDrawer.requiredRoleLine', {
+                            role: w.requiredRole || '—',
+                          })}
                         </p>
                         {w.category && (
                           <span className={cn(metricChipClass('default'), 'mt-1')}>
@@ -345,13 +352,13 @@ export default function LineStationConfigDrawer({
                 ))}
                 {sorted.length === 0 && (
                   <p className="py-4 text-center text-[12.5px] text-muted-foreground">
-                    Esta línea todavía no tiene puestos configurados.
+                    {t('lineStationConfigDrawer.noStationsMessage')}
                   </p>
                 )}
               </div>
               <Button variant="outline" onClick={startCreate} className="w-full font-bold">
                 <Plus className="h-4 w-4" />
-                Crear nuevo puesto
+                {t('lineStationConfigDrawer.createStationButton')}
               </Button>
             </>
           )}
@@ -359,10 +366,12 @@ export default function LineStationConfigDrawer({
           {formOpen && (
             <div className="flex flex-col gap-3">
               <p className="text-[14px] font-extrabold">
-                {creating ? 'Nuevo puesto' : 'Editar puesto'}
+                {creating
+                  ? t('lineStationConfigDrawer.newStationTitle')
+                  : t('lineStationConfigDrawer.editStationTitle')}
               </p>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="station-name">Nombre de la estación</Label>
+                <Label htmlFor="station-name">{t('lineStationConfigDrawer.nameLabel')}</Label>
                 <Input
                   id="station-name"
                   value={form.name}
@@ -370,7 +379,7 @@ export default function LineStationConfigDrawer({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="station-role">Rol requerido</Label>
+                <Label htmlFor="station-role">{t('lineStationConfigDrawer.roleLabel')}</Label>
                 <Input
                   id="station-role"
                   value={form.requiredRoleLabel}
@@ -378,7 +387,9 @@ export default function LineStationConfigDrawer({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="station-category">Categoría</Label>
+                <Label htmlFor="station-category">
+                  {t('lineStationConfigDrawer.categoryLabel')}
+                </Label>
                 <Select
                   value={form.category || NO_CATEGORY}
                   onValueChange={(v) =>
@@ -389,10 +400,12 @@ export default function LineStationConfigDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
-                    {LINE_VISUAL_TYPE_ORDER.map((t) => (
-                      <SelectItem key={t.key} value={t.key}>
-                        {t.label}
+                    <SelectItem value={NO_CATEGORY}>
+                      {t('lineStationConfigDrawer.noCategoryOption')}
+                    </SelectItem>
+                    {LINE_VISUAL_TYPE_ORDER.map((vt) => (
+                      <SelectItem key={vt.key} value={vt.key}>
+                        {vt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -400,7 +413,9 @@ export default function LineStationConfigDrawer({
               </div>
               {creating ? (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="station-quantity">Cantidad de posiciones</Label>
+                  <Label htmlFor="station-quantity">
+                    {t('lineStationConfigDrawer.quantityLabel')}
+                  </Label>
                   <Input
                     id="station-quantity"
                     type="number"
@@ -410,12 +425,14 @@ export default function LineStationConfigDrawer({
                     onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                   />
                   <p className="text-[12px] text-muted-foreground">
-                    Si es mayor a 1, se crean posiciones numeradas (ej. "Montaje", "Montaje 2"...).
+                    {t('lineStationConfigDrawer.quantityHint')}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="station-capacity">Capacidad (personas simultáneas)</Label>
+                  <Label htmlFor="station-capacity">
+                    {t('lineStationConfigDrawer.capacityLabel')}
+                  </Label>
                   <Input
                     id="station-capacity"
                     type="number"
@@ -433,14 +450,16 @@ export default function LineStationConfigDrawer({
                   disabled={busy}
                   className="flex-1 font-bold"
                 >
-                  Cancelar
+                  {t('lineStationConfigDrawer.cancelButton')}
                 </Button>
                 <Button
                   disabled={busy}
                   onClick={creating ? submitCreate : submitEdit}
                   className="flex-1 font-bold"
                 >
-                  {creating ? 'Crear puesto' : 'Guardar cambios'}
+                  {creating
+                    ? t('lineStationConfigDrawer.createButton')
+                    : t('lineStationConfigDrawer.saveButton')}
                 </Button>
               </div>
             </div>

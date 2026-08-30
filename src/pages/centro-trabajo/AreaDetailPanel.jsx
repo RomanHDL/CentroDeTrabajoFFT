@@ -1,5 +1,6 @@
 import { ChevronRight, Users2 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { sectionTitleClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
@@ -15,8 +16,13 @@ import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import EmployeeAvatar from './EmployeeAvatar'
 
 function StaffingLine({ staffing }) {
+  const { t } = useTranslation('centroTrabajo')
   if (staffing.ideal == null) {
-    return <p className="mb-4 text-[11.5px] text-muted-foreground">Sin plantilla definida</p>
+    return (
+      <p className="mb-4 text-[11.5px] text-muted-foreground">
+        {t('areaDetailPanel.noStaffingDefined')}
+      </p>
+    )
   }
   const complete = staffing.status === 'COMPLETA'
   const missing = staffing.ideal - staffing.real
@@ -31,7 +37,9 @@ function StaffingLine({ staffing }) {
         {staffing.real} / {staffing.ideal}
       </span>
       <p className={cn('text-[11.5px] font-bold', complete ? 'text-emerald-500' : 'text-red-500')}>
-        {complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
+        {complete
+          ? t('areaDetailPanel.complete')
+          : t('areaDetailPanel.missingCount', { count: missing })}
       </p>
     </div>
   )
@@ -40,6 +48,7 @@ function StaffingLine({ staffing }) {
 const SAMPLE_LIMIT = 8
 
 function StatusChip({ hasPeople }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <span
       className={cn(
@@ -49,15 +58,16 @@ function StatusChip({ hasPeople }) {
           : 'border-slate-400/[0.33] bg-slate-400/[0.13] text-slate-500',
       )}
     >
-      {hasPeople ? 'Con personal' : 'Sin personal hoy'}
+      {hasPeople ? t('areaDetailPanel.hasStaff') : t('areaDetailPanel.noStaffToday')}
     </span>
   )
 }
 
 function PendingEmployeeNumberNote() {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <p className="mt-4 text-[10.5px] leading-[1.5] text-muted-foreground">
-      Números de empleado pendientes: BASE todavía no incluye esa columna.
+      {t('areaDetailPanel.pendingEmployeeNumberNote')}
     </p>
   )
 }
@@ -104,6 +114,7 @@ function PersonRow({ person, secondary, onClickSecondary }) {
    lateral/inferior) -- aqui solo se renderiza el contenido, igual
    que antes. */
 export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDrawer }) {
+  const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const [showAllFft, setShowAllFft] = useState(false)
   const [showAllPeople, setShowAllPeople] = useState(false)
@@ -113,8 +124,8 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
       <div className="p-5">
         <EmptyState
           compact
-          title="Selecciona un área"
-          description="Haz click en cualquier zona del layout para ver quién trabaja ahí."
+          title={t('areaDetailPanel.selectAreaTitle')}
+          description={t('areaDetailPanel.selectAreaDescription')}
         />
       </div>
     )
@@ -126,8 +137,8 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         <p className="mb-3 text-[17px] font-extrabold">{selection.label}</p>
         <EmptyState
           compact
-          title="Sin datos de personal todavía"
-          description="Esta zona aparece en el plano real, pero todavía no hay una fuente de personal conectada a ella."
+          title={t('areaDetailPanel.noDataTitle')}
+          description={t('areaDetailPanel.noDataDescription')}
         />
       </div>
     )
@@ -150,11 +161,13 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         </div>
 
         <p className="text-[10.5px] font-bold uppercase tracking-[0.5px] text-muted-foreground">
-          Total de personas
+          {t('areaDetailPanel.totalPeople')}
         </p>
         <div className="mt-0.5 flex items-center gap-2">
           <Users2 className="h-6 w-6 text-blue-500" />
-          <p className="text-[22px] font-extrabold">{people.length} personas</p>
+          <p className="text-[22px] font-extrabold">
+            {t('areaDetailPanel.peopleCount', { count: people.length })}
+          </p>
         </div>
         <div className="mb-4 flex items-center gap-2">
           <span
@@ -173,12 +186,14 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
               fftComplete ? 'text-emerald-500' : 'text-red-500',
             )}
           >
-            {fftComplete ? 'Completa' : fftMissing === 1 ? 'Falta 1' : `Faltan ${fftMissing}`}
+            {fftComplete
+              ? t('areaDetailPanel.complete')
+              : t('areaDetailPanel.missingCount', { count: fftMissing })}
           </p>
         </div>
 
         <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>
-          Líneas ({selection.areaIds.length})
+          {t('areaDetailPanel.linesCount', { count: selection.areaIds.length })}
         </p>
         <div className="mb-4 grid grid-cols-2 gap-2">
           {selection.areaIds.map((id) => {
@@ -206,10 +221,11 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         </div>
 
         <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>
-          Personal asignado {showAllFft ? '' : '(muestra)'}
+          {t('areaDetailPanel.assignedPersonnel')}{' '}
+          {showAllFft ? '' : t('areaDetailPanel.sampleSuffix')}
         </p>
         {people.length === 0 ? (
-          <EmptyState compact title="Sin personal en el Excel para FFT" />
+          <EmptyState compact title={t('areaDetailPanel.emptyFftTitle')} />
         ) : (
           <div className="flex flex-col gap-2.5">
             {visible.map((p) => (
@@ -229,7 +245,9 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
             onClick={() => setShowAllFft((v) => !v)}
             className="mt-2 font-bold"
           >
-            {showAllFft ? 'Ver menos' : `Ver todo el personal (${people.length})`}
+            {showAllFft
+              ? t('areaDetailPanel.showLess')
+              : t('areaDetailPanel.showAllPeopleButton', { count: people.length })}
           </Button>
         )}
 
@@ -255,7 +273,7 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
             onClick={() => onSelectArea('__FFT__')}
             className="text-[11.5px] font-bold text-muted-foreground hover:text-blue-500"
           >
-            FFT
+            {t('areaDetailPanel.fftBreadcrumb')}
           </button>
           <ChevronRight className="h-[14px] w-[14px] text-muted-foreground" />
         </div>
@@ -266,17 +284,21 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
       </div>
 
       <p className="text-[10.5px] font-bold uppercase tracking-[0.5px] text-muted-foreground">
-        Total de personas
+        {t('areaDetailPanel.totalPeople')}
       </p>
       <div className="mb-2 mt-0.5 flex items-center gap-2">
         <Users2 className="h-6 w-6 text-blue-500" />
-        <p className="text-[22px] font-extrabold">{people.length} personas</p>
+        <p className="text-[22px] font-extrabold">
+          {t('areaDetailPanel.peopleCount', { count: people.length })}
+        </p>
       </div>
       <StaffingLine staffing={staffing} />
 
-      <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>Personal asignado</p>
+      <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>
+        {t('areaDetailPanel.assignedPersonnel')}
+      </p>
       {people.length === 0 ? (
-        <EmptyState compact title="Sin personal en el Excel para esta área" />
+        <EmptyState compact title={t('areaDetailPanel.emptyAreaTitle')} />
       ) : (
         <div className="flex flex-col gap-2.5">
           {visible.map((p) => (
@@ -291,7 +313,9 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
           onClick={() => setShowAllPeople((v) => !v)}
           className="mt-2 font-bold"
         >
-          {showAllPeople ? 'Ver menos' : `Ver todo el personal (${people.length})`}
+          {showAllPeople
+            ? t('areaDetailPanel.showLess')
+            : t('areaDetailPanel.showAllPeopleButton', { count: people.length })}
         </Button>
       )}
 
@@ -300,7 +324,7 @@ export default function AreaDetailPanel({ selection, onSelectArea, onOpenFullDra
         onClick={() => onOpenFullDrawer(area.id)}
         className="mt-4 w-full rounded-[20px] font-bold"
       >
-        Asignar empleado
+        {t('areaDetailPanel.assignEmployeeButton')}
       </Button>
 
       <div className="my-4 border-t border-border" />

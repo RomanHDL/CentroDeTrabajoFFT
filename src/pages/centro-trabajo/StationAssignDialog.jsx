@@ -1,5 +1,6 @@
 import { CheckCircle2, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -38,6 +39,7 @@ import EmployeeAvatar from './EmployeeAvatar'
    se refresca sola, sin F5.
    ───────────────────────────────────────────── */
 export default function StationAssignDialog({ open, onClose, areaId, station, onDone }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const [query, setQuery] = useState('')
   const [showAllSuggested, setShowAllSuggested] = useState(false)
@@ -124,7 +126,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
       setConflictAssignment(res.assignment)
       setStep('CONFLICT')
     } else {
-      setError(res.message || 'No se pudo asignar. Intenta de nuevo.')
+      setError(res.message || t('stationAssignDialog.assignErrorFallback'))
     }
     setSubmitting(false)
   }
@@ -144,7 +146,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
       setStep('SUCCESS')
       onDone?.()
     } else {
-      setError(res.message || 'No se pudo mover al empleado. Intenta de nuevo.')
+      setError(res.message || t('stationAssignDialog.moveErrorFallback'))
     }
     setSubmitting(false)
   }
@@ -155,15 +157,21 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
         {step === 'SEARCH' && (
           <>
             <DialogHeader>
-              <DialogTitle>Asignar personal — {station.name}</DialogTitle>
+              <DialogTitle>
+                {t('stationAssignDialog.title', { stationName: station.name })}
+              </DialogTitle>
             </DialogHeader>
             <div className="px-6 pb-2">
               <div className="mb-4 flex flex-wrap gap-2">
-                <span className={metricChipClass('default')}>Estación: {station.name}</span>
-                <span className={metricChipClass('info')}>
-                  Rol requerido: {station.requiredRole}
+                <span className={metricChipClass('default')}>
+                  {t('stationAssignDialog.stationLabel')} {station.name}
                 </span>
-                <span className={metricChipClass('warn')}>Disponible</span>
+                <span className={metricChipClass('info')}>
+                  {t('stationAssignDialog.roleLabel')} {station.requiredRole}
+                </span>
+                <span className={metricChipClass('warn')}>
+                  {t('stationAssignDialog.availableChip')}
+                </span>
               </div>
 
               <div className="relative mb-5">
@@ -172,7 +180,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar por número de empleado o nombre..."
+                  placeholder={t('stationAssignDialog.searchPlaceholder')}
                   className="h-auto rounded-[25px] py-3 pl-9 text-[17px]"
                 />
               </div>
@@ -182,13 +190,13 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
               {!query.trim() && (
                 <>
                   <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                    Personal sugerido para {station.requiredRole}
+                    {t('stationAssignDialog.suggestedForRole', { role: station.requiredRole })}
                   </p>
                   {suggested.length === 0 ? (
                     <EmptyState
                       compact
-                      title="Sin candidatos"
-                      description="Nadie presente hoy tiene esta habilidad registrada todavía."
+                      title={t('stationAssignDialog.noCandidatesTitle')}
+                      description={t('stationAssignDialog.noCandidatesDescription')}
                     />
                   ) : (
                     <div className="flex flex-col gap-2">
@@ -210,7 +218,9 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                     onClick={() => setShowAllSuggested((v) => !v)}
                     className="mt-2 font-bold"
                   >
-                    {showAllSuggested ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
+                    {showAllSuggested
+                      ? t('stationAssignDialog.hideUnregisteredButton')
+                      : t('stationAssignDialog.moreOptionsButton')}
                   </Button>
                 </>
               )}
@@ -219,8 +229,8 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                 (searchResults.length === 0 ? (
                   <EmptyState
                     compact
-                    title="No se encontró personal"
-                    description="No encontramos empleados que coincidan con esta búsqueda."
+                    title={t('stationAssignDialog.noResultsTitle')}
+                    description={t('stationAssignDialog.noResultsDescription')}
                   />
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -239,7 +249,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
             </div>
             <div className="flex justify-end gap-2 px-6 pb-5">
               <Button variant="ghost" onClick={onClose}>
-                Cerrar
+                {t('stationAssignDialog.closeButton')}
               </Button>
             </div>
           </>
@@ -248,42 +258,44 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
         {step === 'CONFIRM' && selected && (
           <>
             <DialogHeader>
-              <DialogTitle>Confirmar asignación</DialogTitle>
+              <DialogTitle>{t('stationAssignDialog.confirmTitle')}</DialogTitle>
             </DialogHeader>
             <div className="px-6 pb-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.5px] text-muted-foreground">
-                Empleado seleccionado
+                {t('stationAssignDialog.selectedEmployeeLabel')}
               </p>
               <div className="my-3 flex items-center gap-3">
                 <EmployeeAvatar employee={selected} size={44} />
                 <div>
                   <p className="text-[16px] font-extrabold">{selected.name}</p>
                   <p className="text-[12.5px] text-muted-foreground">
-                    Empleado #{selected.employeeNumber}
+                    {t('stationAssignDialog.employeeNumberLine', {
+                      employeeNumber: selected.employeeNumber,
+                    })}
                   </p>
                 </div>
               </div>
               <div className="my-3 border-t border-border" />
               <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.5px] text-muted-foreground">
-                Asignación
+                {t('stationAssignDialog.assignmentLabel')}
               </p>
               <p className="text-[14px]">
-                Estación: <b>{station.name}</b>
+                {t('stationAssignDialog.stationLabel')} <b>{station.name}</b>
               </p>
               <p className="text-[14px]">
-                Rol requerido: <b>{station.requiredRole}</b>
+                {t('stationAssignDialog.roleLabel')} <b>{station.requiredRole}</b>
               </p>
               <p className="text-[14px]">
-                Área: <b>{areaName}</b>
+                {t('stationAssignDialog.areaLabel')} <b>{areaName}</b>
               </p>
               {error && <Alert className={cn(alertToneClass('error'), 'mt-4')}>{error}</Alert>}
             </div>
             <div className="flex justify-end gap-2 px-6 pb-5">
               <Button variant="ghost" onClick={() => setStep('SEARCH')}>
-                Cancelar
+                {t('stationAssignDialog.cancelButton')}
               </Button>
               <Button disabled={submitting} onClick={handleAssign} className="font-bold">
-                Asignar a {station.name}
+                {t('stationAssignDialog.assignToStationButton', { stationName: station.name })}
               </Button>
             </div>
           </>
@@ -292,38 +304,44 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
         {step === 'CONFLICT' && selected && conflictAssignment && (
           <>
             <DialogHeader>
-              <DialogTitle>Este empleado ya está asignado</DialogTitle>
+              <DialogTitle>{t('stationAssignDialog.conflictTitle')}</DialogTitle>
             </DialogHeader>
             <div className="px-6 pb-2">
               <p className="text-[16px] font-extrabold">{selected.name}</p>
               <p className="mb-3 text-[12.5px] text-muted-foreground">
-                Empleado #{selected.employeeNumber}
+                {t('stationAssignDialog.employeeNumberLine', {
+                  employeeNumber: selected.employeeNumber,
+                })}
               </p>
               <div className="rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
-                <p className="text-[11px] font-bold uppercase text-muted-foreground">Actualmente</p>
+                <p className="text-[11px] font-bold uppercase text-muted-foreground">
+                  {t('stationAssignDialog.currentlyLabel')}
+                </p>
                 <p className="font-bold">
                   {workCenterById(conflictAssignment.areaId)?.name || conflictAssignment.areaId} —{' '}
                   {conflictAssignment.stationId}
                 </p>
                 <p className="text-[12.5px] text-muted-foreground">
-                  Entrada: {conflictAssignment.checkInAt}
+                  {t('stationAssignDialog.checkInLine', {
+                    checkInAt: conflictAssignment.checkInAt,
+                  })}
                 </p>
               </div>
               {conflictAssignment.areaId === areaId &&
               conflictAssignment.stationId === station.name ? (
                 <Alert className={cn(alertToneClass('info'), 'mt-4')}>
-                  Ya está asignado exactamente a esta estación.
+                  {t('stationAssignDialog.alreadyAtStationMessage')}
                 </Alert>
               ) : (
                 <p className="mt-4 text-[13px] text-muted-foreground">
-                  Nueva ubicación: <b>{areaName}</b> — {station.name}
+                  {t('stationAssignDialog.newLocationLabel')} <b>{areaName}</b> — {station.name}
                 </p>
               )}
               {error && <Alert className={cn(alertToneClass('error'), 'mt-4')}>{error}</Alert>}
             </div>
             <div className="flex flex-wrap justify-end gap-2 px-6 pb-5">
               <Button variant="ghost" onClick={() => setStep('SEARCH')}>
-                Cancelar
+                {t('stationAssignDialog.cancelButton')}
               </Button>
               <Button
                 disabled={
@@ -334,7 +352,7 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
                 onClick={handleMove}
                 className="font-bold"
               >
-                Mover a esta estación
+                {t('stationAssignDialog.moveToStationButton')}
               </Button>
             </div>
           </>
@@ -343,13 +361,15 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
         {step === 'SUCCESS' && result && (
           <div className="px-6 pb-6 pt-8 text-center">
             <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
-            <p className="mb-2 text-[16px] font-extrabold">Asignado correctamente</p>
+            <p className="mb-2 text-[16px] font-extrabold">
+              {t('stationAssignDialog.successMessage')}
+            </p>
             <p className="text-[17px] font-extrabold">{result.employee.name}</p>
             <p className="mb-5 text-[12.5px] text-muted-foreground">
               #{result.employee.employeeNumber} · {station.name}
             </p>
             <Button onClick={onClose} className="font-bold">
-              Cerrar
+              {t('stationAssignDialog.closeButton')}
             </Button>
           </div>
         )}
@@ -359,11 +379,12 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
 }
 
 function ResultRow({ employee, compatible, present, assignment, onSelect }) {
+  const { t } = useTranslation('centroTrabajo')
   const statusLabel = assignment
-    ? `Asignado — ${assignment.stationId}`
+    ? t('stationAssignDialog.assignedAtStation', { stationId: assignment.stationId })
     : present
-      ? 'Disponible hoy'
-      : 'No registrado hoy'
+      ? t('stationAssignDialog.availableTodayStatus')
+      : t('stationAssignDialog.notRegisteredTodayStatus')
   const statusColor = assignment ? '#B45309' : present ? '#047857' : null
   return (
     <div className="flex items-center gap-3 rounded-[20px] border border-border p-2.5">
@@ -371,8 +392,8 @@ function ResultRow({ employee, compatible, present, assignment, onSelect }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-bold">{employee.name}</p>
         <p className="text-[11.5px] text-muted-foreground">
-          Empleado #{employee.employeeNumber}
-          {compatible ? ' · Habilidad registrada' : ''}
+          {t('stationAssignDialog.employeeNumberLine', { employeeNumber: employee.employeeNumber })}
+          {compatible ? t('stationAssignDialog.compatibleSkillSuffix') : ''}
         </p>
         <p
           className={cn('text-[11px] font-bold', !statusColor && 'text-muted-foreground')}
@@ -382,7 +403,7 @@ function ResultRow({ employee, compatible, present, assignment, onSelect }) {
         </p>
       </div>
       <Button variant="outline" onClick={onSelect} className="h-10 min-w-24 shrink-0 font-bold">
-        Seleccionar
+        {t('stationAssignDialog.selectButton')}
       </Button>
     </div>
   )
