@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +21,7 @@ import EmployeeAvatar from './EmployeeAvatar'
    nunca un tercer camino de asignacion.
    ───────────────────────────────────────────── */
 export default function EmployeeAssignSearchBar({ areaId }) {
+  const { t } = useTranslation('centroTrabajo')
   const [query, setQuery] = useState('')
   usePersonnelVersion()
   const dnd = useDndAssign()
@@ -36,7 +38,7 @@ export default function EmployeeAssignSearchBar({ areaId }) {
       <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar por número de empleado o nombre..."
+        placeholder={t('employeeAssignSearchBar.searchPlaceholder')}
         className="h-auto rounded-[25px] py-[11.2px] pl-9 text-[15px]"
       />
 
@@ -44,7 +46,7 @@ export default function EmployeeAssignSearchBar({ areaId }) {
         <div className="absolute z-20 mt-1 max-h-[320px] w-full overflow-y-auto rounded-[20px] border border-border bg-card shadow-lg">
           {results.length === 0 ? (
             <p className="p-4 text-[13px] text-muted-foreground">
-              No se encontró personal activo con ese criterio.
+              {t('employeeAssignSearchBar.noResults')}
             </p>
           ) : (
             <div className="divide-y divide-border">
@@ -63,13 +65,15 @@ export default function EmployeeAssignSearchBar({ areaId }) {
                       <p className="text-[11.5px] text-muted-foreground">
                         {numberLabel} ·{' '}
                         {effectiveAreaId
-                          ? `Actualmente: ${workCenterById(effectiveAreaId)?.name || effectiveAreaId}`
-                          : 'Sin asignación'}
+                          ? t('employeeAssignSearchBar.currentlyAt', {
+                              areaName: workCenterById(effectiveAreaId)?.name || effectiveAreaId,
+                            })
+                          : t('employeeAssignSearchBar.unassigned')}
                       </p>
                     </div>
                     {sameArea ? (
                       <Badge variant="secondary" className="font-bold">
-                        Ya está aquí
+                        {t('employeeAssignSearchBar.alreadyHereBadge')}
                       </Badge>
                     ) : (
                       <Button
@@ -78,7 +82,9 @@ export default function EmployeeAssignSearchBar({ areaId }) {
                         onClick={() => handlePick(employee)}
                         className="shrink-0 font-bold"
                       >
-                        {current ? 'Mover aquí' : 'Asignar'}
+                        {current
+                          ? t('employeeAssignSearchBar.moveHereButton')
+                          : t('employeeAssignSearchBar.assignButton')}
                       </Button>
                     )}
                   </div>

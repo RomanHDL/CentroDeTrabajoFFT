@@ -1,17 +1,22 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getMovementsForDate, todayISO } from '../../data/personnel/repository'
 import { workCenterById } from '../../data/production/catalog'
 import { EmptyState } from '../../ui'
 
-const MOVEMENT_LABEL = { CHECK_IN: 'Entrada', MOVE: 'Movimiento', RELEASE: 'Puesto liberado' }
-
 function areaLabel(id) {
   return workCenterById(id)?.name || id || '—'
 }
 
 export default function LineHistoryDialog({ lineId, open, onClose }) {
+  const { t } = useTranslation('centroTrabajo')
+  const MOVEMENT_LABEL = {
+    CHECK_IN: t('lineHistoryDialog.movementCheckIn'),
+    MOVE: t('lineHistoryDialog.movementMove'),
+    RELEASE: t('lineHistoryDialog.movementRelease'),
+  }
   // `open` fuerza refrescar los movimientos (getMovementsForDate) cada vez que el
   // dialogo se reabre, aunque no se lea dentro del callback -- comportamiento
   // original preservado tal cual.
@@ -27,14 +32,16 @@ export default function LineHistoryDialog({ lineId, open, onClose }) {
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Historial de {workCenterById(lineId)?.name || lineId} — hoy</DialogTitle>
+          <DialogTitle>
+            {t('lineHistoryDialog.title', { lineName: workCenterById(lineId)?.name || lineId })}
+          </DialogTitle>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto border-y border-border px-6 py-4">
           {movements.length === 0 ? (
             <EmptyState
               compact
-              title="Sin movimientos hoy"
-              description="No ha habido entradas ni movimientos en esta área hoy."
+              title={t('lineHistoryDialog.emptyTitle')}
+              description={t('lineHistoryDialog.emptyDescription')}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -50,7 +57,7 @@ export default function LineHistoryDialog({ lineId, open, onClose }) {
                     </p>
                     <p className="text-[12.5px] text-muted-foreground">
                       {m.fromAreaId
-                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
+                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : t('lineHistoryDialog.noAssignment')}`
                         : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
                     </p>
                   </div>
@@ -61,7 +68,7 @@ export default function LineHistoryDialog({ lineId, open, onClose }) {
         </div>
         <div className="flex justify-end gap-2 px-6 py-4">
           <Button variant="ghost" onClick={onClose}>
-            Cerrar
+            {t('lineHistoryDialog.closeButton')}
           </Button>
         </div>
       </DialogContent>

@@ -1,5 +1,6 @@
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useOutletContext } from 'react-router-dom'
 import BrandLogo from '@/components/BrandLogo'
 import { Button } from '@/components/ui/button'
@@ -16,12 +17,15 @@ import LineasTab from './LineasTab'
 import PersonalDeHoyTab from './PersonalDeHoyTab'
 import { useSelectedWorkCenter } from './useSelectedWorkCenter'
 
+// Fase 4 (i18n): `labelKey` en vez de un `label` literal -- mismo patron ya
+// usado en Sidebar.jsx/NAV_ITEMS. Las claves reales viven en
+// public/locales/{lng}/centroTrabajo.json bajo "centroTrabajoPage".
 const TABS = [
-  { key: 'areas', label: 'Áreas de trabajo' },
-  { key: 'lineas', label: 'Líneas' },
-  { key: 'estaciones', label: 'Estaciones' },
-  { key: 'personal', label: 'Personal' },
-  { key: 'bajas', label: 'Bajas' },
+  { key: 'areas', labelKey: 'centroTrabajoPage.tabAreas' },
+  { key: 'lineas', labelKey: 'centroTrabajoPage.tabLineas' },
+  { key: 'estaciones', labelKey: 'centroTrabajoPage.tabEstaciones' },
+  { key: 'personal', labelKey: 'centroTrabajoPage.tabPersonal' },
+  { key: 'bajas', labelKey: 'centroTrabajoPage.tabBajas' },
 ]
 
 /* Centro de Trabajo = OPERACION. Sin KPIs ejecutivos, sin produccion,
@@ -30,6 +34,7 @@ const TABS = [
    personal, con datos reales (snapshot de BASE + asignacion diaria
    real cuando exista). */
 export default function CentroTrabajoPage() {
+  const { t } = useTranslation('centroTrabajo')
   const [tab, setTab] = useState('areas')
   const {
     workCenterId: selectedLine,
@@ -79,13 +84,13 @@ export default function CentroTrabajoPage() {
           <Tabs value={tab} onValueChange={setTab}>
             <div className="overflow-x-auto">
               <TabsList className="h-auto w-max gap-1 rounded-none bg-transparent p-0">
-                {TABS.map((t) => (
+                {TABS.map((tabDef) => (
                   <TabsTrigger
-                    key={t.key}
-                    value={t.key}
+                    key={tabDef.key}
+                    value={tabDef.key}
                     className="h-[46px] rounded-none border-b-2 border-transparent px-3 text-[13.5px] font-semibold text-muted-foreground data-[state=active]:border-blue-500 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
-                    {t.label}
+                    {t(tabDef.labelKey)}
                   </TabsTrigger>
                 ))}
               </TabsList>

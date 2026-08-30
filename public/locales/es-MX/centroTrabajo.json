@@ -1,0 +1,75 @@
+{
+  "centroTrabajoPage": {
+    "tabAreas": "Áreas de trabajo",
+    "tabLineas": "Líneas",
+    "tabEstaciones": "Estaciones",
+    "tabPersonal": "Personal",
+    "tabBajas": "Bajas"
+  },
+  "registerPersonnelDialog": {
+    "title": "+ Registrar personal"
+  },
+  "suggestedEmployeeCard": {
+    "notRegisteredToday": "No registrado hoy",
+    "assignedIn": "Asignado en {{areaName}}",
+    "available": "Disponible",
+    "assignButton": "Asignar"
+  },
+  "areaStaffSummary": {
+    "title": "Resumen del área",
+    "totalAssigned": "Total asignado",
+    "missingCoverage": "Faltan por cubrir"
+  },
+  "lineHistoryDialog": {
+    "title": "Historial de {{lineName}} — hoy",
+    "movementCheckIn": "Entrada",
+    "movementMove": "Movimiento",
+    "movementRelease": "Puesto liberado",
+    "emptyTitle": "Sin movimientos hoy",
+    "emptyDescription": "No ha habido entradas ni movimientos en esta área hoy.",
+    "noAssignment": "sin asignación",
+    "closeButton": "Cerrar"
+  },
+  "lineVisualLegend": {
+    "hierarchyTitle": "Jerarquía / Tipo de puesto",
+    "stationStateTitle": "Estado de estación",
+    "stationOccupied": "Ocupada",
+    "stationAvailable": "Disponible",
+    "stationCriticalVacancy": "Vacante crítica",
+    "stationUnassigned": "Sin asignación"
+  },
+  "workCenterNavControls": {
+    "previousLabel": "Anterior",
+    "nextLabel": "Siguiente",
+    "noPreviousArea": "No hay área anterior",
+    "noNextArea": "No hay área siguiente"
+  },
+  "employeeAssignSearchBar": {
+    "searchPlaceholder": "Buscar por número de empleado o nombre...",
+    "noResults": "No se encontró personal activo con ese criterio.",
+    "currentlyAt": "Actualmente: {{areaName}}",
+    "unassigned": "Sin asignación",
+    "alreadyHereBadge": "Ya está aquí",
+    "moveHereButton": "Mover aquí",
+    "assignButton": "Asignar"
+  },
+  "employeeSearchField": {
+    "defaultLabel": "Número o nombre de empleado",
+    "searchPlaceholder": "3647 o Román",
+    "noResults": "Sin resultados",
+    "admissionDate": "Ingreso: {{date}}"
+  },
+  "employeeAvailableDetailDialog": {
+    "title": "Detalle del empleado",
+    "employeeNumberLabel": "No. empleado",
+    "statusLabel": "Estado",
+    "availableBadge": "Disponible",
+    "currentAreaLabel": "Área actual",
+    "noAreaAssigned": "Sin área asignada",
+    "shiftLabel": "Turno",
+    "noShiftToday": "Sin turno asignado hoy",
+    "registeredActivityLabel": "Actividad registrada (BASE)",
+    "cancelButton": "Cancelar",
+    "assignButton": "Asignar"
+  }
+}

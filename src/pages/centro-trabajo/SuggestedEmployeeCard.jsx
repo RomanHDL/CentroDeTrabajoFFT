@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cardClass, metricChipClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
@@ -6,13 +7,17 @@ import { workCenterById } from '../../data/production/catalog'
 import EmployeeAvatar from './EmployeeAvatar'
 
 export default function SuggestedEmployeeCard({ candidate, onAssign, disabled }) {
+  const { t } = useTranslation('centroTrabajo')
   const skills = getSkillsForEmployee(candidate.employee.id)
 
   const statusLabel = !candidate.present
-    ? 'No registrado hoy'
+    ? t('suggestedEmployeeCard.notRegisteredToday')
     : candidate.assignment
-      ? `Asignado en ${workCenterById(candidate.assignment.areaId)?.name || candidate.assignment.areaId}`
-      : 'Disponible'
+      ? t('suggestedEmployeeCard.assignedIn', {
+          areaName:
+            workCenterById(candidate.assignment.areaId)?.name || candidate.assignment.areaId,
+        })
+      : t('suggestedEmployeeCard.available')
 
   const statusTone = !candidate.present ? 'default' : candidate.assignment ? 'warn' : 'ok'
 
@@ -37,7 +42,7 @@ export default function SuggestedEmployeeCard({ candidate, onAssign, disabled })
           onClick={() => onAssign(candidate)}
           className="shrink-0 font-bold normal-case"
         >
-          Asignar
+          {t('suggestedEmployeeCard.assignButton')}
         </Button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 /* ─────────────────────────────────────────────
@@ -26,6 +27,7 @@ const BTN_CLASS =
   'flex min-w-0 items-center gap-1 rounded-[10px] border border-border bg-card px-[11px] py-1 text-[12.5px] font-bold leading-[1.3] text-foreground transition-colors hover:border-[#3B82F6] hover:bg-[rgba(59,130,246,.06)] dark:hover:bg-[rgba(59,130,246,.14)] disabled:cursor-not-allowed disabled:border-border disabled:opacity-35'
 
 export default function WorkCenterNavControls({ previous, next, onNavigate }) {
+  const { t } = useTranslation('centroTrabajo')
   useEffect(() => {
     function onKeyDown(e) {
       if (!e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
@@ -55,11 +57,15 @@ export default function WorkCenterNavControls({ previous, next, onNavigate }) {
             className={BTN_CLASS}
           >
             <ChevronLeft className="h-[17px] w-[17px]" />
-            <span className="hidden sm:inline">{previous?.name || 'Anterior'}</span>
-            <span className="sm:hidden">Anterior</span>
+            <span className="hidden sm:inline">
+              {previous?.name || t('workCenterNavControls.previousLabel')}
+            </span>
+            <span className="sm:hidden">{t('workCenterNavControls.previousLabel')}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent>{previous ? previous.name : 'No hay área anterior'}</TooltipContent>
+        <TooltipContent>
+          {previous ? previous.name : t('workCenterNavControls.noPreviousArea')}
+        </TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -69,12 +75,14 @@ export default function WorkCenterNavControls({ previous, next, onNavigate }) {
             onClick={() => next && onNavigate(next.id)}
             className={BTN_CLASS}
           >
-            <span className="hidden sm:inline">{next?.name || 'Siguiente'}</span>
-            <span className="sm:hidden">Siguiente</span>
+            <span className="hidden sm:inline">
+              {next?.name || t('workCenterNavControls.nextLabel')}
+            </span>
+            <span className="sm:hidden">{t('workCenterNavControls.nextLabel')}</span>
             <ChevronRight className="h-[17px] w-[17px]" />
           </button>
         </TooltipTrigger>
-        <TooltipContent>{next ? next.name : 'No hay área siguiente'}</TooltipContent>
+        <TooltipContent>{next ? next.name : t('workCenterNavControls.noNextArea')}</TooltipContent>
       </Tooltip>
     </div>
   )

@@ -1,10 +1,13 @@
 // Andamiaje i18n (MI Stack Reference, sección 10, HARD RULE) -- Fase 4 de
 // la migración de compliance. Trilingüe: en (fallback técnico), es-MX
 // (idioma real del personal de piso), zh-CN. namespaces: common,
-// navigation, auth -- por ahora. Ninguna página se tradujo todavía a
-// propósito (eso pasa página por página cuando se migre a Tailwind, ver
-// plan de migración) -- esto solo prueba el framework end-to-end con el
-// menú de navegación y el login.
+// navigation, auth, centroTrabajo (2026-08-29, primera carpeta real que
+// extrae su contenido -- una clave por archivo fuente, ver
+// public/locales/*/centroTrabajo.json). en/zh-CN de centroTrabajo.json
+// se quedan vacios a proposito hasta que alguien los traduzca de verdad
+// -- fallbackLng='es-MX' hace que cualquier clave faltante en esos 2
+// idiomas se vea en español mientras tanto, nunca una clave cruda ni un
+// texto vacío.
 //
 // Idioma por defecto = es-MX, NO el que detecte el navegador: el personal
 // de piso habla español, y la mayoría de los dispositivos en producción
@@ -18,9 +21,9 @@
 // queda incompleta en otro idioma, es más útil que el texto faltante
 // aparezca en español (el idioma real de la mayoría) que en inglés.
 import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
-import Backend from 'i18next-http-backend'
 import LanguageDetector from 'i18next-browser-languagedetector'
+import Backend from 'i18next-http-backend'
+import { initReactI18next } from 'react-i18next'
 
 i18n
   .use(Backend)
@@ -29,7 +32,7 @@ i18n
   .init({
     fallbackLng: 'es-MX',
     supportedLngs: ['es-MX', 'en', 'zh-CN'],
-    ns: ['common', 'navigation', 'auth'],
+    ns: ['common', 'navigation', 'auth', 'centroTrabajo'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage'],
