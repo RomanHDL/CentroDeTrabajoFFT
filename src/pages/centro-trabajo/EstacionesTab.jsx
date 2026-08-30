@@ -24,6 +24,7 @@ import {
   UserX,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,10 +82,17 @@ import {
    "Sin plantilla definida" en vez de un % falso. */
 
 const STATUS_META = {
-  COMPLETA: { color: '#10B981', label: 'Completa (100% o más)' },
-  PARCIAL: { color: '#F59E0B', label: 'Parcial (1-99%)' },
-  FALTA_PERSONAL: { color: '#EF4444', label: 'Falta personal (0%)' },
-  SIN_PERSONAL: { color: '#94A3B8', label: 'Sin personal' },
+  COMPLETA: { color: '#10B981' },
+  PARCIAL: { color: '#F59E0B' },
+  FALTA_PERSONAL: { color: '#EF4444' },
+  SIN_PERSONAL: { color: '#94A3B8' },
+}
+
+const STATUS_LABEL_KEYS = {
+  COMPLETA: 'estacionesTab.statusCompleteLabel',
+  PARCIAL: 'estacionesTab.statusPartialLabel',
+  FALTA_PERSONAL: 'estacionesTab.statusMissingLabel',
+  SIN_PERSONAL: 'estacionesTab.noStaffLabel',
 }
 
 function statusFor(real, ideal) {
@@ -96,103 +104,108 @@ function statusFor(real, ideal) {
   return 'FALTA_PERSONAL'
 }
 
-function badgeFor(real, ideal) {
+function badgeFor(real, ideal, t) {
   if (ideal == null) return null
-  if (real <= 0) return { text: 'Sin personal' }
-  if (real >= ideal) return { text: 'Completa' }
+  if (real <= 0) return { text: t('estacionesTab.noStaffLabel') }
+  if (real >= ideal) return { text: t('estacionesTab.completeBadge') }
   const missing = ideal - real
-  return { text: missing === 1 ? 'Falta 1' : `Faltan ${missing}` }
+  return { text: t('estacionesTab.missingCount', { count: missing }) }
 }
 
 /* La lista curada de tarjetas -- id sintético propio de esta vista
-   (no siempre coincide 1:1 con un WORK_CENTER real, ver compute()). */
-const AREA_SLOTS = [
-  {
-    id: 'FFT',
-    name: 'WC Líneas de producción (FFT)',
-    subtitle: 'líneas activas',
-    badge: 'Líneas 1 - 10',
-    icon: <Cog size={22} />,
-    colorAreaId: 'LINEA1',
-  },
-  {
-    id: 'HIGH_VALUE',
-    name: 'WC Midea / High Value / DMT',
-    subtitle: 'Productos mixtos',
-    icon: <MonitorSmartphone size={22} />,
-    colorAreaId: 'HIGH_VALUE',
-  },
-  {
-    id: 'PALETIZADO',
-    name: 'WC Paletizado (Palletizing)',
-    subtitle: 'Zona de paletizado',
-    icon: <Package2 size={22} />,
-    colorAreaId: 'PALETIZADO',
-  },
-  {
-    id: 'INSUMOS_SUMINISTRO',
-    name: 'WC Insumos y Suministro de Material',
-    subtitle: 'PNP/POC/PEN · Box Prep · Suministro',
-    icon: <ShoppingCart size={22} />,
-    colorAreaId: 'INSUMOS',
-  },
-  {
-    id: 'ACCESORIOS',
-    name: 'WC Accesorios',
-    subtitle: 'Accesorios',
-    icon: <Tag size={22} />,
-    colorAreaId: 'ACCESORIOS',
-  },
-  {
-    id: 'CALIDAD',
-    name: 'WC Calidad',
-    subtitle: 'Control de calidad',
-    icon: <ShieldCheck size={22} />,
-    colorAreaId: 'CALIDAD',
-  },
-  {
-    id: 'CAPACITACION',
-    name: 'WC Capacitación',
-    subtitle: 'Capacitación',
-    icon: <GraduationCap size={22} />,
-    colorAreaId: 'CAPACITACION',
-  },
-  {
-    id: 'TEAM_LEADER',
-    name: 'WC Team Leader',
-    subtitle: 'Liderazgo',
-    icon: <UserCog size={22} />,
-    colorAreaId: 'TEAM_LEADER',
-  },
-  {
-    id: 'ENTRENADOR',
-    name: 'WC Entrenador',
-    subtitle: 'Entrenamiento',
-    icon: <Headset size={22} />,
-    colorAreaId: 'ENTRENADOR',
-  },
-  {
-    id: 'LIMPIEZA',
-    name: 'WC Limpieza',
-    subtitle: 'Limpieza',
-    icon: <SprayCan size={22} />,
-    colorAreaId: 'LIMPIEZA',
-  },
-  {
-    id: 'GERENTE',
-    name: 'WC Coordinador de Almacén',
-    subtitle: 'Gerencia',
-    icon: <User size={22} />,
-    colorAreaId: 'GERENTE',
-  },
-  {
-    id: 'SUPERVISOR',
-    name: 'WC Supervisor',
-    subtitle: 'Supervisión',
-    icon: <UserCheck size={22} />,
-    colorAreaId: 'SUPERVISOR',
-  },
-]
+   (no siempre coincide 1:1 con un WORK_CENTER real, ver compute()).
+   Se construye dentro de EstacionesTab (no a nivel de módulo) porque
+   sus textos visibles requieren t(), que solo funciona dentro de un
+   componente. */
+function buildAreaSlots(t) {
+  return [
+    {
+      id: 'FFT',
+      name: t('estacionesTab.areaFFTName'),
+      subtitle: t('estacionesTab.areaFFTSubtitle'),
+      badge: t('estacionesTab.areaFFTBadge'),
+      icon: <Cog size={22} />,
+      colorAreaId: 'LINEA1',
+    },
+    {
+      id: 'HIGH_VALUE',
+      name: t('estacionesTab.areaHighValueName'),
+      subtitle: t('estacionesTab.areaHighValueSubtitle'),
+      icon: <MonitorSmartphone size={22} />,
+      colorAreaId: 'HIGH_VALUE',
+    },
+    {
+      id: 'PALETIZADO',
+      name: t('estacionesTab.areaPaletizadoName'),
+      subtitle: t('estacionesTab.areaPaletizadoSubtitle'),
+      icon: <Package2 size={22} />,
+      colorAreaId: 'PALETIZADO',
+    },
+    {
+      id: 'INSUMOS_SUMINISTRO',
+      name: t('estacionesTab.areaInsumosSuministroName'),
+      subtitle: t('estacionesTab.areaInsumosSuministroSubtitle'),
+      icon: <ShoppingCart size={22} />,
+      colorAreaId: 'INSUMOS',
+    },
+    {
+      id: 'ACCESORIOS',
+      name: t('estacionesTab.areaAccesoriosName'),
+      subtitle: t('estacionesTab.areaAccesoriosSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'ACCESORIOS',
+    },
+    {
+      id: 'CALIDAD',
+      name: t('estacionesTab.areaCalidadName'),
+      subtitle: t('estacionesTab.areaCalidadSubtitle'),
+      icon: <ShieldCheck size={22} />,
+      colorAreaId: 'CALIDAD',
+    },
+    {
+      id: 'CAPACITACION',
+      name: t('estacionesTab.areaCapacitacionName'),
+      subtitle: t('estacionesTab.areaCapacitacionSubtitle'),
+      icon: <GraduationCap size={22} />,
+      colorAreaId: 'CAPACITACION',
+    },
+    {
+      id: 'TEAM_LEADER',
+      name: t('estacionesTab.areaTeamLeaderName'),
+      subtitle: t('estacionesTab.areaTeamLeaderSubtitle'),
+      icon: <UserCog size={22} />,
+      colorAreaId: 'TEAM_LEADER',
+    },
+    {
+      id: 'ENTRENADOR',
+      name: t('estacionesTab.areaEntrenadorName'),
+      subtitle: t('estacionesTab.areaEntrenadorSubtitle'),
+      icon: <Headset size={22} />,
+      colorAreaId: 'ENTRENADOR',
+    },
+    {
+      id: 'LIMPIEZA',
+      name: t('estacionesTab.areaLimpiezaName'),
+      subtitle: t('estacionesTab.areaLimpiezaSubtitle'),
+      icon: <SprayCan size={22} />,
+      colorAreaId: 'LIMPIEZA',
+    },
+    {
+      id: 'GERENTE',
+      name: t('estacionesTab.areaGerenteName'),
+      subtitle: t('estacionesTab.areaGerenteSubtitle'),
+      icon: <User size={22} />,
+      colorAreaId: 'GERENTE',
+    },
+    {
+      id: 'SUPERVISOR',
+      name: t('estacionesTab.areaSupervisorName'),
+      subtitle: t('estacionesTab.areaSupervisorSubtitle'),
+      icon: <UserCheck size={22} />,
+      colorAreaId: 'SUPERVISOR',
+    },
+  ]
+}
 
 /* Placeholders sin área de catálogo mapeada (igual criterio que
    REFERENCE_ONLY_ZONES en floorPlanZones.js) -- nunca se les inventa
@@ -201,11 +214,16 @@ const AREA_SLOTS = [
    elige un área real. */
 const PLACEHOLDER_SLOTS = REFERENCE_ONLY_ZONES
 
-function computeRow(slot) {
+function computeRow(slot, t) {
   if (slot.id === 'FFT') {
     const real = FFT_LINE_IDS.reduce((s, id) => s + (getPeopleByArea()[id]?.length || 0), 0)
     const ideal = FFT_LINE_IDS.reduce((s, id) => s + (getAreaStaffing(id).ideal || 0), 0)
-    return { slot, real, ideal, extraNote: `${FFT_LINE_IDS.length} ${slot.subtitle}` }
+    return {
+      slot,
+      real,
+      ideal,
+      extraNote: t('estacionesTab.fftLinesNote', { count: FFT_LINE_IDS.length }),
+    }
   }
   if (slot.id === 'INSUMOS_SUMINISTRO') {
     // 2026-08-26: group-aware (PNP/POC/PEN + Box Prep + Insumos + Suministro
@@ -223,12 +241,15 @@ function normalize(text) {
 }
 
 export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
+  const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [view, setView] = useState('tarjetas')
 
-  const rows = useMemo(() => AREA_SLOTS.map(computeRow), [])
+  const areaSlots = useMemo(() => buildAreaSlots(t), [t])
+
+  const rows = useMemo(() => areaSlots.map((slot) => computeRow(slot, t)), [areaSlots, t])
 
   const filteredRows = useMemo(
     () => rows.filter((r) => !query.trim() || normalize(r.slot.name).includes(normalize(query))),
@@ -273,19 +294,16 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
-            <p className="text-[16px] font-extrabold">Estaciones del centro de trabajo</p>
+            <p className="text-[16px] font-extrabold">{t('estacionesTab.title')}</p>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 cursor-help text-muted-foreground" />
               </TooltipTrigger>
-              <TooltipContent>
-                Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el
-                plano físico se administran en Áreas de trabajo.
-              </TooltipContent>
+              <TooltipContent>{t('estacionesTab.tooltipInfo')}</TooltipContent>
             </Tooltip>
           </div>
           <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-            Todas las áreas y estaciones operativas registradas
+            {t('estacionesTab.subtitle')}
           </p>
         </div>
 
@@ -293,7 +311,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
           <div className="relative min-w-[260px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar área, estación o empleado..."
+              placeholder={t('estacionesTab.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-9 pl-9"
@@ -310,7 +328,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
                   : 'text-muted-foreground hover:bg-accent/50',
               )}
             >
-              <LayoutGrid className="h-[17px] w-[17px]" /> Tarjetas
+              <LayoutGrid className="h-[17px] w-[17px]" /> {t('estacionesTab.cardsViewButton')}
             </button>
             <button
               type="button"
@@ -322,7 +340,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
                   : 'text-muted-foreground hover:bg-accent/50',
               )}
             >
-              <List className="h-[17px] w-[17px]" /> Lista
+              <List className="h-[17px] w-[17px]" /> {t('estacionesTab.listViewButton')}
             </button>
           </div>
         </div>
@@ -352,25 +370,24 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
 
       {filteredRows.length === 0 && filteredPlaceholders.length === 0 && (
         <p className="py-8 text-center text-[13px] text-muted-foreground">
-          Ninguna área coincide con "{query}".
+          {t('estacionesTab.noMatch', { query })}
         </p>
       )}
 
       <SummaryPanel totals={totals} />
 
       <p className="mt-3 text-center text-[11px] text-muted-foreground/60">
-        Los datos se actualizan según las asignaciones del día actual (snapshot histórico mientras
-        nadie registre a alguien hoy; en cuanto se registra o mueve, esa asignación real siempre
-        gana).
+        {t('estacionesTab.dataNote')}
       </p>
     </div>
   )
 }
 
 function AreaCard({ row, onClick }) {
+  const { t } = useTranslation('centroTrabajo')
   const { slot, real, ideal, extraNote } = row
   const statusKey = statusFor(real, ideal)
-  const badge = badgeFor(real, ideal)
+  const badge = badgeFor(real, ideal, t)
   const accent = colorForArea(slot.colorAreaId)
   const statusColor = statusKey ? STATUS_META[statusKey].color : '#94A3B8'
   const pct = ideal ? Math.min((real / ideal) * 100, 999) : null
@@ -431,7 +448,9 @@ function AreaCard({ row, onClick }) {
           </span>
         </div>
       ) : (
-        <p className="text-[10.5px] italic text-muted-foreground/60">Sin plantilla definida</p>
+        <p className="text-[10.5px] italic text-muted-foreground/60">
+          {t('estacionesTab.noTemplateNote')}
+        </p>
       )}
 
       <div className="mt-auto flex items-center justify-between border-t border-dashed border-border pt-1">
@@ -443,13 +462,14 @@ function AreaCard({ row, onClick }) {
 }
 
 function PlaceholderCard({ placeholder, onAssign }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className="flex flex-col items-start gap-2 rounded-[16px] border-[1.5px] border-dashed border-border bg-muted p-3.5">
       <div className="grid h-11 w-11 place-items-center rounded-full border border-border bg-card text-muted-foreground/60">
         <PlusCircle className="h-[22px] w-[22px]" />
       </div>
       <p className="text-[13.5px] font-extrabold">{placeholder.label}</p>
-      <p className="text-[12px] text-muted-foreground">Sin personal asignado</p>
+      <p className="text-[12px] text-muted-foreground">{t('estacionesTab.unassignedNote')}</p>
       <Button
         variant="ghost"
         onClick={(e) => {
@@ -458,29 +478,38 @@ function PlaceholderCard({ placeholder, onAssign }) {
         }}
         className="mt-auto h-auto justify-start p-0 text-[13px] font-bold text-primary hover:bg-transparent hover:text-primary"
       >
-        Asignar personal
+        {t('estacionesTab.assignPersonnelButton')}
       </Button>
     </div>
   )
 }
 
 function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className="overflow-auto rounded-2xl border border-border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[11.5px] font-extrabold uppercase">Área</TableHead>
-            <TableHead className="text-[11.5px] font-extrabold uppercase">Personal</TableHead>
-            <TableHead className="text-[11.5px] font-extrabold uppercase">Estado</TableHead>
-            <TableHead className="text-[11.5px] font-extrabold uppercase">Cobertura</TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">
+              {t('estacionesTab.colArea')}
+            </TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">
+              {t('estacionesTab.colPersonal')}
+            </TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">
+              {t('estacionesTab.colEstado')}
+            </TableHead>
+            <TableHead className="text-[11.5px] font-extrabold uppercase">
+              {t('estacionesTab.colCobertura')}
+            </TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
             const statusKey = statusFor(row.real, row.ideal)
-            const badge = badgeFor(row.real, row.ideal)
+            const badge = badgeFor(row.real, row.ideal, t)
             const color = statusKey ? STATUS_META[statusKey].color : '#94A3B8'
             const pct = row.ideal ? Math.min((row.real / row.ideal) * 100, 999) : null
             return (
@@ -520,7 +549,7 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
                   )}
                 </TableCell>
                 <TableCell className="text-[13px] font-bold" style={{ color }}>
-                  {pct != null ? `${pct.toFixed(1)}%` : 'Sin plantilla'}
+                  {pct != null ? `${pct.toFixed(1)}%` : t('estacionesTab.noTemplateShort')}
                 </TableCell>
                 <TableCell className="text-right">
                   <ChevronDown className="ml-auto h-[18px] w-[18px] -rotate-90 text-muted-foreground/60" />
@@ -537,7 +566,7 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
                 </div>
               </TableCell>
               <TableCell colSpan={3} className="text-[12.5px] italic">
-                Sin personal asignado
+                {t('estacionesTab.unassignedNote')}
               </TableCell>
               <TableCell className="text-right">
                 <Button
@@ -546,7 +575,7 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
                   onClick={onAssign}
                   className="font-bold text-primary hover:bg-transparent hover:text-primary"
                 >
-                  Asignar personal
+                  {t('estacionesTab.assignPersonnelButton')}
                 </Button>
               </TableCell>
             </TableRow>
@@ -558,28 +587,34 @@ function EstacionesListView({ rows, placeholders, onOpenRow, onAssign }) {
 }
 
 function SummaryPanel({ totals }) {
+  const { t } = useTranslation('centroTrabajo')
   const items = [
-    { label: 'Áreas totales', value: totals.count, icon: <Users size={16} />, color: '#3B82F6' },
     {
-      label: 'Personal asignado',
+      label: t('estacionesTab.totalAreasLabel'),
+      value: totals.count,
+      icon: <Users size={16} />,
+      color: '#3B82F6',
+    },
+    {
+      label: t('estacionesTab.assignedPersonnelLabel'),
       value: totals.totalReal,
       icon: <Users2 size={16} />,
       color: '#10B981',
     },
     {
-      label: 'Plantilla ideal',
+      label: t('estacionesTab.idealStaffingLabel'),
       value: totals.totalIdeal,
       icon: <UsersRound size={16} />,
       color: '#A855F7',
     },
     {
-      label: 'Personal faltante',
+      label: t('estacionesTab.missingPersonnelLabel'),
       value: totals.faltante,
       icon: <UserX size={16} />,
       color: '#EF4444',
     },
     {
-      label: '% Cobertura general',
+      label: t('estacionesTab.overallCoverageLabel'),
       value: `${totals.coverage.toFixed(1)}%`,
       icon: <PieChart size={16} />,
       color: '#06B6D4',
@@ -590,13 +625,15 @@ function SummaryPanel({ totals }) {
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-            Leyenda de estado
+            {t('estacionesTab.statusLegendTitle')}
           </p>
           <div className="flex flex-wrap gap-3">
-            {Object.values(STATUS_META).map((meta) => (
-              <div key={meta.label} className="flex items-center gap-[4.8px]">
+            {Object.entries(STATUS_META).map(([key, meta]) => (
+              <div key={key} className="flex items-center gap-[4.8px]">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
-                <p className="text-[12px] font-semibold text-muted-foreground">{meta.label}</p>
+                <p className="text-[12px] font-semibold text-muted-foreground">
+                  {t(STATUS_LABEL_KEYS[key])}
+                </p>
               </div>
             ))}
           </div>

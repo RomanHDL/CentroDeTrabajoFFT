@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -73,60 +74,64 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    "Resumen del área" sigue usando recharts (PieChart/Pie/Cell), sin
    cambios -- no es un componente MUI, no le toca conversion. */
 
-function describeAreaState(real, ideal) {
+function describeAreaState(real, ideal, t) {
   if (ideal == null)
     return {
       tone: 'ok',
       Icon: CheckCircle2,
-      label: 'Sin plantilla oficial',
-      description: 'Esta área no tiene una plantilla ideal definida todavía.',
+      label: t('supportAreaDetail.stateNoTemplate'),
+      description: t('supportAreaDetail.stateNoTemplateDescription'),
     }
   if (real === 0)
     return {
       tone: 'bad',
       Icon: TriangleAlert,
-      label: 'Sin personal',
-      description: 'Actualmente no hay personal asignado a esta área.',
+      label: t('supportAreaDetail.stateNoStaff'),
+      description: t('supportAreaDetail.stateNoStaffDescription'),
     }
   if (real > ideal) {
     const extra = real - ideal
     return {
       tone: 'ok',
       Icon: CheckCircle2,
-      label: 'Completa',
-      description: `Cuenta con ${extra} persona${extra === 1 ? '' : 's'} adicional${extra === 1 ? '' : 'es'} a la plantilla ideal.`,
+      label: t('supportAreaDetail.stateComplete'),
+      description: t('supportAreaDetail.stateCompleteExtraDescription', { count: extra }),
     }
   }
   if (real === ideal)
     return {
       tone: 'ok',
       Icon: CheckCircle2,
-      label: 'Completa',
-      description: 'Cuenta con el personal ideal asignado.',
+      label: t('supportAreaDetail.stateComplete'),
+      description: t('supportAreaDetail.stateCompleteIdealDescription'),
     }
   const missing = ideal - real
   return {
     tone: 'warn',
     Icon: TriangleAlert,
-    label: real / ideal >= 0.5 ? 'Parcial' : 'Falta personal',
-    description: `Requiere ${missing} persona${missing === 1 ? '' : 's'} adicional${missing === 1 ? '' : 'es'} para alcanzar la plantilla ideal.`,
+    label:
+      real / ideal >= 0.5
+        ? t('supportAreaDetail.statePartial')
+        : t('supportAreaDetail.stateMissingStaff'),
+    description: t('supportAreaDetail.stateMissingDescription', { count: missing }),
   }
 }
 
 const TONE_COLOR = { ok: '#10B981', warn: '#F59E0B', bad: '#EF4444' }
 
-function relativeTimeEs(iso) {
+function relativeTimeEs(iso, t) {
   const diffMin = Math.max(0, dayjs().diff(dayjs(iso), 'minute'))
-  if (diffMin < 1) return 'Justo ahora'
-  if (diffMin < 60) return `Hace ${diffMin} min`
+  if (diffMin < 1) return t('supportAreaDetail.relativeJustNow')
+  if (diffMin < 60) return t('supportAreaDetail.relativeMinutesAgo', { count: diffMin })
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `Hace ${diffH} h`
+  if (diffH < 24) return t('supportAreaDetail.relativeHoursAgo', { count: diffH })
   const diffD = Math.floor(diffH / 24)
-  if (diffD < 7) return `Hace ${diffD} d`
-  return `Hace ${Math.floor(diffD / 7)} semana${Math.floor(diffD / 7) === 1 ? '' : 's'}`
+  if (diffD < 7) return t('supportAreaDetail.relativeDaysAgo', { count: diffD })
+  return t('supportAreaDetail.relativeWeeksAgo', { count: Math.floor(diffD / 7) })
 }
 
 function PersonCard({ person, areaId, canManage }) {
+  const { t } = useTranslation('centroTrabajo')
   const dnd = useDndAssign()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
@@ -165,7 +170,7 @@ function PersonCard({ person, areaId, canManage }) {
             )}
             {homeArea && (
               <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
-                Zona real: {homeArea.name}
+                {t('supportAreaDetail.homeAreaLabel', { areaName: homeArea.name })}
               </p>
             )}
           </div>
@@ -174,7 +179,9 @@ function PersonCard({ person, areaId, canManage }) {
           <div className="hidden shrink-0 items-center gap-1 sm:flex">
             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
             <div>
-              <p className="text-[9.5px] leading-[1.1] text-muted-foreground">Fecha asignación</p>
+              <p className="text-[9.5px] leading-[1.1] text-muted-foreground">
+                {t('supportAreaDetail.assignedDateLabel')}
+              </p>
               <p className="text-[11.5px] font-bold leading-[1.1]">{assignedDate}</p>
             </div>
           </div>
@@ -183,7 +190,7 @@ function PersonCard({ person, areaId, canManage }) {
           className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
           style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
         >
-          {(person.status || 'Activo').toUpperCase()}
+          {(person.status || t('supportAreaDetail.statusActiveDefault')).toUpperCase()}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -197,13 +204,13 @@ function PersonCard({ person, areaId, canManage }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
               <Eye className="mr-2 h-4 w-4" />
-              Ver detalle
+              {t('supportAreaDetail.viewDetail')}
             </DropdownMenuItem>
             {canManage &&
               (assignment ? (
                 <DropdownMenuItem onClick={() => setMoveOpen(true)}>
                   <ArrowLeftRight className="mr-2 h-4 w-4" />
-                  Mover a otra área
+                  {t('supportAreaDetail.moveToOtherArea')}
                 </DropdownMenuItem>
               ) : (
                 <Tooltip>
@@ -211,19 +218,19 @@ function PersonCard({ person, areaId, canManage }) {
                     <div>
                       <DropdownMenuItem disabled>
                         <ArrowLeftRight className="mr-2 h-4 w-4" />
-                        Mover a otra área
+                        {t('supportAreaDetail.moveToOtherArea')}
                       </DropdownMenuItem>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    Solo disponible para asignaciones registradas hoy
+                    {t('supportAreaDetail.moveDisabledTooltip')}
                   </TooltipContent>
                 </Tooltip>
               ))}
             {canManage && (
               <DropdownMenuItem onClick={() => dnd.requestRelease(person.id)}>
                 <UserMinus className="mr-2 h-4 w-4" />
-                Liberar del área
+                {t('supportAreaDetail.releaseFromArea')}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -277,6 +284,7 @@ export default function SupportAreaDetail({
   next,
   onNavigate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -346,15 +354,15 @@ export default function SupportAreaDetail({
   const headerLabel = statusMeta
     ? statusMeta.label
     : people.length > 0
-      ? 'Con personal'
-      : 'Sin personal hoy'
+      ? t('supportAreaDetail.headerLabelHasStaff')
+      : t('supportAreaDetail.headerLabelNoStaffToday')
   const coveragePct =
     staffing.ideal != null && staffing.ideal > 0
       ? Math.round((staffing.real / staffing.ideal) * 1000) / 10
       : null
   const coverageBarPct = coveragePct != null ? Math.min(100, coveragePct) : 0
   const missing = staffing.ideal != null ? Math.max(0, staffing.ideal - staffing.real) : 0
-  const state = describeAreaState(staffing.real, staffing.ideal)
+  const state = describeAreaState(staffing.real, staffing.ideal, t)
   const description = SUPPORT_AREA_DESCRIPTIONS[area.id] || null
   const historyItems = showAllHistory ? history.items : history.items.slice(0, 3)
   const headerColor = statusMeta?.color || '#10B981'
@@ -362,16 +370,37 @@ export default function SupportAreaDetail({
   const donutData =
     staffing.ideal != null
       ? [
-          { key: 'activo', label: 'Personal activo', value: staffing.real, color: '#3B82F6' },
-          { key: 'vacante', label: 'Vacantes', value: missing, color: '#CBD5E1' },
+          {
+            key: 'activo',
+            label: t('supportAreaDetail.activePersonnelLabel'),
+            value: staffing.real,
+            color: '#3B82F6',
+          },
+          {
+            key: 'vacante',
+            label: t('supportAreaDetail.vacanciesLabel'),
+            value: missing,
+            color: '#CBD5E1',
+          },
         ].filter((d) => d.value > 0 || staffing.real === 0)
-      : [{ key: 'activo', label: 'Personal activo', value: staffing.real, color: '#3B82F6' }]
+      : [
+          {
+            key: 'activo',
+            label: t('supportAreaDetail.activePersonnelLabel'),
+            value: staffing.real,
+            color: '#3B82F6',
+          },
+        ]
   const donutTotal = donutData.reduce((sum, d) => sum + d.value, 0) || 1
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
-        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('supportAreaDetail.dialogTitle', {
+            areaName: area?.name || t('supportAreaDetail.areaFallback'),
+          })}
+        </DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
           <button
@@ -392,7 +421,7 @@ export default function SupportAreaDetail({
               </span>
             </div>
             <p className="text-[11.5px] text-muted-foreground">
-              Centro de Trabajo · Área de soporte
+              {t('supportAreaDetail.areaSubtitle')}
             </p>
           </div>
           <div className="flex-1" />
@@ -404,7 +433,9 @@ export default function SupportAreaDetail({
             className="rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('supportAreaDetail.registerPersonnelButton')
+              : t('supportAreaDetail.selfAssignButton')}
           </Button>
           <button
             type="button"
@@ -432,7 +463,9 @@ export default function SupportAreaDetail({
                       ? `${staffing.real} / ${staffing.ideal}`
                       : staffing.real}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">personas asignadas</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('supportAreaDetail.peopleAssignedLabel')}
+                  </p>
                   <div className="mt-0.5 flex items-center gap-1">
                     <span
                       className="h-[7px] w-[7px] rounded-full"
@@ -450,7 +483,7 @@ export default function SupportAreaDetail({
 
               <div className="flex-[1_1_190px] px-3 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  Estado del área
+                  {t('supportAreaDetail.areaStatusLabel')}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <state.Icon
@@ -464,7 +497,7 @@ export default function SupportAreaDetail({
 
               <div className="flex-[1_1_150px] px-3 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  Cobertura
+                  {t('supportAreaDetail.coverageLabel')}
                 </p>
                 <p
                   className={cn(
@@ -486,7 +519,10 @@ export default function SupportAreaDetail({
                       />
                     </div>
                     <p className="text-[10.5px] text-muted-foreground">
-                      {staffing.real} de {staffing.ideal} personas
+                      {t('supportAreaDetail.coverageOfLabel', {
+                        real: staffing.real,
+                        ideal: staffing.ideal,
+                      })}
                     </p>
                   </>
                 )}
@@ -494,10 +530,12 @@ export default function SupportAreaDetail({
 
               <div className="flex-[1_1_110px] px-3 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  Plantilla ideal
+                  {t('supportAreaDetail.idealTemplateLabel')}
                 </p>
                 <p className="text-[21px] font-extrabold leading-[1.1]">{staffing.ideal ?? '—'}</p>
-                <p className="text-[10.5px] text-muted-foreground">personas</p>
+                <p className="text-[10.5px] text-muted-foreground">
+                  {t('supportAreaDetail.peopleUnitLabel')}
+                </p>
               </div>
 
               {description && (
@@ -508,14 +546,14 @@ export default function SupportAreaDetail({
                   <div className="mb-0.5 flex items-center gap-1.5">
                     <Info className="h-[15px] w-[15px] text-[#3B82F6]" />
                     <p className="text-[11.5px] font-extrabold text-[#3B82F6]">
-                      Información del área
+                      {t('supportAreaDetail.areaInfoLabel')}
                     </p>
                   </div>
                   <p className="text-xs font-semibold">{description}</p>
                   <p className="text-[10.5px] text-muted-foreground">
                     {missing === 0
-                      ? 'No requiere cobertura adicional'
-                      : `Requiere ${missing} persona${missing === 1 ? '' : 's'} para cobertura completa`}
+                      ? t('supportAreaDetail.noAdditionalCoverageNeeded')
+                      : t('supportAreaDetail.additionalCoverageNeeded', { count: missing })}
                   </p>
                 </div>
               )}
@@ -534,13 +572,13 @@ export default function SupportAreaDetail({
               )}
             >
               <p className="mb-3 text-[14.5px] font-extrabold">
-                Personal asignado ({people.length})
+                {t('supportAreaDetail.assignedPersonnelTitle', { count: people.length })}
               </p>
               {people.length === 0 ? (
                 <EmptyState
                   compact
-                  title="No hay personal asignado actualmente."
-                  description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'."
+                  title={t('supportAreaDetail.emptyAssignedTitle')}
+                  description={t('supportAreaDetail.emptyAssignedDescription')}
                 />
               ) : (
                 <div className="flex flex-col gap-2.5">
@@ -557,7 +595,9 @@ export default function SupportAreaDetail({
             </div>
 
             <div className="rounded-2xl border border-border p-4">
-              <p className="mb-3 text-[14.5px] font-extrabold">Resumen del área</p>
+              <p className="mb-3 text-[14.5px] font-extrabold">
+                {t('supportAreaDetail.areaSummaryTitle')}
+              </p>
               <div className="relative h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -574,12 +614,19 @@ export default function SupportAreaDetail({
                         <Cell key={row.key} fill={row.color} />
                       ))}
                     </Pie>
-                    <RTooltip formatter={(v, n) => [`${v} persona${v === 1 ? '' : 's'}`, n]} />
+                    <RTooltip
+                      formatter={(v, n) => [
+                        t('supportAreaDetail.personCountLabel', { count: v }),
+                        n,
+                      ]}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
                   <p className="text-[22px] font-extrabold leading-none">{staffing.real}</p>
-                  <p className="text-[10px] text-muted-foreground">personas</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {t('supportAreaDetail.peopleUnitLabel')}
+                  </p>
                 </div>
               </div>
               <div className="mt-2 flex flex-col gap-1.5">
@@ -618,13 +665,13 @@ export default function SupportAreaDetail({
           <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border p-4">
               <p className="mb-3 text-[13.5px] font-extrabold">
-                Disponibles para asignar ({available.length})
+                {t('supportAreaDetail.availableToAssignTitle', { count: available.length })}
               </p>
               {available.length === 0 ? (
                 <EmptyState
                   compact
-                  title="No hay candidatos disponibles"
-                  description="Actualmente no hay personal disponible para asignar a esta área."
+                  title={t('supportAreaDetail.emptyCandidatesTitle')}
+                  description={t('supportAreaDetail.emptyCandidatesDescription')}
                 />
               ) : (
                 <div className="flex flex-col gap-[6.8px]">
@@ -640,14 +687,16 @@ export default function SupportAreaDetail({
                   onClick={() => setRegisterOpen(true)}
                   className="mt-2 font-bold"
                 >
-                  Ver todos los empleados
+                  {t('supportAreaDetail.viewAllEmployeesButton')}
                 </Button>
               )}
             </div>
 
             <div className="rounded-2xl border border-border p-4">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[13.5px] font-extrabold">Actividad reciente</p>
+                <p className="text-[13.5px] font-extrabold">
+                  {t('supportAreaDetail.recentActivityTitle')}
+                </p>
                 {history.items.length > 3 && (
                   <Button
                     variant="ghost"
@@ -655,21 +704,25 @@ export default function SupportAreaDetail({
                     onClick={() => setShowAllHistory((v) => !v)}
                     className="font-bold"
                   >
-                    {showAllHistory ? 'Ver menos' : 'Ver todo'}
+                    {showAllHistory
+                      ? t('supportAreaDetail.showLessButton')
+                      : t('supportAreaDetail.showAllButton')}
                   </Button>
                 )}
               </div>
               {history.loading ? (
-                <p className="text-xs text-muted-foreground">Cargando…</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('supportAreaDetail.loadingLabel')}
+                </p>
               ) : history.error ? (
                 <p className="text-xs text-muted-foreground">
-                  No se pudo cargar la actividad reciente.
+                  {t('supportAreaDetail.historyLoadErrorMessage')}
                 </p>
               ) : historyItems.length === 0 ? (
                 <EmptyState
                   compact
-                  title="Sin actividad reciente"
-                  description="Todavía no hay asignaciones o movimientos registrados para esta área."
+                  title={t('supportAreaDetail.emptyHistoryTitle')}
+                  description={t('supportAreaDetail.emptyHistoryDescription')}
                 />
               ) : (
                 <div className="flex flex-col gap-2.5">
@@ -683,11 +736,17 @@ export default function SupportAreaDetail({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-bold leading-[1.3]">
-                          {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
+                          {t('supportAreaDetail.historyEntryLabel', {
+                            employeeName: h.employeeName,
+                            action:
+                              h.action === 'MOVED'
+                                ? t('supportAreaDetail.actionReassigned')
+                                : t('supportAreaDetail.actionAssigned'),
+                          })}
                         </p>
                         <p className="text-[10.5px] text-muted-foreground">
-                          {h.byName ? `Por ${h.byName} · ` : ''}
-                          {relativeTimeEs(h.movedAt)}
+                          {h.byName ? t('supportAreaDetail.byPrefix', { byName: h.byName }) : ''}
+                          {relativeTimeEs(h.movedAt, t)}
                         </p>
                       </div>
                     </div>
@@ -704,8 +763,7 @@ export default function SupportAreaDetail({
           >
             <Info className="h-[17px] w-[17px] shrink-0 text-[#3B82F6]" />
             <p className="text-xs text-muted-foreground">
-              {area.name} es un área de soporte. La asignación de personal se gestiona directamente
-              por los responsables autorizados.
+              {t('supportAreaDetail.supportAreaFooterNote', { areaName: area.name })}
             </p>
           </div>
         </div>
