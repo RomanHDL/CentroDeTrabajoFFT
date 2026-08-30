@@ -1,24 +1,16 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import Avatar from '@mui/material/Avatar'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import Divider from '@mui/material/Divider'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
-import LightModeIcon from '@mui/icons-material/LightMode'
-import LockResetIcon from '@mui/icons-material/LockReset'
-import LogoutIcon from '@mui/icons-material/Logout'
-import TranslateIcon from '@mui/icons-material/Translate'
-import CheckIcon from '@mui/icons-material/Check'
+import { Check, KeyRound, Languages, LogOut, Moon, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '../state/auth'
-import { ROLE_LABELS } from './roleLabels'
 import NotificationBell from './NotificationBell'
+import { ROLE_LABELS } from './roleLabels'
 
 // Fase 4 (i18n, MI Stack Reference sección 10) -- nombres reales en su
 // propio idioma (nunca traducidos), convencion estandar de selectores de
@@ -47,19 +39,31 @@ function initialsOf(name) {
    logica/handlers/datos reales de useAuth, cero duplicacion) para poder
    reutilizarlo tanto en la barra superior global (AppLayout.jsx, todas las
    demas paginas) como en el nuevo header propio de Centro de Trabajo
-   (CentroTrabajoPage.jsx) sin mantener dos copias de este bloque. */
+   (CentroTrabajoPage.jsx) sin mantener dos copias de este bloque.
+
+   Fase 6c: convertido de MUI (IconButton/Tooltip/Avatar/Menu/MenuItem/
+   Divider/ListItemIcon + sx) a Tailwind + shadcn/ui (DropdownMenu para el
+   selector de idioma y el menu de cuenta, Tooltip solo para el toggle
+   claro/oscuro -- un boton de accion directa, mismo patron ya usado por el
+   toggle de fijado en Sidebar.jsx) + lucide-react. Los botones que ademas
+   disparan un menu (idioma, avatar) usan un atributo `title` nativo en vez
+   de envolverlos en Tooltip, para no anidar dos primitivos Radix (Tooltip +
+   DropdownMenu) sobre el mismo elemento -- mismo criterio que los botones
+   de icono de UsuariosPage.jsx. Los menus ya no necesitan estado propio de
+   anchorEl: DropdownMenu de Radix maneja su open/close sin controlar (no
+   controlled), por eso ya no hace falta useState aqui. Iconos MUI -> lucide:
+   TranslateIcon -> Languages, DarkModeIcon -> Moon, LightModeIcon -> Sun,
+   LockResetIcon -> KeyRound (mismo icono que ya usa UsuariosPage.jsx para
+   "Restablecer contraseña"), LogoutIcon -> LogOut, CheckIcon -> Check. */
 export default function HeaderUserActions({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [menuAnchor, setMenuAnchor] = useState(null)
-  const [langAnchor, setLangAnchor] = useState(null)
   const { i18n } = useTranslation()
 
   const roleLabel = ROLE_LABELS[user?.role] || user?.role
   const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
 
   async function handleLogout() {
-    setMenuAnchor(null)
     await logout()
     navigate('/login', { replace: true })
   }
@@ -67,110 +71,76 @@ export default function HeaderUserActions({ mode, setMode }) {
   return (
     <>
       {canApproveMoves && <NotificationBell userId={user?.id} />}
-      <Tooltip title="Idioma / Language / 语言">
-        <IconButton
-          size="small"
-          onClick={(e) => setLangAnchor(e.currentTarget)}
-          sx={{
-            transition: 'background-color 200ms ease, color 200ms ease',
-            '&:hover': {
-              bgcolor: (t) =>
-                t.palette.mode === 'dark' ? 'rgba(96,165,250,.14)' : 'rgba(59,130,246,.10)',
-            },
-          }}
-        >
-          <TranslateIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-      <Menu anchorEl={langAnchor} open={!!langAnchor} onClose={() => setLangAnchor(null)}>
-        {LANGUAGES.map((lng) => (
-          <MenuItem
-            key={lng.code}
-            selected={i18n.resolvedLanguage === lng.code}
-            onClick={() => {
-              i18n.changeLanguage(lng.code)
-              setLangAnchor(null)
-            }}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            title="Idioma / Language / 语言"
+            className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-blue-500/[0.10] dark:hover:bg-blue-400/[0.14]"
           >
-            <ListItemIcon>
-              {i18n.resolvedLanguage === lng.code ? <CheckIcon fontSize="small" /> : null}
-            </ListItemIcon>
-            {lng.label}
-          </MenuItem>
-        ))}
-      </Menu>
-      <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
-        <IconButton
-          size="small"
-          onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}
-          sx={{
-            transition: 'background-color 200ms ease, color 200ms ease',
-            '&:hover': {
-              bgcolor: (t) =>
-                t.palette.mode === 'dark' ? 'rgba(96,165,250,.14)' : 'rgba(59,130,246,.10)',
-            },
-          }}
-        >
-          {mode === 'light' ? (
-            <DarkModeIcon fontSize="small" />
-          ) : (
-            <LightModeIcon fontSize="small" />
+            <Languages size={20} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {LANGUAGES.map((lng) => (
+            <DropdownMenuItem key={lng.code} onClick={() => i18n.changeLanguage(lng.code)}>
+              <span className="mr-2 flex h-4 w-4 items-center justify-center">
+                {i18n.resolvedLanguage === lng.code && <Check className="h-4 w-4" />}
+              </span>
+              {lng.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}
+            className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-blue-500/[0.10] dark:hover:bg-blue-400/[0.14]"
+          >
+            {mode === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{mode === 'light' ? 'Modo oscuro' : 'Modo claro'}</TooltipContent>
+      </Tooltip>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            title={`${user?.name || ''} · Mi cuenta`}
+            className="ml-1 flex items-center gap-2 rounded-[20px] px-2 py-1 transition-colors duration-200 hover:bg-accent"
+          >
+            <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-[#3B82F6] text-sm font-bold text-white">
+              {initialsOf(user?.name)}
+            </span>
+            <span className="hidden text-left leading-[1.1] sm:block">
+              <p className="text-[13px] font-bold">{user?.name}</p>
+              <p className="text-[11px] text-muted-foreground">{roleLabel}</p>
+            </span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[200px]">
+          <div className="px-4 py-2">
+            <p className="text-[13px] font-bold">{user?.name}</p>
+            <p className="text-xs text-muted-foreground">{roleLabel} · Mi cuenta</p>
+          </div>
+          <div className="-mx-1 my-1 h-px bg-border" />
+          {user?.role === 'ADMINISTRADOR' && (
+            <DropdownMenuItem onClick={() => navigate('/cambiar-contrasena')}>
+              <KeyRound className="mr-2 h-4 w-4" />
+              Cambiar contraseña
+            </DropdownMenuItem>
           )}
-        </IconButton>
-      </Tooltip>
-
-      <Box
-        onClick={(e) => setMenuAnchor(e.currentTarget)}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          cursor: 'pointer',
-          ml: 0.5,
-          px: 1,
-          py: 0.5,
-          borderRadius: 2,
-          transition: 'background-color 200ms ease',
-          '&:hover': { bgcolor: 'action.hover' },
-        }}
-      >
-        <Avatar sx={{ width: 34, height: 34, fontSize: 14, fontWeight: 700, bgcolor: '#3B82F6' }}>
-          {initialsOf(user?.name)}
-        </Avatar>
-        <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1.1 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{user?.name}</Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{roleLabel}</Typography>
-        </Box>
-      </Box>
-
-      <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{user?.name}</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-            {roleLabel} · Mi cuenta
-          </Typography>
-        </Box>
-        <Divider />
-        {user?.role === 'ADMINISTRADOR' && (
-          <MenuItem
-            onClick={() => {
-              setMenuAnchor(null)
-              navigate('/cambiar-contrasena')
-            }}
-          >
-            <ListItemIcon>
-              <LockResetIcon fontSize="small" />
-            </ListItemIcon>
-            Cambiar contraseña
-          </MenuItem>
-        )}
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <LogoutIcon fontSize="small" />
-          </ListItemIcon>
-          Cerrar sesión
-        </MenuItem>
-      </Menu>
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar sesión
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   )
 }

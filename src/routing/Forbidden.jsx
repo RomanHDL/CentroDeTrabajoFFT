@@ -1,28 +1,13 @@
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import BlockIcon from '@mui/icons-material/Block'
+import { Ban } from 'lucide-react'
 
 export default function Forbidden() {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '50vh',
-        gap: 1.5,
-        textAlign: 'center',
-        px: 2,
-      }}
-    >
-      <BlockIcon sx={{ fontSize: 48, color: 'error.main' }} />
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
-        Acceso no autorizado
-      </Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 420 }}>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-4 text-center">
+      <Ban className="h-12 w-12 text-destructive" />
+      <p className="text-xl font-extrabold text-foreground">Acceso no autorizado</p>
+      <p className="max-w-[420px] text-base text-muted-foreground">
         Tu rol no tiene permiso para ver esta sección.
-      </Typography>
-    </Box>
+      </p>
+    </div>
   )
 }

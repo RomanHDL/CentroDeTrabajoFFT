@@ -1,24 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
-import Box from '@mui/material/Box'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import Badge from '@mui/material/Badge'
-import Popover from '@mui/material/Popover'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
-import NotificationsIcon from '@mui/icons-material/Notifications'
-import CloseIcon from '@mui/icons-material/Close'
 import dayjs from 'dayjs'
-import { workCenterById } from '../data/production/catalog'
-import { getPendingMoves } from '../data/personnel/repository'
+import { Bell, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 import {
   approvePendingMoveWithToast,
   rejectPendingMoveWithToast,
 } from '../data/personnel/moveApprovalActions'
+import { getPendingMoves } from '../data/personnel/repository'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
+import { workCenterById } from '../data/production/catalog'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 
 function areaName(id) {
@@ -33,54 +26,48 @@ function timeAgo(iso) {
   return `Hace ${mins} min`
 }
 
+// Fase 6c: reemplaza el Box con sx condicional (compact ? {} : bgcolor
+// action.hover) -- mismo criterio, como className con cn().
 function MoveRow({ move, userId, onResolved, compact }) {
   return (
-    <Box
-      sx={{
-        p: compact ? 0 : 1.25,
-        borderRadius: 2,
-        ...(compact ? {} : { bgcolor: 'action.hover' }),
-      }}
-    >
-      <Typography sx={{ fontWeight: 800, fontSize: 13.5 }}>
+    <div className={cn('rounded-[20px]', compact ? 'p-0' : 'bg-accent p-2.5')}>
+      <p className="text-[13.5px] font-extrabold">
         {move.employeeNumber && move.employeeNumber !== 'PROYECTO'
           ? `${move.employeeNumber} — `
           : ''}
         {move.employeeName}
-      </Typography>
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+      </p>
+      <p className="text-[12.5px] text-muted-foreground">
         {areaName(move.fromAreaId)} → {areaName(move.toAreaId)}
-      </Typography>
-      <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.25 }}>
+      </p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
         Solicitado por: {move.requestedByName || 'otro usuario'} · {timeAgo(move.requestedAt)}
-      </Typography>
-      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+      </p>
+      <div className="mt-2 flex gap-2">
         <Button
-          size="small"
-          color="error"
-          variant="outlined"
+          size="sm"
+          variant="outline"
+          className="border-red-500 font-bold text-red-500 hover:bg-red-500/10"
           onClick={() => {
             rejectPendingMoveWithToast(move.id, userId)
-            onResolved && onResolved(move.id)
+            onResolved?.(move.id)
           }}
-          sx={{ textTransform: 'none', fontWeight: 700 }}
         >
           Rechazar
         </Button>
         <Button
-          size="small"
-          color="success"
-          variant="contained"
+          size="sm"
+          variant="success"
+          className="font-bold"
           onClick={() => {
             approvePendingMoveWithToast(move.id, userId)
-            onResolved && onResolved(move.id)
+            onResolved?.(move.id)
           }}
-          sx={{ textTransform: 'none', fontWeight: 700 }}
         >
           Aprobar
         </Button>
-      </Stack>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -91,11 +78,19 @@ function MoveRow({ move, userId, onResolved, compact }) {
 
    Ademas muestra una notificacion flotante (no autodescartable como un toast) cuando aparece una
    solicitud NUEVA que este usuario todavia no habia visto -- se cierra sola al resolverse, o el
-   usuario puede ocultarla manualmente sin que eso rechace la solicitud (sigue en la campana). */
+   usuario puede ocultarla manualmente sin que eso rechace la solicitud (sigue en la campana).
+
+   Fase 6c: convertido de MUI (IconButton/Tooltip/Badge/Popover/Paper/Typography/Stack/Button/
+   Divider + sx) a Tailwind + shadcn/ui (Popover controlado con open/onOpenChange en vez del
+   anchorEl manual de MUI, mismo resultado -- abre/cierra por click en la campana; Badge para el
+   contador, con los mismos colores bracket-hex ya establecidos en badge.jsx) + lucide-react.
+   NotificationsIcon -> Bell, CloseIcon -> X. El boton de la campana usa un atributo `title`
+   nativo en vez de un Tooltip Radix, para no anidarlo con el propio PopoverTrigger sobre el mismo
+   elemento (mismo criterio que HeaderUserActions.jsx). */
 export default function NotificationBell({ userId }) {
   const version = usePersonnelVersion()
   const isTouch = useIsTouchDevice()
-  const [anchorEl, setAnchorEl] = useState(null)
+  const [open, setOpen] = useState(false)
   const [floating, setFloating] = useState(null) // { move, extraCount }
   const seenIds = useRef(new Set())
   const dismissedIds = useRef(new Set())
@@ -103,16 +98,24 @@ export default function NotificationBell({ userId }) {
 
   const pendingMoves = getPendingMoves()
 
+  // Se ejecuta a proposito solo cuando cambia `version` (nuevo evento de personnel), no en cada
+  // render por el array/funciones nuevos que devuelve getPendingMoves() -- mismo criterio que ya
+  // tenia el eslint-disable-next-line original de este efecto.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: solo depende de version, ver comentario arriba
   useEffect(() => {
     if (!initialized.current) {
       // Primera carga: no mostrar flotante para solicitudes que ya existian antes de abrir la
       // app (solo para las que aparezcan DESPUES, en vivo).
-      pendingMoves.forEach((m) => seenIds.current.add(m.id))
+      pendingMoves.forEach((m) => {
+        seenIds.current.add(m.id)
+      })
       initialized.current = true
       return
     }
     const fresh = pendingMoves.filter((m) => !seenIds.current.has(m.id))
-    fresh.forEach((m) => seenIds.current.add(m.id))
+    fresh.forEach((m) => {
+      seenIds.current.add(m.id)
+    })
     const stillPendingIds = new Set(pendingMoves.map((m) => m.id))
     // Si la que se estaba mostrando ya se resolvio (ya no esta pendiente), quitarla.
     setFloating((prev) => {
@@ -125,92 +128,75 @@ export default function NotificationBell({ userId }) {
         setFloating({ move: mostRecent, extraCount: rest.length })
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version])
 
   if (!userId) return null
 
   return (
     <>
-      <Tooltip title="Movimientos pendientes de aprobación">
-        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
-          <Badge badgeContent={pendingMoves.length} color="error">
-            <NotificationsIcon fontSize="small" />
-          </Badge>
-        </IconButton>
-      </Tooltip>
-
-      <Popover
-        open={!!anchorEl}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Box sx={{ width: 320, maxHeight: 420, overflowY: 'auto', p: 1.5 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: 14, mb: 1 }}>
-            Aprobaciones pendientes
-          </Typography>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            title="Movimientos pendientes de aprobación"
+            className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-accent"
+          >
+            <span className="relative inline-flex">
+              <Bell size={20} />
+              {pendingMoves.length > 0 && (
+                <Badge className="absolute -right-1.5 -top-1.5 h-[18px] min-w-[18px] items-center justify-center rounded-full border-transparent bg-[#EF4444] px-1 text-[10px] leading-none text-white">
+                  {pendingMoves.length}
+                </Badge>
+              )}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="max-h-[420px] w-80 overflow-y-auto p-3">
+          <p className="mb-2 text-sm font-extrabold">Aprobaciones pendientes</p>
           {pendingMoves.length === 0 ? (
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', py: 1 }}>
-              No hay solicitudes pendientes.
-            </Typography>
+            <p className="py-2 text-[13px] text-muted-foreground">No hay solicitudes pendientes.</p>
           ) : (
-            <Stack spacing={1} divider={<Divider />}>
+            <div className="flex flex-col gap-2 divide-y divide-border">
               {pendingMoves.map((m) => (
                 <MoveRow key={m.id} move={m} userId={userId} compact />
               ))}
-            </Stack>
+            </div>
           )}
-        </Box>
+        </PopoverContent>
       </Popover>
 
       {floating && (
-        <Paper
-          elevation={6}
-          sx={{
-            position: 'fixed',
-            zIndex: (t) => t.zIndex.modal + 1,
-            width: { xs: 'calc(100% - 24px)', sm: 340 },
-            borderRadius: 3,
-            p: 1.75,
-            ...(isTouch
-              ? { left: 12, right: 12, bottom: 12 } // tablet: abajo, no tapa el modal de registro
-              : { top: 68, right: 16 }),
-          }}
+        <div
+          className={cn(
+            'fixed z-[1301] w-[calc(100%-24px)] rounded-[30px] border border-border bg-card p-3.5 text-card-foreground shadow-xl sm:w-[340px]',
+            isTouch ? 'inset-x-3 bottom-3' : 'right-4 top-[68px]', // tablet: abajo, no tapa el modal de registro
+          )}
         >
-          <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: 13.5,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
+          <div className="flex items-start justify-between">
+            <p className="flex items-center gap-1 text-[13.5px] font-extrabold">
               🔔 Solicitud de cambio de área
-            </Typography>
-            <IconButton
-              size="small"
+            </p>
+            <button
+              type="button"
               onClick={() => {
                 dismissedIds.current.add(floating.move.id)
                 setFloating(null)
               }}
+              className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-accent"
             >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Stack>
-          <Box sx={{ mt: 0.5 }}>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-1">
             <MoveRow move={floating.move} userId={userId} onResolved={() => setFloating(null)} />
-          </Box>
+          </div>
           {floating.extraCount > 0 && (
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 1 }}>
+            <p className="mt-2 text-[11px] text-muted-foreground">
               +{floating.extraCount} solicitud{floating.extraCount > 1 ? 'es' : ''} más en la
               campana.
-            </Typography>
+            </p>
           )}
-        </Paper>
+        </div>
       )}
     </>
   )

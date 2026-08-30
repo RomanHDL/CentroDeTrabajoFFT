@@ -127,7 +127,7 @@ export default function AvailablePersonnelTray({
       ) : (
         <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1.5">
           {filtered.map((p) => (
-            <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ flexShrink: 0 }}>
+            <DraggablePersonChip key={p.id} employeeId={p.id} className="shrink-0">
               <button
                 type="button"
                 onClick={() => setDetailPerson(p)}

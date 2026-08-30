@@ -161,7 +161,7 @@ function DropZone({ areaId, label }) {
 function AvailableCandidateRow({ person, areaId }) {
   const dnd = useDndAssign()
   return (
-    <DraggablePersonChip employeeId={person.id} sx={{ display: 'block' }}>
+    <DraggablePersonChip employeeId={person.id} className="block">
       <button
         type="button"
         onClick={() => dnd.requestAssign(person.id, areaId)}

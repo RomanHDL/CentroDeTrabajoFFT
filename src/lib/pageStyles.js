@@ -170,3 +170,12 @@ export function kpiCardClass(accent = 'blue') {
 // cubre el track estatico.
 export const progressBarClass =
   'h-1.5 overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.06]'
+
+// Fase 6c (docs/DeveloperManualPage + docs/UserManualPage): reemplaza <Paper
+// sx={{ p: 2.5 }}> generico y plano (SIN el hover/elevacion de cardClass, que
+// es especifico de Dashboard) -- radio por defecto del tema MUI
+// (theme.shape.borderRadius = 10, sin override) + el mismo token bg-card/
+// border-border ya establecido para contenedores tipo Paper en el resto del
+// repo. El margin-bottom se agrega aparte en cada uso porque varia (mb-4 en
+// unos bloques, mb-6 en otros) entre las dos paginas.
+export const manualPanelClass = 'rounded-[10px] border border-border bg-card p-5'

@@ -1,47 +1,41 @@
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
 import { Link } from 'react-router-dom'
-import { MODULES, FAQ } from './userManualData'
+import { Badge } from '@/components/ui/badge'
+import { manualPanelClass } from '@/lib/pageStyles'
+import { FAQ, MODULES } from './userManualData'
 
 // User Manual (MI Stack Reference, sección 17a, HARD RULE) -- ruta real,
 // contenido genuino del estado actual de cada módulo. Ver userManualData.js.
 export default function UserManualPage() {
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
-      <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-        Manual de Usuario
-      </Typography>
-      <Typography sx={{ color: 'text.secondary', mb: 3 }}>
-        Cómo usar Centro de Trabajo FFT. <Link to="/developer-manual">Ver el Developer Manual</Link>
+    <div className="mx-auto max-w-[1000px]">
+      <h1 className="mb-1 text-2xl font-extrabold text-foreground">Manual de Usuario</h1>
+      <p className="mb-6 text-base text-muted-foreground">
+        Cómo usar Centro de Trabajo FFT.{' '}
+        <Link to="/developer-manual" className="text-primary underline">
+          Ver el Developer Manual
+        </Link>
         .
-      </Typography>
+      </p>
 
       {MODULES.map((mod) => (
-        <Paper key={mod.name} sx={{ p: 2.5, mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Typography sx={{ fontWeight: 700 }}>{mod.name}</Typography>
-            <Chip
-              size="small"
-              label={mod.status}
-              color={mod.status === 'disponible' ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Box>
-          <Typography sx={{ whiteSpace: 'pre-line', fontSize: 14 }}>{mod.body}</Typography>
-        </Paper>
+        <div key={mod.name} className={`${manualPanelClass} mb-4`}>
+          <div className="mb-2 flex items-center gap-2">
+            <p className="font-bold text-foreground">{mod.name}</p>
+            <Badge variant={mod.status === 'disponible' ? 'success' : 'outline'}>
+              {mod.status}
+            </Badge>
+          </div>
+          <p className="whitespace-pre-line text-sm text-foreground">{mod.body}</p>
+        </div>
       ))}
 
-      <Typography variant="h6" sx={{ fontWeight: 700, mt: 3, mb: 1.5 }}>
-        Preguntas frecuentes
-      </Typography>
+      <h2 className="mb-3 mt-6 text-xl font-bold text-foreground">Preguntas frecuentes</h2>
       {FAQ.map(([q, a]) => (
-        <Paper key={q} sx={{ p: 2.5, mb: 2 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 14, mb: 0.5 }}>{q}</Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>{a}</Typography>
-        </Paper>
+        <div key={q} className={`${manualPanelClass} mb-4`}>
+          <p className="mb-1 text-sm font-bold text-foreground">{q}</p>
+          <p className="text-sm text-muted-foreground">{a}</p>
+        </div>
       ))}
-    </Box>
+    </div>
   )
 }
