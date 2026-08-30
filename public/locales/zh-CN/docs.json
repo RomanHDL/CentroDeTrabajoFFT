@@ -63,5 +63,29 @@
     "fieldColumn": "字段",
     "typeColumn": "类型",
     "notesColumn": "备注"
+  },
+  "changelogPage": {
+    "title": "更新日志",
+    "intro": "项目的真实变更历史（与仓库中的 CHANGELOG.md 内容一致）。",
+    "sectionAdded": "新增",
+    "sectionChanged": "变更",
+    "sectionPending": "待办（受限于外部凭据）"
+  },
+  "changelogData": {
+    "unreleasedTitle": "迁移至 MI Stack Reference 标准",
+    "unreleasedDescription": "真实（而非象征性）符合公司内部标准，以便部署到私有服务器（Coolify）。架构详情请参见开发者手册。",
+    "addedPnpm": "固定使用 pnpm（packageManager: pnpm@11.22.0），取代 npm。",
+    "addedBiome": "采用 Biome 作为代码检查/格式化工具（2 空格缩进，宽度 100，使用 \"recommended\" 预设）。",
+    "addedTsconfig": "宽松的 tsconfig.json（allowJs）——新代码从此使用真正的 TypeScript 编写；现有的 .jsx 文件按需逐步转换。",
+    "addedSentry": "Sentry 可观测性（前端 + 后端），在获得真实 DSN 之前处于未启用状态。",
+    "addedManuals": "开发者手册（仅限 ADMINISTRADOR 管理员）与用户手册，均已在导航菜单中提供入口。",
+    "addedChangelog": "本更新日志页面，即应用内的 CHANGELOG.md 镜像。",
+    "addedDrizzle": "完成 Prisma → Drizzle ORM 的全面迁移。Schema 通过对真实数据库直接执行内省（introspection）生成（18 张表/12 个枚举）。原先使用 Prisma 的 25 个 API/服务器文件及 11 个维护脚本已逐一迁移，行为已完全核实一致。",
+    "addedI18n": "真正的 i18n（react-i18next）。完整框架加上将应用中所有可见文本提取为翻译键，并提供西班牙语、英语和简体中文的真实内容。语言选择持久保存，默认语言为西班牙语。",
+    "addedTailwind": "完成 MUI → Tailwind CSS + shadcn/ui 的全面迁移。前端全部 88 个文件已逐一转换；MUI 已从项目中完全移除。",
+    "changedFormat": "对整个仓库的代码格式进行了统一（使用 Biome），未改变任何行为。",
+    "pendingSso": "接入真正的 Nextcloud 单点登录（SSO / OIDC），取代自建登录方式。",
+    "pendingCoolify": "部署到 Coolify（Docker + PM2），取代 Vercel。",
+    "v100Description": "开始技术栈迁移之前的生产状态。完整的现场人员管理功能：按工位的每日分配、需审批的调动（LIDER → SUPERVISOR/ADMINISTRADOR）、考勤、从 Excel 导入的人员目录（含离职/重复冲突的复核队列）、按角色及按用户的权限设置，以及二维现场运营平面图。部署在 Vercel 上，并与 GitHub 自动集成（desarrollo-personal 分支 → 预览环境，main 分支 → 生产环境）。"
   }
 }

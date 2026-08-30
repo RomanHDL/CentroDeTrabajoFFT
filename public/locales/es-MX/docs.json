@@ -63,5 +63,29 @@
     "fieldColumn": "Campo",
     "typeColumn": "Tipo",
     "notesColumn": "Notas"
+  },
+  "changelogPage": {
+    "title": "Cambios",
+    "intro": "Historial de cambios reales del proyecto (mismo contenido que CHANGELOG.md en el repositorio).",
+    "sectionAdded": "Agregado",
+    "sectionChanged": "Cambiado",
+    "sectionPending": "Pendiente (bloqueado en credenciales externas)"
+  },
+  "changelogData": {
+    "unreleasedTitle": "Migración a MI Stack Reference",
+    "unreleasedDescription": "Cumplimiento real (no tokenístico) con el estándar interno de la empresa para poder desplegar en el servidor privado (Coolify). Ver el Developer Manual para el detalle de arquitectura.",
+    "addedPnpm": "pnpm pinneado (packageManager: pnpm@11.22.0), reemplaza npm.",
+    "addedBiome": "Biome como linter/formateador (2 espacios, ancho 100, preset \"recommended\").",
+    "addedTsconfig": "tsconfig.json permisivo (allowJs) — código nuevo se escribe en TypeScript real desde ahora; el .jsx existente se convierte de forma oportunista.",
+    "addedSentry": "Observabilidad Sentry (frontend + backend), inactiva hasta recibir un DSN real.",
+    "addedManuals": "Developer Manual (solo ADMINISTRADOR) y Manual de Usuario, ambos enlazados desde el menú de navegación.",
+    "addedChangelog": "Esta página de Cambios, espejo dentro de la app de CHANGELOG.md.",
+    "addedDrizzle": "Migración completa Prisma → Drizzle ORM. Schema generado por introspección directa contra la base real (18 tablas/12 enums). Los 25 archivos de API/servidor y los 11 scripts de mantenimiento que usaban Prisma fueron portados uno por uno, mismo comportamiento verificado.",
+    "addedI18n": "i18n real (react-i18next). Framework completo más extracción de todo el texto visible de la app a claves de traducción, con contenido real en español, inglés y chino simplificado. Selector de idioma persistente, español como idioma por defecto.",
+    "addedTailwind": "Migración completa MUI → Tailwind CSS + shadcn/ui. Los 88 archivos del frontend convertidos uno por uno; MUI eliminado por completo del proyecto.",
+    "changedFormat": "Formato de código en todo el repo (Biome), sin cambios de comportamiento.",
+    "pendingSso": "SSO real de Nextcloud (OIDC), reemplaza el login propio.",
+    "pendingCoolify": "Despliegue a Coolify (Docker + PM2), reemplaza Vercel.",
+    "v100Description": "Estado de producción antes de iniciar la migración de stack. Gestión completa de personal de piso: asignación diaria por estación, movimientos con aprobación (LIDER → SUPERVISOR/ADMINISTRADOR), asistencia, catálogo de personal importado desde Excel (con colas de revisión para conflictos de baja/duplicados), permisos por rol y por usuario, y un plano operativo 2D del piso. Desplegado en Vercel con integración automática de GitHub (desarrollo-personal → Preview, main → Producción)."
   }
 }

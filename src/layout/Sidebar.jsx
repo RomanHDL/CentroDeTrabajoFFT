@@ -1,9 +1,12 @@
 import {
   BarChart3,
+  BookOpen,
   CalendarCheck,
   ChevronsLeft,
   ClipboardCheck,
+  Code2,
   Factory,
+  History,
   LayoutDashboard,
   UserPlus,
   Users,
@@ -59,6 +62,35 @@ const NAV_ITEMS = [
   { to: '/kpis', labelKey: 'kpis', icon: BarChart3, configurable: true },
   { to: '/asistencia', labelKey: 'asistencia', icon: CalendarCheck, configurable: true },
   { to: '/auditoria', labelKey: 'auditoria', icon: ClipboardCheck, configurable: true },
+  // 2026-08-30: paginas de ayuda/referencia (no son funcionalidad de
+  // negocio) -- `configurable: false` + `roles` fijo en vez del sistema de
+  // permisos editable (Usuarios -> Gestion de permisos), decision explicita
+  // del usuario. Manual de Usuario y Cambios son utiles para cualquier rol;
+  // Developer Manual (esquema de BD, arquitectura interna) solo tiene
+  // sentido para quien administra el sistema -- tambien bloqueado por rol a
+  // nivel de ruta en App.jsx (ProtectedRoute roles=['ADMINISTRADOR']), no
+  // solo oculto del menu.
+  {
+    to: '/manual',
+    labelKey: 'userManual',
+    icon: BookOpen,
+    configurable: false,
+    roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'],
+  },
+  {
+    to: '/developer-manual',
+    labelKey: 'developerManual',
+    icon: Code2,
+    configurable: false,
+    roles: ['ADMINISTRADOR'],
+  },
+  {
+    to: '/changelog',
+    labelKey: 'changelog',
+    icon: History,
+    configurable: false,
+    roles: ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'],
+  },
 ]
 
 // Estilo de item de menu (rediseño visual 2026-08-28, referencia "sidebar
