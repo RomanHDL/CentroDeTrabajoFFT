@@ -1,6 +1,7 @@
-import { Cog, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import BrandLogo from '@/components/BrandLogo'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,9 +64,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-[400px] rounded-[30px] border border-border bg-card p-6 text-foreground sm:p-8">
+        {/* Marca general de la plataforma (2026-08-29, cambio de branding a
+            peticion explicita del usuario) -- ver src/components/BrandLogo.jsx.
+            El login/autenticacion en si no cambia, solo esta cabecera visual. */}
         <div className="mb-6 flex flex-col items-center gap-2">
-          <Cog size={36} style={{ color: '#3B82F6' }} />
-          <p className="text-center text-[18px] font-extrabold">Centro de Trabajo FFT</p>
+          <BrandLogo variant="login" />
           <p className="text-center text-[13px] text-muted-foreground">
             Organización de áreas, líneas, estaciones y personal
           </p>

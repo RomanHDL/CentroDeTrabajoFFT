@@ -3,7 +3,6 @@ import {
   CalendarCheck,
   ChevronsLeft,
   ClipboardCheck,
-  Cog,
   Factory,
   LayoutDashboard,
   UserPlus,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
+import BrandLogo from '@/components/BrandLogo'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -98,35 +98,18 @@ function NavList({ items, onItemClick }) {
   )
 }
 
-// Encabezado (rediseño visual 2026-08-28): mismo icono de marca que ya usa
-// toda la app (antes PrecisionManufacturingIcon de MUI, #3B82F6 -- ver
-// AppLayout.jsx/LoginPage.jsx/CentroTrabajoPage.jsx). Fase 6 lo porta a
-// Lucide (Cog, el equivalente mas cercano a "manufactura de precision" en
-// ese set de iconos) -- LoginPage/CentroTrabajoPage siguen con el icono MUI
-// hasta que se conviertan en su propio paso de esta misma fase, asi que
-// durante la transicion el icono se vera distinto entre paginas ya
-// convertidas y las que faltan; se resuelve al terminar 6c. `onToggle` es
-// exactamente el mismo handler que antes (onTogglePin): el boton solo
-// cambia de icono (pin -> chevron) y de estilo, el comportamiento de fijar/
-// soltar el menu abierto NO cambia.
+// Encabezado (2026-08-29, cambio de branding a peticion explicita del
+// usuario): la marca general "Centro de Control" / "CONTROL OPERATIVO"
+// reemplaza el icono+texto "CENTRO DE TRABAJO FFT" que vivia aqui -- ver
+// src/components/BrandLogo.jsx, fuente unica del branding (variant="sidebar",
+// pensada para el ancho angosto de esta columna). `onToggle` es exactamente
+// el mismo handler que antes (onTogglePin): el boton solo cambia de icono
+// (pin -> chevron) y de estilo, el comportamiento de fijar/soltar el menu
+// abierto NO cambia.
 function SidebarHeader({ onToggle, toggleTitle, pinned }) {
   return (
     <div className="flex min-h-16 items-center gap-2.5 border-b border-border px-3.5 py-3.5">
-      <div
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: BRAND_BLUE }}
-      >
-        <Cog className="text-white" size={20} />
-      </div>
-      <div className="min-w-0 flex-1 leading-[1.15]">
-        <p className="text-[12.5px] font-extrabold leading-[1.25] tracking-[0.2px] text-foreground">
-          CENTRO DE
-        </p>
-        <p className="text-[12.5px] font-extrabold leading-[1.25] tracking-[0.2px]">
-          <span className="text-foreground">TRABAJO </span>
-          <span style={{ color: BRAND_BLUE }}>FFT</span>
-        </p>
-      </div>
+      <BrandLogo variant="sidebar" className="flex-1" />
       {onToggle && (
         <Tooltip>
           <TooltipTrigger asChild>

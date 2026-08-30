@@ -44,7 +44,7 @@ function SheetContent({ side = 'left', className, children, style, ...props }) {
       >
         <DialogPrimitive.Title className="sr-only">Menú de navegación</DialogPrimitive.Title>
         <DialogPrimitive.Description className="sr-only">
-          Menú principal de Centro de Trabajo FFT
+          Menú principal de Centro de Control
         </DialogPrimitive.Description>
         {children}
         <DialogPrimitive.Close className="absolute right-3 top-3 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">

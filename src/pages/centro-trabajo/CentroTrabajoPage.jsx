@@ -1,9 +1,10 @@
-import { Factory, LayoutGrid, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import BrandLogo from '@/components/BrandLogo'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cardClass, pageClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
+import { cardClass, pageClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import HeaderUserActions from '../../layout/HeaderUserActions'
 import RotateDeviceHint from '../../ui/RotateDeviceHint'
@@ -59,45 +60,18 @@ export default function CentroTrabajoPage() {
             </Button>
           )}
 
-          {/* Logo + titulo: mismo simbolo/color que antes vivian en la barra
-              superior global (Factory, #3B82F6), un poco mas grande aqui
-              para darle identidad al nuevo header principal. Hover sutil
-              (seccion "EFECTO DEL LOGO + TITULO" del pedido) -- puramente
-              decorativo, sin navegacion asociada. */}
-          <div className="group flex items-center gap-2.5 rounded-[25px] px-2 py-1 transition-colors duration-200 hover:bg-blue-500/[0.06] dark:hover:bg-blue-500/[0.1]">
-            <Factory className="h-[30px] w-[30px] shrink-0 text-blue-500 transition-[transform,filter] duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_6px_rgba(59,130,246,.45)]" />
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  pageTitleClass,
-                  'text-[1.15rem] transition-colors duration-200 group-hover:text-blue-500 sm:text-[1.4rem]',
-                )}
-              >
-                Centro de Trabajo
-              </p>
-              <p className={pageSubtitleClass}>
-                Organización operativa por áreas, líneas, estaciones y personal
-              </p>
-            </div>
-          </div>
+          {/* Marca general de la plataforma (2026-08-29, cambio de branding a
+              peticion explicita del usuario): "Centro de Control" / "CONTROL
+              OPERATIVO" reemplaza el logo+titulo "Centro de Trabajo" que
+              vivia aqui -- ver src/components/BrandLogo.jsx, fuente unica del
+              branding. El MODULO sigue llamandose "Centro de Trabajo" (menu,
+              rutas, tabs de esta misma pagina) -- solo cambia la marca. */}
+          <BrandLogo variant="header" />
 
           <div className="min-w-[16px] flex-1" />
 
           <div className="flex flex-wrap items-center gap-1">
             <HeaderUserActions mode={mode} setMode={setMode} />
-            {/* Acceso directo al layout/plano (Áreas de trabajo) desde
-                cualquier pestaña -- a peticion explicita del usuario
-                (2026-08-24, mockup de la pestaña Lineas). Misma ruta/handler
-                de siempre (setTab('areas')), solo se le agrega hover. */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTab('areas')}
-              className="ml-2 shrink-0 gap-1.5 rounded-[25px] font-bold transition-[background-color,border-color,transform] duration-200 hover:-translate-y-px hover:bg-blue-500/[0.06] dark:hover:bg-blue-500/[0.14]"
-            >
-              <LayoutGrid className="h-[17px] w-[17px]" />
-              Ver layout general
-            </Button>
           </div>
         </div>
 

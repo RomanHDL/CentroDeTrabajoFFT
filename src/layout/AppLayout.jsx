@@ -1,6 +1,7 @@
-import { Cog, Menu as MenuIcon } from 'lucide-react'
+import { Menu as MenuIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import BrandLogo from '@/components/BrandLogo'
 import { cn } from '@/lib/utils'
 import { setCurrentUserId } from '../data/personnel/apiSync'
 import { useAuth } from '../state/auth'
@@ -90,8 +91,7 @@ export default function AppLayout({ mode, setMode }) {
                 <MenuIcon size={20} />
               </button>
             )}
-            <Cog size={24} style={{ color: '#3B82F6' }} />
-            <p className="text-[15px] font-extrabold tracking-[-0.2px]">Centro de Trabajo FFT</p>
+            <BrandLogo variant="header-compact" />
             <div className="flex-1" />
             <HeaderUserActions mode={mode} setMode={setMode} />
           </div>
