@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useEmployeeDropTargetStation } from '../../ui/dnd'
@@ -24,6 +25,7 @@ export default function LeadershipRow({
   onEmployeeClick,
   rank,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
   const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
@@ -120,7 +122,9 @@ export default function LeadershipRow({
         </DraggablePersonChip>
       ) : (
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-bold text-muted-foreground">Sin asignar</p>
+          <p className="text-[13.5px] font-bold text-muted-foreground">
+            {t('leadershipRow.unassigned')}
+          </p>
           <p className="truncate text-[11px] text-muted-foreground/60">
             {workstation.requiredRole}
           </p>
@@ -133,7 +137,7 @@ export default function LeadershipRow({
           occupant ? 'text-[#059669]' : 'text-[#B45309]',
         )}
       >
-        {occupant ? 'OCUPADO' : 'DISPONIBLE'}
+        {occupant ? t('leadershipRow.occupied') : t('leadershipRow.available')}
       </span>
     </div>
   )
