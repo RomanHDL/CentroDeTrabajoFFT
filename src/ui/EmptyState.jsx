@@ -1,13 +1,11 @@
 import { Inbox } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
-export default function EmptyState({
-  icon,
-  title = 'Sin datos disponibles',
-  description = '',
-  action,
-  compact = false,
-}) {
+export default function EmptyState({ icon, title, description = '', action, compact = false }) {
+  const { t } = useTranslation('app')
+  const resolvedTitle = title ?? t('emptyState.defaultTitle')
+
   return (
     <div
       className={cn(
@@ -26,7 +24,7 @@ export default function EmptyState({
         {icon || <Inbox />}
       </div>
       <p className={cn('mb-1 font-semibold text-foreground', compact ? 'text-[13px]' : 'text-sm')}>
-        {title}
+        {resolvedTitle}
       </p>
       {description && (
         <p

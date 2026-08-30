@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { subscribeToast } from './toast'
 
@@ -28,6 +29,7 @@ const AUTO_HIDE_MS = 3200
    sobre la transicion CSS local de opacidad (mismo proposito: no desmontar
    `current` hasta que la animacion de salida realmente termino). */
 export default function ToastHost() {
+  const { t } = useTranslation('app')
   const [queue, setQueue] = useState([])
   const [open, setOpen] = useState(false)
   const [current, setCurrent] = useState(null)
@@ -76,7 +78,7 @@ export default function ToastHost() {
         <button
           type="button"
           onClick={handleClose}
-          aria-label="Cerrar"
+          aria-label={t('toastHost.closeLabel')}
           className="shrink-0 opacity-80 transition-opacity hover:opacity-100"
         >
           <X className="h-4 w-4" />

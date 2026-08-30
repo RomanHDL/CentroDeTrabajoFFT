@@ -48,9 +48,9 @@ import {
   fetchLineStationConfig,
 } from '../../data/personnel/lineStationConfig'
 import {
+  getLineVisualTypeOrder,
+  getLineVisualTypes,
   getPersonnelVisualType,
-  LINE_VISUAL_TYPE_ORDER,
-  LINE_VISUAL_TYPES,
 } from '../../data/personnel/lineVisualType'
 import {
   checkInEmployee,
@@ -68,9 +68,9 @@ import {
   workCenterById,
 } from '../../data/production/catalog'
 import {
-  AREA_STATUS_META,
   classifyAreaStatus,
   getActividadForEmployee,
+  getAreaStatusMeta,
   getEffectiveTodayRoster,
   getGroupAreaStaffing,
   getGroupPeople,
@@ -225,7 +225,7 @@ export default function LineDetailDrawer({
   )
   const areaStatusKey =
     staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
-  const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
+  const areaStatusMeta = areaStatusKey ? getAreaStatusMeta()[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? Moon : Sun
@@ -315,7 +315,8 @@ export default function LineDetailDrawer({
       if (!byCategory.has(key)) byCategory.set(key, { key, label, color, stations: [] })
       byCategory.get(key).stations.push(w)
     })
-    const groups = LINE_VISUAL_TYPE_ORDER.filter((vt2) => vt2.key !== 'LIDERAZGO')
+    const groups = getLineVisualTypeOrder()
+      .filter((vt2) => vt2.key !== 'LIDERAZGO')
       .map((vt2) => byCategory.get(vt2.key))
       .filter(Boolean)
     if (byCategory.has('__SIN_CLASIFICAR__')) groups.push(byCategory.get('__SIN_CLASIFICAR__'))
@@ -331,8 +332,8 @@ export default function LineDetailDrawer({
     const leadershipGroup = stationCategories.leadership.length
       ? {
           key: 'LIDERAZGO',
-          label: LINE_VISUAL_TYPES.LIDERAZGO.label,
-          color: LINE_VISUAL_TYPES.LIDERAZGO.color,
+          label: getLineVisualTypes().LIDERAZGO.label,
+          color: getLineVisualTypes().LIDERAZGO.color,
           occupied: stationCategories.leadership.filter((w) => w.occupants.length > 0).length,
           total: stationCategories.leadership.length,
         }

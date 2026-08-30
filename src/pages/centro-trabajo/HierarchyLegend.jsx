@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn, hexToRgba } from '@/lib/utils'
-import { PERSONNEL_RANK_ORDER } from '../../data/personnel/rankSystem'
+import { getPersonnelRankOrder } from '../../data/personnel/rankSystem'
 
 /* Rediseño "tablero operativo" (2026-08-28, a peticion explicita del
    usuario) -- SOLO lo usa LineLikeAreaDetail.jsx (areas LINE_LIKE:
@@ -61,7 +61,7 @@ export default function HierarchyLegend({ expanded = false }) {
         <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
           {t('hierarchyLegend.title')}
         </p>
-        {PERSONNEL_RANK_ORDER.map((rank) => (
+        {getPersonnelRankOrder().map((rank) => (
           <div key={rank.key} className="flex items-center gap-1">
             <RankIcon rank={rank} />
             <p className="text-[11px] font-bold text-muted-foreground">{rank.label}</p>
@@ -75,7 +75,7 @@ export default function HierarchyLegend({ expanded = false }) {
       <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
         {t('hierarchyLegend.expandedTitle')}
       </p>
-      {PERSONNEL_RANK_ORDER.map((rank) => (
+      {getPersonnelRankOrder().map((rank) => (
         <div key={rank.key} className="flex items-center gap-2">
           <div
             className="grid h-6 w-6 shrink-0 place-items-center rounded-full"

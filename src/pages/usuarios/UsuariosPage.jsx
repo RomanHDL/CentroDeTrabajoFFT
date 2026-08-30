@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ROLE_LABELS } from '../../layout/roleLabels'
+import { getRoleLabels } from '../../layout/roleLabels'
 import { apiRequest } from '../../state/auth'
 import { KpiCard } from '../../ui'
 import { showToast } from '../../ui/toast'
@@ -202,7 +202,7 @@ export default function UsuariosPage() {
                 <TableCell>{u.employeeNumber || '—'}</TableCell>
                 <TableCell className="font-semibold">{u.name}</TableCell>
                 <TableCell>{u.username || '—'}</TableCell>
-                <TableCell>{ROLE_LABELS[u.role] || u.role}</TableCell>
+                <TableCell>{getRoleLabels()[u.role] || u.role}</TableCell>
                 <TableCell>
                   <Badge variant={u.active ? 'success' : 'outline'}>
                     {u.active ? t('usuariosPage.statusActive') : t('usuariosPage.statusInactive')}

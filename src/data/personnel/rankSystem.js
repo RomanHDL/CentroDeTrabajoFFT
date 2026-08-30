@@ -25,6 +25,8 @@
    getPersonnelRank devuelve null ("Sin información disponible", nunca se
    inventa un rango). ───────────────────────────────────────────── */
 
+import i18n from '../../i18n'
+
 // iconKey/description (2026-08-28, rediseño "tablero operativo" de areas
 // LINE_LIKE, a peticion explicita del usuario): campos ADITIVOS -- ningun
 // consumidor existente (LineStationCard.jsx, RankLegend.jsx) los lee, asi
@@ -32,104 +34,119 @@
 // @mui/icons-material vive en la capa de presentacion (HierarchyLegend.jsx/
 // LineLikeAreaDetail.jsx), nunca aqui (este archivo se queda framework-
 // agnostico, solo datos).
-export const PERSONNEL_RANKS = {
-  HEAD_CHIEF_AREA: {
-    key: 'HEAD_CHIEF_AREA',
-    order: 1,
-    label: 'Head Chief Area',
-    color: '#6D28D9',
-    iconKey: 'headChief',
-    description: 'Máxima autoridad del área',
-  },
-  GERENTE_FFT: {
-    key: 'GERENTE_FFT',
-    order: 2,
-    label: 'Gerente FFT',
-    color: '#1E3A8A',
-    iconKey: 'gerente',
-    description: 'Nivel ejecutivo',
-  },
-  SUPERVISOR: {
-    key: 'SUPERVISOR',
-    order: 3,
-    label: 'Supervisor',
-    color: '#2563EB',
-    iconKey: 'supervisor',
-    description: 'Supervisión operativa',
-  },
-  TEAM_LEADER: {
-    key: 'TEAM_LEADER',
-    order: 4,
-    label: 'Team Leader',
-    color: '#0D9488',
-    iconKey: 'teamLeader',
-    description: 'Liderazgo de equipo',
-  },
-  // 2026-08-28 (tercera ronda, a peticion explicita del usuario -- "operador de
-  // compatibilidad es ayudante general operador de compatibilidad"): YA NO es
-  // excepcion -- REEMPLAZA la decision de una ronda anterior de esta misma
-  // tarea, que lo dejaba con rango propio. Se deja el rango DEFINIDO por
-  // completitud de leyenda/compatibilidad hacia atras (mismo criterio que
-  // OPERADOR_ESPECIALIZADO abajo), pero ya no hay ninguna entrada en
-  // EXACT_ROLE_TO_RANK que lo dispare -- "Operador de Compatibilidad" cae en
-  // el fallback AYUDANTE_GENERAL como cualquier otro puesto especifico: el
-  // NOMBRE del puesto (función) sigue siendo "Operador de Compatibilidad",
-  // solo cambia el rango mostrado.
-  OPERADOR_DE_COMPATIBILIDAD: {
-    key: 'OPERADOR_DE_COMPATIBILIDAD',
-    order: 5,
-    label: 'Operador de Compatibilidad',
-    color: '#D97706',
-    iconKey: 'compatibilidad',
-    description: 'Compatibilidad de producto',
-  },
-  // OPERADOR_ESPECIALIZADO ya no tiene ningun puesto real que lo dispare (ver getPersonnelRank
-  // -- el fallback ahora es AYUDANTE_GENERAL) -- se deja definido por completitud de la leyenda
-  // y compatibilidad hacia atras, igual que ya se hacia con HEAD_CHIEF_AREA/GERENTE_FFT/SUPERVISOR.
-  OPERADOR_ESPECIALIZADO: {
-    key: 'OPERADOR_ESPECIALIZADO',
-    order: 6,
-    label: 'Operador especializado',
-    color: '#EA580C',
-    iconKey: 'operador',
-    description: 'Operación técnica/especializada',
-  },
-  AYUDANTE_GENERAL: {
-    key: 'AYUDANTE_GENERAL',
-    order: 7,
-    label: 'Ayudante General',
-    color: '#64748B',
-    iconKey: 'ayudante',
-    description: 'Personal operativo general',
-  },
-  PERSONAL_DE_APOYO: {
-    key: 'PERSONAL_DE_APOYO',
-    order: 8,
-    label: 'Personal de apoyo',
-    color: '#DB2777',
-    iconKey: 'apoyo',
-    description: 'Apoyo transversal desde otra función',
-  },
+/* Funcion (nunca objeto estatico): los label/description deben resolverse
+   frescos en cada llamada via i18n.t(), nunca congelarse en el idioma que
+   estaba activo cuando el modulo se importo -- ver HARD RULE de i18n en
+   src/i18n.js. Todo consumidor debe llamar getPersonnelRanks() de nuevo
+   en vez de guardar el resultado como constante. */
+export function getPersonnelRanks() {
+  return {
+    HEAD_CHIEF_AREA: {
+      key: 'HEAD_CHIEF_AREA',
+      order: 1,
+      label: i18n.t('dataLayer:rankSystem.headChiefArea'),
+      color: '#6D28D9',
+      iconKey: 'headChief',
+      description: i18n.t('dataLayer:rankSystem.headChiefAreaDescription'),
+    },
+    GERENTE_FFT: {
+      key: 'GERENTE_FFT',
+      order: 2,
+      label: i18n.t('dataLayer:rankSystem.gerenteFft'),
+      color: '#1E3A8A',
+      iconKey: 'gerente',
+      description: i18n.t('dataLayer:rankSystem.gerenteFftDescription'),
+    },
+    SUPERVISOR: {
+      key: 'SUPERVISOR',
+      order: 3,
+      label: i18n.t('dataLayer:rankSystem.supervisor'),
+      color: '#2563EB',
+      iconKey: 'supervisor',
+      description: i18n.t('dataLayer:rankSystem.supervisorDescription'),
+    },
+    TEAM_LEADER: {
+      key: 'TEAM_LEADER',
+      order: 4,
+      label: i18n.t('dataLayer:rankSystem.teamLeader'),
+      color: '#0D9488',
+      iconKey: 'teamLeader',
+      description: i18n.t('dataLayer:rankSystem.teamLeaderDescription'),
+    },
+    // 2026-08-28 (tercera ronda, a peticion explicita del usuario -- "operador de
+    // compatibilidad es ayudante general operador de compatibilidad"): YA NO es
+    // excepcion -- REEMPLAZA la decision de una ronda anterior de esta misma
+    // tarea, que lo dejaba con rango propio. Se deja el rango DEFINIDO por
+    // completitud de leyenda/compatibilidad hacia atras (mismo criterio que
+    // OPERADOR_ESPECIALIZADO abajo), pero ya no hay ninguna entrada en
+    // EXACT_ROLE_TO_RANK_KEY que lo dispare -- "Operador de Compatibilidad" cae en
+    // el fallback AYUDANTE_GENERAL como cualquier otro puesto especifico: el
+    // NOMBRE del puesto (función) sigue siendo "Operador de Compatibilidad",
+    // solo cambia el rango mostrado.
+    OPERADOR_DE_COMPATIBILIDAD: {
+      key: 'OPERADOR_DE_COMPATIBILIDAD',
+      order: 5,
+      label: i18n.t('dataLayer:rankSystem.operadorCompatibilidad'),
+      color: '#D97706',
+      iconKey: 'compatibilidad',
+      description: i18n.t('dataLayer:rankSystem.operadorCompatibilidadDescription'),
+    },
+    // OPERADOR_ESPECIALIZADO ya no tiene ningun puesto real que lo dispare (ver getPersonnelRank
+    // -- el fallback ahora es AYUDANTE_GENERAL) -- se deja definido por completitud de la leyenda
+    // y compatibilidad hacia atras, igual que ya se hacia con HEAD_CHIEF_AREA/GERENTE_FFT/SUPERVISOR.
+    OPERADOR_ESPECIALIZADO: {
+      key: 'OPERADOR_ESPECIALIZADO',
+      order: 6,
+      label: i18n.t('dataLayer:rankSystem.operadorEspecializado'),
+      color: '#EA580C',
+      iconKey: 'operador',
+      description: i18n.t('dataLayer:rankSystem.operadorEspecializadoDescription'),
+    },
+    AYUDANTE_GENERAL: {
+      key: 'AYUDANTE_GENERAL',
+      order: 7,
+      label: i18n.t('dataLayer:rankSystem.ayudanteGeneral'),
+      color: '#64748B',
+      iconKey: 'ayudante',
+      description: i18n.t('dataLayer:rankSystem.ayudanteGeneralDescription'),
+    },
+    PERSONAL_DE_APOYO: {
+      key: 'PERSONAL_DE_APOYO',
+      order: 8,
+      label: i18n.t('dataLayer:rankSystem.personalDeApoyo'),
+      color: '#DB2777',
+      iconKey: 'apoyo',
+      description: i18n.t('dataLayer:rankSystem.personalDeApoyoDescription'),
+    },
+  }
 }
 
-/* Orden fijo para la leyenda (Nivel 1 -> Nivel 7). */
-export const PERSONNEL_RANK_ORDER = Object.values(PERSONNEL_RANKS).sort((a, b) => a.order - b.order)
+/* Orden fijo para la leyenda (Nivel 1 -> Nivel 7). Funcion (nunca array
+   estatico) por la misma razon que getPersonnelRanks() arriba. */
+export function getPersonnelRankOrder() {
+  return Object.values(getPersonnelRanks()).sort((a, b) => a.order - b.order)
+}
 
-const EXACT_ROLE_TO_RANK = {
-  'Jefe de Área': PERSONNEL_RANKS.HEAD_CHIEF_AREA,
-  'Gerente FFT': PERSONNEL_RANKS.GERENTE_FFT,
-  Supervisor: PERSONNEL_RANKS.SUPERVISOR,
-  'Team Leader': PERSONNEL_RANKS.TEAM_LEADER,
+/* Claves de rango (no texto de UI) -- coinciden EXACTAMENTE con el `role`
+   real de la estacion (workstations.js/BASE), nunca se traducen: son
+   valores de datos que deben seguir haciendo match contra el rol real
+   guardado, no texto visible independiente. */
+const EXACT_ROLE_TO_RANK_KEY = {
+  'Jefe de Área': 'HEAD_CHIEF_AREA',
+  'Gerente FFT': 'GERENTE_FFT',
+  Supervisor: 'SUPERVISOR',
+  'Team Leader': 'TEAM_LEADER',
   // "Calidad" es el rol real (LINE_BASE_ROLES) para inspeccion/apoyo de calidad dentro de una
   // linea -- si algun dia una area LINE_LIKE llega a tener un puesto literal "Calidad" (ej.
   // alguien de Calidad reubicado ahi conserva ese rol real), se identifica como apoyo aqui, sin
   // rastrear que la persona "viene de Calidad" -- es el ROL actual el que decide, nunca el origen.
   // Calidad ya tenia su propio rango dedicado de una tarea anterior explicita, no se toca
   // sin que el usuario lo pida.
-  Calidad: PERSONNEL_RANKS.PERSONAL_DE_APOYO,
+  Calidad: 'PERSONAL_DE_APOYO',
   // "Operador de Compatibilidad" (2026-08-28, tercera ronda) YA NO esta aqui -- dejo de ser
-  // excepcion, ver el comentario junto a PERSONNEL_RANKS.OPERADOR_DE_COMPATIBILIDAD arriba.
-  // Cae en el fallback AYUDANTE_GENERAL de getPersonnelRank, como cualquier otro puesto.
+  // excepcion, ver el comentario junto a PERSONNEL_RANKS.OPERADOR_DE_COMPATIBILIDAD en
+  // getPersonnelRanks() arriba. Cae en el fallback AYUDANTE_GENERAL de getPersonnelRank, como
+  // cualquier otro puesto.
 }
 
 /* Puestos genericos sin nombre oficial todavia (ver LINE_LIKE_AREA_IDS en
@@ -146,8 +163,9 @@ const UNKNOWN_ROLE_PLACEHOLDER = 'Puesto (nombre oficial pendiente de definir)'
 export function getPersonnelRank(role) {
   if (!role || role === UNKNOWN_ROLE_PLACEHOLDER) return null
   const trimmed = role.trim()
-  if (EXACT_ROLE_TO_RANK[trimmed]) return EXACT_ROLE_TO_RANK[trimmed]
-  if (/^ayudante general/i.test(trimmed)) return PERSONNEL_RANKS.AYUDANTE_GENERAL
+  const ranks = getPersonnelRanks()
+  if (EXACT_ROLE_TO_RANK_KEY[trimmed]) return ranks[EXACT_ROLE_TO_RANK_KEY[trimmed]]
+  if (/^ayudante general/i.test(trimmed)) return ranks.AYUDANTE_GENERAL
   // 2026-08-28 ("CORRECCIÓN DE PUESTOS Y ESTACIONES OPERATIVAS", a peticion explicita del
   // usuario, "quiero simplificar la clasificacion"): CUALQUIER otro puesto real y especifico
   // (Materialista, Surtidor de Accesorios, Controles, Armar Bases, Conveyor, Tornillería,
@@ -155,5 +173,5 @@ export function getPersonnelRank(role) {
   // puesto (workstation.role) sigue disponible aparte como "función" (ver LineStationCard.jsx),
   // nunca se pierde esa informacion, solo cambia el RANGO mostrado. Antes caia en
   // OPERADOR_ESPECIALIZADO (ver arriba, rango que se deja definido mas nunca disparado).
-  return PERSONNEL_RANKS.AYUDANTE_GENERAL
+  return ranks.AYUDANTE_GENERAL
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { AREA_STATUS_META } from '../../../data/dashboard/dashboardMetrics'
+import { getAreaStatusMeta } from '../../../data/dashboard/dashboardMetrics'
 import ChartCard from '../ChartCard'
 
 /* "Estado de las áreas" (2026-08-25) -- a proposito NO se titula "Estado
@@ -26,7 +26,7 @@ function ChartTooltip({ active, payload }) {
 export default function AreaStatusDonutCard({ statusCounts, loading }) {
   const { t } = useTranslation('dashboard')
   const total = Object.values(statusCounts).reduce((s, v) => s + v, 0)
-  const data = Object.values(AREA_STATUS_META).map((meta) => ({
+  const data = Object.values(getAreaStatusMeta()).map((meta) => ({
     ...meta,
     value: statusCounts[meta.key] || 0,
     pct: total > 0 ? ((statusCounts[meta.key] || 0) / total) * 100 : 0,

@@ -1,22 +1,23 @@
-import { REAL_PERSONNEL_SNAPSHOT, BASE_SNAPSHOT_DATE } from './realPersonnelSnapshot'
+import i18n from '../../i18n'
 import {
-  WORK_CENTERS,
-  workCenterById,
-  hasLineStations,
-  LINE_LIKE_AREA_IDS,
-  canonicalOperationalAreaId,
-  operationalGroupMembers,
-} from './catalog'
-import { FFT_LINE_IDS, colorGroupForArea } from './layoutZones'
-import {
-  getMovementsForDate,
-  getAssignmentsForDate,
-  getEmployeeById,
   getAllEmployees,
   getAssignableEmployees,
+  getAssignmentsForDate,
   getBaselineSuppressed,
+  getEmployeeById,
+  getMovementsForDate,
   todayISO,
 } from '../personnel/repository'
+import {
+  canonicalOperationalAreaId,
+  hasLineStations,
+  LINE_LIKE_AREA_IDS,
+  operationalGroupMembers,
+  WORK_CENTERS,
+  workCenterById,
+} from './catalog'
+import { colorGroupForArea, FFT_LINE_IDS } from './layoutZones'
+import { BASE_SNAPSHOT_DATE, REAL_PERSONNEL_SNAPSHOT } from './realPersonnelSnapshot'
 
 export { BASE_SNAPSHOT_DATE }
 
@@ -73,7 +74,7 @@ export const PROTECTED_FROM_LAYOUT_CLEAR_AREAS = WORK_CENTERS.filter(
 function mapAreaZonaToId(areaZona) {
   if (!areaZona) return null
   if (areaZona === 'LINEA 0') return 'PROYECTO'
-  if (areaZona.startsWith('LINEA ')) return 'LINEA' + areaZona.split(' ')[1]
+  if (areaZona.startsWith('LINEA ')) return `LINEA${areaZona.split(' ')[1]}`
   if (areaZona === 'DMT') return 'HIGH_VALUE'
   // INGENIERIA/CAJAS (2026-08-25, a peticion explicita del usuario): esa
   // gente real se cuenta como SUPERVISOR/BOX_PREP respectivamente, no como
@@ -281,7 +282,7 @@ export function getEffectiveTodayRoster() {
       synthetic.push({
         id: `snapshot-${p.id}`,
         employeeId: p.id,
-        employeeNumber: employee?.employeeNumber || 'PENDIENTE',
+        employeeNumber: employee?.employeeNumber || i18n.t('dataLayer:personnelByArea.pending'),
         employee,
         areaId,
         // 2026-08-26: WC Midea/High Value (LINE_LIKE) tampoco lleva estacion
@@ -463,11 +464,34 @@ export function getFftPeopleWithLine() {
    copia. OperatingFloorPlan.jsx NO se toco (fuera de alcance de este
    pedido, es parte del "layout general" que el usuario pidio no tocar)
    -- sigue con su propia copia identica, sin romper nada. */
-export const AREA_STATUS_META = {
-  COMPLETA: { key: 'COMPLETA', color: '#10B981', label: 'Completa' },
-  PARCIAL: { key: 'PARCIAL', color: '#3B82F6', label: 'Parcial' },
-  FALTA: { key: 'FALTA', color: '#EF4444', label: 'Falta personal' },
-  SIN_PERSONAL: { key: 'SIN_PERSONAL', color: '#94A3B8', label: 'Sin personal' },
+/* Funcion (nunca objeto estatico): el label debe resolverse fresco en
+   cada llamada via i18n.t(), nunca congelarse en el idioma que estaba
+   activo cuando el modulo se importo -- ver HARD RULE de i18n en
+   src/i18n.js. Todo consumidor debe llamar getAreaStatusMeta() de nuevo
+   en vez de guardar el resultado como constante. */
+export function getAreaStatusMeta() {
+  return {
+    COMPLETA: {
+      key: 'COMPLETA',
+      color: '#10B981',
+      label: i18n.t('dataLayer:personnelByArea.complete'),
+    },
+    PARCIAL: {
+      key: 'PARCIAL',
+      color: '#3B82F6',
+      label: i18n.t('dataLayer:personnelByArea.partial'),
+    },
+    FALTA: {
+      key: 'FALTA',
+      color: '#EF4444',
+      label: i18n.t('dataLayer:personnelByArea.missingStaff'),
+    },
+    SIN_PERSONAL: {
+      key: 'SIN_PERSONAL',
+      color: '#94A3B8',
+      label: i18n.t('dataLayer:personnelByArea.noStaff'),
+    },
+  }
 }
 
 export function classifyAreaStatus(real, ideal) {

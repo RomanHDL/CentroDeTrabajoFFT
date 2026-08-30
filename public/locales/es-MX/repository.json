@@ -1,0 +1,15 @@
+{
+  "enterEmployeeNumber": "Captura un número de empleado.",
+  "employeeNumberInUse": "El número de empleado {{number}} ya está en uso por otra persona.",
+  "selectAreaLine": "Selecciona el área/línea.",
+  "selectStation": "Selecciona el rol/estación.",
+  "employeeNotFound": "Empleado no encontrado.",
+  "stationFull": "{{stationId}} ya está completa ({{count}}/{{capacity}}).",
+  "selectDestinationAreaLine": "Selecciona el área/línea destino.",
+  "selectDestinationStation": "Selecciona el rol/estación destino.",
+  "noActiveAssignmentToday": "El empleado no tiene una asignación activa hoy.",
+  "stationNotOccupied": "La estación ya no está ocupada.",
+  "alreadyAtStation": "Ya está en esa estación.",
+  "noLocationAssignedToday": "El empleado no tiene una ubicación asignada hoy.",
+  "requestNoLongerExists": "Esa solicitud ya no existe."
+}

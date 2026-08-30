@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ROLE_LABELS } from '../../../layout/roleLabels'
+import { getRoleLabels } from '../../../layout/roleLabels'
 import { apiRequest } from '../../../state/auth'
 import { showToast } from '../../../ui/toast'
 import { getModuleIcon } from './moduleIcons'
@@ -126,7 +126,7 @@ export default function RoleModulePermissionsCard() {
               <TableHead>{t('roleModulePermissionsCard.systemModulesHeader')}</TableHead>
               {ROLES.map((role) => (
                 <TableHead key={role} className="text-center">
-                  {ROLE_LABELS[role]}
+                  {getRoleLabels()[role]}
                 </TableHead>
               ))}
               <TableHead className="text-right">
@@ -221,7 +221,7 @@ export default function RoleModulePermissionsCard() {
                   <div key={u.id} className="py-1">
                     <p className="text-sm font-medium">{u.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {`${ROLE_LABELS[u.role] || u.role}${u.employeeNumber ? ` · ${u.employeeNumber}` : ''}`}
+                      {`${getRoleLabels()[u.role] || u.role}${u.employeeNumber ? ` · ${u.employeeNumber}` : ''}`}
                     </p>
                   </div>
                 ))}

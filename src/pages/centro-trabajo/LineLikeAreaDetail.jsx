@@ -58,8 +58,8 @@ import {
   workCenterById,
 } from '../../data/production/catalog'
 import {
-  AREA_STATUS_META,
   classifyAreaStatus,
+  getAreaStatusMeta,
   getEffectiveTodayRoster,
   getGroupAreaStaffing,
   getGroupPeople,
@@ -239,7 +239,7 @@ export default function LineLikeAreaDetail({
   }, [stationSource, workstations, memberIds, version])
   const areaStatusKey =
     staffing?.ideal != null ? classifyAreaStatus(staffing.real, staffing.ideal) : null
-  const areaStatusMeta = areaStatusKey ? AREA_STATUS_META[areaStatusKey] : null
+  const areaStatusMeta = areaStatusKey ? getAreaStatusMeta()[areaStatusKey] : null
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)

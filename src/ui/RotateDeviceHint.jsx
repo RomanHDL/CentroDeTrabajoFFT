@@ -1,5 +1,6 @@
 import { RotateCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { alertToneClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import { useIsTouchDevice } from './useIsTouchDevice'
@@ -35,6 +36,7 @@ function useIsPortrait() {
    pagina con scroll si de verdad no puede girar el dispositivo), solo
    le avisa claramente que girarlo se ve mejor. */
 export default function RotateDeviceHint({ className }) {
+  const { t } = useTranslation('app')
   const isTouch = useIsTouchDevice()
   const isPortrait = useIsPortrait()
 
@@ -49,7 +51,7 @@ export default function RotateDeviceHint({ className }) {
       )}
     >
       <RotateCw className="h-5 w-5 shrink-0" />
-      Gira tu dispositivo para ver mejor esta sección.
+      {t('rotateDeviceHint.message')}
     </div>
   )
 }

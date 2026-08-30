@@ -6,7 +6,7 @@ import { cardClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { describeZoneSelection, PHYSICAL_ZONES } from '../../data/production/layoutZones'
+import { describeZoneSelection, getPhysicalZones } from '../../data/production/layoutZones'
 import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
 import AreaDetailPanel from './AreaDetailPanel'
 import WorkAreaBottomSummary from './WorkAreaBottomSummary'
@@ -48,7 +48,7 @@ export default function AreasLayoutView({ onOpenLine }) {
 
   function handleSelectArea(id) {
     if (id === 'FFT' || id === '__FFT__') {
-      setSelection(describeZoneSelection(PHYSICAL_ZONES.FFT))
+      setSelection(describeZoneSelection(getPhysicalZones().FFT))
       return
     }
     setSelection({ type: 'area', id })

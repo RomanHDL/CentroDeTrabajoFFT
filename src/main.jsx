@@ -1,8 +1,8 @@
+import * as Sentry from '@sentry/react'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import * as Sentry from '@sentry/react'
-import './i18n'
+import i18n from './i18n'
 import './index.css'
 import App from './App'
 
@@ -21,7 +21,13 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Sentry.ErrorBoundary fallback={<p>Ocurrió un error inesperado. Recarga la página.</p>}>
+    <Sentry.ErrorBoundary
+      fallback={
+        <p>
+          {i18n.t('app:mainErrorBoundary.title', 'Ocurrió un error inesperado. Recarga la página.')}
+        </p>
+      }
+    >
       <BrowserRouter>
         <App />
       </BrowserRouter>

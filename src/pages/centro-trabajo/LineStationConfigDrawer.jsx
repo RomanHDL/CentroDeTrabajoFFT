@@ -21,7 +21,7 @@ import {
   reorderLineStations,
   updateLineStation,
 } from '../../data/personnel/lineStationConfig'
-import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
+import { getLineVisualTypeOrder } from '../../data/personnel/lineVisualType'
 
 const EMPTY_FORM = { name: '', requiredRoleLabel: '', category: '', quantity: 1, capacity: 1 }
 
@@ -403,7 +403,7 @@ export default function LineStationConfigDrawer({
                     <SelectItem value={NO_CATEGORY}>
                       {t('lineStationConfigDrawer.noCategoryOption')}
                     </SelectItem>
-                    {LINE_VISUAL_TYPE_ORDER.map((vt) => (
+                    {getLineVisualTypeOrder().map((vt) => (
                       <SelectItem key={vt.key} value={vt.key}>
                         {vt.label}
                       </SelectItem>

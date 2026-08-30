@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ROLE_LABELS } from '../../layout/roleLabels'
+import { getRoleLabels } from '../../layout/roleLabels'
 import { apiRequest } from '../../state/auth'
 
 export default function EditUserDialog({ open, user, onClose, onSaved }) {
@@ -109,7 +109,7 @@ export default function EditUserDialog({ open, user, onClose, onSaved }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                {Object.entries(getRoleLabels()).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>

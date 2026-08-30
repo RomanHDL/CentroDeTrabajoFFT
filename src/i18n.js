@@ -45,6 +45,10 @@ i18n
       'usuarios',
       'registroPersonal',
       'docs',
+      'repository',
+      'app',
+      'catalog',
+      'dataLayer',
     ],
     defaultNS: 'common',
     detection: {
