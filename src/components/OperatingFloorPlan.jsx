@@ -568,22 +568,40 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              ellas en su propia fila.
              Columnas 1-2, fila 1 (2026-08-30, a peticion explicita del
              usuario, "WC LINEA 0 ya no debe mostrarse como area/card
-             independiente"): el area "paletizado" (que dibujaba WC LINEA 1
-             y WC LINEA 0/PROYECTO como barras horizontales aparte) se quita
-             -- esas 2 columnas ahora son parte del area "fft", que crece de
-             10 a 12 columnas (mismo ancho total del grid, 15 columnas,
-             ningun otro area se mueve ni cambia de tamaño). Dentro de
-             FftBlock, LINEA1 y PROYECTO pasan a ser una columna vertical
-             mas (LineColumn), junto con LINEA2..10 -- ver FFT_LINE_IDS en
-             floorPlanZones.js, ya no se filtra ningun id. */
+             independiente"; corregido el mismo dia -- el usuario aclaro que
+             el AGRUPAMIENTO/conteo esta bien pero el diseño visual debe
+             seguir siendo el de antes, solo con WC LINEA 0 primero y LINEA 1
+             despues, ambas horizontales): el area "paletizado" (columnas
+             1-2) se conserva exactamente como antes -- WC LINEA 0/PROYECTO y
+             LINEA1 se siguen dibujando como barras horizontales aparte, no
+             como columna dentro de FftBlock. Lo unico que cambio de verdad
+             (y se conserva) es el AGRUPAMIENTO logico: FFT_LINE_IDS
+             (floorPlanZones.js) ya incluye PROYECTO, asi que el total
+             mostrado en el header de "WC Líneas de producción (FFT)" suma
+             las 11 lineas (antes solo sumaba LINEA1..10); ver
+             FFT_COLUMN_LINE_IDS mas abajo para las columnas verticales
+             (LINEA2..10, sin cambios). */
           gridTemplateAreas: `
             "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor"
-            "fft fft fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
+            "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
         <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
+
+        {/* Orden invertido a peticion explicita del usuario (2026-08-30):
+            antes iba LINEA1 arriba y WC LINEA 0/PROYECTO abajo; ahora WC
+            LINEA 0 va primero (arriba) y LINEA1 despues (abajo). */}
+        <div style={{ gridArea: 'paletizado' }} className="flex flex-col gap-2">
+          <HorizontalLineBar
+            lineId="PROYECTO"
+            title={t('operatingFloorPlan.line0Title')}
+            onOpen={onOpen}
+            readOnly={readOnly}
+          />
+          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
+        </div>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
@@ -835,13 +853,18 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   )
 }
 
-/* 2026-08-30 (a peticion explicita del usuario, "WC LINEA 0 ya no debe
-   mostrarse como area/card independiente"): LINEA1 y PROYECTO ya no se
-   filtran de FFT_LINE_IDS -- las 11 lineas (LINEA1..10 + PROYECTO) se
-   dibujan como columna dentro de este bloque, ninguna aparte. id="area-fft"
-   (usado por CriticalAreasCard para scroll+highlight del agregado FFT --
-   no tiene sentido hacer scroll a una sola linea cuando el summary es del
-   bloque agregado). */
+/* LINEA1 y WC LINEA 0 (PROYECTO) se dibujan aparte (HorizontalLineBar,
+   acostadas en el area "paletizado" -- ver arriba) pero SI cuentan en el
+   total de este bloque: FFT_LINE_IDS (floorPlanZones.js) incluye las 11
+   lineas (LINEA1..10 + PROYECTO, agregado a peticion explicita del usuario
+   2026-08-30) para que totalReal/totalIdeal reflejen el agregado real de
+   "WC Líneas de producción (FFT)". FFT_COLUMN_LINE_IDS filtra ambas de las
+   columnas verticales -- solo LINEA2..10 se dibujan aqui, exactamente como
+   antes del 2026-08-30. id="area-fft" (usado por CriticalAreasCard para
+   scroll+highlight del agregado FFT -- no tiene sentido hacer scroll a una
+   sola linea cuando el summary es del bloque agregado). */
+const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1' && id !== 'PROYECTO')
+
 function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   const { t } = useTranslation('centroTrabajo')
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
@@ -872,11 +895,63 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
           columnas y FftBlock (overflow:hidden) recortaba el personal
           sobrante en silencio. */}
       <div className="flex min-h-0 flex-1 gap-[4.8px]">
-        {FFT_LINE_IDS.map((id) => (
+        {FFT_COLUMN_LINE_IDS.map((id) => (
           <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />
         ))}
       </div>
     </div>
+  )
+}
+
+/* Barra horizontal ("acostada") -- usada para WC LINEA 0 (PROYECTO) y
+   LINEA1, apiladas en el espacio que dejó libre la caja de Paletizado de
+   arriba a la izquierda (a petición del usuario 2026-08-24; orden WC LINEA
+   0 primero / LINEA1 despues a peticion explicita del usuario 2026-08-30).
+   Mismo lenguaje visual que BigZone, solo horizontal. */
+function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
+  const wc = workCenterById(lineId)
+  const staffing = getAreaStaffing(lineId)
+  const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
+  const tone = toneFor(status)
+  const label =
+    staffing.ideal != null
+      ? `${staffing.real} / ${staffing.ideal}`
+      : t('operatingFloorPlan.personCount', { count: staffing.real })
+  const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
+  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
+  return (
+    <button
+      type="button"
+      {...(readOnly ? {} : dropProps)}
+      onClick={() => onOpen(lineId)}
+      className={cn(
+        'flex min-h-0 flex-1 cursor-pointer select-none flex-col justify-center gap-1 rounded-[20px] border border-t-[3px] p-2 text-left transition-[box-shadow,background-color] duration-150',
+        isOver ? 'border-blue-500' : tone.border,
+        isOver ? 'border-t-blue-500' : tone.borderTop,
+        isOver ? OVER_TONE.bg : tone.bgIdle,
+        tone.ring25,
+      )}
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="text-[12.5px] font-extrabold">{title || wc?.name}</p>
+        <p className="text-[13.5px] font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
+      </div>
+      {status && (
+        <p className={cn('text-[9.5px] font-bold', tone.text)}>{statusText(t, status, staffing)}</p>
+      )}
+      <div className={cn('h-1.5 w-full overflow-hidden rounded-full', tone.track18)}>
+        <div className={cn('h-full rounded-full', tone.solid)} style={{ width: `${pct * 100}%` }} />
+      </div>
+      {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
+          personal, debe verse su nombre igual que en WC Accesorios, no solo la
+          barra de avance. */}
+      <div className="mt-1 max-h-[70px] overflow-auto">
+        <PersonList areaId={lineId} columns={2} readOnly={readOnly} />
+      </div>
+    </button>
   )
 }
 
