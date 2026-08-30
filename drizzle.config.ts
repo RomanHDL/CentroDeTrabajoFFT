@@ -1,9 +1,7 @@
 import { defineConfig } from 'drizzle-kit'
 import { config } from 'dotenv'
 
-// Mismo patron que prisma.config.js (no se toca ese archivo hasta que
-// Prisma se retire del todo -- fase 3f). .env.local sigue siendo la
-// unica fuente de secretos en desarrollo.
+// .env.local sigue siendo la unica fuente de secretos en desarrollo.
 config({ path: '.env.local' })
 
 const directUrl: string | undefined =
@@ -14,14 +12,16 @@ const directUrl: string | undefined =
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './server-lib/db/schema.ts',
+  schema: './server-lib/db/schema.js',
   out: './drizzle',
   dbCredentials: {
     url: directUrl as string,
   },
-  // _prisma_migrations es la tabla de bookkeeping interna de Prisma (se
-  // mantiene mientras Prisma siga presente, fase 3f la retira) -- nunca
-  // debe ser parte del schema/diff de Drizzle, para que un futuro
-  // `generate` jamas proponga borrarla.
+  // Fase 3 (Prisma -> Drizzle) ya se completo por entero -- prisma.config.js
+  // y @prisma/* ya no existen en el repo. _prisma_migrations puede seguir
+  // viva como tabla de bookkeeping HISTORICA dentro de la base de datos real
+  // (Neon) hasta que alguien la borre manualmente ahi; se sigue excluyendo
+  // del diff de Drizzle para que un futuro `generate` nunca proponga
+  // borrarla por error.
   tablesFilter: ['!_prisma_migrations'],
 })
