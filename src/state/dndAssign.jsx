@@ -1,24 +1,19 @@
-import React, { createContext, useContext, useMemo, useState } from 'react'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import Button from '@mui/material/Button'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import Typography from '@mui/material/Typography'
-import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
-import { getWorkstationsForLine, hasMultipleStations } from '../data/personnel/workstations'
+import { createContext, useContext, useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
+import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
 import {
-  getCurrentAssignment,
   checkInEmployee,
-  releaseAssignment,
+  getAssignmentsForArea,
+  getCurrentAssignment,
   getEmployeeById,
   getLineWorkstationsWithOccupancy,
-  getAssignmentsForArea,
+  releaseAssignment,
   swapOrBumpStation,
 } from '../data/personnel/repository'
-import { formatEmployeeNumber } from '../data/personnel/employeeDisplay'
+import { getWorkstationsForLine, hasMultipleStations } from '../data/personnel/workstations'
+import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
 import { showToast } from '../ui/toast'
@@ -200,6 +195,7 @@ export function DndAssignProvider({ children }) {
     setReleaseTarget(null)
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: value se memoiza UNA sola vez a proposito -- las 3 funciones solo llaman setters de useState (identidad estable entre renders) y nunca leen stationPicker/moveTarget/releaseTarget/swapTarget por closure, asi que recrearlas en cada render solo forzaria un re-render innecesario de todo consumidor de useDndAssign().
   const value = useMemo(() => ({ requestAssign, requestAssignToStation, requestRelease }), [])
 
   const pickerStations = stationPicker
@@ -212,72 +208,68 @@ export function DndAssignProvider({ children }) {
 
       <Dialog
         open={Boolean(stationPicker)}
-        onClose={() => setStationPicker(null)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        onOpenChange={(next) => !next && setStationPicker(null)}
       >
-        {stationPicker && (
-          <>
-            <DialogTitle sx={{ fontWeight: 800 }}>
-              Elige una estación — {workCenterById(stationPicker.targetAreaId)?.name}
-            </DialogTitle>
-            <DialogContent>
-              <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-                Asignando a <b>{stationPicker.employee.name}</b>
-              </Typography>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 2 }}>
-                No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b> ·
-                Soltar sobre la línea no elige estación automáticamente — selecciona una disponible:
-              </Typography>
-              <Stack spacing={1}>
-                {pickerStations.map((s) => (
-                  <Stack
-                    key={s.id}
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    onClick={() => {
-                      if (!s.isAvailable) return
-                      const { employee, current, targetAreaId } = stationPicker
-                      setStationPicker(null)
-                      finalize(employee, current, targetAreaId, s.name)
-                    }}
-                    sx={{
-                      p: 1.25,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      cursor: s.isAvailable ? 'pointer' : 'not-allowed',
-                      opacity: s.isAvailable ? 1 : 0.5,
-                      '&:hover': s.isAvailable ? { borderColor: '#3B82F6' } : {},
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 700, fontSize: 13.5 }}>{s.name}</Typography>
-                    <Chip
-                      size="small"
-                      label={
-                        s.isAvailable
-                          ? 'Disponible'
-                          : `${s.occupants.length}/${s.capacity} completa`
-                      }
-                      sx={{
-                        height: 20,
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        bgcolor: s.isAvailable ? '#10B98122' : '#94A3B822',
-                        color: s.isAvailable ? '#047857' : '#64748B',
+        <DialogContent>
+          {stationPicker && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  Elige una estación — {workCenterById(stationPicker.targetAreaId)?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="px-6 pb-6">
+                <p className="text-[13px] text-muted-foreground">
+                  Asignando a <b>{stationPicker.employee.name}</b>
+                </p>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b>{' '}
+                  · Soltar sobre la línea no elige estación automáticamente — selecciona una
+                  disponible:
+                </p>
+                <div className="flex flex-col gap-2">
+                  {pickerStations.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={!s.isAvailable}
+                      onClick={() => {
+                        const { employee, current, targetAreaId } = stationPicker
+                        setStationPicker(null)
+                        finalize(employee, current, targetAreaId, s.name)
                       }}
-                    />
-                  </Stack>
-                ))}
-              </Stack>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-              <Button onClick={() => setStationPicker(null)}>Cancelar</Button>
-            </DialogActions>
-          </>
-        )}
+                      className={cn(
+                        'flex items-center justify-between rounded-[20px] border border-border p-2.5 text-left transition-colors',
+                        s.isAvailable
+                          ? 'cursor-pointer hover:border-blue-500'
+                          : 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <span className="text-[13.5px] font-bold">{s.name}</span>
+                      <span
+                        className={cn(
+                          'inline-flex h-5 items-center rounded-full px-2 text-[10.5px] font-bold',
+                          s.isAvailable
+                            ? 'bg-emerald-500/[0.13] text-emerald-700'
+                            : 'bg-slate-400/[0.13] text-slate-500',
+                        )}
+                      >
+                        {s.isAvailable
+                          ? 'Disponible'
+                          : `${s.occupants.length}/${s.capacity} completa`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+                <Button variant="outline" onClick={() => setStationPicker(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
 
       {moveTarget && (
@@ -307,81 +299,77 @@ export function DndAssignProvider({ children }) {
         />
       )}
 
-      <Dialog
-        open={Boolean(swapTarget)}
-        onClose={() => setSwapTarget(null)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        {swapTarget && (
-          <>
-            <DialogTitle sx={{ fontWeight: 800 }}>
-              {swapTarget.current ? 'Intercambiar puesto' : 'Puesto ocupado'}
-            </DialogTitle>
-            <DialogContent>
-              {swapTarget.current ? (
-                <Typography sx={{ fontSize: 14 }}>
-                  <b>{swapTarget.employeeA.name}</b> tomará el puesto de{' '}
-                  <b>{swapTarget.employeeB.name}</b> en{' '}
-                  <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}),
-                  y <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
-                  <b>{swapTarget.employeeA.name}</b> en{' '}
-                  <b>{workCenterById(swapTarget.current.areaId)?.name}</b> (
-                  {swapTarget.current.stationId}).
-                </Typography>
-              ) : (
-                <Typography sx={{ fontSize: 14 }}>
-                  <b>{swapTarget.stationName}</b> ya está ocupada por{' '}
-                  <b>{swapTarget.employeeB.name}</b>. Si continúas,{' '}
-                  <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
-                  <b>{swapTarget.employeeB.name}</b> quedará sin asignación.
-                </Typography>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-              <Button onClick={() => setSwapTarget(null)}>Cancelar</Button>
-              <Button variant="contained" onClick={confirmSwap} sx={{ fontWeight: 700 }}>
-                {swapTarget.current ? 'Intercambiar' : 'Ocupar puesto'}
-              </Button>
-            </DialogActions>
-          </>
-        )}
+      <Dialog open={Boolean(swapTarget)} onOpenChange={(next) => !next && setSwapTarget(null)}>
+        <DialogContent>
+          {swapTarget && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {swapTarget.current ? 'Intercambiar puesto' : 'Puesto ocupado'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="px-6 pb-6 text-sm">
+                {swapTarget.current ? (
+                  <p>
+                    <b>{swapTarget.employeeA.name}</b> tomará el puesto de{' '}
+                    <b>{swapTarget.employeeB.name}</b> en{' '}
+                    <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}
+                    ), y <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
+                    <b>{swapTarget.employeeA.name}</b> en{' '}
+                    <b>{workCenterById(swapTarget.current.areaId)?.name}</b> (
+                    {swapTarget.current.stationId}).
+                  </p>
+                ) : (
+                  <p>
+                    <b>{swapTarget.stationName}</b> ya está ocupada por{' '}
+                    <b>{swapTarget.employeeB.name}</b>. Si continúas,{' '}
+                    <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
+                    <b>{swapTarget.employeeB.name}</b> quedará sin asignación.
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+                <Button variant="outline" onClick={() => setSwapTarget(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={confirmSwap} className="font-bold">
+                  {swapTarget.current ? 'Intercambiar' : 'Ocupar puesto'}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
 
       <Dialog
         open={Boolean(releaseTarget)}
-        onClose={() => setReleaseTarget(null)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        onOpenChange={(next) => !next && setReleaseTarget(null)}
       >
-        {releaseTarget && (
-          <>
-            <DialogTitle sx={{ fontWeight: 800 }}>Quitar del área</DialogTitle>
-            <DialogContent>
-              <Typography sx={{ fontSize: 14 }}>
+        <DialogContent>
+          {releaseTarget && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Quitar del área</DialogTitle>
+              </DialogHeader>
+              <div className="px-6 pb-6 text-sm">
                 ¿Quitar a <b>{releaseTarget.employee.name}</b> de{' '}
                 <b>
                   {workCenterById(releaseTarget.currentAssignment.areaId)?.name ||
                     releaseTarget.currentAssignment.areaId}
                 </b>
                 ?
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-              <Button onClick={() => setReleaseTarget(null)}>Cancelar</Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={confirmRelease}
-                sx={{ fontWeight: 700 }}
-              >
-                Quitar
-              </Button>
-            </DialogActions>
-          </>
-        )}
+              </div>
+              <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+                <Button variant="outline" onClick={() => setReleaseTarget(null)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={confirmRelease} className="font-bold">
+                  Quitar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
     </DndAssignContext.Provider>
   )

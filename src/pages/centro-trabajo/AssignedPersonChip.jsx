@@ -19,7 +19,7 @@ import EmployeeAvatar from './EmployeeAvatar'
 export default function AssignedPersonChip({ employeeId, name, subtitle, size = 32 }) {
   const dnd = useDndAssign()
   return (
-    <DraggablePersonChip employeeId={employeeId} sx={{ width: '100%' }}>
+    <DraggablePersonChip employeeId={employeeId} className="w-full">
       <div className="flex items-center gap-2 rounded-[20px] border border-border p-2 pr-1">
         <EmployeeAvatar employee={{ name }} size={size} />
         <div className="min-w-0 flex-1">

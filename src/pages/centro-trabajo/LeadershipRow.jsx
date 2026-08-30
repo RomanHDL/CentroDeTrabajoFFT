@@ -83,7 +83,7 @@ export default function LeadershipRow({
       </div>
 
       {occupant ? (
-        <DraggablePersonChip employeeId={occupant.employee?.id} sx={{ flex: 1, minWidth: 0 }}>
+        <DraggablePersonChip employeeId={occupant.employee?.id} className="min-w-0 flex-1">
           {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya esta anidado dentro de la fila que tambien tiene role="button" arriba, y dentro de DraggablePersonChip (draggable=true nativo); un <button> anidado en otro es HTML invalido y podria alterar el drag & drop de HTML5. */}
           <div
             className="flex items-center gap-3"

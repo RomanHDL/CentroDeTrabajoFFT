@@ -1,6 +1,5 @@
+import { Loader2 } from 'lucide-react'
 import { Navigate, useLocation } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
 import { useAuth } from '../state/auth'
 import Forbidden from './Forbidden'
 
@@ -10,11 +9,9 @@ export default function ProtectedRoute({ roles, children }) {
 
   if (loading) {
     return (
-      <Box
-        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 

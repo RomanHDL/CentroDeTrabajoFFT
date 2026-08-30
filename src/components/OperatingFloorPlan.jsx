@@ -1046,7 +1046,7 @@ function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
         )
         if (readOnly) return <div key={p.id}>{row}</div>
         return (
-          <DraggablePersonChip key={p.id} employeeId={p.id} sx={{ display: 'block' }}>
+          <DraggablePersonChip key={p.id} employeeId={p.id} className="block">
             {row}
           </DraggablePersonChip>
         )
