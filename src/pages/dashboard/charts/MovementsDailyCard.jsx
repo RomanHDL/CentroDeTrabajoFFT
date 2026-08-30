@@ -1,8 +1,21 @@
 import dayjs from 'dayjs'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import ChartCard from '../ChartCard'
 
-const WEEKDAY_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+function weekdayLabels(t) {
+  return [
+    t('movementsDailyCard.weekdaySun'),
+    t('movementsDailyCard.weekdayMon'),
+    t('movementsDailyCard.weekdayTue'),
+    t('movementsDailyCard.weekdayWed'),
+    t('movementsDailyCard.weekdayThu'),
+    t('movementsDailyCard.weekdayFri'),
+    t('movementsDailyCard.weekdaySat'),
+  ]
+}
+
 const GRID_COLOR = 'hsl(var(--foreground) / 0.06)'
 const AXIS_COLOR = 'hsl(var(--muted-foreground))'
 const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
@@ -19,34 +32,40 @@ const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
    falso/engañoso. En su lugar, esta gráfica muestra movimientos reales
    por día (últimos 7 días de calendario) -- 100% verídico. */
 function ChartTooltip({ active, payload, label }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="mb-0.5 text-[12.5px] font-bold">{label}</div>
       <div className="text-xs text-muted-foreground">
-        {payload[0].value} movimiento{payload[0].value === 1 ? '' : 's'}
+        {t('movementsDailyCard.movementCount', { count: payload[0].value })}
       </div>
     </div>
   )
 }
 
 export default function MovementsDailyCard({ dailyLast7, loading, error, onRetry }) {
+  const { t } = useTranslation('dashboard')
   const today = dayjs().format('YYYY-MM-DD')
+  const weekdayEs = useMemo(() => weekdayLabels(t), [t])
 
   const data = dailyLast7.map((row) => {
     const day = dayjs(row.date)
-    return { ...row, label: row.date === today ? 'Hoy' : WEEKDAY_ES[day.day()] }
+    return {
+      ...row,
+      label: row.date === today ? t('movementsDailyCard.todayLabel') : weekdayEs[day.day()],
+    }
   })
 
   return (
     <ChartCard
-      title="Movimientos por día"
-      subtitle="Últimos 7 días de calendario"
+      title={t('movementsDailyCard.title')}
+      subtitle={t('movementsDailyCard.subtitle')}
       loading={loading}
       error={error}
       onRetry={onRetry}
       empty={!error && data.every((row) => row.count === 0)}
-      emptyMessage="No hay movimientos registrados en los últimos 7 días."
+      emptyMessage={t('movementsDailyCard.emptyMessage')}
     >
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">

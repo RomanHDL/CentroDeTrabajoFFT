@@ -1,4 +1,5 @@
 import { CheckCircle2, Info, Lightbulb, OctagonAlert, TriangleAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cardClass, cardHeaderClass, cardHeaderTitleClass } from '@/lib/pageStyles'
 import { EmptyState } from '../../ui'
 
@@ -21,20 +22,21 @@ function withAlpha(hex, opacity) {
    de color + texto corto en 2 líneas (Parte 23), máximo 6 filas, en 2
    columnas cuando hay espacio para no alargar la card verticalmente. */
 export default function FindingsCard({ findings }) {
+  const { t } = useTranslation('dashboard')
   return (
     <div className={`${cardClass} h-full`}>
       <div className={cardHeaderClass}>
         <div className="flex items-center gap-1.5">
           <Lightbulb className="h-[18px] w-[18px] text-[#F59E0B]" />
-          <p className={cardHeaderTitleClass}>Hallazgos del día</p>
+          <p className={cardHeaderTitleClass}>{t('findingsCard.title')}</p>
         </div>
       </div>
       <div className="p-4">
         {findings.length === 0 ? (
           <EmptyState
             compact
-            title="Sin hallazgos por ahora"
-            description="No hay condiciones destacables con los datos actuales."
+            title={t('findingsCard.emptyTitle')}
+            description={t('findingsCard.emptyDescription')}
           />
         ) : (
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Bar,
   CartesianGrid,
@@ -20,14 +21,21 @@ const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
    Plantilla ideal se trata como META de planeación, nunca como techo:
    si actual > ideal, faltante queda en 0 (nunca negativo, Parte 17). */
 function ChartTooltip({ active, payload, label }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="mb-0.5 text-[12.5px] font-bold">{label}</div>
-      <div className="text-xs text-muted-foreground">Actual: {row.actual}</div>
-      <div className="text-xs text-muted-foreground">Ideal: {row.ideal}</div>
-      <div className="text-xs font-bold text-[#EF4444]">Faltante: {row.missing}</div>
+      <div className="text-xs text-muted-foreground">
+        {t('missingVsIdealComboCard.actualLabel', { value: row.actual })}
+      </div>
+      <div className="text-xs text-muted-foreground">
+        {t('missingVsIdealComboCard.idealLabel', { value: row.ideal })}
+      </div>
+      <div className="text-xs font-bold text-[#EF4444]">
+        {t('missingVsIdealComboCard.missingLabel', { value: row.missing })}
+      </div>
     </div>
   )
 }
@@ -52,6 +60,7 @@ function useIsDarkMode() {
 }
 
 export default function MissingVsIdealComboCard({ areas, loading }) {
+  const { t } = useTranslation('dashboard')
   const isDark = useIsDarkMode()
   const idealColor = isDark ? '#475569' : '#CBD5E1'
 
@@ -62,11 +71,11 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
 
   return (
     <ChartCard
-      title="Faltante vs ideal por área"
-      subtitle="Personal actual, plantilla ideal y faltante calculado, por área"
+      title={t('missingVsIdealComboCard.title')}
+      subtitle={t('missingVsIdealComboCard.subtitle')}
       loading={loading}
       empty={data.length === 0}
-      emptyMessage="Ninguna área tiene todavía una plantilla ideal definida."
+      emptyMessage={t('missingVsIdealComboCard.emptyMessage')}
     >
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
@@ -107,8 +116,11 @@ export default function MissingVsIdealComboCard({ areas, loading }) {
             <Legend
               wrapperStyle={{ fontSize: 11 }}
               formatter={(v) =>
-                ({ actual: 'Personal actual', ideal: 'Plantilla ideal', missing: 'Faltante' })[v] ||
-                v
+                ({
+                  actual: t('missingVsIdealComboCard.actualSeriesLabel'),
+                  ideal: t('missingVsIdealComboCard.idealSeriesLabel'),
+                  missing: t('missingVsIdealComboCard.missingSeriesLabel'),
+                })[v] || v
               }
             />
             <Bar

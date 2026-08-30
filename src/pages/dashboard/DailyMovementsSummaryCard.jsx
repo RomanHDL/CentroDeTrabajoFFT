@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowLeftRight, ArrowUp, Minus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import ChartCard from './ChartCard'
 
 /* "Movimientos del día" (2026-08-26) -- desglose real de
@@ -24,31 +25,32 @@ function Row({ icon, label, value, color }) {
 }
 
 export default function DailyMovementsSummaryCard({ dailyMovements, loading }) {
+  const { t } = useTranslation('dashboard')
   const d = dailyMovements || { asignaciones: 0, removidos: 0, movimientos: 0, neto: 0, total: 0 }
   return (
     <ChartCard
-      title="Movimientos del día"
-      subtitle="Asignaciones, liberaciones y reasignaciones de hoy"
+      title={t('dailyMovementsSummaryCard.title')}
+      subtitle={t('dailyMovementsSummaryCard.subtitle')}
       loading={loading}
       empty={d.total === 0}
-      emptyMessage="Todavía no hay movimientos registrados hoy."
+      emptyMessage={t('dailyMovementsSummaryCard.emptyMessage')}
     >
       <div className="divide-y divide-border">
         <Row
           icon={<ArrowUp className="h-4 w-4" />}
-          label="Asignaciones"
+          label={t('dailyMovementsSummaryCard.assignmentsLabel')}
           value={d.asignaciones}
           color="#10B981"
         />
         <Row
           icon={<ArrowDown className="h-4 w-4" />}
-          label="Removidos / Liberados"
+          label={t('dailyMovementsSummaryCard.removedLabel')}
           value={d.removidos}
           color="#EF4444"
         />
         <Row
           icon={<ArrowLeftRight className="h-4 w-4" />}
-          label="Movimientos / Reasignaciones"
+          label={t('dailyMovementsSummaryCard.movementsLabel')}
           value={d.movimientos}
           color="#3B82F6"
         />
@@ -63,7 +65,7 @@ export default function DailyMovementsSummaryCard({ dailyMovements, loading }) {
         >
           <Minus className="h-4 w-4" />
         </div>
-        <p className="flex-1 text-[12.5px] font-bold">Neto</p>
+        <p className="flex-1 text-[12.5px] font-bold">{t('dailyMovementsSummaryCard.netLabel')}</p>
         <p
           className="text-[17px] font-extrabold"
           style={{ color: d.neto >= 0 ? '#10B981' : '#EF4444' }}

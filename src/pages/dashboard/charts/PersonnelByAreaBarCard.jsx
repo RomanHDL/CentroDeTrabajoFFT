@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   Bar,
   BarChart,
@@ -17,20 +18,22 @@ const AXIS_COLOR = 'hsl(var(--muted-foreground))'
 const CURSOR_FILL = 'hsl(var(--foreground) / 0.04)'
 
 function ChartTooltip({ active, payload }) {
+  const { t } = useTranslation('dashboard')
   if (!active || !payload?.length) return null
   const row = payload[0].payload
   return (
     <div className="rounded-[15px] border border-border bg-popover px-3 py-2 shadow-md text-popover-foreground">
       <div className="mb-0.5 text-[12.5px] font-bold">{row.name}</div>
       <div className="text-xs text-muted-foreground">
-        {row.actual} persona{row.actual === 1 ? '' : 's'}
-        {row.ideal != null ? ` · ideal ${row.ideal}` : ''}
+        {t('personnelByAreaBarCard.personCount', { count: row.actual })}
+        {row.ideal != null ? t('personnelByAreaBarCard.idealSuffix', { ideal: row.ideal }) : ''}
       </div>
     </div>
   )
 }
 
 export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea }) {
+  const { t } = useTranslation('dashboard')
   const data = [...areas]
     .sort((a, b) => b.actual - a.actual)
     .map((a, i) => ({ ...a, shortName: a.name.replace(/^WC /, ''), color: colorForIndex(i) }))
@@ -38,11 +41,11 @@ export default function PersonnelByAreaBarCard({ areas, loading, onSelectArea })
 
   return (
     <ChartCard
-      title="Personal por área"
-      subtitle="Personal actual en cada área, de mayor a menor"
+      title={t('personnelByAreaBarCard.title')}
+      subtitle={t('personnelByAreaBarCard.subtitle')}
       loading={loading}
       empty={data.length === 0}
-      emptyMessage="No hay áreas con personal registrado todavía."
+      emptyMessage={t('personnelByAreaBarCard.emptyMessage')}
       height={height}
     >
       <div className="flex-1 overflow-auto" style={{ minHeight: height }}>

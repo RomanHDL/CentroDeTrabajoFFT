@@ -1,0 +1,170 @@
+{
+  "chartCard": {
+    "loadErrorMessage": "No se pudieron cargar estos datos.",
+    "retryButton": "Reintentar",
+    "emptyDefaultMessage": "Sin datos disponibles."
+  },
+  "dailyMovementsSummaryCard": {
+    "title": "Movimientos del día",
+    "subtitle": "Asignaciones, liberaciones y reasignaciones de hoy",
+    "emptyMessage": "Todavía no hay movimientos registrados hoy.",
+    "assignmentsLabel": "Asignaciones",
+    "removedLabel": "Removidos / Liberados",
+    "movementsLabel": "Movimientos / Reasignaciones",
+    "netLabel": "Neto"
+  },
+  "dashboardExecKpiCard": {},
+  "fftIndicatorsCard": {
+    "title": "Indicadores FFT",
+    "subtitle": "Eficiencia, demoras, producción y cumplimiento de programas del área",
+    "noSourceMessage": "Sin fuente de datos configurada"
+  },
+  "recentActivityCard": {
+    "title": "Actividades recientes",
+    "subtitle": "Eventos reales de personal de hoy",
+    "emptyMessage": "Todavía no hay actividad registrada hoy.",
+    "viewAllButton": "Ver todas las actividades",
+    "dialogTitle": "Actividades de hoy"
+  },
+  "dashboardKpiCard": {},
+  "findingsCard": {
+    "title": "Hallazgos del día",
+    "emptyTitle": "Sin hallazgos por ahora",
+    "emptyDescription": "No hay condiciones destacables con los datos actuales."
+  },
+  "dashboardPage": {
+    "pageTitle": "Dashboard",
+    "pageSubtitle": "Resumen general del centro de trabajo",
+    "shiftLabel": "Turno: {{shift}}",
+    "todayLabel": "Hoy: {{date}}",
+    "kpiPersonalActualTitle": "Personal actual",
+    "kpiPersonalActualUnit": "personas en turno",
+    "kpiFooterIdeal": "Ideal",
+    "kpiPersonalFaltanteTitle": "Personal faltante",
+    "kpiPersonalFaltanteUnit": "personas faltantes",
+    "kpiFaltantePctFooter": "{{pct}}% del ideal",
+    "kpiNoIdealFooter": "Sin plantilla ideal",
+    "kpiPlantillaIdealTitle": "Plantilla ideal",
+    "kpiPersonasUnit": "personas",
+    "kpiTotalIdealFooter": "Total ideal definida",
+    "kpiLineasOperandoTitle": "Líneas operando",
+    "kpiLineasUnit": "líneas operativas",
+    "kpiLineasPctFooter": "{{pct}}% de las líneas",
+    "kpiCoberturaTotalTitle": "Cobertura total",
+    "kpiCoberturaUnit": "de cobertura general",
+    "kpiCoberturaFooter": "{{real}} / {{ideal}} del ideal",
+    "lastUpdatedLabel": "Última actualización: {{time}}"
+  },
+  "dashboardQuickSummaryStrip": {
+    "noCoverageGoal": "Sin meta",
+    "headerTitle": "Resumen rápido del centro de trabajo",
+    "totalAreasLabel": "Áreas totales",
+    "personnelOnShiftLabel": "Personal en turno",
+    "missingPersonnelLabel": "Personas faltantes",
+    "operatingLinesLabel": "Líneas operativas",
+    "overallCoverageLabel": "Cobertura general",
+    "movementsTodayLabel": "Movimientos hoy"
+  },
+  "dashboardExportButton": {
+    "buttonLabel": "Descargar Excel",
+    "summarySheetName": "Resumen",
+    "areasSheetName": "Áreas",
+    "shiftsSheetName": "Turnos",
+    "movementsSheetName": "Movimientos",
+    "attendanceSheetName": "Asistencia",
+    "metricColumnHeader": "Métrica",
+    "valueColumnHeader": "Valor",
+    "metricPersonalActual": "Personal actual",
+    "metricPlantillaIdeal": "Plantilla ideal",
+    "metricPersonalFaltante": "Personal faltante",
+    "metricCoberturaGeneral": "Cobertura general (%)",
+    "metricLineasOperando": "Líneas operando",
+    "metricMovimientosHoy": "Movimientos hoy",
+    "metricMovimientosPendientes": "Movimientos pendientes de aprobación",
+    "areaColumnHeader": "Área",
+    "actualColumnHeader": "Actual",
+    "idealColumnHeader": "Ideal",
+    "faltanteColumnHeader": "Faltante",
+    "coberturaColumnHeader": "Cobertura",
+    "estadoColumnHeader": "Estado",
+    "noTemplateStatus": "Sin plantilla",
+    "turnoColumnHeader": "Turno",
+    "personasColumnHeader": "Personas",
+    "horaColumnHeader": "Hora",
+    "empleadoColumnHeader": "Empleado",
+    "tipoColumnHeader": "Tipo",
+    "desdeColumnHeader": "Desde",
+    "haciaColumnHeader": "Hacia",
+    "movementTypeCheckIn": "Registro",
+    "movementTypeRelease": "Liberación",
+    "movementTypeMovement": "Movimiento",
+    "employeeNumberColumnHeader": "No. empleado",
+    "checkInTimeColumnHeader": "Hora de entrada"
+  },
+  "areaStatusDonutCard": {
+    "title": "Estado de las áreas",
+    "subtitle": "Áreas con plantilla ideal definida, por estado de cobertura",
+    "emptyMessage": "Ninguna área tiene todavía una plantilla ideal definida.",
+    "totalLabel": "Total",
+    "areaCountPct_one": "{{count}} área ({{pct}}%)",
+    "areaCountPct_other": "{{count}} áreas ({{pct}}%)"
+  },
+  "coverageDonutCard": {
+    "title": "Cobertura por área",
+    "subtitle": "Distribución del personal actual entre áreas",
+    "emptyMessage": "Todavía no hay personal asignado en ninguna área.",
+    "tooltipText": "{{actual}} personas · {{share}}% del personal actual",
+    "totalCoverageLabel": "Cobertura total"
+  },
+  "missingVsIdealComboCard": {
+    "title": "Faltante vs ideal por área",
+    "subtitle": "Personal actual, plantilla ideal y faltante calculado, por área",
+    "emptyMessage": "Ninguna área tiene todavía una plantilla ideal definida.",
+    "actualLabel": "Actual: {{value}}",
+    "idealLabel": "Ideal: {{value}}",
+    "missingLabel": "Faltante: {{value}}",
+    "actualSeriesLabel": "Personal actual",
+    "idealSeriesLabel": "Plantilla ideal",
+    "missingSeriesLabel": "Faltante"
+  },
+  "movementsDailyCard": {
+    "title": "Movimientos por día",
+    "subtitle": "Últimos 7 días de calendario",
+    "emptyMessage": "No hay movimientos registrados en los últimos 7 días.",
+    "todayLabel": "Hoy",
+    "weekdaySun": "Dom",
+    "weekdayMon": "Lun",
+    "weekdayTue": "Mar",
+    "weekdayWed": "Mié",
+    "weekdayThu": "Jue",
+    "weekdayFri": "Vie",
+    "weekdaySat": "Sáb",
+    "movementCount_one": "{{count}} movimiento",
+    "movementCount_other": "{{count}} movimientos"
+  },
+  "movementsHourlyCard": {
+    "title": "Movimientos por hora (hoy)",
+    "subtitle": "Check-ins y movimientos reales registrados durante el turno",
+    "emptyMessage": "Todavía no se ha registrado ningún movimiento hoy.",
+    "movementCount_one": "{{count}} movimiento",
+    "movementCount_other": "{{count}} movimientos"
+  },
+  "personnelByAreaBarCard": {
+    "title": "Personal por área",
+    "subtitle": "Personal actual en cada área, de mayor a menor",
+    "emptyMessage": "No hay áreas con personal registrado todavía.",
+    "personCount_one": "{{count}} persona",
+    "personCount_other": "{{count}} personas",
+    "idealSuffix": " · ideal {{ideal}}"
+  },
+  "shiftDistributionDonutCard": {
+    "title": "Distribución por turno",
+    "subtitle": "Personal con turno real registrado hoy",
+    "emptyMessage": "Todavía no hay personal con turno registrado hoy.",
+    "totalLabel": "Total",
+    "personCountPct_one": "{{count}} persona ({{pct}}%)",
+    "personCountPct_other": "{{count}} personas ({{pct}}%)",
+    "personCount_one": "{{count}} persona",
+    "personCount_other": "{{count}} personas"
+  }
+}

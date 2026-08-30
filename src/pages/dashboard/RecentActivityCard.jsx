@@ -1,5 +1,6 @@
 import { ArrowLeftRight, UserMinus, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogClose,
@@ -48,17 +49,18 @@ function ActivityRow({ a }) {
 }
 
 export default function RecentActivityCard({ recentActivity, loading }) {
+  const { t } = useTranslation('dashboard')
   const [open, setOpen] = useState(false)
   const items = recentActivity || []
 
   return (
     <>
       <ChartCard
-        title="Actividades recientes"
-        subtitle="Eventos reales de personal de hoy"
+        title={t('recentActivityCard.title')}
+        subtitle={t('recentActivityCard.subtitle')}
         loading={loading}
         empty={items.length === 0}
-        emptyMessage="Todavía no hay actividad registrada hoy."
+        emptyMessage={t('recentActivityCard.emptyMessage')}
       >
         <div className="space-y-2.5">
           {items.slice(0, 6).map((a) => (
@@ -71,7 +73,7 @@ export default function RecentActivityCard({ recentActivity, loading }) {
             onClick={() => setOpen(true)}
             className="mt-3 cursor-pointer self-start border-0 bg-transparent p-0 text-[11.5px] font-bold text-[#3B82F6]"
           >
-            Ver todas las actividades
+            {t('recentActivityCard.viewAllButton')}
           </button>
         )}
       </ChartCard>
@@ -79,7 +81,7 @@ export default function RecentActivityCard({ recentActivity, loading }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Actividades de hoy</DialogTitle>
+            <DialogTitle>{t('recentActivityCard.dialogTitle')}</DialogTitle>
             <DialogClose asChild>
               <button
                 type="button"

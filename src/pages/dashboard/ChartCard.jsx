@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   cardClass,
@@ -26,6 +27,7 @@ export default function ChartCard({
   emptyMessage,
   children,
 }) {
+  const { t } = useTranslation('dashboard')
   return (
     <div className={`${cardClass} flex h-full flex-col`}>
       <div className={cardHeaderClass}>
@@ -42,17 +44,17 @@ export default function ChartCard({
             className="flex flex-col items-center justify-center gap-3 text-center"
             style={{ height }}
           >
-            <p className="text-[13px] text-muted-foreground">No se pudieron cargar estos datos.</p>
+            <p className="text-[13px] text-muted-foreground">{t('chartCard.loadErrorMessage')}</p>
             {onRetry && (
               <Button variant="ghost" size="sm" onClick={onRetry} className="font-bold normal-case">
                 <RefreshCw className="h-3.5 w-3.5" />
-                Reintentar
+                {t('chartCard.retryButton')}
               </Button>
             )}
           </div>
         ) : empty ? (
           <div className="flex items-center justify-center" style={{ height }}>
-            <EmptyState compact title={emptyMessage || 'Sin datos disponibles.'} />
+            <EmptyState compact title={emptyMessage || t('chartCard.emptyDefaultMessage')} />
           </div>
         ) : (
           children
