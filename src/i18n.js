@@ -44,6 +44,7 @@ i18n
       'dashboard',
       'usuarios',
       'registroPersonal',
+      'docs',
     ],
     defaultNS: 'common',
     detection: {
