@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '../../state/auth'
 
 export default function ChangePasswordPage() {
+  const { t } = useTranslation('auth')
   const { user, changePassword } = useAuth()
   const navigate = useNavigate()
 
@@ -39,11 +41,11 @@ export default function ChangePasswordPage() {
     setError('')
 
     if (newPassword.length < 8) {
-      setError('La nueva contraseña debe tener al menos 8 caracteres.')
+      setError(t('errorPasswordTooShort'))
       return
     }
     if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden.')
+      setError(t('errorPasswordMismatch'))
       return
     }
 
@@ -52,7 +54,7 @@ export default function ChangePasswordPage() {
       await changePassword(requiresCurrent ? currentPassword : undefined, newPassword)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(err.message || 'No se pudo cambiar la contraseña.')
+      setError(err.message || t('errorChangePasswordGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -61,17 +63,17 @@ export default function ChangePasswordPage() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-[420px] rounded-[30px] border border-border bg-card p-6 text-foreground sm:p-8">
-        <p className="mb-1 text-[17px] font-extrabold">Cambiar contraseña</p>
+        <p className="mb-1 text-[17px] font-extrabold">{t('changePasswordTitle')}</p>
         {user?.mustChangePassword && (
           <p className="mb-4 text-[13px] text-muted-foreground">
-            Tu contraseña es temporal. Debes establecer una nueva antes de continuar.
+            {t('changePasswordTemporaryNotice')}
           </p>
         )}
 
         <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-4">
           {requiresCurrent && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="change-password-current">Contraseña actual</Label>
+              <Label htmlFor="change-password-current">{t('currentPasswordLabel')}</Label>
               <Input
                 id="change-password-current"
                 type="password"
@@ -83,7 +85,7 @@ export default function ChangePasswordPage() {
             </div>
           )}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="change-password-new">Nueva contraseña</Label>
+            <Label htmlFor="change-password-new">{t('newPasswordLabel')}</Label>
             <Input
               id="change-password-new"
               type="password"
@@ -92,10 +94,10 @@ export default function ChangePasswordPage() {
               disabled={submitting}
               autoComplete="new-password"
             />
-            <p className="text-xs text-muted-foreground">Mínimo 8 caracteres</p>
+            <p className="text-xs text-muted-foreground">{t('newPasswordHint')}</p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="change-password-confirm">Confirmar nueva contraseña</Label>
+            <Label htmlFor="change-password-confirm">{t('confirmPasswordLabel')}</Label>
             <Input
               id="change-password-confirm"
               type="password"
@@ -109,7 +111,11 @@ export default function ChangePasswordPage() {
           {error && <Alert variant="destructive">{error}</Alert>}
 
           <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
-            {submitting ? <Loader2 size={22} className="animate-spin" /> : 'Guardar contraseña'}
+            {submitting ? (
+              <Loader2 size={22} className="animate-spin" />
+            ) : (
+              t('changePasswordSubmit')
+            )}
           </Button>
         </form>
       </div>

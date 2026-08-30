@@ -59,6 +59,7 @@ export default function HeaderUserActions({ mode, setMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { i18n } = useTranslation()
+  const { t } = useTranslation('layout')
 
   const roleLabel = ROLE_LABELS[user?.role] || user?.role
   const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
@@ -76,7 +77,7 @@ export default function HeaderUserActions({ mode, setMode }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            title="Idioma / Language / 语言"
+            title={t('headerUserActions.idiomaTitle')}
             className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-blue-500/[0.10] dark:hover:bg-blue-400/[0.14]"
           >
             <Languages size={20} />
@@ -104,14 +105,16 @@ export default function HeaderUserActions({ mode, setMode }) {
             {mode === 'light' ? <Moon size={20} /> : <Sun size={20} />}
           </button>
         </TooltipTrigger>
-        <TooltipContent>{mode === 'light' ? 'Modo oscuro' : 'Modo claro'}</TooltipContent>
+        <TooltipContent>
+          {mode === 'light' ? t('headerUserActions.modoOscuro') : t('headerUserActions.modoClaro')}
+        </TooltipContent>
       </Tooltip>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            title={`${user?.name || ''} · Mi cuenta`}
+            title={t('headerUserActions.miCuenta', { value: user?.name || '' })}
             className="ml-1 flex items-center gap-2 rounded-[20px] px-2 py-1 transition-colors duration-200 hover:bg-accent"
           >
             <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-[#3B82F6] text-sm font-bold text-white">
@@ -126,18 +129,20 @@ export default function HeaderUserActions({ mode, setMode }) {
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <div className="px-4 py-2">
             <p className="text-[13px] font-bold">{user?.name}</p>
-            <p className="text-xs text-muted-foreground">{roleLabel} · Mi cuenta</p>
+            <p className="text-xs text-muted-foreground">
+              {t('headerUserActions.miCuenta', { value: roleLabel })}
+            </p>
           </div>
           <div className="-mx-1 my-1 h-px bg-border" />
           {user?.role === 'ADMINISTRADOR' && (
             <DropdownMenuItem onClick={() => navigate('/cambiar-contrasena')}>
               <KeyRound className="mr-2 h-4 w-4" />
-              Cambiar contraseña
+              {t('headerUserActions.cambiarContrasena')}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
-            Cerrar sesión
+            {t('headerUserActions.cerrarSesion')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next'
 import ComingSoonPage from '../shared/ComingSoonPage'
 
 export default function KpisPage() {
-  return <ComingSoonPage title="KPI's" />
+  const { t } = useTranslation('navigation')
+  return <ComingSoonPage title={t('kpis')} />
 }

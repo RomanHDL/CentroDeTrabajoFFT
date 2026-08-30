@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { Bell, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -18,17 +19,18 @@ function areaName(id) {
   return workCenterById(id)?.name || id || '—'
 }
 
-function timeAgo(iso) {
+function timeAgo(iso, t) {
   if (!iso) return ''
   const mins = Math.max(0, dayjs().diff(dayjs(iso), 'minute'))
-  if (mins < 1) return 'Hace un momento'
-  if (mins === 1) return 'Hace 1 min'
-  return `Hace ${mins} min`
+  if (mins < 1) return t('notificationBell.haceUnMomento')
+  if (mins === 1) return t('notificationBell.hace1Min')
+  return t('notificationBell.haceNMin', { mins })
 }
 
 // Fase 6c: reemplaza el Box con sx condicional (compact ? {} : bgcolor
 // action.hover) -- mismo criterio, como className con cn().
 function MoveRow({ move, userId, onResolved, compact }) {
+  const { t } = useTranslation('layout')
   return (
     <div className={cn('rounded-[20px]', compact ? 'p-0' : 'bg-accent p-2.5')}>
       <p className="text-[13.5px] font-extrabold">
@@ -41,7 +43,10 @@ function MoveRow({ move, userId, onResolved, compact }) {
         {areaName(move.fromAreaId)} → {areaName(move.toAreaId)}
       </p>
       <p className="mt-0.5 text-[11px] text-muted-foreground">
-        Solicitado por: {move.requestedByName || 'otro usuario'} · {timeAgo(move.requestedAt)}
+        {t('notificationBell.solicitadoPor', {
+          name: move.requestedByName || t('notificationBell.otroUsuario'),
+          time: timeAgo(move.requestedAt, t),
+        })}
       </p>
       <div className="mt-2 flex gap-2">
         <Button
@@ -53,7 +58,7 @@ function MoveRow({ move, userId, onResolved, compact }) {
             onResolved?.(move.id)
           }}
         >
-          Rechazar
+          {t('notificationBell.rechazar')}
         </Button>
         <Button
           size="sm"
@@ -64,7 +69,7 @@ function MoveRow({ move, userId, onResolved, compact }) {
             onResolved?.(move.id)
           }}
         >
-          Aprobar
+          {t('notificationBell.aprobar')}
         </Button>
       </div>
     </div>
@@ -88,6 +93,7 @@ function MoveRow({ move, userId, onResolved, compact }) {
    nativo en vez de un Tooltip Radix, para no anidarlo con el propio PopoverTrigger sobre el mismo
    elemento (mismo criterio que HeaderUserActions.jsx). */
 export default function NotificationBell({ userId }) {
+  const { t } = useTranslation('layout')
   const version = usePersonnelVersion()
   const isTouch = useIsTouchDevice()
   const [open, setOpen] = useState(false)
@@ -138,7 +144,7 @@ export default function NotificationBell({ userId }) {
         <PopoverTrigger asChild>
           <button
             type="button"
-            title="Movimientos pendientes de aprobación"
+            title={t('notificationBell.movimientosPendientesTitle')}
             className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-accent"
           >
             <span className="relative inline-flex">
@@ -152,9 +158,13 @@ export default function NotificationBell({ userId }) {
           </button>
         </PopoverTrigger>
         <PopoverContent align="end" className="max-h-[420px] w-80 overflow-y-auto p-3">
-          <p className="mb-2 text-sm font-extrabold">Aprobaciones pendientes</p>
+          <p className="mb-2 text-sm font-extrabold">
+            {t('notificationBell.aprobacionesPendientes')}
+          </p>
           {pendingMoves.length === 0 ? (
-            <p className="py-2 text-[13px] text-muted-foreground">No hay solicitudes pendientes.</p>
+            <p className="py-2 text-[13px] text-muted-foreground">
+              {t('notificationBell.noHaySolicitudesPendientes')}
+            </p>
           ) : (
             <div className="flex flex-col gap-2 divide-y divide-border">
               {pendingMoves.map((m) => (
@@ -174,7 +184,7 @@ export default function NotificationBell({ userId }) {
         >
           <div className="flex items-start justify-between">
             <p className="flex items-center gap-1 text-[13.5px] font-extrabold">
-              🔔 Solicitud de cambio de área
+              {t('notificationBell.solicitudCambioArea')}
             </p>
             <button
               type="button"
@@ -192,8 +202,7 @@ export default function NotificationBell({ userId }) {
           </div>
           {floating.extraCount > 0 && (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              +{floating.extraCount} solicitud{floating.extraCount > 1 ? 'es' : ''} más en la
-              campana.
+              {t('notificationBell.masEnCampana', { count: floating.extraCount })}
             </p>
           )}
         </div>

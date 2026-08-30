@@ -1,0 +1,26 @@
+{
+  "appLayout": {},
+  "headerUserActions": {
+    "idiomaTitle": "Idioma / Language / 语言",
+    "modoOscuro": "Modo oscuro",
+    "modoClaro": "Modo claro",
+    "miCuenta": "{{value}} · Mi cuenta",
+    "cambiarContrasena": "Cambiar contraseña",
+    "cerrarSesion": "Cerrar sesión"
+  },
+  "notificationBell": {
+    "haceUnMomento": "Hace un momento",
+    "hace1Min": "Hace 1 min",
+    "haceNMin": "Hace {{mins}} min",
+    "rechazar": "Rechazar",
+    "aprobar": "Aprobar",
+    "solicitadoPor": "Solicitado por: {{name}} · {{time}}",
+    "otroUsuario": "otro usuario",
+    "movimientosPendientesTitle": "Movimientos pendientes de aprobación",
+    "aprobacionesPendientes": "Aprobaciones pendientes",
+    "noHaySolicitudesPendientes": "No hay solicitudes pendientes.",
+    "solicitudCambioArea": "🔔 Solicitud de cambio de área",
+    "masEnCampana_one": "+{{count}} solicitud más en la campana.",
+    "masEnCampana_other": "+{{count}} solicitudes más en la campana."
+  }
+}
