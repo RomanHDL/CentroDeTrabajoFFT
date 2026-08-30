@@ -71,5 +71,52 @@
     "registeredActivityLabel": "Actividad registrada (BASE)",
     "cancelButton": "Cancelar",
     "assignButton": "Asignar"
+  },
+  "hierarchyLegend": {
+    "title": "Jerarquía / Rango",
+    "expandedTitle": "Leyenda de jerarquía / rango"
+  },
+  "areaCoverageSummaryCard": {
+    "title": "Resumen por área",
+    "subtitle": "Personal actual frente a la plantilla ideal, por área",
+    "showLess": "Ver menos",
+    "showAllAreas": "Ver todas las áreas",
+    "complete": "Completa",
+    "missingCount_one": "Falta {{count}}",
+    "missingCount_other": "Faltan {{count}}",
+    "hasStaff": "Con personal",
+    "noStaffing": "Sin plantilla"
+  },
+  "bajasTab": {
+    "title": "Personal no asignable",
+    "subtitle": "Personal marcado como baja — no se puede registrar, mover ni asignar a ninguna estación",
+    "searchPlaceholder": "Buscar por nombre o número...",
+    "columnEmployee": "Empleado",
+    "columnName": "Nombre",
+    "columnLastArea": "Última área/puesto conocido",
+    "columnHireDate": "Fecha de ingreso",
+    "columnStatus": "Estado",
+    "statusBaja": "Baja",
+    "emptyTitle": "Sin resultados",
+    "emptyDescription": "Nadie coincide con esta búsqueda."
+  },
+  "areasLayoutView": {
+    "snapshotInfo": "Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {{baseSnapshotDate}}. Arrastrar o asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot. Números de empleado pendientes: BASE no trae esa columna todavía.",
+    "detailTitle": "Detalle del área"
+  },
+  "unassignedPersonnelCard": {
+    "zonaProduccion": "Producción",
+    "zonaChofer": "Chofer",
+    "title": "Personal sin área asignada ({{count}})",
+    "subtitle": "Personas activas sin ubicación asignada en el centro de trabajo",
+    "viewList": "Ver lista",
+    "emptyMessage": "Todo el personal activo tiene una zona conocida.",
+    "moreLabel": "más",
+    "nameWithTag": "{{name}} ({{tag}})"
+  },
+  "leadershipRow": {
+    "unassigned": "Sin asignar",
+    "occupied": "OCUPADO",
+    "available": "DISPONIBLE"
   }
 }

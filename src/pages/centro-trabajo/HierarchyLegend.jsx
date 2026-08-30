@@ -8,6 +8,7 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn, hexToRgba } from '@/lib/utils'
 import { PERSONNEL_RANK_ORDER } from '../../data/personnel/rankSystem'
 
@@ -53,11 +54,12 @@ export function RankIcon({ rank, size = 15, className }) {
    de detalle -- mismo dato (PERSONNEL_RANK_ORDER), nunca un segundo mapa
    de texto paralelo. */
 export default function HierarchyLegend({ expanded = false }) {
+  const { t } = useTranslation('centroTrabajo')
   if (!expanded) {
     return (
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-          Jerarquía / Rango
+          {t('hierarchyLegend.title')}
         </p>
         {PERSONNEL_RANK_ORDER.map((rank) => (
           <div key={rank.key} className="flex items-center gap-1">
@@ -71,7 +73,7 @@ export default function HierarchyLegend({ expanded = false }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-        Leyenda de jerarquía / rango
+        {t('hierarchyLegend.expandedTitle')}
       </p>
       {PERSONNEL_RANK_ORDER.map((rank) => (
         <div key={rank.key} className="flex items-center gap-2">

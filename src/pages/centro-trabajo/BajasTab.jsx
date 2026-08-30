@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -36,6 +37,7 @@ import { EmptyState } from '../../ui'
 
    Fase 6c (Centro de Trabajo, primer lote): portado de MUI a Tailwind. */
 export default function BajasTab() {
+  const { t } = useTranslation('centroTrabajo')
   const [query, setQuery] = useState('')
 
   const baja = useMemo(() => getBajaEmployees(), [])
@@ -51,17 +53,15 @@ export default function BajasTab() {
     <div className={`${cardClass} mt-4`}>
       <div className={cardHeaderClass}>
         <div>
-          <p className={cardHeaderTitleClass}>Personal no asignable</p>
-          <p className={cardHeaderSubtitleClass}>
-            Personal marcado como baja — no se puede registrar, mover ni asignar a ninguna estación
-          </p>
+          <p className={cardHeaderTitleClass}>{t('bajasTab.title')}</p>
+          <p className={cardHeaderSubtitleClass}>{t('bajasTab.subtitle')}</p>
         </div>
       </div>
       <div className="px-5 pt-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 opacity-50" />
           <Input
-            placeholder="Buscar por nombre o número..."
+            placeholder={t('bajasTab.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-card pl-10"
@@ -72,11 +72,11 @@ export default function BajasTab() {
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className={tableHeaderRowClass}>
-              <TableHead>Empleado</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Última área/puesto conocido</TableHead>
-              <TableHead>Fecha de ingreso</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>{t('bajasTab.columnEmployee')}</TableHead>
+              <TableHead>{t('bajasTab.columnName')}</TableHead>
+              <TableHead>{t('bajasTab.columnLastArea')}</TableHead>
+              <TableHead>{t('bajasTab.columnHireDate')}</TableHead>
+              <TableHead>{t('bajasTab.columnStatus')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,7 +89,7 @@ export default function BajasTab() {
                 <TableCell className={cellTextSecondaryClass}>{e.areaHistorica || '—'}</TableCell>
                 <TableCell className={cellTextSecondaryClass}>{e.fechaIngreso || '—'}</TableCell>
                 <TableCell>
-                  <span className={statusChipClass('CANCELADA')}>Baja</span>
+                  <span className={statusChipClass('CANCELADA')}>{t('bajasTab.statusBaja')}</span>
                 </TableCell>
               </TableRow>
             ))}
@@ -98,8 +98,8 @@ export default function BajasTab() {
                 <TableCell colSpan={5}>
                   <EmptyState
                     compact
-                    title="Sin resultados"
-                    description="Nadie coincide con esta búsqueda."
+                    title={t('bajasTab.emptyTitle')}
+                    description={t('bajasTab.emptyDescription')}
                   />
                 </TableCell>
               </TableRow>

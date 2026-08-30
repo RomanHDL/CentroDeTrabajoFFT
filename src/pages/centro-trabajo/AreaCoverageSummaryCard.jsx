@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { hexToRgba } from '@/lib/utils'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -13,6 +14,7 @@ const VISIBLE_LIMIT = 8
    (2026-08-25). Antes vivia junto al resumen general dentro de
    AreaSummaryStrip.jsx (ya no existe, se dividio en 2 componentes). */
 export default function AreaCoverageSummaryCard({ onSelectArea }) {
+  const { t } = useTranslation('centroTrabajo')
   const [showAll, setShowAll] = useState(false)
   // `version` fuerza refrescar getAllAreaSummaries() cuando cambia el estado
   // de personal, aunque no se lea dentro del callback -- comportamiento
@@ -27,9 +29,9 @@ export default function AreaCoverageSummaryCard({ onSelectArea }) {
     <div className="rounded-2xl border border-border p-4">
       <div className="mb-2.5 flex items-center justify-between">
         <div>
-          <p className="text-[14.5px] font-extrabold">Resumen por área</p>
+          <p className="text-[14.5px] font-extrabold">{t('areaCoverageSummaryCard.title')}</p>
           <p className="text-[11.5px] text-muted-foreground">
-            Personal actual frente a la plantilla ideal, por área
+            {t('areaCoverageSummaryCard.subtitle')}
           </p>
         </div>
         {(summaries.length > visible.length || showAll) && (
@@ -39,7 +41,9 @@ export default function AreaCoverageSummaryCard({ onSelectArea }) {
             onClick={() => setShowAll((v) => !v)}
             className="shrink-0 gap-1 font-bold text-primary hover:text-primary"
           >
-            {showAll ? 'Ver menos' : 'Ver todas las áreas'}
+            {showAll
+              ? t('areaCoverageSummaryCard.showLess')
+              : t('areaCoverageSummaryCard.showAllAreas')}
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}
@@ -75,13 +79,11 @@ export default function AreaCoverageSummaryCard({ onSelectArea }) {
               <p className="mb-1 text-[10px] font-bold" style={{ color }}>
                 {hasIdeal
                   ? complete
-                    ? 'Completa'
-                    : missing === 1
-                      ? 'Falta 1'
-                      : `Faltan ${missing}`
+                    ? t('areaCoverageSummaryCard.complete')
+                    : t('areaCoverageSummaryCard.missingCount', { count: missing })
                   : s.count > 0
-                    ? 'Con personal'
-                    : 'Sin plantilla'}
+                    ? t('areaCoverageSummaryCard.hasStaff')
+                    : t('areaCoverageSummaryCard.noStaffing')}
               </p>
               {hasIdeal ? (
                 <div className="flex items-center gap-[4.8px]">

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cardClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ import WorkAreaBottomSummary from './WorkAreaBottomSummary'
    useMediaQuery+Drawer de MUI -- el punto de quiebre exacto (768px)
    no es pixel-critico aqui, solo es un cambio de disposicion. */
 export default function AreasLayoutView({ onOpenLine }) {
+  const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const [selection, setSelection] = useState(null)
   const sinZona = getPeopleWithoutArea()
@@ -63,9 +65,7 @@ export default function AreasLayoutView({ onOpenLine }) {
   return (
     <div>
       <p className="mb-3 text-[11px] text-muted-foreground">
-        Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {BASE_SNAPSHOT_DATE}.
-        Arrastrar o asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot.
-        Números de empleado pendientes: BASE no trae esa columna todavía.
+        {t('areasLayoutView.snapshotInfo', { baseSnapshotDate: BASE_SNAPSHOT_DATE })}
       </p>
 
       {/* Sin cardHeader propio (2026-08-25): OperatingFloorPlan ya trae su
@@ -86,9 +86,9 @@ export default function AreasLayoutView({ onOpenLine }) {
             'md:inset-y-0 md:bottom-auto md:left-auto md:right-0 md:top-0 md:h-full md:max-h-none md:w-[420px] md:rounded-none',
           )}
         >
-          <DialogTitle className="sr-only">Detalle del área</DialogTitle>
+          <DialogTitle className="sr-only">{t('areasLayoutView.detailTitle')}</DialogTitle>
           <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
-            <p className="text-[15px] font-extrabold">Detalle del área</p>
+            <p className="text-[15px] font-extrabold">{t('areasLayoutView.detailTitle')}</p>
             <DialogClose asChild>
               <button
                 type="button"

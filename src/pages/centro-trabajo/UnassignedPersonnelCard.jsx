@@ -1,5 +1,6 @@
 import { ChevronRight, X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,15 +15,8 @@ import EmployeeAvatar from './EmployeeAvatar'
 
 const PREVIEW_LIMIT = 5
 
-/* Etiqueta identificadora para gente real cuya zona cruda no corresponde a
-   ningun WORK_CENTER del catalogo (2026-08-25, a peticion explicita del
-   usuario: CHOFER/PRODUCCION son gente de linea sin linea especifica
-   conocida -- se quedan "sin area asignada" pero identificados, en vez de
-   inventarles una area propia). */
-const ZONA_TAG_LABELS = { PRODUCCION: 'Producción', CHOFER: 'Chofer' }
-
-function personTag(p) {
-  return p.asistencia || ZONA_TAG_LABELS[p.areaZona] || null
+function personTag(p, zonaTagLabels) {
+  return p.asistencia || zonaTagLabels[p.areaZona] || null
 }
 
 function shortName(name) {
@@ -39,17 +33,29 @@ function shortName(name) {
    avatares (a peticion explicita del usuario, 2026-08-25) y "Ver
    lista" abre un dialog simple en vez de crecer la card. */
 export default function UnassignedPersonnelCard({ people }) {
+  const { t } = useTranslation('centroTrabajo')
   const [open, setOpen] = useState(false)
   const preview = people.slice(0, PREVIEW_LIMIT)
   const extra = Math.max(people.length - PREVIEW_LIMIT, 0)
+  /* Etiqueta identificadora para gente real cuya zona cruda no corresponde a
+     ningun WORK_CENTER del catalogo (2026-08-25, a peticion explicita del
+     usuario: CHOFER/PRODUCCION son gente de linea sin linea especifica
+     conocida -- se quedan "sin area asignada" pero identificados, en vez de
+     inventarles una area propia). */
+  const zonaTagLabels = {
+    PRODUCCION: t('unassignedPersonnelCard.zonaProduccion'),
+    CHOFER: t('unassignedPersonnelCard.zonaChofer'),
+  }
 
   return (
     <div className="rounded-2xl border border-border p-4">
       <div className={cn('flex items-start justify-between', people.length && 'mb-3')}>
         <div>
-          <p className="text-sm font-extrabold">Personal sin área asignada ({people.length})</p>
+          <p className="text-sm font-extrabold">
+            {t('unassignedPersonnelCard.title', { count: people.length })}
+          </p>
           <p className="text-[11px] text-muted-foreground">
-            Personas activas sin ubicación asignada en el centro de trabajo
+            {t('unassignedPersonnelCard.subtitle')}
           </p>
         </div>
         {people.length > 0 && (
@@ -59,7 +65,7 @@ export default function UnassignedPersonnelCard({ people }) {
             onClick={() => setOpen(true)}
             className="shrink-0 gap-1 font-bold text-primary hover:text-primary"
           >
-            Ver lista
+            {t('unassignedPersonnelCard.viewList')}
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}
@@ -67,12 +73,12 @@ export default function UnassignedPersonnelCard({ people }) {
 
       {people.length === 0 ? (
         <p className="text-[11.5px] italic text-muted-foreground">
-          Todo el personal activo tiene una zona conocida.
+          {t('unassignedPersonnelCard.emptyMessage')}
         </p>
       ) : (
         <div className="flex flex-wrap gap-x-2.5 gap-y-2">
           {preview.map((p) => {
-            const tag = personTag(p)
+            const tag = personTag(p, zonaTagLabels)
             return (
               <div key={p.id} className="flex w-14 flex-col items-center gap-[3.2px]">
                 <EmployeeAvatar employee={p} size={40} />
@@ -92,7 +98,9 @@ export default function UnassignedPersonnelCard({ people }) {
               <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-xs font-extrabold text-muted-foreground">
                 +{extra}
               </div>
-              <p className="text-[10px] text-muted-foreground">más</p>
+              <p className="text-[10px] text-muted-foreground">
+                {t('unassignedPersonnelCard.moreLabel')}
+              </p>
             </div>
           )}
         </div>
@@ -101,7 +109,9 @@ export default function UnassignedPersonnelCard({ people }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Personal sin área asignada ({people.length})</DialogTitle>
+            <DialogTitle>
+              {t('unassignedPersonnelCard.title', { count: people.length })}
+            </DialogTitle>
             <DialogClose asChild>
               <button
                 type="button"
@@ -113,10 +123,10 @@ export default function UnassignedPersonnelCard({ people }) {
           </DialogHeader>
           <div className="flex flex-wrap gap-1.5 px-6 pb-6">
             {people.map((p) => {
-              const tag = personTag(p)
+              const tag = personTag(p, zonaTagLabels)
               return (
                 <Badge key={p.id} variant="secondary">
-                  {tag ? `${p.name} (${tag})` : p.name}
+                  {tag ? t('unassignedPersonnelCard.nameWithTag', { name: p.name, tag }) : p.name}
                 </Badge>
               )
             })}
