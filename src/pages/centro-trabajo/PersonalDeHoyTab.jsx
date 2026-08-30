@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -132,19 +133,25 @@ function areaLabel(id) {
   return workCenterById(id)?.name || id || '—'
 }
 
-const ESTADO_OPTIONS = [
-  { value: 'TODOS', label: 'Todos' },
-  { value: 'REGISTRADO', label: 'Registrado hoy' },
-  { value: 'SNAPSHOT', label: 'Por snapshot' },
-  { value: 'SIN_ESTACION', label: 'Sin estación' },
-  { value: 'SIN_ASIGNACION', label: 'Sin asignación' },
-]
+// Construido dentro de PersonalDeHoyTab (no a nivel de módulo) porque
+// sus textos visibles requieren t(), que solo funciona dentro de un
+// componente (mismo patrón que buildAreaSlots en EstacionesTab.jsx).
+function buildEstadoOptions(t) {
+  return [
+    { value: 'TODOS', label: t('personalDeHoyTab.todosLabel') },
+    { value: 'REGISTRADO', label: t('personalDeHoyTab.registradoHoyLabel') },
+    { value: 'SNAPSHOT', label: t('personalDeHoyTab.porSnapshotLabel') },
+    { value: 'SIN_ESTACION', label: t('personalDeHoyTab.sinEstacionLabel') },
+    { value: 'SIN_ASIGNACION', label: t('personalDeHoyTab.sinAsignacionLabel') },
+  ]
+}
 
 const ROSTER_PAGE_SIZE = 8
 const DIRECTORY_PAGE_SIZE = 8
 const AREA_SUMMARY_TOP_N = 5
 
 export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   // roleMode colapsa ADMINISTRADOR/SUPERVISOR/LIDER en un solo modo
@@ -165,6 +172,8 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const [directoryQuery, setDirectoryQuery] = useState('')
   const [showAllRoster, setShowAllRoster] = useState(false)
   const [showAllDirectory, setShowAllDirectory] = useState(false)
+
+  const estadoOptions = useMemo(() => buildEstadoOptions(t), [t])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const pendingMoves = useMemo(
@@ -322,30 +331,30 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
         <DashboardKpiCard
           icon={<Users />}
           accent="#3B82F6"
-          title="Personal presente hoy"
-          subtitle="Registrados en la fecha"
+          title={t('personalDeHoyTab.kpiPresentTitle')}
+          subtitle={t('personalDeHoyTab.kpiPresentSubtitle')}
           value={presentToday}
         />
         <DashboardKpiCard
           icon={<Badge />}
           accent="#06B6D4"
-          title="Con número de empleado"
-          subtitle="Personal activo identificado"
+          title={t('personalDeHoyTab.kpiWithNumberTitle')}
+          subtitle={t('personalDeHoyTab.kpiWithNumberSubtitle')}
           value={directoryWithNumber.length}
-          unit={`· ${pctConNumero.toFixed(1)}% del personal activo`}
+          unit={t('personalDeHoyTab.kpiWithNumberUnit', { pct: pctConNumero.toFixed(1) })}
         />
         <DashboardKpiCard
           icon={<Briefcase />}
           accent="#A855F7"
-          title="Personal por proyecto"
-          subtitle="Asignados a proyectos"
+          title={t('personalDeHoyTab.kpiProjectsTitle')}
+          subtitle={t('personalDeHoyTab.kpiProjectsSubtitle')}
           value={directoryProyectos.length}
         />
         <DashboardKpiCard
           icon={<ArrowLeftRight />}
           accent="#F59E0B"
-          title="Movimientos hoy"
-          subtitle="Altas, traslados o cambios"
+          title={t('personalDeHoyTab.kpiMovesTitle')}
+          subtitle={t('personalDeHoyTab.kpiMovesSubtitle')}
           value={movesToday}
         />
       </div>
@@ -358,17 +367,17 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar empleado por nombre o número..."
+              placeholder={t('personalDeHoyTab.searchPlaceholder')}
               className="h-9 pl-9"
             />
           </div>
           <div className="min-w-[150px]">
             <Select value={areaFilter} onValueChange={setAreaFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Área" />
+                <SelectValue placeholder={t('personalDeHoyTab.areaPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="TODAS">Todas</SelectItem>
+                <SelectItem value="TODAS">{t('personalDeHoyTab.todasLabel')}</SelectItem>
                 {WORK_CENTERS.map((w) => (
                   <SelectItem key={w.id} value={w.id}>
                     {w.name}
@@ -380,10 +389,10 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
           <div className="min-w-[130px]">
             <Select value={shiftFilter} onValueChange={setShiftFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Turno" />
+                <SelectValue placeholder={t('personalDeHoyTab.turnoLabel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
+                <SelectItem value="TODOS">{t('personalDeHoyTab.todosLabel')}</SelectItem>
                 {SHIFT_OPTIONS.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
@@ -395,10 +404,10 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
           <div className="min-w-[150px]">
             <Select value={estadoFilter} onValueChange={setEstadoFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Estado" />
+                <SelectValue placeholder={t('personalDeHoyTab.estadoLabel')} />
               </SelectTrigger>
               <SelectContent>
-                {ESTADO_OPTIONS.map((o) => (
+                {estadoOptions.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
                   </SelectItem>
@@ -412,7 +421,9 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             className="shrink-0 rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('personalDeHoyTab.registerButtonSupervisor')
+              : t('personalDeHoyTab.registerButtonSelf')}
           </Button>
           <Button
             variant="outline"
@@ -420,7 +431,7 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             className="shrink-0 rounded-[20px] font-bold"
           >
             <Download className="h-4 w-4" />
-            Exportar Excel
+            {t('personalDeHoyTab.exportButton')}
           </Button>
         </div>
       </div>
@@ -431,7 +442,10 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                 <p className="text-lg font-extrabold">
-                  {bestMatchDetail.employee.employeeNumber} — {bestMatchDetail.employee.name}
+                  {t('personalDeHoyTab.employeeHeader', {
+                    employeeNumber: bestMatchDetail.employee.employeeNumber,
+                    name: bestMatchDetail.employee.name,
+                  })}
                 </p>
                 <Button
                   variant="ghost"
@@ -440,31 +454,46 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
                   className="font-bold"
                 >
                   <History className="h-4 w-4" />
-                  Ver historial de hoy
+                  {t('personalDeHoyTab.viewHistoryButton')}
                 </Button>
               </div>
               {bestMatchDetail.assignment ? (
                 <div className="flex flex-wrap gap-6 gap-y-3">
-                  <InfoField label="Estado" value="Presente" />
                   <InfoField
-                    label="Ubicación actual"
+                    label={t('personalDeHoyTab.estadoLabel')}
+                    value={t('personalDeHoyTab.presenteValue')}
+                  />
+                  <InfoField
+                    label={t('personalDeHoyTab.ubicacionActualLabel')}
                     value={areaLabel(bestMatchDetail.assignment.areaId)}
                   />
-                  <InfoField label="Rol actual" value={bestMatchDetail.assignment.stationId} />
-                  <InfoField label="Entrada" value={bestMatchDetail.assignment.checkInAt} />
+                  <InfoField
+                    label={t('personalDeHoyTab.rolActualLabel')}
+                    value={bestMatchDetail.assignment.stationId}
+                  />
+                  <InfoField
+                    label={t('personalDeHoyTab.entradaLabel')}
+                    value={bestMatchDetail.assignment.checkInAt}
+                  />
                   {bestMatchDetail.lastMove && (
                     <InfoField
-                      label="Último movimiento"
-                      value={`${areaLabel(bestMatchDetail.lastMove.fromAreaId)} → ${areaLabel(bestMatchDetail.lastMove.toAreaId)} · ${bestMatchDetail.lastMove.movedAt}`}
+                      label={t('personalDeHoyTab.ultimoMovimientoLabel')}
+                      value={t('personalDeHoyTab.lastMoveValue', {
+                        from: areaLabel(bestMatchDetail.lastMove.fromAreaId),
+                        to: areaLabel(bestMatchDetail.lastMove.toAreaId),
+                        movedAt: bestMatchDetail.lastMove.movedAt,
+                      })}
                     />
                   )}
                 </div>
               ) : (
-                <p className={emptyTextClass}>No registrado hoy.</p>
+                <p className={emptyTextClass}>{t('personalDeHoyTab.noRegistradoHoy')}</p>
               )}
             </div>
           ) : (
-            <p className={emptyTextClass}>No se encontró ningún empleado para "{query}".</p>
+            <p className={emptyTextClass}>
+              {t('personalDeHoyTab.noEmployeeFoundForQuery', { query })}
+            </p>
           )}
         </div>
       )}
@@ -478,10 +507,10 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
           <div className={cardHeaderClass}>
             <div>
               <p className={cardHeaderTitleClass}>
-                Movimientos pendientes de aprobación ({pendingMoves.length})
+                {t('personalDeHoyTab.pendingMovesTitle', { count: pendingMoves.length })}
               </p>
               <p className={cardHeaderSubtitleClass}>
-                Pedidos por líderes — verifica antes de aplicarlos
+                {t('personalDeHoyTab.pendingMovesSubtitle')}
               </p>
             </div>
           </div>
@@ -493,11 +522,18 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
               >
                 <div>
                   <p className="text-[13.5px] font-bold">
-                    {m.employeeNumber} — {m.employeeName}
+                    {t('personalDeHoyTab.employeeHeader', {
+                      employeeNumber: m.employeeNumber,
+                      name: m.employeeName,
+                    })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {areaLabel(m.fromAreaId)} → {areaLabel(m.toAreaId)} · {m.toStationId} · pedido
-                    por {m.requestedByName || 'un líder'}
+                    {t('personalDeHoyTab.moveRequestSummary', {
+                      from: areaLabel(m.fromAreaId),
+                      to: areaLabel(m.toAreaId),
+                      station: m.toStationId,
+                      requestedBy: m.requestedByName || t('personalDeHoyTab.unknownLeaderFallback'),
+                    })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -508,11 +544,11 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
                     className="font-bold text-destructive hover:text-destructive"
                   >
                     <X className="h-4 w-4" />
-                    Rechazar
+                    {t('personalDeHoyTab.rejectButton')}
                   </Button>
                   <Button size="sm" onClick={() => handleApproveMove(m.id)} className="font-bold">
                     <Check className="h-4 w-4" />
-                    Aprobar
+                    {t('personalDeHoyTab.approveButton')}
                   </Button>
                 </div>
               </div>
@@ -609,31 +645,32 @@ function InfoField({ label, value }) {
    "Ver todos los registros" para expandir -- nunca fuerza scroll de
    cientos de filas para llegar al siguiente bloque. */
 function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, onRowClick }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className={cn(cardClass, 'mb-4')}>
       <div className={cn(cardHeaderClass, 'justify-between')}>
         <div className="flex items-center gap-2">
           <CalendarDays className="h-[18px] w-[18px] text-muted-foreground" />
           <div>
-            <p className={cardHeaderTitleClass}>Registro de hoy</p>
-            <p className={cardHeaderSubtitleClass}>
-              Pase de lista efectivo — snapshot histórico + asignaciones reales del día
-            </p>
+            <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.registroDeHoyTitle')}</p>
+            <p className={cardHeaderSubtitleClass}>{t('personalDeHoyTab.registroDeHoySubtitle')}</p>
           </div>
         </div>
-        <span className={cn(metricChipClass('info'), 'shrink-0')}>{allCount} registrados hoy</span>
+        <span className={cn(metricChipClass('info'), 'shrink-0')}>
+          {t('personalDeHoyTab.registeredTodayChip', { count: allCount })}
+        </span>
       </div>
       <div className={cn('overflow-x-auto', showAll && 'max-h-[480px] overflow-y-auto')}>
         <Table>
           <TableHeader className={showAll ? 'sticky top-0 z-10 bg-card' : undefined}>
             <TableRow className={tableHeaderRowClass}>
-              <TableHead>Empleado</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Área actual</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Entrada</TableHead>
-              <TableHead>Turno</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>{t('personalDeHoyTab.colEmpleado')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colNombre')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colAreaActual')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colRol')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.entradaLabel')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.turnoLabel')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.estadoLabel')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -660,17 +697,23 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
                     {areaLabel(r.areaId) || '—'}
                   </TableCell>
                   <TableCell className={cellTextSecondaryClass}>
-                    {r.stationId || 'Sin estación'}
+                    {r.stationId || t('personalDeHoyTab.sinEstacionLabel')}
                   </TableCell>
                   <TableCell className={cellTextSecondaryClass}>{displayCheckIn}</TableCell>
                   <TableCell className={cellTextSecondaryClass}>{r.shift || '—'}</TableCell>
                   <TableCell>
                     {r.source === 'SIN_ASIGNACION' ? (
-                      <span className={statusChipClass('CANCELADA')}>Sin asignación</span>
+                      <span className={statusChipClass('CANCELADA')}>
+                        {t('personalDeHoyTab.sinAsignacionLabel')}
+                      </span>
                     ) : r.source === 'SNAPSHOT' && !showAsAutoActive ? (
-                      <span className={statusChipClass('PENDIENTE')}>Por snapshot</span>
+                      <span className={statusChipClass('PENDIENTE')}>
+                        {t('personalDeHoyTab.porSnapshotLabel')}
+                      </span>
                     ) : (
-                      <span className={statusChipClass('COMPLETADA')}>Registrado hoy</span>
+                      <span className={statusChipClass('COMPLETADA')}>
+                        {t('personalDeHoyTab.registradoHoyLabel')}
+                      </span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -681,8 +724,8 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
                 <TableCell colSpan={7}>
                   <EmptyState
                     compact
-                    title="Nadie coincide con los filtros actuales"
-                    description="Ajusta la búsqueda, área, turno o estado."
+                    title={t('personalDeHoyTab.emptyFilterTitle')}
+                    description={t('personalDeHoyTab.emptyFilterDescription')}
                   />
                 </TableCell>
               </TableRow>
@@ -693,7 +736,9 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
       {total > 0 && (
         <div className="border-t border-border p-3 text-right">
           <Button variant="ghost" size="sm" onClick={onToggleShowAll} className="font-bold">
-            {showAll ? 'Ver menos' : `Ver todos los registros (${total})`}
+            {showAll
+              ? t('personalDeHoyTab.viewLessButton')
+              : t('personalDeHoyTab.viewAllRegistrationsButton', { count: total })}
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -718,22 +763,25 @@ function DirectorioCard({
   onToggleShowAll,
   onRowClick,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className={cardClass}>
       <div className={cardHeaderClass}>
         <Contact className="h-[18px] w-[18px] text-muted-foreground" />
         <div>
-          <p className={cardHeaderTitleClass}>Directorio completo de personal</p>
-          <p className={cardHeaderSubtitleClass}>
-            Todo el personal, persona por persona — con número de empleado o como Proyecto
-          </p>
+          <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.directorioTitle')}</p>
+          <p className={cardHeaderSubtitleClass}>{t('personalDeHoyTab.directorioSubtitle')}</p>
         </div>
       </div>
       <div className="px-5 pt-4">
         <Tabs value={tab} onValueChange={onTabChange}>
           <TabsList>
-            <TabsTrigger value="CON_NUMERO">Con número de empleado ({withNumberCount})</TabsTrigger>
-            <TabsTrigger value="PROYECTOS">Proyectos ({proyectosCount})</TabsTrigger>
+            <TabsTrigger value="CON_NUMERO">
+              {t('personalDeHoyTab.withNumberTab', { count: withNumberCount })}
+            </TabsTrigger>
+            <TabsTrigger value="PROYECTOS">
+              {t('personalDeHoyTab.projectsTab', { count: proyectosCount })}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -743,7 +791,7 @@ function DirectorioCard({
           <Input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Buscar por nombre o número..."
+            placeholder={t('personalDeHoyTab.directorySearchPlaceholder')}
             className="h-9 w-full pl-9"
           />
         </div>
@@ -752,11 +800,11 @@ function DirectorioCard({
         <Table>
           <TableHeader className={showAll ? 'sticky top-0 z-10 bg-card' : undefined}>
             <TableRow className={tableHeaderRowClass}>
-              <TableHead>Empleado</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Área actual</TableHead>
-              <TableHead>Fecha de ingreso</TableHead>
-              {tab === 'PROYECTOS' && <TableHead>Tipo</TableHead>}
+              <TableHead>{t('personalDeHoyTab.colEmpleado')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colNombre')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colAreaActual')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.colFechaIngreso')}</TableHead>
+              {tab === 'PROYECTOS' && <TableHead>{t('personalDeHoyTab.colTipo')}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -778,8 +826,8 @@ function DirectorioCard({
                   <TableCell>
                     <span className={statusChipClass('PENDIENTE')}>
                       {e.employeeNumber === 'PROYECTO'
-                        ? 'Registrado como Proyecto'
-                        : 'Sin número confirmado'}
+                        ? t('personalDeHoyTab.registeredAsProject')
+                        : t('personalDeHoyTab.sinNumeroConfirmado')}
                     </span>
                   </TableCell>
                 )}
@@ -790,8 +838,8 @@ function DirectorioCard({
                 <TableCell colSpan={tab === 'PROYECTOS' ? 5 : 4}>
                   <EmptyState
                     compact
-                    title="Sin resultados"
-                    description="Nadie coincide con esta búsqueda."
+                    title={t('personalDeHoyTab.emptyDirectoryTitle')}
+                    description={t('personalDeHoyTab.emptyDirectoryDescription')}
                   />
                 </TableCell>
               </TableRow>
@@ -802,7 +850,9 @@ function DirectorioCard({
       {total > 0 && (
         <div className="border-t border-border p-3 text-right">
           <Button variant="ghost" size="sm" onClick={onToggleShowAll} className="font-bold">
-            {showAll ? 'Ver menos' : `Ver directorio completo (${total})`}
+            {showAll
+              ? t('personalDeHoyTab.viewLessButton')
+              : t('personalDeHoyTab.viewAllDirectoryButton', { count: total })}
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -816,17 +866,18 @@ function DirectorioCard({
    del roster completo (sin filtros de la barra) para que sea estable
    -- clic en una fila aplica ese filtro de Area a la tabla principal. */
 function ResumenPorAreaCard({ areas, totalPresente, onAreaClick }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className={cardClass}>
       <div className={cardHeaderClass}>
         <div>
-          <p className={cardHeaderTitleClass}>Resumen por área</p>
-          <p className={cardHeaderSubtitleClass}>Dónde está el personal presente hoy</p>
+          <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.resumenAreaTitle')}</p>
+          <p className={cardHeaderSubtitleClass}>{t('personalDeHoyTab.resumenAreaSubtitle')}</p>
         </div>
       </div>
       <div className="p-4">
         {areas.length === 0 ? (
-          <p className={emptyTextClass}>Sin personal presente hoy.</p>
+          <p className={emptyTextClass}>{t('personalDeHoyTab.noStaffTodayMessage')}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {areas.map((a) => (
@@ -853,7 +904,9 @@ function ResumenPorAreaCard({ areas, totalPresente, onAreaClick }) {
           </div>
         )}
         <div className="mt-4 flex justify-between border-t border-dashed border-border pt-3">
-          <p className="text-xs font-bold text-muted-foreground">Total presente</p>
+          <p className="text-xs font-bold text-muted-foreground">
+            {t('personalDeHoyTab.totalPresenteLabel')}
+          </p>
           <p className="text-sm font-extrabold">{totalPresente}</p>
         </div>
       </div>
@@ -874,21 +927,22 @@ function AlertasCard({
   onClickSnapshot,
   onClickMovimientos,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const rows = [
     {
-      label: 'Empleados sin estación asignada',
+      label: t('personalDeHoyTab.alertSinEstacionLabel'),
       value: sinEstacion,
       onClick: onClickSinEstacion,
       color: '#F59E0B',
     },
     {
-      label: 'Pendientes por registrar (snapshot)',
+      label: t('personalDeHoyTab.alertSnapshotLabel'),
       value: snapshot,
       onClick: onClickSnapshot,
       color: '#F59E0B',
     },
     {
-      label: 'Movimientos recientes hoy',
+      label: t('personalDeHoyTab.alertMovimientosLabel'),
       value: movimientos,
       onClick: onClickMovimientos,
       color: '#3B82F6',
@@ -898,7 +952,7 @@ function AlertasCard({
     <div className={cardClass}>
       <div className={cardHeaderClass}>
         <TriangleAlert className="h-[18px] w-[18px] text-[#F59E0B]" />
-        <p className={cardHeaderTitleClass}>Alertas / pendientes</p>
+        <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.alertasTitle')}</p>
       </div>
       <div className="flex flex-col p-1">
         {rows.map((row) => (
@@ -927,17 +981,38 @@ function AlertasCard({
    de siempre (su propio flujo ya distingue registrar de mover); Ver
    bajas / Ver layout general solo cambian de pestaña. */
 function AccionesRapidasCard({ onAsignar, onMover, onVerBajas, onVerLayout }) {
+  const { t } = useTranslation('centroTrabajo')
   const actions = [
-    { label: 'Asignar a línea', icon: UserPlus, color: '#3B82F6', onClick: onAsignar },
-    { label: 'Mover personal', icon: ArrowLeftRight, color: '#10B981', onClick: onMover },
-    { label: 'Ver bajas', icon: UserX, color: '#EF4444', onClick: onVerBajas },
-    { label: 'Ver layout general', icon: LayoutGrid, color: '#3B82F6', onClick: onVerLayout },
+    {
+      label: t('personalDeHoyTab.asignarLineaAction'),
+      icon: UserPlus,
+      color: '#3B82F6',
+      onClick: onAsignar,
+    },
+    {
+      label: t('personalDeHoyTab.moverPersonalAction'),
+      icon: ArrowLeftRight,
+      color: '#10B981',
+      onClick: onMover,
+    },
+    {
+      label: t('personalDeHoyTab.verBajasAction'),
+      icon: UserX,
+      color: '#EF4444',
+      onClick: onVerBajas,
+    },
+    {
+      label: t('personalDeHoyTab.verLayoutAction'),
+      icon: LayoutGrid,
+      color: '#3B82F6',
+      onClick: onVerLayout,
+    },
   ]
   return (
     <div className={cardClass}>
       <div className={cardHeaderClass}>
         <Zap className="h-[18px] w-[18px] text-muted-foreground" />
-        <p className={cardHeaderTitleClass}>Acciones rápidas</p>
+        <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.accionesRapidasTitle')}</p>
       </div>
       <div className="grid grid-cols-2 gap-2.5 p-3">
         {actions.map((a) => (
