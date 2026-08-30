@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,19 +21,21 @@ import { apiRequest } from '../../../state/auth'
 import { showToast } from '../../../ui/toast'
 import { getModuleIcon } from './moduleIcons'
 
-const CONFIG_LABELS = {
-  admin: 'Heredado de Administrador',
-  role: 'Heredado del rol',
-  ALLOW: 'Permiso personalizado',
-  DENY: 'Denegado individualmente',
-  inherit: 'Heredado del rol',
+function getConfigLabels(t) {
+  return {
+    admin: t('userModulePermissionsCard.inheritedFromAdmin'),
+    role: t('userModulePermissionsCard.inheritedFromRole'),
+    ALLOW: t('userModulePermissionsCard.customPermission'),
+    DENY: t('userModulePermissionsCard.deniedIndividually'),
+    inherit: t('userModulePermissionsCard.inheritedFromRole'),
+  }
 }
 
-function configLabel(row, role) {
-  if (role === 'ADMINISTRADOR') return CONFIG_LABELS.admin
-  if (row.override === 'ALLOW') return CONFIG_LABELS.ALLOW
-  if (row.override === 'DENY') return CONFIG_LABELS.DENY
-  return CONFIG_LABELS.inherit
+function configLabel(row, role, labels) {
+  if (role === 'ADMINISTRADOR') return labels.admin
+  if (row.override === 'ALLOW') return labels.ALLOW
+  if (row.override === 'DENY') return labels.DENY
+  return labels.inherit
 }
 
 function userLabel(u) {
@@ -49,6 +52,8 @@ const EFFECTS = ['INHERIT', 'ALLOW', 'DENY']
    es controlado por UsuariosPage para poder pre-seleccionar un usuario al
    hacer click en 🔑 desde la tabla. */
 export default function UserModulePermissionsCard({ users, selectedUserId, onSelectUser }) {
+  const { t } = useTranslation('usuarios')
+  const configLabels = useMemo(() => getConfigLabels(t), [t])
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -109,9 +114,9 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
         ...prev,
         modules: prev.modules.map((m) => (m.moduleKey === moduleKey ? { ...m, ...updated } : m)),
       }))
-      showToast('Permiso actualizado', 'success')
+      showToast(t('userModulePermissionsCard.permissionUpdatedToast'), 'success')
     } catch (err) {
-      showToast(err.message || 'No se pudo actualizar el permiso', 'error')
+      showToast(err.message || t('userModulePermissionsCard.permissionUpdateErrorToast'), 'error')
     } finally {
       setSavingKey(null)
     }
@@ -127,13 +132,13 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
     <div>
       <div className="mb-4 max-w-[420px]">
         <Label htmlFor="user-search" className="mb-1.5 block text-xs">
-          Buscar usuario
+          {t('userModulePermissionsCard.searchUserLabel')}
         </Label>
         <Popover open={comboOpen} onOpenChange={setComboOpen}>
           <PopoverAnchor asChild>
             <Input
               id="user-search"
-              placeholder="Número de empleado, nombre o username"
+              placeholder={t('userModulePermissionsCard.searchUserPlaceholder')}
               value={comboOpen ? query : selectedUser ? userLabel(selectedUser) : ''}
               onFocus={() => {
                 setQuery(selectedUser ? userLabel(selectedUser) : '')
@@ -152,7 +157,9 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             {filteredUsers.length === 0 ? (
-              <p className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</p>
+              <p className="px-3 py-2 text-sm text-muted-foreground">
+                {t('userModulePermissionsCard.noResults')}
+              </p>
             ) : (
               filteredUsers.map((u) => (
                 <button
@@ -174,7 +181,7 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
 
       {!selectedUserId && (
         <p className="text-[13.5px] text-muted-foreground">
-          Selecciona un usuario para ver y editar sus permisos individuales.
+          {t('userModulePermissionsCard.selectUserPrompt')}
         </p>
       )}
 
@@ -194,21 +201,31 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
         <div>
           <div className="mb-4 flex flex-wrap gap-6 rounded-[20px] bg-muted p-3">
             <div>
-              <p className="text-[11px] text-muted-foreground">Nombre</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t('userModulePermissionsCard.nameLabel')}
+              </p>
               <p className="text-[13.5px] font-bold">{detail.name}</p>
             </div>
             <div>
-              <p className="text-[11px] text-muted-foreground">Número</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t('userModulePermissionsCard.numberLabel')}
+              </p>
               <p className="text-[13.5px] font-bold">{detail.employeeNumber || '—'}</p>
             </div>
             <div>
-              <p className="text-[11px] text-muted-foreground">Rol</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t('userModulePermissionsCard.roleLabel')}
+              </p>
               <p className="text-[13.5px] font-bold">{ROLE_LABELS[detail.role] || detail.role}</p>
             </div>
             <div>
-              <p className="text-[11px] text-muted-foreground">Estado</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t('userModulePermissionsCard.statusLabel')}
+              </p>
               <Badge variant={detail.active ? 'success' : 'outline'}>
-                {detail.active ? 'Activo' : 'Inactivo'}
+                {detail.active
+                  ? t('userModulePermissionsCard.activeStatus')
+                  : t('userModulePermissionsCard.inactiveStatus')}
               </Badge>
             </div>
           </div>
@@ -217,10 +234,12 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
             <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Módulo</TableHead>
-                  <TableHead>Acceso efectivo</TableHead>
-                  <TableHead>Configuración</TableHead>
-                  <TableHead className="text-right">Cambiar</TableHead>
+                  <TableHead>{t('userModulePermissionsCard.moduleHeader')}</TableHead>
+                  <TableHead>{t('userModulePermissionsCard.effectiveAccessHeader')}</TableHead>
+                  <TableHead>{t('userModulePermissionsCard.configurationHeader')}</TableHead>
+                  <TableHead className="text-right">
+                    {t('userModulePermissionsCard.changeHeader')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -237,24 +256,28 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
                       </TableCell>
                       <TableCell>
                         <Badge variant={row.effective ? 'success' : 'outline'}>
-                          {row.effective ? 'Permitido' : 'Sin acceso'}
+                          {row.effective
+                            ? t('userModulePermissionsCard.allowedLabel')
+                            : t('userModulePermissionsCard.noAccessLabel')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[12.5px] text-muted-foreground">
-                        {configLabel(row, detail.role)}
+                        {configLabel(row, detail.role, configLabels)}
                       </TableCell>
                       <TableCell className="text-right">
                         {isAdmin ? (
-                          <p className="text-[11.5px] italic text-muted-foreground">No aplica</p>
+                          <p className="text-[11.5px] italic text-muted-foreground">
+                            {t('userModulePermissionsCard.notApplicable')}
+                          </p>
                         ) : (
                           <div className="inline-flex">
                             {EFFECTS.map((effect, idx) => {
                               const label =
                                 effect === 'INHERIT'
-                                  ? 'Heredar'
+                                  ? t('userModulePermissionsCard.inheritAction')
                                   : effect === 'ALLOW'
-                                    ? 'Permitir'
-                                    : 'Denegar'
+                                    ? t('userModulePermissionsCard.allowAction')
+                                    : t('userModulePermissionsCard.denyAction')
                               const active =
                                 (effect === 'INHERIT' && !row.override) || row.override === effect
                               const savingId = `${row.moduleKey}:${effect}`

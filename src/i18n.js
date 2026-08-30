@@ -35,7 +35,7 @@ i18n
   .init({
     fallbackLng: 'es-MX',
     supportedLngs: ['es-MX', 'en', 'zh-CN'],
-    ns: ['common', 'navigation', 'auth', 'centroTrabajo', 'layout', 'dashboard'],
+    ns: ['common', 'navigation', 'auth', 'centroTrabajo', 'layout', 'dashboard', 'usuarios'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage'],

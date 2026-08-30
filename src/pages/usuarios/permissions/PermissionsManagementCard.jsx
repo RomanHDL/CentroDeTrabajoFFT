@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RoleModulePermissionsCard from './RoleModulePermissionsCard'
 import UserModulePermissionsCard from './UserModulePermissionsCard'
@@ -14,6 +15,7 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
   { users, focusUserId, onFocusUserHandled },
   ref,
 ) {
+  const { t } = useTranslation('usuarios')
   const [tab, setTab] = useState(0)
   const [selectedUserId, setSelectedUserId] = useState(null)
 
@@ -27,15 +29,15 @@ const PermissionsManagementCard = forwardRef(function PermissionsManagementCard(
 
   return (
     <div ref={ref} className="mt-6 rounded-[20px] border border-border p-5">
-      <p className="mb-1 text-base font-extrabold">Gestión de permisos</p>
+      <p className="mb-1 text-base font-extrabold">{t('permissionsManagementCard.title')}</p>
       <p className="mb-3 text-[13px] text-muted-foreground">
-        Qué módulos puede ver cada rol, y ajustes individuales por usuario.
+        {t('permissionsManagementCard.subtitle')}
       </p>
 
       <Tabs value={String(tab)} onValueChange={(v) => setTab(Number(v))}>
         <TabsList className="mb-4">
-          <TabsTrigger value="0">Por rol</TabsTrigger>
-          <TabsTrigger value="1">Por usuario</TabsTrigger>
+          <TabsTrigger value="0">{t('permissionsManagementCard.tabByRole')}</TabsTrigger>
+          <TabsTrigger value="1">{t('permissionsManagementCard.tabByUser')}</TabsTrigger>
         </TabsList>
         <TabsContent value="0">
           <RoleModulePermissionsCard />
