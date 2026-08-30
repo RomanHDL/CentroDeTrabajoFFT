@@ -7,9 +7,8 @@
 cmds = [
   "corepack disable",
   "npm install --global pnpm@11.22.0",
-  "pnpm install --frozen-lockfile"
+  "$(npm prefix -g)/bin/pnpm install --frozen-lockfile"
 ]
 
 [start]
 cmd = "pnpm start"
-
