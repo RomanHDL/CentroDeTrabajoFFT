@@ -1,15 +1,16 @@
-import { LINES_ONLY, OFFICIAL_SHIFTS, workCenterById } from '../production/catalog'
-import {
-  getAllAreaSummaries,
-  getAreaHeadcount,
-  AREA_STATUS_META,
-  classifyAreaStatus,
-} from '../production/personnelByArea'
+import i18n from '../../i18n'
 import {
   getAssignmentsForDate,
-  getMovementsForDate,
   getEmployeeById,
+  getMovementsForDate,
 } from '../personnel/repository'
+import { LINES_ONLY, OFFICIAL_SHIFTS, workCenterById } from '../production/catalog'
+import {
+  classifyAreaStatus,
+  getAllAreaSummaries,
+  getAreaHeadcount,
+  getAreaStatusMeta,
+} from '../production/personnelByArea'
 
 /* ─────────────────────────────────────────────
    Capa de calculo EXCLUSIVA del rediseño del Dashboard (2026-08-25).
@@ -24,7 +25,7 @@ import {
    personnelByArea.js (idénticas caracter por caracter, pero una segunda
    fuente que podia desincronizarse con el tiempo). Ahora se REEXPORTAN
    de ahi directo, nunca se reimplementan. */
-export { AREA_STATUS_META, classifyAreaStatus }
+export { classifyAreaStatus, getAreaStatusMeta }
 
 /* Areas para las graficas del Dashboard -- misma fuente que "Resumen por
    área" de Centro de Trabajo (getAllAreaSummaries). Se excluyen SOLO las
@@ -93,6 +94,8 @@ export function getDashboardFindings({
   movementsToday,
 }) {
   const findings = []
+  const andJoiner = i18n.t('dataLayer:dashboardMetrics.andJoiner')
+  const moreSuffix = i18n.t('dataLayer:dashboardMetrics.moreSuffix')
 
   const withIdeal = areas.filter((a) => a.ideal != null)
 
@@ -101,8 +104,10 @@ export function getDashboardFindings({
     findings.push({
       id: `none-${a.id}`,
       tone: 'bad',
-      title: `${shortAreaName(a.name)} no tiene personal asignado.`,
-      detail: `Requiere ${a.ideal} persona${a.ideal === 1 ? '' : 's'} para cubrir su plantilla.`,
+      title: i18n.t('dataLayer:dashboardMetrics.noStaffAssignedTitle', {
+        areaName: shortAreaName(a.name),
+      }),
+      detail: i18n.t('dataLayer:dashboardMetrics.requiresStaffDetail', { count: a.ideal }),
     })
   })
 
@@ -116,8 +121,11 @@ export function getDashboardFindings({
     findings.push({
       id: `critical-${a.id}`,
       tone: 'warn',
-      title: `${shortAreaName(a.name)} opera al ${a.coveragePct}% de cobertura.`,
-      detail: `Faltan ${a.missing} persona${a.missing === 1 ? '' : 's'} para alcanzar la plantilla ideal.`,
+      title: i18n.t('dataLayer:dashboardMetrics.criticalCoverageTitle', {
+        areaName: shortAreaName(a.name),
+        coveragePct: a.coveragePct,
+      }),
+      detail: i18n.t('dataLayer:dashboardMetrics.missingStaffDetail', { count: a.missing }),
     })
   })
 
@@ -125,12 +133,14 @@ export function getDashboardFindings({
     const names = incompleteLines.map((l) => shortAreaName(l.name))
     const list =
       names.length <= 3
-        ? names.join(names.length === 2 ? ' y ' : ', ').replace(/, ([^,]*)$/, ' y $1')
-        : `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`
+        ? names.join(names.length === 2 ? andJoiner : ', ').replace(/, ([^,]*)$/, `${andJoiner}$1`)
+        : `${names.slice(0, 2).join(', ')}${andJoiner}${names.length - 2}${moreSuffix}`
     findings.push({
       id: 'lines-incomplete',
       tone: incompleteLines.length >= 3 ? 'bad' : 'warn',
-      title: `${incompleteLines.length} línea${incompleteLines.length === 1 ? '' : 's'} de producción con personal incompleto.`,
+      title: i18n.t('dataLayer:dashboardMetrics.incompleteLinesTitle', {
+        count: incompleteLines.length,
+      }),
       detail: list,
     })
   }
@@ -139,8 +149,8 @@ export function getDashboardFindings({
     findings.push({
       id: 'pending-moves',
       tone: 'info',
-      title: `${pendingMovesCount} movimiento${pendingMovesCount === 1 ? '' : 's'} esperan aprobación.`,
-      detail: 'Revísalos en Centro de Trabajo.',
+      title: i18n.t('dataLayer:dashboardMetrics.pendingMovesTitle', { count: pendingMovesCount }),
+      detail: i18n.t('dataLayer:dashboardMetrics.pendingMovesDetail'),
     })
   }
 
@@ -148,12 +158,17 @@ export function getDashboardFindings({
   if (complete.length > 0) {
     const names = complete.slice(0, 2).map((a) => shortAreaName(a.name))
     const label =
-      complete.length > 2 ? `${names.join(', ')} y ${complete.length - 2} más` : names.join(' y ')
+      complete.length > 2
+        ? `${names.join(', ')}${andJoiner}${complete.length - 2}${moreSuffix}`
+        : names.join(andJoiner)
     findings.push({
       id: 'areas-complete',
       tone: 'ok',
-      title: `${label} ${complete.length === 1 ? 'está completa' : 'están completas'}.`,
-      detail: `Cobertura del 100% o más en ${complete.length} área${complete.length === 1 ? '' : 's'}.`,
+      title: i18n.t('dataLayer:dashboardMetrics.areasCompleteTitle', {
+        count: complete.length,
+        label,
+      }),
+      detail: i18n.t('dataLayer:dashboardMetrics.areasCompleteDetail', { count: complete.length }),
     })
   }
 
@@ -166,8 +181,10 @@ export function getDashboardFindings({
     findings.push({
       id: `over-${a.id}`,
       tone: 'ok',
-      title: `${shortAreaName(a.name)} supera su plantilla ideal.`,
-      detail: `Cuenta con ${surplus} persona${surplus === 1 ? '' : 's'} adicionales al ideal.`,
+      title: i18n.t('dataLayer:dashboardMetrics.overIdealTitle', {
+        areaName: shortAreaName(a.name),
+      }),
+      detail: i18n.t('dataLayer:dashboardMetrics.overIdealDetail', { count: surplus }),
     })
   }
 
@@ -175,8 +192,8 @@ export function getDashboardFindings({
     findings.push({
       id: 'movements-today',
       tone: 'info',
-      title: `${movementsToday} movimiento${movementsToday === 1 ? '' : 's'} registrados hoy.`,
-      detail: 'Incluye asignaciones, movimientos y liberaciones.',
+      title: i18n.t('dataLayer:dashboardMetrics.movementsTodayTitle', { count: movementsToday }),
+      detail: i18n.t('dataLayer:dashboardMetrics.movementsTodayDetail'),
     })
   }
 
@@ -214,7 +231,11 @@ export function getShiftDistribution(realTotal) {
   const sinTurno = Math.max(0, realTotal - matched)
   return [
     ...OFFICIAL_SHIFTS.map((s) => ({ id: s.id, label: s.label, count: counts.get(s.label) || 0 })),
-    { id: 'SIN_TURNO', label: 'Sin turno registrado', count: sinTurno },
+    {
+      id: 'SIN_TURNO',
+      label: i18n.t('dataLayer:dashboardMetrics.noShiftRegistered'),
+      count: sinTurno,
+    },
   ]
 }
 
@@ -238,7 +259,17 @@ export function getDailyMovementsBreakdown(date) {
   }
 }
 
-const ACTIVITY_LABELS = { CHECK_IN: 'Asignación', MOVE: 'Movimiento', RELEASE: 'Liberación' }
+/* Funcion (nunca objeto estatico): el label debe resolverse fresco en
+   cada llamada via i18n.t(), nunca congelarse en el idioma que estaba
+   activo cuando el modulo se importo -- ver HARD RULE de i18n en
+   src/i18n.js. Solo se usa dentro de este archivo (getRecentActivity). */
+function getActivityLabels() {
+  return {
+    CHECK_IN: i18n.t('dataLayer:dashboardMetrics.activityCheckIn'),
+    MOVE: i18n.t('dataLayer:dashboardMetrics.activityMove'),
+    RELEASE: i18n.t('dataLayer:dashboardMetrics.activityRelease'),
+  }
+}
 
 /* Actividades recientes (2026-08-26) -- misma fuente que el desglose de
    arriba (getMovementsForDate, ya sincronizada localmente, cero
@@ -257,8 +288,11 @@ export function getRecentActivity(limit = 30) {
       return {
         id: m.id,
         type: m.type,
-        label: ACTIVITY_LABELS[m.type] || m.type,
-        employeeName: employee?.name || m.employeeNumber || 'Empleado',
+        label: getActivityLabels()[m.type] || m.type,
+        employeeName:
+          employee?.name ||
+          m.employeeNumber ||
+          i18n.t('dataLayer:dashboardMetrics.unknownEmployee'),
         fromAreaName: m.fromAreaId ? workCenterById(m.fromAreaId)?.name || m.fromAreaId : null,
         toAreaName: m.toAreaId ? workCenterById(m.toAreaId)?.name || m.toAreaId : null,
         time: m.movedAt,

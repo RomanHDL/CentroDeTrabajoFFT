@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,7 @@ import { showToast } from '../ui/toast'
 const DndAssignContext = createContext(null)
 
 export function DndAssignProvider({ children }) {
+  const { t } = useTranslation('app')
   const [stationPicker, setStationPicker] = useState(null) // { employee, current, targetAreaId }
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
   const [releaseTarget, setReleaseTarget] = useState(null) // { employee, currentAssignment }
@@ -54,7 +56,10 @@ export function DndAssignProvider({ children }) {
     if (!wc || wc.idealHeadcount == null) return
     const staffing = getAreaStaffing(areaId)
     if (staffing.real > wc.idealHeadcount) {
-      showToast(`${wc.name} ya alcanzó su plantilla ideal de ${wc.idealHeadcount}.`, 'warning')
+      showToast(
+        t('dndAssign.overIdealWarning', { areaName: wc.name, idealHeadcount: wc.idealHeadcount }),
+        'warning',
+      )
     }
   }
 
@@ -63,7 +68,7 @@ export function DndAssignProvider({ children }) {
     const alreadyHere =
       current && current.areaId === targetAreaId && current.stationId === stationName
     if (alreadyHere) {
-      showToast(`${employee.name} ya está asignado a ${areaName}.`, 'info')
+      showToast(t('dndAssign.alreadyAssignedInfo', { name: employee.name, areaName }), 'info')
       return
     }
     if (current) {
@@ -82,10 +87,10 @@ export function DndAssignProvider({ children }) {
       shift: CURRENT_SHIFT,
     })
     if (res.status === 'OK') {
-      showToast(`${employee.name} asignado a ${areaName}.`)
+      showToast(t('dndAssign.assignedToast', { name: employee.name, areaName }))
       warnIfOverIdeal(targetAreaId)
     } else {
-      showToast(res.message || 'No se pudo asignar.', 'error')
+      showToast(res.message || t('dndAssign.assignFailedFallback'), 'error')
     }
   }
 
@@ -99,7 +104,13 @@ export function DndAssignProvider({ children }) {
     // real de estaciones, no por tipo de area (ver workstations.js/hasMultipleStations).
     if (hasMultipleStations(targetAreaId)) {
       if (current && current.areaId === targetAreaId) {
-        showToast(`${employee.name} ya está en ${workCenterById(targetAreaId)?.name}.`, 'info')
+        showToast(
+          t('dndAssign.alreadyInAreaInfo', {
+            name: employee.name,
+            areaName: workCenterById(targetAreaId)?.name,
+          }),
+          'info',
+        )
         return
       }
       setStationPicker({ employee, current, targetAreaId })
@@ -147,14 +158,22 @@ export function DndAssignProvider({ children }) {
     if (res.status === 'OK') {
       if (res.bumpedEmployeeId) {
         showToast(
-          `${employeeA.name} ocupó el puesto de ${employeeB.name}; ${employeeB.name} quedó sin asignación.`,
+          t('dndAssign.swapBumpedToast', {
+            employeeAName: employeeA.name,
+            employeeBName: employeeB.name,
+          }),
         )
       } else {
-        showToast(`${employeeA.name} y ${employeeB.name} intercambiaron de puesto.`)
+        showToast(
+          t('dndAssign.swapExchangedToast', {
+            employeeAName: employeeA.name,
+            employeeBName: employeeB.name,
+          }),
+        )
       }
       warnIfOverIdeal(targetAreaId)
     } else {
-      showToast(res.message || 'No se pudo intercambiar.', 'error')
+      showToast(res.message || t('dndAssign.swapFailedFallback'), 'error')
     }
     setSwapTarget(null)
   }
@@ -188,9 +207,9 @@ export function DndAssignProvider({ children }) {
     const areaName = workCenterById(currentAssignment.areaId)?.name || currentAssignment.areaId
     const res = releaseAssignment(employee.id, currentAssignment.areaId)
     if (res.status === 'OK') {
-      showToast(`${employee.name} removido de ${areaName}.`)
+      showToast(t('dndAssign.releasedToast', { name: employee.name, areaName }))
     } else {
-      showToast(res.message || 'No se pudo quitar la asignación.', 'error')
+      showToast(res.message || t('dndAssign.releaseFailedFallback'), 'error')
     }
     setReleaseTarget(null)
   }
@@ -215,17 +234,19 @@ export function DndAssignProvider({ children }) {
             <>
               <DialogHeader>
                 <DialogTitle>
-                  Elige una estación — {workCenterById(stationPicker.targetAreaId)?.name}
+                  {t('dndAssign.stationPickerTitle', {
+                    areaName: workCenterById(stationPicker.targetAreaId)?.name,
+                  })}
                 </DialogTitle>
               </DialogHeader>
               <div className="px-6 pb-6">
                 <p className="text-[13px] text-muted-foreground">
-                  Asignando a <b>{stationPicker.employee.name}</b>
+                  {t('dndAssign.assigningToLabel')} <b>{stationPicker.employee.name}</b>
                 </p>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  No. empleado: <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b>{' '}
-                  · Soltar sobre la línea no elige estación automáticamente — selecciona una
-                  disponible:
+                  {t('dndAssign.employeeNumberLabel')}{' '}
+                  <b>{formatEmployeeNumber(stationPicker.employee.employeeNumber)}</b>{' '}
+                  {t('dndAssign.pickerInstructions')}
                 </p>
                 <div className="flex flex-col gap-2">
                   {pickerStations.map((s) => (
@@ -255,8 +276,11 @@ export function DndAssignProvider({ children }) {
                         )}
                       >
                         {s.isAvailable
-                          ? 'Disponible'
-                          : `${s.occupants.length}/${s.capacity} completa`}
+                          ? t('dndAssign.availableLabel')
+                          : t('dndAssign.fullCapacityLabel', {
+                              occupants: s.occupants.length,
+                              capacity: s.capacity,
+                            })}
                       </span>
                     </button>
                   ))}
@@ -264,7 +288,7 @@ export function DndAssignProvider({ children }) {
               </div>
               <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
                 <Button variant="outline" onClick={() => setStationPicker(null)}>
-                  Cancelar
+                  {t('dndAssign.cancelButton')}
                 </Button>
               </div>
             </>
@@ -284,14 +308,16 @@ export function DndAssignProvider({ children }) {
               workCenterById(moveTarget.presetTo.areaId)?.name || moveTarget.presetTo.areaId
             if (res?.pending) {
               showToast(
-                `Solicitud de movimiento de ${moveTarget.employee.name} enviada para aprobación.`,
+                t('dndAssign.moveRequestedInfo', { name: moveTarget.employee.name }),
                 'info',
               )
             } else {
               const fromName =
                 workCenterById(moveTarget.currentAssignment.areaId)?.name ||
                 moveTarget.currentAssignment.areaId
-              showToast(`${moveTarget.employee.name} movido de ${fromName} a ${toName}.`)
+              showToast(
+                t('dndAssign.movedToast', { name: moveTarget.employee.name, fromName, toName }),
+              )
               warnIfOverIdeal(moveTarget.presetTo.areaId)
             }
             setMoveTarget(null)
@@ -305,35 +331,41 @@ export function DndAssignProvider({ children }) {
             <>
               <DialogHeader>
                 <DialogTitle>
-                  {swapTarget.current ? 'Intercambiar puesto' : 'Puesto ocupado'}
+                  {swapTarget.current
+                    ? t('dndAssign.swapTitleActive')
+                    : t('dndAssign.swapTitleOccupied')}
                 </DialogTitle>
               </DialogHeader>
               <div className="px-6 pb-6 text-sm">
                 {swapTarget.current ? (
                   <p>
-                    <b>{swapTarget.employeeA.name}</b> tomará el puesto de{' '}
-                    <b>{swapTarget.employeeB.name}</b> en{' '}
+                    <b>{swapTarget.employeeA.name}</b> {t('dndAssign.swapTakesPositionOf')}{' '}
+                    <b>{swapTarget.employeeB.name}</b> {t('dndAssign.swapAreaConnector')}{' '}
                     <b>{workCenterById(swapTarget.targetAreaId)?.name}</b> ({swapTarget.stationName}
-                    ), y <b>{swapTarget.employeeB.name}</b> pasará al puesto que dejó{' '}
-                    <b>{swapTarget.employeeA.name}</b> en{' '}
+                    ), {t('dndAssign.swapAndConnector')} <b>{swapTarget.employeeB.name}</b>{' '}
+                    {t('dndAssign.swapVacatedPositionOf')} <b>{swapTarget.employeeA.name}</b>{' '}
+                    {t('dndAssign.swapAreaConnector')}{' '}
                     <b>{workCenterById(swapTarget.current.areaId)?.name}</b> (
                     {swapTarget.current.stationId}).
                   </p>
                 ) : (
                   <p>
-                    <b>{swapTarget.stationName}</b> ya está ocupada por{' '}
-                    <b>{swapTarget.employeeB.name}</b>. Si continúas,{' '}
-                    <b>{swapTarget.employeeA.name}</b> tomará ese puesto y{' '}
-                    <b>{swapTarget.employeeB.name}</b> quedará sin asignación.
+                    <b>{swapTarget.stationName}</b> {t('dndAssign.swapOccupiedByLabel')}{' '}
+                    <b>{swapTarget.employeeB.name}</b>
+                    {t('dndAssign.swapContinueNotice')} <b>{swapTarget.employeeA.name}</b>{' '}
+                    {t('dndAssign.swapWillTakePosition')} <b>{swapTarget.employeeB.name}</b>{' '}
+                    {t('dndAssign.swapWillBeUnassigned')}
                   </p>
                 )}
               </div>
               <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
                 <Button variant="outline" onClick={() => setSwapTarget(null)}>
-                  Cancelar
+                  {t('dndAssign.cancelButton')}
                 </Button>
                 <Button onClick={confirmSwap} className="font-bold">
-                  {swapTarget.current ? 'Intercambiar' : 'Ocupar puesto'}
+                  {swapTarget.current
+                    ? t('dndAssign.swapConfirmButton')
+                    : t('dndAssign.swapOccupyButton')}
                 </Button>
               </div>
             </>
@@ -349,22 +381,23 @@ export function DndAssignProvider({ children }) {
           {releaseTarget && (
             <>
               <DialogHeader>
-                <DialogTitle>Quitar del área</DialogTitle>
+                <DialogTitle>{t('dndAssign.releaseDialogTitle')}</DialogTitle>
               </DialogHeader>
               <div className="px-6 pb-6 text-sm">
-                ¿Quitar a <b>{releaseTarget.employee.name}</b> de{' '}
+                {t('dndAssign.releaseConfirmPrefix')} <b>{releaseTarget.employee.name}</b>{' '}
+                {t('dndAssign.releaseConfirmConnector')}{' '}
                 <b>
                   {workCenterById(releaseTarget.currentAssignment.areaId)?.name ||
                     releaseTarget.currentAssignment.areaId}
                 </b>
-                ?
+                {t('dndAssign.releaseConfirmSuffix')}
               </div>
               <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
                 <Button variant="outline" onClick={() => setReleaseTarget(null)}>
-                  Cancelar
+                  {t('dndAssign.cancelButton')}
                 </Button>
                 <Button variant="destructive" onClick={confirmRelease} className="font-bold">
-                  Quitar
+                  {t('dndAssign.releaseButton')}
                 </Button>
               </div>
             </>

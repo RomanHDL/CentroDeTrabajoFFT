@@ -10,7 +10,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '../state/auth'
 import NotificationBell from './NotificationBell'
-import { ROLE_LABELS } from './roleLabels'
+import { getRoleLabels } from './roleLabels'
 
 // Fase 4 (i18n, MI Stack Reference sección 10) -- nombres reales en su
 // propio idioma (nunca traducidos), convencion estandar de selectores de
@@ -61,7 +61,7 @@ export default function HeaderUserActions({ mode, setMode }) {
   const { i18n } = useTranslation()
   const { t } = useTranslation('layout')
 
-  const roleLabel = ROLE_LABELS[user?.role] || user?.role
+  const roleLabel = getRoleLabels()[user?.role] || user?.role
   const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
 
   async function handleLogout() {

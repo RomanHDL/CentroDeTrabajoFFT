@@ -1,0 +1,61 @@
+{
+  "forbidden": {
+    "title": "Acceso no autorizado",
+    "description": "Tu rol no tiene permiso para ver esta sección."
+  },
+  "emptyState": {
+    "defaultTitle": "Sin datos disponibles"
+  },
+  "rotateDeviceHint": {
+    "message": "Gira tu dispositivo para ver mejor esta sección."
+  },
+  "toastHost": {
+    "closeLabel": "Cerrar"
+  },
+  "roleLabels": {
+    "administrador": "Administrador",
+    "supervisor": "Supervisor",
+    "lider": "Líder"
+  },
+  "mainErrorBoundary": {
+    "title": "Ocurrió un error inesperado. Recarga la página."
+  },
+  "dndAssign": {
+    "overIdealWarning": "{{areaName}} ya alcanzó su plantilla ideal de {{idealHeadcount}}.",
+    "alreadyAssignedInfo": "{{name}} ya está asignado a {{areaName}}.",
+    "assignedToast": "{{name}} asignado a {{areaName}}.",
+    "assignFailedFallback": "No se pudo asignar.",
+    "alreadyInAreaInfo": "{{name}} ya está en {{areaName}}.",
+    "swapBumpedToast": "{{employeeAName}} ocupó el puesto de {{employeeBName}}; {{employeeBName}} quedó sin asignación.",
+    "swapExchangedToast": "{{employeeAName}} y {{employeeBName}} intercambiaron de puesto.",
+    "swapFailedFallback": "No se pudo intercambiar.",
+    "releasedToast": "{{name}} removido de {{areaName}}.",
+    "releaseFailedFallback": "No se pudo quitar la asignación.",
+    "moveRequestedInfo": "Solicitud de movimiento de {{name}} enviada para aprobación.",
+    "movedToast": "{{name}} movido de {{fromName}} a {{toName}}.",
+    "stationPickerTitle": "Elige una estación — {{areaName}}",
+    "assigningToLabel": "Asignando a",
+    "employeeNumberLabel": "No. empleado:",
+    "pickerInstructions": "· Soltar sobre la línea no elige estación automáticamente — selecciona una disponible:",
+    "availableLabel": "Disponible",
+    "fullCapacityLabel": "{{occupants}}/{{capacity}} completa",
+    "cancelButton": "Cancelar",
+    "swapTitleActive": "Intercambiar puesto",
+    "swapTitleOccupied": "Puesto ocupado",
+    "swapTakesPositionOf": "tomará el puesto de",
+    "swapAreaConnector": "en",
+    "swapAndConnector": "y",
+    "swapVacatedPositionOf": "pasará al puesto que dejó",
+    "swapOccupiedByLabel": "ya está ocupada por",
+    "swapContinueNotice": ". Si continúas,",
+    "swapWillTakePosition": "tomará ese puesto y",
+    "swapWillBeUnassigned": "quedará sin asignación.",
+    "swapConfirmButton": "Intercambiar",
+    "swapOccupyButton": "Ocupar puesto",
+    "releaseDialogTitle": "Quitar del área",
+    "releaseConfirmPrefix": "¿Quitar a",
+    "releaseConfirmConnector": "de",
+    "releaseConfirmSuffix": "?",
+    "releaseButton": "Quitar"
+  }
+}

@@ -31,6 +31,18 @@
    aparecen agrupados en un bloque visual.
    ───────────────────────────────────────────── */
 
+// i18n (2026-08-29, migracion de catalog.js) -- import directo de la
+// instancia i18next (no el hook useTranslation, este archivo no es un
+// componente React) para poder resolver texto visible EN EL MOMENTO en
+// que se llama una funcion/getter, nunca al cargar este modulo. Ver la
+// nota larga junto a WORK_CENTERS mas abajo: el array en si sigue siendo
+// un literal estatico con su `name` ORIGINAL en español -- ese literal
+// alimenta directamente logica real (workstations.js usa wc.name como
+// stationId/role persistido, ver buildWorkstations) y NUNCA se traduce.
+// Solo las funciones/getters que exponen texto para MOSTRAR (nunca para
+// comparar/guardar) resuelven vía i18n.t() en el momento de la llamada.
+import i18n from '../../i18n'
+
 export const SHIFT_OPTIONS = ['Matutino', 'Vespertino', 'Nocturno']
 
 export const CURRENT_SHIFT = 'Matutino'
@@ -48,10 +60,23 @@ export const SHIFT_HOURS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
    Registrar/Autoasignar/Mover -- Matutino/Vespertino/Nocturno,
    fuera de alcance de este cambio, no se tocan para no invalidar
    turnos ya guardados). */
+// `label` se queda literal en español a proposito (2026-08-29, migracion
+// i18n): dashboardMetrics.js/getShiftDistribution compara este `label`
+// EXACTO contra el `shift` real persistido en DailyAssignment (viene del
+// vocabulario legacy de SHIFT_OPTIONS) -- es una clave de datos, no solo
+// texto visible, igual que WORK_CENTERS.name mas abajo. `labelKey` es el
+// identificador nuevo para traducir SOLO lo que se muestra (ver
+// getCurrentShift/getShiftSchedule), sin tocar el valor comparado.
 export const OFFICIAL_SHIFTS = [
-  { id: 'MATUTINO', label: 'Matutino', start: '07:00', end: '17:10' },
-  { id: 'TIEMPO_EXTRA', label: 'Tiempo extra', start: '17:11', end: '22:00' },
-  { id: 'NOCHE', label: 'Noche', start: '22:01', end: '07:00' },
+  { id: 'MATUTINO', label: 'Matutino', labelKey: 'shiftMatutino', start: '07:00', end: '17:10' },
+  {
+    id: 'TIEMPO_EXTRA',
+    label: 'Tiempo extra',
+    labelKey: 'shiftTiempoExtra',
+    start: '17:11',
+    end: '22:00',
+  },
+  { id: 'NOCHE', label: 'Noche', labelKey: 'shiftNoche', start: '22:01', end: '07:00' },
 ]
 
 /* Logica central reutilizable de "que turno es ahora" (2026-08-26, a
@@ -73,18 +98,31 @@ function minutesOfDay(hhmm) {
   return h * 60 + m
 }
 
+// Resuelve el `label` visible de un turno EN EL MOMENTO en que se llama
+// (nunca al cargar el modulo) -- devuelve una copia (spread) para no
+// mutar la entrada original de OFFICIAL_SHIFTS, que se queda intacta
+// para que la comparacion `s.label === shiftIdOrLabel` de abajo y el
+// match contra `shift` real en dashboardMetrics.js sigan funcionando
+// contra el literal en español de siempre.
+function resolveShiftDisplay(shift) {
+  if (!shift) return shift
+  return { ...shift, label: shift.labelKey ? i18n.t(`catalog:${shift.labelKey}`) : shift.label }
+}
+
 export function getShiftSchedule(shiftIdOrLabel) {
-  return OFFICIAL_SHIFTS.find((s) => s.id === shiftIdOrLabel || s.label === shiftIdOrLabel) || null
+  const found =
+    OFFICIAL_SHIFTS.find((s) => s.id === shiftIdOrLabel || s.label === shiftIdOrLabel) || null
+  return resolveShiftDisplay(found)
 }
 
 export function getCurrentShift(date = new Date()) {
   const minutes = date.getHours() * 60 + date.getMinutes()
   const [matutino, tiempoExtra, noche] = OFFICIAL_SHIFTS
   if (minutes >= minutesOfDay(matutino.start) && minutes <= minutesOfDay(matutino.end))
-    return matutino
+    return resolveShiftDisplay(matutino)
   if (minutes >= minutesOfDay(tiempoExtra.start) && minutes <= minutesOfDay(tiempoExtra.end))
-    return tiempoExtra
-  return noche
+    return resolveShiftDisplay(tiempoExtra)
+  return resolveShiftDisplay(noche)
 }
 
 export function formatShiftSchedule(shift) {
@@ -330,6 +368,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA1',
     name: 'WC LINEA 1',
+    nameKey: 'wcLinea1',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -339,6 +378,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA2',
     name: 'WC LINEA 2',
+    nameKey: 'wcLinea2',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -348,6 +388,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA3',
     name: 'WC LINEA 3',
+    nameKey: 'wcLinea3',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -357,6 +398,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA4',
     name: 'WC LINEA 4',
+    nameKey: 'wcLinea4',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -366,6 +408,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA5',
     name: 'WC LINEA 5',
+    nameKey: 'wcLinea5',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -375,6 +418,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA6',
     name: 'WC LINEA 6',
+    nameKey: 'wcLinea6',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -384,6 +428,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA7',
     name: 'WC LINEA 7',
+    nameKey: 'wcLinea7',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -393,6 +438,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA8',
     name: 'WC LINEA 8',
+    nameKey: 'wcLinea8',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -402,6 +448,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA9',
     name: 'WC LINEA 9',
+    nameKey: 'wcLinea9',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -411,6 +458,7 @@ export const WORK_CENTERS = [
   {
     id: 'LINEA10',
     name: 'WC LINEA 10',
+    nameKey: 'wcLinea10',
     kind: 'linea',
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
@@ -420,6 +468,7 @@ export const WORK_CENTERS = [
   {
     id: 'PROYECTO',
     name: 'WC LINEA 0',
+    nameKey: 'wcLinea0',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -434,6 +483,7 @@ export const WORK_CENTERS = [
   {
     id: 'PALETIZADO',
     name: 'WC Paletizado',
+    nameKey: 'wcPaletizado',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -443,6 +493,7 @@ export const WORK_CENTERS = [
   {
     id: 'ACCESORIOS',
     name: 'WC Accesorios',
+    nameKey: 'wcAccesorios',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -513,6 +564,7 @@ export const WORK_CENTERS = [
   {
     id: 'CONVEYOR_PRINCIPAL',
     name: 'WC Conveyor General',
+    nameKey: 'wcConveyorGeneral',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -522,6 +574,7 @@ export const WORK_CENTERS = [
   {
     id: 'CONVEYOR_SECUNDARIO',
     name: 'WC Conveyor Secundario',
+    nameKey: 'wcConveyorSecundario',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -538,6 +591,7 @@ export const WORK_CENTERS = [
   {
     id: 'HIGH_VALUE',
     name: 'WC Midea / High Value',
+    nameKey: 'wcMideaHighValue',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -547,6 +601,7 @@ export const WORK_CENTERS = [
   {
     id: 'CALIDAD',
     name: 'WC Calidad',
+    nameKey: 'wcCalidad',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -556,6 +611,7 @@ export const WORK_CENTERS = [
   {
     id: 'SELLADO',
     name: 'WC Sellado',
+    nameKey: 'wcSellado',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -579,6 +635,7 @@ export const WORK_CENTERS = [
   {
     id: 'INSUMOS',
     name: 'WC Insumos y Suministro de Material',
+    nameKey: 'wcInsumosSuministroMaterial',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -588,6 +645,7 @@ export const WORK_CENTERS = [
   {
     id: 'SUMINISTRO_MATERIAL',
     name: 'WC Suministro de material',
+    nameKey: 'wcSuministroMaterial',
     kind: 'area',
     type: AREA_TYPES.WORK_AREA,
     isProduction: true,
@@ -602,6 +660,7 @@ export const WORK_CENTERS = [
   {
     id: 'BOX_PREP',
     name: 'WC Box Prep',
+    nameKey: 'wcBoxPrep',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -612,6 +671,7 @@ export const WORK_CENTERS = [
   {
     id: 'CAPACITACION',
     name: 'WC Capacitación',
+    nameKey: 'wcCapacitacion',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -621,6 +681,7 @@ export const WORK_CENTERS = [
   {
     id: 'TEAM_LEADER',
     name: 'WC Team Leader',
+    nameKey: 'wcTeamLeader',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -635,6 +696,7 @@ export const WORK_CENTERS = [
   {
     id: 'ENTRENADOR',
     name: 'WC Entrenador',
+    nameKey: 'wcEntrenador',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -651,6 +713,7 @@ export const WORK_CENTERS = [
   {
     id: 'SOPORTE',
     name: 'WC Soporte',
+    nameKey: 'wcSoporte',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -661,6 +724,7 @@ export const WORK_CENTERS = [
   {
     id: 'LIMPIEZA',
     name: 'WC Limpieza',
+    nameKey: 'wcLimpieza',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -676,6 +740,7 @@ export const WORK_CENTERS = [
   {
     id: 'GERENTE',
     name: 'WC Coordinador de Almacén',
+    nameKey: 'wcCoordinadorAlmacen',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -685,6 +750,7 @@ export const WORK_CENTERS = [
   {
     id: 'SUPERVISOR',
     name: 'WC Supervisor',
+    nameKey: 'wcSupervisor',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
     isProduction: false,
@@ -1058,13 +1124,35 @@ export function getAreaDetailVariant(workCenterId) {
    real en WorkArea/Employee/User, ver prisma/schema.prisma -- por eso
    esta configuracion central nueva, en un solo lugar, fácil de editar).
    Contenido tal como lo especifico el usuario, no inventado por Claude. */
+// Getters (2026-08-29, migracion i18n) en vez de strings estaticos: los
+// dos consumidores (SpecialAreaDetail.jsx/SupportAreaDetail.jsx) leen
+// `SUPPORT_AREA_DESCRIPTIONS[area.id]` directamente (nunca via una
+// funcion propia), asi que un string plano quedaria fijo en el idioma
+// que estuviera cargado al importar este modulo -- un getter se
+// re-evalua en CADA acceso, nunca se cachea, mismo efecto que llamar
+// `t()` en el render sin tener que tocar esos dos archivos. A diferencia
+// de WORK_CENTERS.name/OFFICIAL_SHIFTS.label, este texto NUNCA se
+// compara ni se persiste (es puramente editorial), asi que no hay riesgo
+// de que el idioma actual rompa una busqueda/igualdad en otro lado.
 export const SUPPORT_AREA_DESCRIPTIONS = {
-  CAPACITACION: 'Área de capacitación y desarrollo',
-  TEAM_LEADER: 'Liderazgo y coordinación operativa',
-  SOPORTE: 'Soporte operativo / ingeniería',
-  LIMPIEZA: 'Soporte de limpieza del área',
-  GERENTE: 'Gestión y dirección del área',
-  SUPERVISOR: 'Supervisión y coordinación',
+  get CAPACITACION() {
+    return i18n.t('catalog:descCapacitacion')
+  },
+  get TEAM_LEADER() {
+    return i18n.t('catalog:descTeamLeader')
+  },
+  get SOPORTE() {
+    return i18n.t('catalog:descSoporte')
+  },
+  get LIMPIEZA() {
+    return i18n.t('catalog:descLimpieza')
+  },
+  get GERENTE() {
+    return i18n.t('catalog:descGerente')
+  },
+  get SUPERVISOR() {
+    return i18n.t('catalog:descSupervisor')
+  },
 }
 
 export const STATIONS = [
@@ -1083,16 +1171,69 @@ export const STATIONS = [
    del % de avance de produccion. SIN_DATOS es el estado por
    defecto mientras no exista una fuente real de produccion;
    nunca se asume "Operando" sin evidencia. */
+// `label` es getter (2026-08-29, migracion i18n) por el mismo motivo que
+// SUPPORT_AREA_DESCRIPTIONS: selectors.js hace `{ key,
+// ...OPERATIONAL_STATUS[key] }` (spread, no una funcion de este
+// archivo) -- el getter se evalua EN ESE MOMENTO (cada llamada a
+// operationalStatusOf()), nunca se cachea en un string fijo. `dot`/
+// `tone` se quedan como estaban (identificadores para color/estilo, no
+// texto visible, nunca se traducen).
 export const OPERATIONAL_STATUS = {
-  OPERANDO: { label: 'Operando', dot: '#10B981', tone: 'ok' },
-  ATENCION: { label: 'En atención', dot: '#F59E0B', tone: 'warn' },
-  MANTENIMIENTO: { label: 'Mantenimiento', dot: '#3B82F6', tone: 'info' },
-  DETENIDO: { label: 'Detenido', dot: '#EF4444', tone: 'bad' },
-  SIN_DATOS: { label: 'Sin datos', dot: '#94A3B8', tone: 'default' },
+  OPERANDO: {
+    get label() {
+      return i18n.t('catalog:statusOperando')
+    },
+    dot: '#10B981',
+    tone: 'ok',
+  },
+  ATENCION: {
+    get label() {
+      return i18n.t('catalog:statusAtencion')
+    },
+    dot: '#F59E0B',
+    tone: 'warn',
+  },
+  MANTENIMIENTO: {
+    get label() {
+      return i18n.t('catalog:statusMantenimiento')
+    },
+    dot: '#3B82F6',
+    tone: 'info',
+  },
+  DETENIDO: {
+    get label() {
+      return i18n.t('catalog:statusDetenido')
+    },
+    dot: '#EF4444',
+    tone: 'bad',
+  },
+  SIN_DATOS: {
+    get label() {
+      return i18n.t('catalog:statusSinDatos')
+    },
+    dot: '#94A3B8',
+    tone: 'default',
+  },
 }
 
+// Resuelve `name` para MOSTRAR, fresco en cada llamada (2026-08-29,
+// migracion i18n) -- WORK_CENTERS[i].name en si NUNCA se traduce (sigue
+// siendo el literal español original): workstations.js lo usa
+// directamente (`WORK_CENTERS.forEach(wc => ...)`, nunca via esta
+// funcion) como stationId/role real para el puesto generico de areas sin
+// CUSTOM_STATION_PLANS (ver buildWorkstations, rama `else` -- ese valor
+// queda persistido en DailyAssignment.stationId), asi que cambiar el
+// literal ahi rompería asignaciones/ocupacion ya guardadas. Esta funcion
+// es la UNICA que traduce, devolviendo una copia (spread) con `name`
+// resuelto vía i18n.t() en el momento de la llamada -- nunca cacheado --
+// para que autocorrija en cuanto cargue la traduccion real, igual que
+// cualquier `t()` de un componente. Todos los consumidores existentes
+// (`workCenterById(id)?.name`) siguen funcionando igual, ahora con texto
+// traducido en vez del literal crudo.
 export function workCenterById(id) {
-  return WORK_CENTERS.find((w) => w.id === id)
+  const entry = WORK_CENTERS.find((w) => w.id === id)
+  if (!entry) return entry
+  return { ...entry, name: entry.nameKey ? i18n.t(`catalog:${entry.nameKey}`) : entry.name }
 }
 
 /* Indicadores del area FFT (2026-08-26, "Reestructuracion operativa FFT",
@@ -1106,14 +1247,43 @@ export function workCenterById(id) {
    false -- este objeto es el unico lugar a cambiar (`hasSource:true` +
    agregar el selector real correspondiente) el dia que exista una
    fuente real, sin tocar el componente visual. */
+// `label` es getter (2026-08-29, migracion i18n): FftIndicatorsCard.jsx
+// hace `FFT_INDICATORS.map((i) => ...)` leyendo `i.label` directo del
+// array (nunca via una funcion de este archivo) -- el getter se
+// re-evalua en cada acceso/render, nunca queda fijo en el idioma que
+// estuviera cargado al importar el modulo. `order`/`hasSource` no son
+// texto visible, se quedan igual.
 export const FFT_INDICATORS = [
-  { id: 'EFICIENCIA', order: 1, label: 'Eficiencia del área FFT', hasSource: false },
-  { id: 'DEMORAS', order: 2, label: 'Demoras en área FFT', hasSource: false },
-  { id: 'PRODUCCION', order: 3, label: 'Indicador de producción', hasSource: false },
+  {
+    id: 'EFICIENCIA',
+    order: 1,
+    get label() {
+      return i18n.t('catalog:fftEficiencia')
+    },
+    hasSource: false,
+  },
+  {
+    id: 'DEMORAS',
+    order: 2,
+    get label() {
+      return i18n.t('catalog:fftDemoras')
+    },
+    hasSource: false,
+  },
+  {
+    id: 'PRODUCCION',
+    order: 3,
+    get label() {
+      return i18n.t('catalog:fftProduccion')
+    },
+    hasSource: false,
+  },
   {
     id: 'CUMPLIMIENTO_PROGRAMAS',
     order: 4,
-    label: 'Cumplimiento de programas área FFT',
+    get label() {
+      return i18n.t('catalog:fftCumplimientoProgramas')
+    },
     hasSource: false,
   },
 ]

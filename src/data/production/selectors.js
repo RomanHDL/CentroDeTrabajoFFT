@@ -1,8 +1,9 @@
-import { WORK_CENTERS, LINES_ONLY, OPERATIONAL_STATUS, workCenterById } from './catalog'
-import { HAS_PRODUCTION_SOURCE, lastHourDelta } from './production'
+import i18n from '../../i18n'
 import { getLineWorkstationsWithOccupancy } from '../personnel/repository'
 import { getLineCapacity } from '../personnel/workstations'
+import { LINES_ONLY, OPERATIONAL_STATUS, WORK_CENTERS, workCenterById } from './catalog'
 import { getAreaHeadcount, getStaffingTotals } from './personnelByArea'
+import { HAS_PRODUCTION_SOURCE, lastHourDelta } from './production'
 
 /* ── Calculos de productividad (centralizados, no en UI) ── */
 
@@ -24,11 +25,19 @@ export function productividadPorPersona(production, personnel) {
 /* Colores de avance — nunca depender solo del color,
    siempre acompañar con texto/porcentaje. */
 export function progressTone(pct) {
-  if (pct == null) return { tone: 'default', label: 'Sin datos', accent: 'slate' }
-  if (pct >= 100) return { tone: 'ok', label: 'Meta alcanzada', accent: 'green' }
-  if (pct >= 80) return { tone: 'info', label: 'Producción normal', accent: 'blue' }
-  if (pct >= 60) return { tone: 'warn', label: 'Debajo de lo esperado', accent: 'amber' }
-  return { tone: 'bad', label: 'Retraso importante', accent: 'red' }
+  if (pct == null)
+    return { tone: 'default', label: i18n.t('dataLayer:selectors.noData'), accent: 'slate' }
+  if (pct >= 100)
+    return { tone: 'ok', label: i18n.t('dataLayer:selectors.targetReached'), accent: 'green' }
+  if (pct >= 80)
+    return { tone: 'info', label: i18n.t('dataLayer:selectors.normalProduction'), accent: 'blue' }
+  if (pct >= 60)
+    return {
+      tone: 'warn',
+      label: i18n.t('dataLayer:selectors.belowExpected'),
+      accent: 'amber',
+    }
+  return { tone: 'bad', label: i18n.t('dataLayer:selectors.significantDelay'), accent: 'red' }
 }
 
 /* Sin fuente real de produccion conectada todavia, el estado

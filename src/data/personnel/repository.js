@@ -1,25 +1,5 @@
 import dayjs from 'dayjs'
-import {
-  readEmployees,
-  writeEmployees,
-  readAssignments,
-  writeAssignments,
-  readMovements,
-  writeMovements,
-  readAttendance,
-  writeAttendance,
-  readSkills,
-  writeSkills,
-  readPendingMoves,
-  writePendingMoves,
-  readBaselineSuppressed,
-  writeBaselineSuppressed,
-  subscribe,
-  notify,
-} from './store'
-import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
-import { SEED_SKILLS } from './skills'
-import { getWorkstationsForLine, getWorkstation } from './workstations'
+import i18n from '../../i18n'
 import {
   CURRENT_SHIFT,
   DEFAULT_LINE_ENTRY_TIME,
@@ -27,15 +7,36 @@ import {
 } from '../production/catalog'
 import {
   startPersonnelSync,
+  syncApproveMove,
   syncCheckIn,
   syncMove,
-  syncRelease,
-  syncSuppressBaseline,
-  syncRestoreBaseline,
-  syncRequestMove,
-  syncApproveMove,
   syncRejectMove,
+  syncRelease,
+  syncRequestMove,
+  syncRestoreBaseline,
+  syncSuppressBaseline,
 } from './apiSync'
+import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
+import { SEED_SKILLS } from './skills'
+import {
+  notify,
+  readAssignments,
+  readAttendance,
+  readBaselineSuppressed,
+  readEmployees,
+  readMovements,
+  readPendingMoves,
+  readSkills,
+  subscribe,
+  writeAssignments,
+  writeAttendance,
+  writeBaselineSuppressed,
+  writeEmployees,
+  writeMovements,
+  writePendingMoves,
+  writeSkills,
+} from './store'
+import { getWorkstation, getWorkstationsForLine } from './workstations'
 
 /* ─────────────────────────────────────────────
    Modelo conceptual:
@@ -67,6 +68,7 @@ function makeId(prefix) {
    backend real (dispositivos distintos, no solo pestañas) arranca una
    sola vez al cargar este modulo. */
 export { subscribe }
+
 startPersonnelSync()
 
 /* ── Employee ── */
@@ -126,7 +128,7 @@ function isEmployeeNumberTaken(number, excludeEmployeeId = null) {
 export function createEmployee({ employeeNumber, name }) {
   const number = String(employeeNumber).trim()
   if (isEmployeeNumberTaken(number)) {
-    throw new Error(`El número de empleado ${number} ya está en uso por otra persona.`)
+    throw new Error(i18n.t('repository:employeeNumberInUse', { number }))
   }
   const employees = readEmployees()
   const employee = {
@@ -221,7 +223,7 @@ function ensureAttendance(employee, date, shift, checkedInAt = nowTime()) {
  */
 export function markPresentOnly({ employeeNumber, name, shift }) {
   const number = String(employeeNumber || '').trim()
-  if (!number) return { status: 'ERROR', message: 'Captura un número de empleado.' }
+  if (!number) return { status: 'ERROR', message: i18n.t('repository:enterEmployeeNumber') }
 
   let employee = getEmployeeByNumber(number)
   if (!employee) {
@@ -461,9 +463,10 @@ export function getMovesCountForDate(date = todayISO()) {
  */
 export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stationId, shift }) {
   const number = String(employeeNumber || '').trim()
-  if (!employeeId && !number) return { status: 'ERROR', message: 'Captura un número de empleado.' }
-  if (!areaId) return { status: 'ERROR', message: 'Selecciona el área/línea.' }
-  if (!stationId) return { status: 'ERROR', message: 'Selecciona el rol/estación.' }
+  if (!employeeId && !number)
+    return { status: 'ERROR', message: i18n.t('repository:enterEmployeeNumber') }
+  if (!areaId) return { status: 'ERROR', message: i18n.t('repository:selectAreaLine') }
+  if (!stationId) return { status: 'ERROR', message: i18n.t('repository:selectStation') }
 
   let employee = employeeId ? getEmployeeById(employeeId) : getEmployeeByNumber(number)
   // wasJustCreated: distingue "persona genuinamente nueva" (recien creada AQUI mismo) de
@@ -471,7 +474,7 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   // el bug real de duplicados (2026-08-27, ver apiSync.js).
   let wasJustCreated = false
   if (!employee) {
-    if (employeeId) return { status: 'ERROR', message: 'Empleado no encontrado.' }
+    if (employeeId) return { status: 'ERROR', message: i18n.t('repository:employeeNotFound') }
     if (!name || !name.trim()) {
       return { status: 'NEEDS_NAME', employeeNumber: number }
     }
@@ -496,7 +499,11 @@ export function checkInEmployee({ employeeId, employeeNumber, name, areaId, stat
   if (occupancy.isFull) {
     return {
       status: 'STATION_FULL',
-      message: `${stationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`,
+      message: i18n.t('repository:stationFull', {
+        stationId,
+        count: occupancy.count,
+        capacity: occupancy.capacity,
+      }),
       occupancy,
     }
   }
@@ -753,14 +760,15 @@ export function reconcileLineAssignments(
  * sin tocar el movimiento anterior.
  */
 export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
-  if (!toAreaId) return { status: 'ERROR', message: 'Selecciona el área/línea destino.' }
-  if (!toStationId) return { status: 'ERROR', message: 'Selecciona el rol/estación destino.' }
+  if (!toAreaId) return { status: 'ERROR', message: i18n.t('repository:selectDestinationAreaLine') }
+  if (!toStationId)
+    return { status: 'ERROR', message: i18n.t('repository:selectDestinationStation') }
 
   const date = todayISO()
   const assignments = readAssignments()
   const idx = assignments.findIndex((a) => a.employeeId === employeeId && a.date === date)
   if (idx === -1) {
-    return { status: 'ERROR', message: 'El empleado no tiene una asignación activa hoy.' }
+    return { status: 'ERROR', message: i18n.t('repository:noActiveAssignmentToday') }
   }
 
   const current = assignments[idx]
@@ -769,7 +777,11 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   if (occupancy.isFull) {
     return {
       status: 'STATION_FULL',
-      message: `${toStationId} ya está completa (${occupancy.count}/${occupancy.capacity}).`,
+      message: i18n.t('repository:stationFull', {
+        stationId: toStationId,
+        count: occupancy.count,
+        capacity: occupancy.capacity,
+      }),
       occupancy,
     }
   }
@@ -831,10 +843,10 @@ export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
   const idxB = assignments.findIndex(
     (a) => a.date === date && a.areaId === toAreaId && a.stationId === toStationId,
   )
-  if (idxB === -1) return { status: 'ERROR', message: 'La estación ya no está ocupada.' }
+  if (idxB === -1) return { status: 'ERROR', message: i18n.t('repository:stationNotOccupied') }
   const assignmentB = assignments[idxB]
   if (assignmentB.employeeId === employeeIdA)
-    return { status: 'ERROR', message: 'Ya está en esa estación.' }
+    return { status: 'ERROR', message: i18n.t('repository:alreadyAtStation') }
 
   const movedAt = nowTime()
   const movements = readMovements()
@@ -842,7 +854,7 @@ export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
 
   if (idxA === -1) {
     const employeeA = getEmployeeById(employeeIdA)
-    if (!employeeA) return { status: 'ERROR', message: 'Empleado no encontrado.' }
+    if (!employeeA) return { status: 'ERROR', message: i18n.t('repository:employeeNotFound') }
 
     movements.push({
       id: makeId('mov'),
@@ -992,7 +1004,7 @@ export function releaseAssignment(employeeId, fallbackFromAreaId = null) {
     writeAssignments(assignments)
     if (employee) ensureAttendance(employee, date, current.shift)
   } else if (!fallbackFromAreaId) {
-    return { status: 'ERROR', message: 'El empleado no tiene una ubicación asignada hoy.' }
+    return { status: 'ERROR', message: i18n.t('repository:noLocationAssignedToday') }
   }
 
   const movements = readMovements()
@@ -1083,12 +1095,13 @@ export function requestMove({
   requestedByUserId,
   requestedByName,
 }) {
-  if (!toAreaId) return { status: 'ERROR', message: 'Selecciona el área/línea destino.' }
-  if (!toStationId) return { status: 'ERROR', message: 'Selecciona el rol/estación destino.' }
+  if (!toAreaId) return { status: 'ERROR', message: i18n.t('repository:selectDestinationAreaLine') }
+  if (!toStationId)
+    return { status: 'ERROR', message: i18n.t('repository:selectDestinationStation') }
 
   const date = todayISO()
   const employee = getEmployeeById(employeeId)
-  if (!employee) return { status: 'ERROR', message: 'Empleado no encontrado.' }
+  if (!employee) return { status: 'ERROR', message: i18n.t('repository:employeeNotFound') }
 
   const current = readAssignments().find((a) => a.employeeId === employeeId && a.date === date)
 
@@ -1132,7 +1145,7 @@ export function requestMove({
 export function approveMove(pendingMoveId, approvedByUserId) {
   const pending = readPendingMoves()
   const idx = pending.findIndex((p) => p.id === pendingMoveId)
-  if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
+  if (idx === -1) return { status: 'ERROR', message: i18n.t('repository:requestNoLongerExists') }
 
   const request = pending[idx]
   const result = moveEmployee({
@@ -1155,7 +1168,7 @@ export function approveMove(pendingMoveId, approvedByUserId) {
 export function rejectMove(pendingMoveId, rejectedByUserId, reason) {
   const pending = readPendingMoves()
   const idx = pending.findIndex((p) => p.id === pendingMoveId)
-  if (idx === -1) return { status: 'ERROR', message: 'Esa solicitud ya no existe.' }
+  if (idx === -1) return { status: 'ERROR', message: i18n.t('repository:requestNoLongerExists') }
 
   pending.splice(idx, 1)
   writePendingMoves(pending)

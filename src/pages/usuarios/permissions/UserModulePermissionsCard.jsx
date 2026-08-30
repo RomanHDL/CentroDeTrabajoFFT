@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { ROLE_LABELS } from '../../../layout/roleLabels'
+import { getRoleLabels } from '../../../layout/roleLabels'
 import { apiRequest } from '../../../state/auth'
 import { showToast } from '../../../ui/toast'
 import { getModuleIcon } from './moduleIcons'
@@ -216,7 +216,9 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
               <p className="text-[11px] text-muted-foreground">
                 {t('userModulePermissionsCard.roleLabel')}
               </p>
-              <p className="text-[13.5px] font-bold">{ROLE_LABELS[detail.role] || detail.role}</p>
+              <p className="text-[13.5px] font-bold">
+                {getRoleLabels()[detail.role] || detail.role}
+              </p>
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground">

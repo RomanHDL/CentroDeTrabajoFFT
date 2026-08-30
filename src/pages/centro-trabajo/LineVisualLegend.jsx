@@ -1,7 +1,7 @@
 import { Award, Package, Settings, Shield, User, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
+import { getLineVisualTypeOrder } from '../../data/personnel/lineVisualType'
 
 /* Rediseño WC LINEA 0-10 (2026-08-28, a peticion explicita del usuario)
    -- SOLO lo usa LineDetailDrawer.jsx. Dos leyendas separadas a
@@ -50,7 +50,7 @@ export default function LineVisualLegend() {
         <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
           {t('lineVisualLegend.hierarchyTitle')}
         </p>
-        {LINE_VISUAL_TYPE_ORDER.map((type) => (
+        {getLineVisualTypeOrder().map((type) => (
           <div key={type.key} className="flex items-center gap-1">
             <LineTypeIcon type={type} />
             <p className="text-[11px] font-bold text-muted-foreground">{type.label}</p>

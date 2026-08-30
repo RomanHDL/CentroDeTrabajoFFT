@@ -25,26 +25,57 @@
    la caja y el titulo del detalle/drawer coincidan siempre.
    ───────────────────────────────────────────── */
 
+import i18n from '../../i18n'
 import { LINES_ONLY, WORK_CENTERS } from './catalog'
 
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
-export const PHYSICAL_ZONES = {
-  PROYECTO: { id: 'PROYECTO', label: 'WC LINEA 0', areaIds: ['PROYECTO'] },
-  FFT: { id: 'FFT', label: 'WC Líneas de producción (FFT)', areaIds: FFT_LINE_IDS },
-  HIGHVALUE: { id: 'HIGHVALUE', label: 'WC Midea / High Value', areaIds: ['HIGH_VALUE'] },
-  SELLADO: { id: 'SELLADO', label: 'WC Sellado', areaIds: ['SELLADO'] },
-  INSUMOS: { id: 'INSUMOS', label: 'WC Insumos', areaIds: ['INSUMOS'] },
-  SUMINISTRO: {
-    id: 'SUMINISTRO',
-    label: 'WC Suministro de material',
-    areaIds: ['SUMINISTRO_MATERIAL'],
-  },
-  PALLETIZING: { id: 'PALLETIZING', label: 'WC Paletizado', areaIds: ['PALETIZADO'] },
-  ACCESSORIES: { id: 'ACCESSORIES', label: 'WC Accesorios', areaIds: ['ACCESORIOS'] },
+/* Definiciones puras (id/areaIds, nunca cambian) -- separadas del label
+   traducido para que IDS_IN_PHYSICAL_ZONES (calculo estatico de solo ids,
+   abajo) no dependa de i18n. Los labels reales SIEMPRE se resuelven en
+   getPhysicalZones() (funcion, nunca objeto estatico) para que nunca
+   queden "congelados" en el idioma que estaba activo cuando el modulo se
+   importo -- ver HARD RULE de i18n en src/i18n.js. */
+const PHYSICAL_ZONE_DEFS = {
+  PROYECTO: { id: 'PROYECTO', areaIds: ['PROYECTO'] },
+  FFT: { id: 'FFT', areaIds: FFT_LINE_IDS },
+  HIGHVALUE: { id: 'HIGHVALUE', areaIds: ['HIGH_VALUE'] },
+  SELLADO: { id: 'SELLADO', areaIds: ['SELLADO'] },
+  INSUMOS: { id: 'INSUMOS', areaIds: ['INSUMOS'] },
+  SUMINISTRO: { id: 'SUMINISTRO', areaIds: ['SUMINISTRO_MATERIAL'] },
+  PALLETIZING: { id: 'PALLETIZING', areaIds: ['PALETIZADO'] },
+  ACCESSORIES: { id: 'ACCESSORIES', areaIds: ['ACCESORIOS'] },
 }
 
-const IDS_IN_PHYSICAL_ZONES = new Set(Object.values(PHYSICAL_ZONES).flatMap((z) => z.areaIds))
+export function getPhysicalZones() {
+  return {
+    PROYECTO: {
+      ...PHYSICAL_ZONE_DEFS.PROYECTO,
+      label: i18n.t('dataLayer:layoutZones.proyecto'),
+    },
+    FFT: { ...PHYSICAL_ZONE_DEFS.FFT, label: i18n.t('dataLayer:layoutZones.fft') },
+    HIGHVALUE: {
+      ...PHYSICAL_ZONE_DEFS.HIGHVALUE,
+      label: i18n.t('dataLayer:layoutZones.highValue'),
+    },
+    SELLADO: { ...PHYSICAL_ZONE_DEFS.SELLADO, label: i18n.t('dataLayer:layoutZones.sellado') },
+    INSUMOS: { ...PHYSICAL_ZONE_DEFS.INSUMOS, label: i18n.t('dataLayer:layoutZones.insumos') },
+    SUMINISTRO: {
+      ...PHYSICAL_ZONE_DEFS.SUMINISTRO,
+      label: i18n.t('dataLayer:layoutZones.suministro'),
+    },
+    PALLETIZING: {
+      ...PHYSICAL_ZONE_DEFS.PALLETIZING,
+      label: i18n.t('dataLayer:layoutZones.palletizing'),
+    },
+    ACCESSORIES: {
+      ...PHYSICAL_ZONE_DEFS.ACCESSORIES,
+      label: i18n.t('dataLayer:layoutZones.accessories'),
+    },
+  }
+}
+
+const IDS_IN_PHYSICAL_ZONES = new Set(Object.values(PHYSICAL_ZONE_DEFS).flatMap((z) => z.areaIds))
 
 /* Fase 6 (MI Stack Reference, cierre): extraida de WorkAreaMap.jsx (890
    lineas, MUI) al eliminar ese componente muerto -- ya no se renderiza en
@@ -68,14 +99,22 @@ export function getAuxiliaryAreas() {
 }
 
 /* Grupos de color MUY suaves, solo para distinguir tipo de area —
-   nunca reemplazan el texto/etiqueta. */
-export const COLOR_GROUPS = {
-  PRODUCCION: { label: 'Producción', color: '#3B82F6' },
-  SOPORTE_PRODUCCION: { label: 'Soporte producción', color: '#F59E0B' },
-  CALIDAD_VALOR: { label: 'Calidad / Valor', color: '#F43F5E' },
-  SOPORTE: { label: 'Soporte', color: '#14B8A6' },
-  ADMINISTRATIVO: { label: 'Administrativo', color: '#A855F7' },
-  LOGISTICA: { label: 'Logística', color: '#64748B' },
+   nunca reemplazan el texto/etiqueta. Funcion (nunca objeto estatico)
+   por la misma razon que getPhysicalZones() arriba: el label debe
+   resolverse fresco en cada llamada, nunca congelarse en el idioma de
+   cuando se importo el modulo. */
+export function getColorGroups() {
+  return {
+    PRODUCCION: { label: i18n.t('dataLayer:layoutZones.production'), color: '#3B82F6' },
+    SOPORTE_PRODUCCION: {
+      label: i18n.t('dataLayer:layoutZones.productionSupport'),
+      color: '#F59E0B',
+    },
+    CALIDAD_VALOR: { label: i18n.t('dataLayer:layoutZones.qualityValue'), color: '#F43F5E' },
+    SOPORTE: { label: i18n.t('dataLayer:layoutZones.support'), color: '#14B8A6' },
+    ADMINISTRATIVO: { label: i18n.t('dataLayer:layoutZones.administrative'), color: '#A855F7' },
+    LOGISTICA: { label: i18n.t('dataLayer:layoutZones.logistics'), color: '#64748B' },
+  }
 }
 
 const AREA_TO_GROUP = {
@@ -104,5 +143,5 @@ export function colorGroupForArea(areaId) {
 }
 
 export function colorForArea(areaId) {
-  return COLOR_GROUPS[colorGroupForArea(areaId)].color
+  return getColorGroups()[colorGroupForArea(areaId)].color
 }

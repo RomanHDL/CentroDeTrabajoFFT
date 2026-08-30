@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ROLE_LABELS } from '../../layout/roleLabels'
+import { getRoleLabels } from '../../layout/roleLabels'
 import { apiRequest } from '../../state/auth'
 
 const EMPTY = { employeeNumber: '', username: '', name: '', role: 'SUPERVISOR', password: '' }
@@ -106,7 +106,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                {Object.entries(getRoleLabels()).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>

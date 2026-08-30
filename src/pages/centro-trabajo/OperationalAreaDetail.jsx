@@ -38,9 +38,9 @@ import {
   workCenterById,
 } from '../../data/production/catalog'
 import {
-  AREA_STATUS_META,
   classifyAreaStatus,
   getActividadForEmployee,
+  getAreaStatusMeta,
   getAvailablePersonnelToday,
   getGroupAreaStaffing,
   getGroupPeople,
@@ -471,7 +471,7 @@ export default function OperationalAreaDetail({
   if (!area || !staffing) return null
 
   const status = classifyAreaStatus(staffing.real, staffing.ideal)
-  const statusMeta = status ? AREA_STATUS_META[status] : null
+  const statusMeta = status ? getAreaStatusMeta()[status] : null
   const headerLabel = statusMeta
     ? statusMeta.label
     : people.length > 0

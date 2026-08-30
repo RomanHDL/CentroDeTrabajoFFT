@@ -30,10 +30,10 @@ import { getCurrentAssignment } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { SUPPORT_AREA_DESCRIPTIONS, workCenterById } from '../../data/production/catalog'
 import {
-  AREA_STATUS_META,
   classifyAreaStatus,
   getActividadForEmployee,
   getAreaStaffing,
+  getAreaStatusMeta,
   getAvailablePersonnelToday,
   getPeopleByArea,
   getSnapshotHomeAreaId,
@@ -350,7 +350,7 @@ export default function SupportAreaDetail({
   if (!area || !staffing) return null
 
   const status = classifyAreaStatus(staffing.real, staffing.ideal)
-  const statusMeta = status ? AREA_STATUS_META[status] : null
+  const statusMeta = status ? getAreaStatusMeta()[status] : null
   const headerLabel = statusMeta
     ? statusMeta.label
     : people.length > 0

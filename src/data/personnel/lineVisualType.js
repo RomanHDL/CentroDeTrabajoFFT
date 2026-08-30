@@ -27,6 +27,8 @@
    4. Sin ocupante, o rol/categoria que no calza con nada conocido -> null
       (nunca se inventa una categoria). ───────────────────────────────────────────── */
 
+import i18n from '../../i18n'
+
 // APOYO (2026-08-28, "ajustes controlados", a peticion explicita del
 // usuario -- "la mayoria de puestos operativos deben utilizar Ayudante
 // General... el rol/rango indica que pertenece a Ayudante General"):
@@ -36,29 +38,66 @@
 // WC LINEA mapeaba aqui (era solo leyenda), asi que renombrar el label no
 // afecta a nadie mas que a Empaque (unico rol nuevo que se mapea aqui,
 // ver ROLE_TO_CATEGORY_KEY.Empaque mas abajo).
-export const LINE_VISUAL_TYPES = {
-  LIDERAZGO: { key: 'LIDERAZGO', label: 'Team Leader', color: '#0D9488', iconKey: 'liderazgo' },
-  CALIDAD: { key: 'CALIDAD', label: 'Calidad', color: '#DB2777', iconKey: 'calidad' },
-  PRODUCCION: { key: 'PRODUCCION', label: 'Producción', color: '#2563EB', iconKey: 'produccion' },
-  TECNICO: {
-    key: 'TECNICO',
-    label: 'Técnico / Especializado',
-    color: '#F59E0B',
-    iconKey: 'tecnico',
-  },
-  SUMINISTRO: { key: 'SUMINISTRO', label: 'Suministro', color: '#7C3AED', iconKey: 'suministro' },
-  APOYO: { key: 'APOYO', label: 'Ayudante General', color: '#64748B', iconKey: 'apoyo' },
+/* Funcion (nunca objeto estatico): el label debe resolverse fresco en
+   cada llamada via i18n.t(), nunca congelarse en el idioma que estaba
+   activo cuando el modulo se importo -- ver HARD RULE de i18n en
+   src/i18n.js. Todo consumidor debe llamar getLineVisualTypes()/
+   getLineVisualTypeOrder() de nuevo en vez de guardar el resultado como
+   constante. */
+export function getLineVisualTypes() {
+  return {
+    LIDERAZGO: {
+      key: 'LIDERAZGO',
+      label: i18n.t('dataLayer:lineVisualType.teamLeader'),
+      color: '#0D9488',
+      iconKey: 'liderazgo',
+    },
+    CALIDAD: {
+      key: 'CALIDAD',
+      label: i18n.t('dataLayer:lineVisualType.quality'),
+      color: '#DB2777',
+      iconKey: 'calidad',
+    },
+    PRODUCCION: {
+      key: 'PRODUCCION',
+      label: i18n.t('dataLayer:lineVisualType.production'),
+      color: '#2563EB',
+      iconKey: 'produccion',
+    },
+    TECNICO: {
+      key: 'TECNICO',
+      label: i18n.t('dataLayer:lineVisualType.technicalSpecialized'),
+      color: '#F59E0B',
+      iconKey: 'tecnico',
+    },
+    SUMINISTRO: {
+      key: 'SUMINISTRO',
+      label: i18n.t('dataLayer:lineVisualType.supply'),
+      color: '#7C3AED',
+      iconKey: 'suministro',
+    },
+    APOYO: {
+      key: 'APOYO',
+      label: i18n.t('dataLayer:lineVisualType.generalAssistant'),
+      color: '#64748B',
+      iconKey: 'apoyo',
+    },
+  }
 }
 
-/* Orden fijo para la leyenda (seccion 13 del pedido). */
-export const LINE_VISUAL_TYPE_ORDER = [
-  LINE_VISUAL_TYPES.LIDERAZGO,
-  LINE_VISUAL_TYPES.CALIDAD,
-  LINE_VISUAL_TYPES.PRODUCCION,
-  LINE_VISUAL_TYPES.TECNICO,
-  LINE_VISUAL_TYPES.SUMINISTRO,
-  LINE_VISUAL_TYPES.APOYO,
-]
+/* Orden fijo para la leyenda (seccion 13 del pedido). Funcion (nunca array
+   estatico) por la misma razon que getLineVisualTypes() arriba. */
+export function getLineVisualTypeOrder() {
+  const types = getLineVisualTypes()
+  return [
+    types.LIDERAZGO,
+    types.CALIDAD,
+    types.PRODUCCION,
+    types.TECNICO,
+    types.SUMINISTRO,
+    types.APOYO,
+  ]
+}
 
 /* Rol base (sin sufijo numerico) -> categoria, para los puestos YA conocidos
    hoy (incluye "Team Leader", nuevo). Unica fuente de este mapeo -- tambien
@@ -91,9 +130,10 @@ export const ROLE_TO_CATEGORY_KEY = {
 }
 
 export function getPersonnelVisualType({ stationRole, actividad, category } = {}) {
-  if (category && LINE_VISUAL_TYPES[category]) return LINE_VISUAL_TYPES[category]
-  if (actividad === 'LIDER') return LINE_VISUAL_TYPES.LIDERAZGO
+  const types = getLineVisualTypes()
+  if (category && types[category]) return types[category]
+  if (actividad === 'LIDER') return types.LIDERAZGO
   if (stationRole && ROLE_TO_CATEGORY_KEY[stationRole])
-    return LINE_VISUAL_TYPES[ROLE_TO_CATEGORY_KEY[stationRole]]
+    return types[ROLE_TO_CATEGORY_KEY[stationRole]]
   return null
 }
