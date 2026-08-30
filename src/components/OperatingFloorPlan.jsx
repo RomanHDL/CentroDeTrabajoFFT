@@ -1,5 +1,6 @@
 import { Focus, Info, Maximize, Minimize, Minus, Plus, User, Users, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -82,11 +83,25 @@ import { useEmployeeDropTarget } from '../ui/dnd'
    arriesgar ni un pixel de la alineación ya afinada explícitamente por
    el usuario en varias rondas. */
 
-const STATUS_META = {
-  COMPLETA: { label: 'Completa', description: 'Cobertura completa' },
-  FALTA: { label: 'Falta personal', description: 'Faltan asignaciones' },
-  PARCIAL: { label: 'Parcial', description: 'Asignación parcial' },
-  SIN_PERSONAL: { label: 'Sin personal', description: 'Sin personal asignado' },
+function buildStatusMeta(t) {
+  return {
+    COMPLETA: {
+      label: t('operatingFloorPlan.statusCompleteLabel'),
+      description: t('operatingFloorPlan.statusCompleteDescription'),
+    },
+    FALTA: {
+      label: t('operatingFloorPlan.statusMissingLabel'),
+      description: t('operatingFloorPlan.statusMissingDescription'),
+    },
+    PARCIAL: {
+      label: t('operatingFloorPlan.statusPartialLabel'),
+      description: t('operatingFloorPlan.statusPartialDescription'),
+    },
+    SIN_PERSONAL: {
+      label: t('operatingFloorPlan.statusNoneLabel'),
+      description: t('operatingFloorPlan.statusNoneDescription'),
+    },
+  }
 }
 
 /* Clases Tailwind por estado -- los 4 colores de STATUS_META (antes hex
@@ -212,10 +227,14 @@ function statusFor(real, ideal) {
   return 'FALTA'
 }
 
-function statusText(status, staffing) {
+function statusText(t, status, staffing) {
   if (!status) return null
-  if (status === 'COMPLETA' || status === 'SIN_PERSONAL') return STATUS_META[status].label
-  return `${STATUS_META[status].label} · Faltan ${staffing.ideal - staffing.real}`
+  const statusMeta = buildStatusMeta(t)
+  if (status === 'COMPLETA' || status === 'SIN_PERSONAL') return statusMeta[status].label
+  return t('operatingFloorPlan.statusMissingCountSuffix', {
+    label: statusMeta[status].label,
+    missing: staffing.ideal - staffing.real,
+  })
 }
 
 // 2026-08-26 ("Reestructuracion operativa FFT"): se excluyen tambien las
@@ -241,6 +260,8 @@ const SHOWN_AREA_IDS = WORK_CENTERS.filter(
    si algun consumidor futuro la necesita (era la usada por el Dashboard
    hasta que se le quito el layout, 2026-08-25). */
 export default function OperatingFloorPlan({ readOnly = false }) {
+  const { t } = useTranslation('centroTrabajo')
+  const statusMeta = useMemo(() => buildStatusMeta(t), [t])
   usePersonnelVersion()
   /* 2026-08-27 (a peticion explicita del usuario): el click directo en
      una zona del plano ahora abre el detalle a traves del MISMO estado
@@ -349,11 +370,13 @@ export default function OperatingFloorPlan({ readOnly = false }) {
                 operating ? 'bg-emerald-500' : 'bg-slate-400',
               )}
             />
-            <p className="text-[17px] font-extrabold">Área operando</p>
+            <p className="text-[17px] font-extrabold">
+              {t('operatingFloorPlan.areaOperatingTitle')}
+            </p>
           </div>
 
           <div className="flex flex-1 flex-wrap justify-center gap-5">
-            {Object.entries(STATUS_META).map(([status, meta]) => (
+            {Object.entries(statusMeta).map(([status, meta]) => (
               <LegendItem
                 key={meta.label}
                 dotClass={toneFor(status).solid}
@@ -363,20 +386,20 @@ export default function OperatingFloorPlan({ readOnly = false }) {
             ))}
             <LegendItem
               icon={<Info className="h-[15px] w-[15px]" />}
-              label="Referencias"
-              description="Áreas de referencia"
+              label={t('operatingFloorPlan.referencesLabel')}
+              description={t('operatingFloorPlan.referencesDescription')}
             />
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
             <InfoStat
               icon={<Users className="h-4 w-4" />}
-              value={`${totalPeople} personas`}
-              label="Total asignadas"
+              value={t('operatingFloorPlan.peopleCountLabel', { count: totalPeople })}
+              label={t('operatingFloorPlan.totalAssignedLabel')}
             />
             <InfoStat
               value={`${totals.realTotal} / ${totals.idealTotal}`}
-              label="Cobertura del catálogo"
+              label={t('operatingFloorPlan.catalogCoverageLabel')}
             />
           </div>
         </div>
@@ -390,7 +413,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
           className="h-9 font-bold text-muted-foreground"
         >
           <Focus className="h-4 w-4" />
-          Ajustar vista
+          {t('operatingFloorPlan.fitViewButton')}
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -406,7 +429,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
               <Minus className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Alejar</TooltipContent>
+          <TooltipContent>{t('operatingFloorPlan.zoomOutTooltip')}</TooltipContent>
         </Tooltip>
         <span className="w-[34px] text-center text-xs font-bold">{Math.round(zoom * 100)}%</span>
         <Tooltip>
@@ -423,7 +446,7 @@ export default function OperatingFloorPlan({ readOnly = false }) {
               <Plus className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Acercar</TooltipContent>
+          <TooltipContent>{t('operatingFloorPlan.zoomInTooltip')}</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -432,7 +455,9 @@ export default function OperatingFloorPlan({ readOnly = false }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            {isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            {isFullscreen
+              ? t('operatingFloorPlan.exitFullscreenTooltip')
+              : t('operatingFloorPlan.enterFullscreenTooltip')}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -497,6 +522,7 @@ function InfoStat({ icon, value, label }) {
 }
 
 function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div ref={floorRef} className="min-w-[1180px]">
       <div
@@ -554,7 +580,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
           <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
           <HorizontalLineBar
             lineId="PROYECTO"
-            title="WC LINEA 0"
+            title={t('operatingFloorPlan.line0Title')}
             onOpen={onOpen}
             readOnly={readOnly}
           />
@@ -565,7 +591,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
         <BigZone
           areaId="HIGH_VALUE"
           gridArea="highvalue"
-          title="WC Midea / High Value"
+          title={t('operatingFloorPlan.midaHighValueTitle')}
           onOpen={onOpen}
           readOnly={readOnly}
         >
@@ -576,7 +602,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-1 border-l border-dashed border-border pl-2">
                 <p className="text-center text-[9.5px] font-bold text-muted-foreground">
-                  Productos Mixtos
+                  {t('operatingFloorPlan.mixedProductsLabel')}
                 </p>
                 <MixtosDecoration />
               </div>
@@ -594,7 +620,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
         <BigZone
           areaId="PALETIZADO"
           gridArea="palletizing"
-          title="WC Paletizado (Palletizing)"
+          title={t('operatingFloorPlan.palletizingTitle')}
           onOpen={onOpen}
           readOnly={readOnly}
         >
@@ -611,7 +637,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
         <BigZone
           areaId="ACCESORIOS"
           gridArea="accessories"
-          title="WC Accesorios"
+          title={t('operatingFloorPlan.accessoriesTitle')}
           onOpen={onOpen}
           readOnly={readOnly}
         >
@@ -657,6 +683,7 @@ const CONVEYOR_ROLE = 'Ayudante General de Conveyor'
 const CONVEYOR_SOURCE_AREA_ID = AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL.sourceAreaId
 
 function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const stations = getLineWorkstationsWithOccupancy(CONVEYOR_SOURCE_AREA_ID).filter(
     (w) => w.role === CONVEYOR_ROLE,
   )
@@ -683,8 +710,12 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
       )}
     >
       <div className="mb-1.5 flex items-baseline justify-between">
-        <p className="text-[12.5px] font-extrabold tracking-[0.4px]">CONVEYOR GENERAL</p>
-        <p className="text-[13.5px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+        <p className="text-[12.5px] font-extrabold tracking-[0.4px]">
+          {t('operatingFloorPlan.conveyorGeneralTitle')}
+        </p>
+        <p className="text-[13.5px] font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
       </div>
       <div className={cn('mb-[6.8px] h-px', tone.divider25)} />
       {/* flexWrap (2026-08-28, a peticion explicita del usuario, Parte 14):
@@ -720,6 +751,7 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
    usa LineStationCard.jsx para el resto de areas LINE_LIKE, sin logica de
    rango paralela. */
 function ConveyorNode({ index, station, onOpen }) {
+  const { t } = useTranslation('centroTrabajo')
   const occupant = station.occupants[0]?.employee || null
   const rank = occupant ? getPersonnelRank(station.role) : null
   const tone = occupant ? NODE_TONE.occupied : NODE_TONE.vacant
@@ -739,7 +771,7 @@ function ConveyorNode({ index, station, onOpen }) {
       <p className="text-[9px] font-extrabold leading-none text-muted-foreground/60">{index}</p>
       <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
       <p className="mt-[1.2px] w-full truncate text-center text-[10px] font-bold leading-[1.15]">
-        {occupant ? occupant.name : 'Vacante'}
+        {occupant ? occupant.name : t('operatingFloorPlan.vacantLabel')}
       </p>
       {rank && (
         <p className="w-full truncate text-center text-[8.5px] leading-[1.1] text-muted-foreground">
@@ -747,13 +779,16 @@ function ConveyorNode({ index, station, onOpen }) {
         </p>
       )}
       <p className={cn('text-[8px] font-extrabold tracking-[0.3px]', tone.text)}>
-        {occupant ? 'OCUPADA' : 'DISPONIBLE'}
+        {occupant
+          ? t('operatingFloorPlan.occupiedStatusLabel')
+          : t('operatingFloorPlan.availableStatusLabel')}
       </p>
     </button>
   )
 }
 
 function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
+  const { t } = useTranslation('centroTrabajo')
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
@@ -761,7 +796,7 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
-      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+      : t('operatingFloorPlan.personCount', { count: staffing.real })
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
@@ -780,10 +815,14 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
     >
       <div className="flex flex-wrap items-baseline justify-between">
         <p className="text-[13px] font-extrabold">{title || wc?.name}</p>
-        <p className="text-sm font-bold">{isOver ? 'Soltar aquí' : label}</p>
+        <p className="text-sm font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
       </div>
       {status && (
-        <p className={cn('text-[10.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
+        <p className={cn('text-[10.5px] font-bold', tone.text)}>
+          {statusText(t, status, staffing)}
+        </p>
       )}
       {/* minHeight:0 (2026-08-25, correccion definitiva): sin esto, este
           hijo flex nunca se encoge por debajo de su contenido -- el
@@ -802,6 +841,7 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
 const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
 
 function FftBlock({ onOpen, onOpenSummary, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
   const totalIdeal = FFT_LINE_IDS.reduce(
     (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
@@ -817,7 +857,9 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
         onClick={() => onOpenSummary('FFT_ALL')}
         className="flex w-full cursor-pointer flex-wrap items-baseline justify-between text-left"
       >
-        <p className="text-[13.5px] font-extrabold">WC Líneas de producción (FFT)</p>
+        <p className="text-[13.5px] font-extrabold">
+          {t('operatingFloorPlan.fftProductionLinesTitle')}
+        </p>
         <p className="text-sm font-bold">
           {totalReal} / {totalIdeal}
         </p>
@@ -840,6 +882,7 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
    Paletizado de arriba a la izquierda (a petición del usuario
    2026-08-24). Mismo lenguaje visual que BigZone, solo horizontal. */
 function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
@@ -847,7 +890,7 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
-      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+      : t('operatingFloorPlan.personCount', { count: staffing.real })
   const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
   return (
@@ -865,10 +908,12 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
     >
       <div className="flex items-baseline justify-between">
         <p className="text-[12.5px] font-extrabold">{title || wc?.name}</p>
-        <p className="text-[13.5px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+        <p className="text-[13.5px] font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
       </div>
       {status && (
-        <p className={cn('text-[9.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
+        <p className={cn('text-[9.5px] font-bold', tone.text)}>{statusText(t, status, staffing)}</p>
       )}
       <div className={cn('h-1.5 w-full overflow-hidden rounded-full', tone.track18)}>
         <div className={cn('h-full rounded-full', tone.solid)} style={{ width: `${pct * 100}%` }} />
@@ -884,6 +929,7 @@ function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
 }
 
 function LineColumn({ lineId, onOpen, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const wc = workCenterById(lineId)
   const staffing = getAreaStaffing(lineId)
   const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
@@ -913,7 +959,7 @@ function LineColumn({ lineId, onOpen, readOnly }) {
           cabiendo en columnas angostas sin ensanchar la card; si de plano
           no cabe, el texto ya envuelve a 2 líneas solo, nunca trunca. */}
       <p className="text-center text-[9px] font-extrabold leading-[1.15] tracking-[-0.2px]">
-        {isOver ? 'Soltar' : wc?.name || lineId}
+        {isOver ? t('operatingFloorPlan.dropLabel') : wc?.name || lineId}
       </p>
       <div
         className={cn('my-1 flex h-9 w-2 items-end overflow-hidden rounded-[40px]', tone.track18)}
@@ -979,6 +1025,7 @@ function MixtosDecoration() {
    una segunda fuente. INSUMOS es el id canonico al que cae cualquier
    arrastre/click sobre la caja fusionada. */
 function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const memberIds = operationalGroupMembers('INSUMOS')
   const staffing = getGroupAreaStaffing(memberIds)
   const people = getGroupPeople(memberIds)
@@ -988,7 +1035,7 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
   const label =
     staffing.ideal != null
       ? `${staffing.real} / ${staffing.ideal}`
-      : `${staffing.real} persona${staffing.real === 1 ? '' : 's'}`
+      : t('operatingFloorPlan.personCount', { count: staffing.real })
   return (
     <button
       type="button"
@@ -1004,14 +1051,20 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
       )}
     >
       <div className="flex flex-wrap items-baseline justify-between">
-        <p className="text-[13px] font-extrabold">WC Insumos y Suministro de Material</p>
-        <p className="text-sm font-bold">{isOver ? 'Soltar aquí' : label}</p>
+        <p className="text-[13px] font-extrabold">
+          {t('operatingFloorPlan.insumosSuministroTitle')}
+        </p>
+        <p className="text-sm font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
       </div>
       {status && (
-        <p className={cn('text-[10.5px] font-bold', tone.text)}>{statusText(status, staffing)}</p>
+        <p className={cn('text-[10.5px] font-bold', tone.text)}>
+          {statusText(t, status, staffing)}
+        </p>
       )}
       <p className="text-[9px] italic text-muted-foreground">
-        PNP / POC / PEN · Box Prep · Suministro de material
+        {t('operatingFloorPlan.insumosSuministroSubtitle')}
       </p>
       <div className="min-h-0 flex-1 overflow-auto">
         <PersonList people={people} columns={2} readOnly={readOnly} />
@@ -1026,9 +1079,14 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
    real de donde arrastrar dentro de este plano, solo destinos. En readOnly
    (Dashboard) sigue exactamente igual que siempre, texto plano sin arrastre. */
 function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
   const people = peopleProp || getPeopleByArea()[areaId] || []
   if (people.length === 0) {
-    return <p className="text-[11px] italic text-muted-foreground">Sin personal asignado</p>
+    return (
+      <p className="text-[11px] italic text-muted-foreground">
+        {t('operatingFloorPlan.statusNoneDescription')}
+      </p>
+    )
   }
   return (
     <div className={columns > 1 ? 'grid grid-cols-2 gap-[3.2px]' : 'flex flex-col gap-[3.2px]'}>
@@ -1056,12 +1114,16 @@ function PersonList({ areaId, columns = 1, people: peopleProp, readOnly }) {
 }
 
 function SupportCard({ areaId, onOpen, readOnly }) {
+  const { t } = useTranslation('centroTrabajo')
+  const statusMeta = useMemo(() => buildStatusMeta(t), [t])
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
   const status = statusFor(staffing.real, staffing.ideal)
   const tone = toneFor(status)
   const label =
-    staffing.ideal != null ? `${staffing.real}/${staffing.ideal}` : `${staffing.real} pers.`
+    staffing.ideal != null
+      ? `${staffing.real}/${staffing.ideal}`
+      : t('operatingFloorPlan.personCountAbbreviated', { count: staffing.real })
   const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : areaId)
 
   return (
@@ -1079,12 +1141,12 @@ function SupportCard({ areaId, onOpen, readOnly }) {
     >
       <div className="flex items-baseline justify-between">
         <p className="text-xs font-extrabold">{wc?.name}</p>
-        <p className="text-[13px] font-bold">{isOver ? 'Soltar aquí' : label}</p>
+        <p className="text-[13px] font-bold">
+          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
+        </p>
       </div>
       {status && (
-        <p className={cn('mt-0.5 text-[9.5px] font-bold', tone.text)}>
-          {STATUS_META[status].label}
-        </p>
+        <p className={cn('mt-0.5 text-[9.5px] font-bold', tone.text)}>{statusMeta[status].label}</p>
       )}
       <div className="mt-1 max-h-[90px] overflow-auto">
         <PersonList areaId={areaId} readOnly={readOnly} />
@@ -1094,13 +1156,15 @@ function SupportCard({ areaId, onOpen, readOnly }) {
 }
 
 function DetailDialog({ areaId, onClose }) {
+  const { t } = useTranslation('centroTrabajo')
+  const statusMeta = useMemo(() => buildStatusMeta(t), [t])
   const open = !!areaId
   let title = ''
   let staffing = null
   let people = []
 
   if (areaId === 'FFT_ALL') {
-    title = 'WC Líneas de producción (FFT)'
+    title = t('operatingFloorPlan.fftProductionLinesTitle')
     const real = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
     const ideal = FFT_LINE_IDS.reduce(
       (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
@@ -1110,7 +1174,7 @@ function DetailDialog({ areaId, onClose }) {
     people = getFftPeopleWithLine()
   } else if (areaId === 'INSUMOS_SUMINISTRO_ALL') {
     const memberIds = operationalGroupMembers('INSUMOS')
-    title = workCenterById('INSUMOS')?.name || 'WC Insumos y Suministro de Material'
+    title = workCenterById('INSUMOS')?.name || t('operatingFloorPlan.insumosSuministroTitle')
     staffing = getGroupAreaStaffing(memberIds)
     people = getGroupPeople(memberIds)
   } else if (areaId) {
@@ -1120,7 +1184,7 @@ function DetailDialog({ areaId, onClose }) {
   }
 
   const status = staffing ? statusFor(staffing.real, staffing.ideal) : null
-  const meta = status ? STATUS_META[status] : null
+  const meta = status ? statusMeta[status] : null
   const tone = status ? toneFor(status) : null
 
   return (
@@ -1143,7 +1207,7 @@ function DetailDialog({ areaId, onClose }) {
               <p className="text-xl font-extrabold">
                 {staffing.ideal != null
                   ? `${staffing.real} / ${staffing.ideal}`
-                  : `${staffing.real} personas`}
+                  : t('operatingFloorPlan.peopleCountLabel', { count: staffing.real })}
               </p>
               {meta && (
                 <span
@@ -1157,7 +1221,9 @@ function DetailDialog({ areaId, onClose }) {
               )}
             </div>
             {people.length === 0 ? (
-              <p className="text-[12.5px] text-muted-foreground">Sin personal asignado.</p>
+              <p className="text-[12.5px] text-muted-foreground">
+                {t('operatingFloorPlan.noPersonnelAssignedPeriod')}
+              </p>
             ) : (
               <div className="flex max-h-[320px] flex-col gap-1.5 overflow-auto">
                 {people.map((p) => (

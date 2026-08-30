@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cardClass, pageClass } from '@/lib/pageStyles'
 import RegisterPersonnelForm from '../centro-trabajo/RegisterPersonnelForm'
 
@@ -16,6 +17,7 @@ import RegisterPersonnelForm from '../centro-trabajo/RegisterPersonnelForm'
    montado globalmente, asi que el formulario MUI adentro de este
    contenedor Tailwind renderiza igual que siempre. */
 export default function RegistroPersonalPage() {
+  const { t } = useTranslation('registroPersonal')
   // Aqui no hay dialogo que cerrar: "Cancelar" limpia el formulario.
   // Forzar un remount (key) es mas simple y seguro que exponer un
   // metodo reset() desde RegisterPersonnelForm.
@@ -25,12 +27,8 @@ export default function RegistroPersonalPage() {
     <div className={pageClass}>
       <div className={`${cardClass} mx-auto max-w-[480px]`}>
         <div className="p-6">
-          <p className="mb-4 text-[18px] font-extrabold">+ Registrar personal</p>
-          <RegisterPersonnelForm
-            key={resetKey}
-            cancelLabel="Cancelar"
-            onCancel={() => setResetKey((k) => k + 1)}
-          />
+          <p className="mb-4 text-[18px] font-extrabold">{t('registroPersonalPage.title')}</p>
+          <RegisterPersonnelForm key={resetKey} onCancel={() => setResetKey((k) => k + 1)} />
         </div>
       </div>
     </div>
