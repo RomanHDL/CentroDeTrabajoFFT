@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -29,9 +30,13 @@ function areaLabel(id) {
   return workCenterById(id)?.name || id || '—'
 }
 
-const MOVEMENT_LABEL = { CHECK_IN: 'Entrada', MOVE: 'Movimiento', RELEASE: 'Puesto liberado' }
-
 export default function EmployeeHistoryDialog({ employee, open, onClose, onChanged }) {
+  const { t } = useTranslation('centroTrabajo')
+  const MOVEMENT_LABEL = {
+    CHECK_IN: t('employeeHistoryDialog.checkInLabel'),
+    MOVE: t('employeeHistoryDialog.movementMove'),
+    RELEASE: t('employeeHistoryDialog.movementRelease'),
+  }
   const { isSupervisor } = useRoleMode()
   const today = todayISO()
   const [moveOpen, setMoveOpen] = useState(false)
@@ -67,7 +72,7 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
   const handleRelease = () => {
     const res = releaseAssignment(employee.id)
     if (res.status === 'OK') {
-      setFeedback('Puesto liberado. El empleado sigue presente hoy, sin asignación.')
+      setFeedback(t('employeeHistoryDialog.releaseFeedback'))
       onChanged?.()
     }
   }
@@ -84,7 +89,7 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
             <p className="text-xs text-muted-foreground">
               {currentAssignment
                 ? `${areaLabel(currentAssignment.areaId)} · ${currentAssignment.stationId}`
-                : 'Sin asignación actual'}
+                : t('employeeHistoryDialog.noCurrentAssignment')}
             </p>
           </div>
         </div>
@@ -106,23 +111,27 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
             <div className="mb-4 flex flex-wrap gap-x-6 gap-y-2">
               <div>
                 <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                  Ubicación actual
+                  {t('employeeHistoryDialog.currentLocationLabel')}
                 </p>
                 <p className="font-bold">
                   {areaLabel(currentAssignment.areaId)} · {currentAssignment.stationId}
                 </p>
               </div>
               <div>
-                <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Entrada</p>
+                <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
+                  {t('employeeHistoryDialog.checkInLabel')}
+                </p>
                 <p className="font-bold">{currentAssignment.checkInAt}</p>
               </div>
             </div>
           )}
 
-          <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>Habilidades</p>
+          <p className={cn(sectionTitleClass, 'mb-2 text-[13px]')}>
+            {t('employeeHistoryDialog.skillsTitle')}
+          </p>
           {skills.length === 0 ? (
             <p className={cn(emptyTextClass, 'py-3 text-left')}>
-              Sin habilidades registradas todavía.
+              {t('employeeHistoryDialog.noSkillsMessage')}
             </p>
           ) : (
             <div className="mb-4 flex flex-wrap gap-x-1.5 gap-y-1.5">
@@ -134,12 +143,14 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
             </div>
           )}
 
-          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>Historial hoy</p>
+          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>
+            {t('employeeHistoryDialog.todayHistoryTitle')}
+          </p>
           {todaysMovements.length === 0 ? (
             <EmptyState
               compact
-              title="Sin movimientos hoy"
-              description="Este empleado no se ha registrado hoy."
+              title={t('employeeHistoryDialog.noMovementsTitle')}
+              description={t('employeeHistoryDialog.noMovementsDescription')}
             />
           ) : (
             <div className="mb-4 flex flex-col gap-2">
@@ -153,7 +164,7 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
                     <p className="text-[13px] font-bold">{MOVEMENT_LABEL[m.type] || m.type}</p>
                     <p className="text-[12.5px] text-muted-foreground">
                       {m.fromAreaId
-                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : 'sin asignación'}`
+                        ? `${areaLabel(m.fromAreaId)} / ${m.fromStationId} → ${m.toAreaId ? `${areaLabel(m.toAreaId)} / ${m.toStationId}` : t('employeeHistoryDialog.noAssignment')}`
                         : `${areaLabel(m.toAreaId)} · ${m.toStationId}`}
                     </p>
                   </div>
@@ -162,12 +173,14 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
             </div>
           )}
 
-          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>Días anteriores</p>
+          <p className={cn(sectionTitleClass, 'mb-2 mt-4 text-[13px]')}>
+            {t('employeeHistoryDialog.pastDaysTitle')}
+          </p>
           {pastAssignments.length === 0 ? (
             <EmptyState
               compact
-              title="Sin historial previo"
-              description="No hay asignaciones registradas en días anteriores."
+              title={t('employeeHistoryDialog.noPastHistoryTitle')}
+              description={t('employeeHistoryDialog.noPastHistoryDescription')}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -196,16 +209,16 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
                 onClick={handleRelease}
                 className="font-bold text-destructive hover:text-destructive"
               >
-                Liberar asignación
+                {t('employeeHistoryDialog.releaseButton')}
               </Button>
               <Button variant="outline" onClick={() => setMoveOpen(true)} className="font-bold">
-                Mover empleado
+                {t('employeeHistoryDialog.moveButton')}
               </Button>
             </>
           )}
           <div className="flex-1" />
           <Button variant="ghost" onClick={onClose}>
-            Cerrar
+            {t('employeeHistoryDialog.closeButton')}
           </Button>
         </div>
       </DialogContent>
@@ -216,7 +229,7 @@ export default function EmployeeHistoryDialog({ employee, open, onClose, onChang
         employee={employee}
         currentAssignment={currentAssignment}
         onDone={() => {
-          setFeedback('Empleado movido correctamente.')
+          setFeedback(t('employeeHistoryDialog.moveFeedback'))
           onChanged?.()
         }}
       />

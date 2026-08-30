@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -31,6 +32,7 @@ import EmployeeSearchField from './EmployeeSearchField'
  * realmente disponibles (respeta capacidad).
  */
 export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, onDone }) {
+  const { t } = useTranslation('centroTrabajo')
   const [employee, setEmployee] = useState(null)
   const [notFoundNumber, setNotFoundNumber] = useState('')
   const [areaId, setAreaId] = useState(fixedAreaId || WORK_CENTERS[0].id)
@@ -95,9 +97,9 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
     } else if (res.status === 'STATION_FULL') {
       setError(res.message)
     } else if (res.status === 'CONFLICT') {
-      setError('Ya tienes una asignación registrada hoy.')
+      setError(t('selfAssignDialog.conflictError'))
     } else {
-      setError(res.message || 'No se pudo completar el registro.')
+      setError(res.message || t('selfAssignDialog.genericError'))
     }
   }
 
@@ -113,7 +115,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
           <>
             <div className="px-6 pb-4 pt-8 text-center">
               <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
-              <p className="mb-4 text-base font-extrabold">Registro realizado</p>
+              <p className="mb-4 text-base font-extrabold">{t('selfAssignDialog.successTitle')}</p>
               <p className="text-lg font-extrabold">
                 {result.employee.employeeNumber} — {result.employee.name}
               </p>
@@ -124,52 +126,54 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
                 <span className={metricChipClass('default')}>{result.assignment.stationId}</span>
               </div>
               <p className="mt-2 text-[13px] text-muted-foreground">
-                Entrada: {result.assignment.checkInAt}
+                {t('selfAssignDialog.checkInLine', { checkInAt: result.assignment.checkInAt })}
               </p>
             </div>
             <div className="flex justify-center px-6 pb-5">
               <Button onClick={handleClose} className="font-bold">
-                Cerrar
+                {t('selfAssignDialog.closeButton')}
               </Button>
             </div>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Registrarme / Autoasignarme</DialogTitle>
+              <DialogTitle>{t('selfAssignDialog.dialogTitle')}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-4 px-6 pb-2 pt-1">
               <EmployeeSearchField
                 autoFocus
                 value={employee}
                 onChange={handleSearch}
-                label="Tu número o nombre"
+                label={t('selfAssignDialog.employeeSearchLabel')}
               />
 
               {notFoundNumber && !employee && (
                 <Alert className={alertToneClass('warning')}>
-                  No encontramos a "{notFoundNumber}". Pide a tu supervisor que te dé de alta.
+                  {t('selfAssignDialog.notFoundMessage', { notFoundNumber })}
                 </Alert>
               )}
 
               {employee && currentAssignment && (
                 <Alert className={alertToneClass('info')}>
-                  <p className="font-extrabold">Ya tienes una asignación</p>
-                  {workCenterById(currentAssignment.areaId)?.name} — {currentAssignment.stationId} ·
-                  Entrada {currentAssignment.checkInAt}
+                  <p className="font-extrabold">{t('selfAssignDialog.hasAssignmentTitle')}</p>
+                  {workCenterById(currentAssignment.areaId)?.name} — {currentAssignment.stationId} ·{' '}
+                  {t('selfAssignDialog.hasAssignmentCheckIn', {
+                    checkInAt: currentAssignment.checkInAt,
+                  })}
                   <br />
-                  Solicita apoyo de un supervisor si necesitas cambiar.
+                  {t('selfAssignDialog.supervisorHelpMessage')}
                 </Alert>
               )}
 
               {employee && !currentAssignment && (
                 <>
                   <Alert className={cn(alertToneClass('info'), 'py-1')}>
-                    Hoy todavía no tienes asignación.
+                    {t('selfAssignDialog.noAssignmentYetMessage')}
                   </Alert>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="self-assign-area">Línea / Área</Label>
+                    <Label htmlFor="self-assign-area">{t('selfAssignDialog.areaLabel')}</Label>
                     <Select
                       value={areaId}
                       disabled={Boolean(fixedAreaId)}
@@ -193,13 +197,16 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
 
                   {lineCapacity.isFull ? (
                     <Alert className={alertToneClass('warning')}>
-                      <p className="font-extrabold">LÍNEA COMPLETA</p>
-                      Actualmente no hay estaciones disponibles en {workCenterById(areaId)?.name}.
-                      Consulta con tu supervisor o elige otra línea.
+                      <p className="font-extrabold">{t('selfAssignDialog.lineFullTitle')}</p>
+                      {t('selfAssignDialog.lineFullMessage', {
+                        areaName: workCenterById(areaId)?.name,
+                      })}
                     </Alert>
                   ) : (
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="self-assign-station">Puesto disponible</Label>
+                      <Label htmlFor="self-assign-station">
+                        {t('selfAssignDialog.stationLabel')}
+                      </Label>
                       <Select value={stationId} onValueChange={(v) => setStationId(v)}>
                         <SelectTrigger id="self-assign-station">
                           <SelectValue />
@@ -209,7 +216,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
                             <SelectItem key={s.id} value={s.name}>
                               {s.name}{' '}
                               {hasSkill(employee.id, s.name)
-                                ? '· compatible con tus habilidades'
+                                ? t('selfAssignDialog.compatibleSkillSuffix')
                                 : ''}
                             </SelectItem>
                           ))}
@@ -220,8 +227,11 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
 
                   {stationId && !skillOk && (
                     <Alert className={alertToneClass('warning')}>
-                      No tienes este rol registrado como habilidad
-                      {STRICT_SKILL_VALIDATION ? '' : ', pero puedes continuar'}.
+                      {t('selfAssignDialog.skillMismatchBase')}
+                      {STRICT_SKILL_VALIDATION
+                        ? ''
+                        : t('selfAssignDialog.skillMismatchContinueSuffix')}
+                      .
                     </Alert>
                   )}
 
@@ -231,7 +241,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
             </div>
             <div className="flex justify-end gap-2 px-6 pb-5 pt-2">
               <Button variant="ghost" onClick={handleClose}>
-                Cancelar
+                {t('selfAssignDialog.cancelButton')}
               </Button>
               {employee && !currentAssignment && (
                 <Button
@@ -239,7 +249,7 @@ export default function SelfAssignDialog({ open, onClose, fixedAreaId = null, on
                   disabled={!stationId || submitting || (STRICT_SKILL_VALIDATION && !skillOk)}
                   className="font-bold"
                 >
-                  Asignarme aquí
+                  {t('selfAssignDialog.confirmButton')}
                 </Button>
               )}
             </div>

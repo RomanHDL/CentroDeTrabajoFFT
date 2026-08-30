@@ -1,4 +1,5 @@
 import { MoreVertical, UserX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,7 @@ export default function LineWorkstationCard({
   onEdit,
   onDeactivate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
 
@@ -115,9 +117,11 @@ export default function LineWorkstationCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => onEdit?.(workstation)}>Editar puesto</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit?.(workstation)}>
+              {t('lineWorkstationCard.editStationMenuItem')}
+            </DropdownMenuItem>
             <DropdownMenuItem disabled={!!occupant} onClick={() => onDeactivate?.(workstation)}>
-              Eliminar puesto
+              {t('lineWorkstationCard.deleteStationMenuItem')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -198,7 +202,7 @@ export default function LineWorkstationCard({
           <>
             <UserX className="h-[30px] w-[30px] text-[#F59E0B]/[0.55] dark:text-[#F59E0B]/[0.7]" />
             <p className="min-h-[2.4em] text-center text-[11.5px] font-bold text-muted-foreground">
-              Sin asignar
+              {t('lineWorkstationCard.unassignedLabel')}
             </p>
           </>
         )}
@@ -220,7 +224,9 @@ export default function LineWorkstationCard({
             occupant ? 'text-[#059669]' : 'text-[#B45309]',
           )}
         >
-          {occupant ? 'OCUPADA' : 'DISPONIBLE'}
+          {occupant
+            ? t('lineWorkstationCard.occupiedStatus')
+            : t('lineWorkstationCard.availableStatus')}
         </p>
       </div>
     </div>
