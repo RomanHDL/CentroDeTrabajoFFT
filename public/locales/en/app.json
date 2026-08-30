@@ -1,1 +1,61 @@
-{}
+{
+  "forbidden": {
+    "title": "Access denied",
+    "description": "Your role does not have permission to view this section."
+  },
+  "emptyState": {
+    "defaultTitle": "No data available"
+  },
+  "rotateDeviceHint": {
+    "message": "Rotate your device for a better view of this section."
+  },
+  "toastHost": {
+    "closeLabel": "Close"
+  },
+  "roleLabels": {
+    "administrador": "Administrator",
+    "supervisor": "Supervisor",
+    "lider": "Team Lead"
+  },
+  "mainErrorBoundary": {
+    "title": "An unexpected error occurred. Please reload the page."
+  },
+  "dndAssign": {
+    "overIdealWarning": "{{areaName}} has already reached its ideal headcount of {{idealHeadcount}}.",
+    "alreadyAssignedInfo": "{{name}} is already assigned to {{areaName}}.",
+    "assignedToast": "{{name}} assigned to {{areaName}}.",
+    "assignFailedFallback": "Could not assign.",
+    "alreadyInAreaInfo": "{{name}} is already in {{areaName}}.",
+    "swapBumpedToast": "{{employeeAName}} took {{employeeBName}}'s position; {{employeeBName}} was left unassigned.",
+    "swapExchangedToast": "{{employeeAName}} and {{employeeBName}} swapped positions.",
+    "swapFailedFallback": "Could not swap.",
+    "releasedToast": "{{name}} removed from {{areaName}}.",
+    "releaseFailedFallback": "Could not remove the assignment.",
+    "moveRequestedInfo": "Move request for {{name}} sent for approval.",
+    "movedToast": "{{name}} moved from {{fromName}} to {{toName}}.",
+    "stationPickerTitle": "Choose a station — {{areaName}}",
+    "assigningToLabel": "Assigning to",
+    "employeeNumberLabel": "Employee no.:",
+    "pickerInstructions": "· Dropping on the line does not automatically choose a station — select an available one:",
+    "availableLabel": "Available",
+    "fullCapacityLabel": "{{occupants}}/{{capacity}} full",
+    "cancelButton": "Cancel",
+    "swapTitleActive": "Swap position",
+    "swapTitleOccupied": "Station occupied",
+    "swapTakesPositionOf": "will take the position of",
+    "swapAreaConnector": "in",
+    "swapAndConnector": "and",
+    "swapVacatedPositionOf": "will move to the position vacated by",
+    "swapOccupiedByLabel": "is already occupied by",
+    "swapContinueNotice": ". If you continue,",
+    "swapWillTakePosition": "will take that position, and",
+    "swapWillBeUnassigned": "will be unassigned.",
+    "swapConfirmButton": "Swap",
+    "swapOccupyButton": "Occupy position",
+    "releaseDialogTitle": "Remove from area",
+    "releaseConfirmPrefix": "Remove",
+    "releaseConfirmConnector": "from",
+    "releaseConfirmSuffix": "?",
+    "releaseButton": "Remove"
+  }
+}

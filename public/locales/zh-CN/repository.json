@@ -1,1 +1,15 @@
-{}
+{
+  "enterEmployeeNumber": "请输入员工编号。",
+  "employeeNumberInUse": "员工编号 {{number}} 已被其他人使用。",
+  "selectAreaLine": "请选择区域/产线。",
+  "selectStation": "请选择角色/工位。",
+  "employeeNotFound": "未找到该员工。",
+  "stationFull": "{{stationId}} 已满（{{count}}/{{capacity}}）。",
+  "selectDestinationAreaLine": "请选择目标区域/产线。",
+  "selectDestinationStation": "请选择目标角色/工位。",
+  "noActiveAssignmentToday": "该员工今日没有有效的岗位分配。",
+  "stationNotOccupied": "该工位已不再被占用。",
+  "alreadyAtStation": "已经在该工位。",
+  "noLocationAssignedToday": "该员工今日没有分配的位置。",
+  "requestNoLongerExists": "该请求已不存在。"
+}

@@ -6,5 +6,15 @@
   "confirm": "Confirm",
   "close": "Close",
   "search": "Search",
-  "language": "Language"
+  "language": "Language",
+  "brandLogo": {
+    "brandName": "Control Center",
+    "brandNameLine1": "Control",
+    "brandNameLine2": "Center",
+    "subtitle": "OPERATIONS CONTROL"
+  },
+  "comingSoonPage": {
+    "title": "Working on it",
+    "description": "This module is currently under development."
+  }
 }

@@ -1,1 +1,61 @@
-{}
+{
+  "forbidden": {
+    "title": "无权访问",
+    "description": "您的角色没有权限查看此部分。"
+  },
+  "emptyState": {
+    "defaultTitle": "暂无数据"
+  },
+  "rotateDeviceHint": {
+    "message": "请旋转设备以获得更好的浏览效果。"
+  },
+  "toastHost": {
+    "closeLabel": "关闭"
+  },
+  "roleLabels": {
+    "administrador": "管理员",
+    "supervisor": "主管",
+    "lider": "组长"
+  },
+  "mainErrorBoundary": {
+    "title": "发生意外错误，请刷新页面。"
+  },
+  "dndAssign": {
+    "overIdealWarning": "{{areaName}} 已达到 {{idealHeadcount}} 人的理想编制。",
+    "alreadyAssignedInfo": "{{name}} 已被分配到 {{areaName}}。",
+    "assignedToast": "{{name}} 已分配到 {{areaName}}。",
+    "assignFailedFallback": "分配失败。",
+    "alreadyInAreaInfo": "{{name}} 已经在 {{areaName}}。",
+    "swapBumpedToast": "{{employeeAName}} 占用了 {{employeeBName}} 的岗位；{{employeeBName}} 已变为未分配状态。",
+    "swapExchangedToast": "{{employeeAName}} 和 {{employeeBName}} 已互换岗位。",
+    "swapFailedFallback": "无法互换。",
+    "releasedToast": "{{name}} 已从 {{areaName}} 移除。",
+    "releaseFailedFallback": "无法移除该分配。",
+    "moveRequestedInfo": "{{name}} 的调动申请已提交，等待审批。",
+    "movedToast": "{{name}} 已从 {{fromName}} 调至 {{toName}}。",
+    "stationPickerTitle": "选择工位 — {{areaName}}",
+    "assigningToLabel": "正在分配给",
+    "employeeNumberLabel": "工号：",
+    "pickerInstructions": "· 直接拖放到产线上不会自动选择工位——请选择一个可用的工位：",
+    "availableLabel": "空闲",
+    "fullCapacityLabel": "{{occupants}}/{{capacity}} 已满",
+    "cancelButton": "取消",
+    "swapTitleActive": "互换岗位",
+    "swapTitleOccupied": "工位已被占用",
+    "swapTakesPositionOf": "将接替",
+    "swapAreaConnector": "在",
+    "swapAndConnector": "同时",
+    "swapVacatedPositionOf": "也将接替",
+    "swapOccupiedByLabel": "目前的占用者是",
+    "swapContinueNotice": "。如果继续，",
+    "swapWillTakePosition": "将占据该位置，",
+    "swapWillBeUnassigned": "将变为未分配状态。",
+    "swapConfirmButton": "互换",
+    "swapOccupyButton": "占用该工位",
+    "releaseDialogTitle": "从区域中移除",
+    "releaseConfirmPrefix": "确定要将",
+    "releaseConfirmConnector": "从",
+    "releaseConfirmSuffix": "移除吗？",
+    "releaseButton": "移除"
+  }
+}
