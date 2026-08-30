@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
@@ -76,53 +77,35 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    size (tailwind-merge resuelve el conflicto con las clases centradas
    por defecto del primitivo). */
 
+// AREA_TYPE_META (Icon+color por tipo de área especial, sin texto en
+// español) vive a nivel de modulo -- las etiquetas traducibles
+// (roleLabel/category) se resuelven una sola vez dentro de
+// SpecialAreaDetail (el componente exportado) y se pasan hacia abajo como
+// parte del `meta` combinado (Fase 4 i18n, ver regla de "lookup compartido"
+// del plan de extraccion).
 const AREA_TYPE_META = {
-  CAPACITACION: {
-    Icon: GraduationCap,
-    roleLabel: 'Capacitación',
-    category: 'Apoyo y desarrollo',
-    color: '#2563EB',
-  },
-  TEAM_LEADER: {
-    Icon: Users2,
-    roleLabel: 'Team Leader',
-    category: 'Liderazgo',
-    color: '#16A34A',
-  },
-  ENTRENADOR: {
-    Icon: Dumbbell,
-    roleLabel: 'Entrenador',
-    category: 'Entrenamiento',
-    color: '#D97706',
-  },
-  LIMPIEZA: {
-    Icon: BrushCleaning,
-    roleLabel: 'Limpieza',
-    category: 'Servicios generales',
-    color: '#0891B2',
-  },
-  GERENTE: {
-    Icon: Network,
-    roleLabel: 'Gerencia FFT',
-    category: 'Gerencia',
-    color: '#7C3AED',
-  },
-  SUPERVISOR: {
-    Icon: Shield,
-    roleLabel: 'Supervisor',
-    category: 'Supervisión',
-    color: '#DC2626',
-  },
+  CAPACITACION: { Icon: GraduationCap, color: '#2563EB' },
+  TEAM_LEADER: { Icon: Users2, color: '#16A34A' },
+  ENTRENADOR: { Icon: Dumbbell, color: '#D97706' },
+  LIMPIEZA: { Icon: BrushCleaning, color: '#0891B2' },
+  GERENTE: { Icon: Network, color: '#7C3AED' },
+  SUPERVISOR: { Icon: Shield, color: '#DC2626' },
 }
 
-function describeAreaState(real, ideal) {
-  if (ideal == null) return { tone: 'ok', Icon: CheckCircle2, label: 'Sin plantilla oficial' }
-  if (real === 0) return { tone: 'bad', Icon: TriangleAlert, label: 'Sin personal' }
-  if (real >= ideal) return { tone: 'ok', Icon: CheckCircle2, label: 'Completa' }
+function describeAreaState(real, ideal, t) {
+  if (ideal == null)
+    return { tone: 'ok', Icon: CheckCircle2, label: t('specialAreaDetail.stateNoTemplate') }
+  if (real === 0)
+    return { tone: 'bad', Icon: TriangleAlert, label: t('specialAreaDetail.stateNoStaff') }
+  if (real >= ideal)
+    return { tone: 'ok', Icon: CheckCircle2, label: t('specialAreaDetail.stateComplete') }
   return {
     tone: 'warn',
     Icon: TriangleAlert,
-    label: real / ideal >= 0.5 ? 'Parcial' : 'Falta personal',
+    label:
+      real / ideal >= 0.5
+        ? t('specialAreaDetail.statePartial')
+        : t('specialAreaDetail.stateMissingStaff'),
   }
 }
 
@@ -132,6 +115,7 @@ const TONE_COLOR = { ok: '#10B981', warn: '#F59E0B', bad: '#EF4444' }
 // se conserva el mismo contrato de props de siempre).
 // biome-ignore lint/correctness/noUnusedFunctionParameters: ver comentario arriba
 function PersonRow({ person, areaId, meta, canManage }) {
+  const { t } = useTranslation('centroTrabajo')
   const dnd = useDndAssign()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
@@ -157,7 +141,7 @@ function PersonRow({ person, areaId, meta, canManage }) {
           className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
           style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
         >
-          {(person.status || 'Activo').toUpperCase()}
+          {(person.status || t('specialAreaDetail.statusActiveDefault')).toUpperCase()}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -171,13 +155,13 @@ function PersonRow({ person, areaId, meta, canManage }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
               <Eye className="mr-2 h-4 w-4" />
-              Ver detalle
+              {t('specialAreaDetail.viewDetail')}
             </DropdownMenuItem>
             {canManage &&
               (assignment ? (
                 <DropdownMenuItem onClick={() => setMoveOpen(true)}>
                   <ArrowLeftRight className="mr-2 h-4 w-4" />
-                  Mover a otra área
+                  {t('specialAreaDetail.moveToOtherArea')}
                 </DropdownMenuItem>
               ) : (
                 <Tooltip>
@@ -185,19 +169,19 @@ function PersonRow({ person, areaId, meta, canManage }) {
                     <div>
                       <DropdownMenuItem disabled>
                         <ArrowLeftRight className="mr-2 h-4 w-4" />
-                        Mover a otra área
+                        {t('specialAreaDetail.moveToOtherArea')}
                       </DropdownMenuItem>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    Solo disponible para asignaciones registradas hoy
+                    {t('specialAreaDetail.moveDisabledTooltip')}
                   </TooltipContent>
                 </Tooltip>
               ))}
             {canManage && (
               <DropdownMenuItem onClick={() => dnd.requestRelease(person.id)}>
                 <UserMinus className="mr-2 h-4 w-4" />
-                Liberar del área
+                {t('specialAreaDetail.releaseFromArea')}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -223,9 +207,9 @@ function PersonRow({ person, areaId, meta, canManage }) {
   )
 }
 
-function TeamLeaderReferenceRow({ leader }) {
+function TeamLeaderReferenceRow({ leader, meta }) {
+  const { t } = useTranslation('centroTrabajo')
   const [historyOpen, setHistoryOpen] = useState(false)
-  const meta = AREA_TYPE_META.TEAM_LEADER
   return (
     <>
       <button
@@ -246,17 +230,17 @@ function TeamLeaderReferenceRow({ leader }) {
               style={{ backgroundColor: hexToRgba(meta.color, 0.12), color: meta.color }}
             >
               <Users2 className="h-[13px] w-[13px]" />
-              TEAM LEADER
+              {t('specialAreaDetail.teamLeaderBadge')}
             </span>
             <p className="mt-[2.8px] truncate text-[11px] text-muted-foreground">
-              Área actual: <b>{leader.areaName}</b>
+              {t('specialAreaDetail.currentAreaLabel')} <b>{leader.areaName}</b>
             </p>
           </div>
           <span
             className="inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold"
             style={{ backgroundColor: hexToRgba('#10B981', 0.14), color: '#10B981' }}
           >
-            ACTIVO
+            {t('specialAreaDetail.activeBadge')}
           </span>
         </div>
       </button>
@@ -278,6 +262,37 @@ export default function SpecialAreaDetail({
   next,
   onNavigate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
+  // roleLabel/category traducidos, resueltos una sola vez aqui (componente
+  // exportado) y combinados con Icon/color (AREA_TYPE_META, nivel de
+  // modulo) -- se pasan hacia abajo como `meta` a PersonRow y como prop
+  // `meta` a TeamLeaderReferenceRow (Fase 4 i18n, lookup compartido).
+  const AREA_TYPE_LABELS = {
+    CAPACITACION: {
+      roleLabel: t('specialAreaDetail.roleCapacitacion'),
+      category: t('specialAreaDetail.categoryApoyoDesarrollo'),
+    },
+    TEAM_LEADER: {
+      roleLabel: t('specialAreaDetail.roleTeamLeader'),
+      category: t('specialAreaDetail.categoryLiderazgo'),
+    },
+    ENTRENADOR: {
+      roleLabel: t('specialAreaDetail.roleEntrenador'),
+      category: t('specialAreaDetail.categoryEntrenamiento'),
+    },
+    LIMPIEZA: {
+      roleLabel: t('specialAreaDetail.roleLimpieza'),
+      category: t('specialAreaDetail.categoryServiciosGenerales'),
+    },
+    GERENTE: {
+      roleLabel: t('specialAreaDetail.roleGerente'),
+      category: t('specialAreaDetail.categoryGerencia'),
+    },
+    SUPERVISOR: {
+      roleLabel: t('specialAreaDetail.roleSupervisor'),
+      category: t('specialAreaDetail.categorySupervision'),
+    },
+  }
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -292,7 +307,9 @@ export default function SpecialAreaDetail({
   }, [workCenterId])
 
   const area = workCenterId ? workCenterById(workCenterId) : null
-  const meta = workCenterId ? AREA_TYPE_META[workCenterId] : null
+  const meta = workCenterId
+    ? { ...AREA_TYPE_META[workCenterId], ...AREA_TYPE_LABELS[workCenterId] }
+    : null
   // `version` fuerza recalcular staffing/people cuando cambia el estado de
   // personal, aunque no se lea dentro del callback (mismo patron ya usado
   // en otros archivos de este folder).
@@ -346,20 +363,24 @@ export default function SpecialAreaDetail({
   const headerLabel = statusMeta
     ? statusMeta.label
     : people.length > 0
-      ? 'Con personal'
-      : 'Sin personal hoy'
+      ? t('specialAreaDetail.headerLabelHasStaff')
+      : t('specialAreaDetail.headerLabelNoStaffToday')
   const coveragePct =
     staffing.ideal != null && staffing.ideal > 0
       ? Math.round((staffing.real / staffing.ideal) * 100)
       : null
-  const state = describeAreaState(staffing.real, staffing.ideal)
+  const state = describeAreaState(staffing.real, staffing.ideal, t)
   const description = SUPPORT_AREA_DESCRIPTIONS[area.id] || null
   const headerColor = statusMeta?.color || '#10B981'
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
-        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('specialAreaDetail.dialogTitle', {
+            areaName: area?.name || t('specialAreaDetail.areaFallback'),
+          })}
+        </DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3.5 py-3 md:px-6">
           <button
@@ -385,8 +406,8 @@ export default function SpecialAreaDetail({
             </div>
             <p className="text-[11.5px] text-muted-foreground">
               {isTeamLeaderHub
-                ? 'Vista global de líderes activos'
-                : `Centro de Trabajo · Área de ${meta.category.toLowerCase()}`}
+                ? t('specialAreaDetail.teamLeaderHubSubtitle')
+                : t('specialAreaDetail.areaSubtitle', { category: meta.category.toLowerCase() })}
             </p>
           </div>
           <div className="flex-1" />
@@ -398,7 +419,9 @@ export default function SpecialAreaDetail({
             className="rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('specialAreaDetail.registerPersonnelButton')
+              : t('specialAreaDetail.selfAssignButton')}
           </Button>
           <button
             type="button"
@@ -423,7 +446,7 @@ export default function SpecialAreaDetail({
               className="text-[11.5px] font-extrabold uppercase tracking-[0.4px]"
               style={{ color: meta.color }}
             >
-              Área especial · {meta.category}
+              {t('specialAreaDetail.specialAreaCategoryBadge', { category: meta.category })}
             </p>
           </div>
 
@@ -432,7 +455,9 @@ export default function SpecialAreaDetail({
             <div className="flex flex-col md:flex-row md:divide-x md:divide-border">
               <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  {isTeamLeaderHub ? 'Líderes activos' : 'Personal mostrado'}
+                  {isTeamLeaderHub
+                    ? t('specialAreaDetail.metricLeadersActive')
+                    : t('specialAreaDetail.metricPeopleShown')}
                 </p>
                 <p className="text-[22px] font-extrabold leading-none">
                   {isTeamLeaderHub ? allLeaders.length : people.length}
@@ -441,7 +466,7 @@ export default function SpecialAreaDetail({
               {isTeamLeaderHub && (
                 <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
                   <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                    Áreas de trabajo
+                    {t('specialAreaDetail.metricWorkAreas')}
                   </p>
                   <p className="text-[22px] font-extrabold leading-none">
                     {new Set(allLeaders.map((l) => l.areaId)).size}
@@ -450,7 +475,7 @@ export default function SpecialAreaDetail({
               )}
               <div className="flex-[1_1_170px] px-3.5 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  Estado del área
+                  {t('specialAreaDetail.metricAreaStatus')}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <state.Icon className="h-4 w-4" style={{ color: TONE_COLOR[state.tone] }} />
@@ -459,7 +484,9 @@ export default function SpecialAreaDetail({
               </div>
               <div className="flex-[1_1_150px] px-3.5 py-2.5 md:px-[18px]">
                 <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                  {isTeamLeaderHub ? 'Plantilla' : 'Cobertura'}
+                  {isTeamLeaderHub
+                    ? t('specialAreaDetail.metricTemplate')
+                    : t('specialAreaDetail.metricCoverage')}
                 </p>
                 <p
                   className={cn(
@@ -469,13 +496,17 @@ export default function SpecialAreaDetail({
                       : 'text-foreground',
                   )}
                 >
-                  {isTeamLeaderHub ? 'No afecta' : coveragePct != null ? `${coveragePct}%` : '—'}
+                  {isTeamLeaderHub
+                    ? t('specialAreaDetail.metricNotApplicable')
+                    : coveragePct != null
+                      ? `${coveragePct}%`
+                      : '—'}
                 </p>
               </div>
               {!isTeamLeaderHub && (
                 <div className="flex-[1_1_110px] px-3.5 py-2.5 md:px-[18px]">
                   <p className="mb-1 text-[10.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-                    Plantilla ideal
+                    {t('specialAreaDetail.metricIdealTemplate')}
                   </p>
                   <p className="text-[21px] font-extrabold leading-[1.1]">
                     {staffing.ideal ?? '—'}
@@ -495,12 +526,16 @@ export default function SpecialAreaDetail({
                 : 'border-border bg-card',
             )}
           >
-            <p className="mb-3 text-[14.5px] font-extrabold">Personal del área ({people.length})</p>
+            <p className="mb-3 text-[14.5px] font-extrabold">
+              {t('specialAreaDetail.areaPersonnelTitle', { count: people.length })}
+            </p>
             {people.length === 0 ? (
               <EmptyState
                 compact
-                title="Sin personal asignado"
-                description={`Actualmente no hay ${meta.roleLabel.toLowerCase()} asignados a esta área.`}
+                title={t('specialAreaDetail.emptyPersonnelTitle')}
+                description={t('specialAreaDetail.emptyPersonnelDescription', {
+                  role: meta.roleLabel.toLowerCase(),
+                })}
               />
             ) : (
               <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
@@ -521,22 +556,25 @@ export default function SpecialAreaDetail({
           {isTeamLeaderHub && (
             <div className="mb-5 rounded-2xl border border-border p-4">
               <p className="mb-0.5 text-[14.5px] font-extrabold">
-                Líderes activos ({allLeaders.length})
+                {t('specialAreaDetail.activeLeadersTitle', { count: allLeaders.length })}
               </p>
               <p className="mb-3 text-xs text-muted-foreground">
-                Esta vista muestra a todos los líderes reales y el área donde actualmente están
-                asignados.
+                {t('specialAreaDetail.activeLeadersSubtitle')}
               </p>
               {allLeaders.length === 0 ? (
                 <EmptyState
                   compact
-                  title="Sin líderes registrados"
-                  description="Actualmente no hay personal con rol de Team Leader en el sistema."
+                  title={t('specialAreaDetail.emptyLeadersTitle')}
+                  description={t('specialAreaDetail.emptyLeadersDescription')}
                 />
               ) : (
                 <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                   {allLeaders.map((leader) => (
-                    <TeamLeaderReferenceRow key={leader.employee.id} leader={leader} />
+                    <TeamLeaderReferenceRow
+                      key={leader.employee.id}
+                      leader={leader}
+                      meta={{ ...AREA_TYPE_META.TEAM_LEADER, ...AREA_TYPE_LABELS.TEAM_LEADER }}
+                    />
                   ))}
                 </div>
               )}
@@ -549,9 +587,7 @@ export default function SpecialAreaDetail({
               >
                 <Info className="mt-px h-4 w-4 shrink-0 text-[#3B82F6]" />
                 <p className="text-[11.5px] text-muted-foreground">
-                  Los líderes siguen asignados a sus áreas de trabajo. Esta es una vista de
-                  referencia y no modifica las asignaciones actuales ni el conteo de personal de
-                  esas áreas.
+                  {t('specialAreaDetail.leadersReferenceNote')}
                 </p>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { CheckCircle2, Hourglass } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -65,8 +66,10 @@ export default function RegisterPersonnelForm({
   fixedAreaId = null,
   onCancel,
   onDone,
-  cancelLabel = 'Cancelar',
+  cancelLabel,
 }) {
+  const { t } = useTranslation('centroTrabajo')
+  const resolvedCancelLabel = cancelLabel ?? t('registerPersonnelForm.cancelButton')
   const { user } = useAuth()
   const isLider = user?.role === 'LIDER'
   const [form, setForm] = useState(() => emptyForm(fixedAreaId))
@@ -141,7 +144,7 @@ export default function RegisterPersonnelForm({
       setResult({
         employee: res.employee,
         assignment: res.assignment,
-        eventLabel: 'Entrada',
+        eventLabel: t('registerPersonnelForm.eventLabelEntrada'),
         eventTime: res.assignment.checkInAt,
       })
       setStep('SUCCESS')
@@ -159,7 +162,7 @@ export default function RegisterPersonnelForm({
         setResult({
           employee: res.employee,
           assignment: res.assignment,
-          eventLabel: 'Asistencia',
+          eventLabel: t('registerPersonnelForm.eventLabelAsistencia'),
           eventTime: attendanceTime,
           alreadyThere: true,
         })
@@ -172,9 +175,9 @@ export default function RegisterPersonnelForm({
     } else if (res.status === 'STATION_FULL') {
       setError(res.message)
     } else if (res.status === 'NEEDS_NAME') {
-      setError('Este número de empleado no está registrado. Captura su nombre para darlo de alta.')
+      setError(t('registerPersonnelForm.needsNameError'))
     } else {
-      setError(res.message || 'No se pudo registrar. Intenta de nuevo.')
+      setError(res.message || t('registerPersonnelForm.genericCheckInError'))
     }
   }
 
@@ -239,7 +242,7 @@ export default function RegisterPersonnelForm({
         setStep('PENDING')
         onDone?.()
       } else {
-        setError(res.message || 'No se pudo enviar la solicitud.')
+        setError(res.message || t('registerPersonnelForm.requestFailedError'))
       }
       setSubmitting(false)
       return
@@ -255,13 +258,13 @@ export default function RegisterPersonnelForm({
       setResult({
         employee: conflict.employee,
         assignment: res.assignment,
-        eventLabel: 'Movido',
+        eventLabel: t('registerPersonnelForm.eventLabelMovido'),
         eventTime: res.movedAt,
       })
       setStep('SUCCESS')
       onDone?.()
     } else {
-      setError(res.message || 'No se pudo mover al empleado.')
+      setError(res.message || t('registerPersonnelForm.moveFailedError'))
     }
     setSubmitting(false)
   }
@@ -281,26 +284,33 @@ export default function RegisterPersonnelForm({
     return (
       <div className="flex flex-col gap-3">
         <p className="text-[17px] font-extrabold">
-          {conflict.employee.employeeNumber} — {conflict.employee.name}
+          {t('registerPersonnelForm.employeeHeader', {
+            employeeNumber: conflict.employee.employeeNumber,
+            name: conflict.employee.name,
+          })}
         </p>
         <Alert className={cn(alertToneClass('warning'), 'py-1')}>
           {sameArea
-            ? 'Ya está registrado hoy en esta misma área, pero con otra forma de trabajo. Esto lo va a cambiar de estación/rol dentro de la misma área, no solo a contar su asistencia.'
-            : 'Ya está registrado hoy en otra área. Esto lo va a mover de área, no solo a contar su asistencia.'}
+            ? t('registerPersonnelForm.conflictSameAreaMessage')
+            : t('registerPersonnelForm.conflictDifferentAreaMessage')}
         </Alert>
         <div className="rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
-          <p className="text-[11px] font-bold uppercase text-muted-foreground">Actualmente hace</p>
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">
+            {t('registerPersonnelForm.currentlyDoingLabel')}
+          </p>
           <p className="font-bold">
             {workCenterById(conflict.assignment.areaId)?.name || conflict.assignment.areaId} —{' '}
             {conflict.assignment.stationId}
           </p>
           <p className="text-[12.5px] text-muted-foreground">
-            Entrada: {conflict.assignment.checkInAt}
+            {t('registerPersonnelForm.entryTimeLabel', {
+              checkInAt: conflict.assignment.checkInAt,
+            })}
           </p>
         </div>
         <div className="rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
           <p className="text-[11px] font-bold uppercase text-muted-foreground">
-            Va a pasar a hacer
+            {t('registerPersonnelForm.willDoLabel')}
           </p>
           <p className="font-bold">
             {areaName} — {form.stationId || '—'}
@@ -308,17 +318,18 @@ export default function RegisterPersonnelForm({
         </div>
         {isLider && (
           <Alert className={cn(alertToneClass('info'), 'py-1')}>
-            Como líder, este movimiento se enviará a un supervisor o administrador para su
-            aprobación — no se aplica de inmediato.
+            {t('registerPersonnelForm.liderMoveNotice')}
           </Alert>
         )}
         {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
         <div className="flex flex-wrap gap-2 pt-2">
           <Button variant="ghost" onClick={onCancel}>
-            Mantener asignación actual
+            {t('registerPersonnelForm.keepCurrentButton')}
           </Button>
           <Button onClick={handleMove} disabled={submitting} className="font-bold">
-            {isLider ? `Enviar para aprobación — ${areaName}` : `Confirmar cambio — ${areaName}`}
+            {isLider
+              ? t('registerPersonnelForm.sendForApprovalButton', { areaName })
+              : t('registerPersonnelForm.confirmChangeButton', { areaName })}
           </Button>
         </div>
       </div>
@@ -343,12 +354,15 @@ export default function RegisterPersonnelForm({
           <p className="mb-4 text-[16px] font-extrabold">
             {resolved
               ? approved
-                ? '✓ Movimiento aprobado'
-                : '✕ Movimiento rechazado'
-              : 'Movimiento enviado para aprobación'}
+                ? t('registerPersonnelForm.moveApprovedTitle')
+                : t('registerPersonnelForm.moveRejectedTitle')
+              : t('registerPersonnelForm.moveSentTitle')}
           </p>
           <p className="text-[18px] font-extrabold">
-            {pendingRequest.employeeNumber} — {pendingRequest.employeeName}
+            {t('registerPersonnelForm.employeeHeader', {
+              employeeNumber: pendingRequest.employeeNumber,
+              name: pendingRequest.employeeName,
+            })}
           </p>
           <div className="mt-2 flex items-center justify-center gap-1.5">
             <span className={metricChipClass('info')}>
@@ -359,18 +373,18 @@ export default function RegisterPersonnelForm({
           <p className="mt-2 text-[13px] text-muted-foreground">
             {resolved
               ? approved
-                ? 'El cambio ya se aplicó.'
-                : 'Se mantiene en su ubicación anterior.'
-              : 'Un supervisor o administrador debe verificarlo antes de que se aplique.'}
+                ? t('registerPersonnelForm.changeAppliedMessage')
+                : t('registerPersonnelForm.keptPreviousLocationMessage')
+              : t('registerPersonnelForm.pendingVerificationMessage')}
           </p>
         </div>
         <div className="flex justify-center gap-2">
           <Button variant="ghost" onClick={handleRegisterAnother}>
-            Registrar otro
+            {t('registerPersonnelForm.registerAnotherButton')}
           </Button>
           {onCancel && (
             <Button onClick={onCancel} className="font-bold">
-              Cerrar
+              {t('registerPersonnelForm.closeButton')}
             </Button>
           )}
         </div>
@@ -384,10 +398,15 @@ export default function RegisterPersonnelForm({
         <div>
           <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-[#10B981]" />
           <p className="mb-4 text-[16px] font-extrabold">
-            {result.alreadyThere ? 'Ya registrada hoy' : 'Registro realizado'}
+            {result.alreadyThere
+              ? t('registerPersonnelForm.alreadyRegisteredTitle')
+              : t('registerPersonnelForm.registrationDoneTitle')}
           </p>
           <p className="text-[18px] font-extrabold">
-            {result.employee.employeeNumber} — {result.employee.name}
+            {t('registerPersonnelForm.employeeHeader', {
+              employeeNumber: result.employee.employeeNumber,
+              name: result.employee.name,
+            })}
           </p>
           <div className="mt-2 flex items-center justify-center gap-1.5">
             <span className={metricChipClass('info')}>
@@ -401,11 +420,11 @@ export default function RegisterPersonnelForm({
         </div>
         <div className="flex justify-center gap-2">
           <Button variant="ghost" onClick={handleRegisterAnother}>
-            Registrar otro
+            {t('registerPersonnelForm.registerAnotherButton')}
           </Button>
           {onCancel && (
             <Button onClick={onCancel} className="font-bold">
-              Cerrar
+              {t('registerPersonnelForm.closeButton')}
             </Button>
           )}
         </div>
@@ -428,17 +447,18 @@ export default function RegisterPersonnelForm({
           onCheckedChange={(checked) => handleToggleNoNumber(checked === true)}
         />
         <Label htmlFor="rpf-no-number" className="cursor-pointer">
-          No tiene número de empleado
+          {t('registerPersonnelForm.noNumberCheckboxLabel')}
         </Label>
       </div>
 
       {form.noNumber && (
         <>
           <Alert className={cn(alertToneClass('info'), 'py-1')}>
-            Se registrará como <b>PROYECTO</b> — se identifica por su nombre completo.
+            {t('registerPersonnelForm.noNumberAlertPrefix')} <b>PROYECTO</b>{' '}
+            {t('registerPersonnelForm.noNumberAlertSuffix')}
           </Alert>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rpf-name-no-number">Nombre completo</Label>
+            <Label htmlFor="rpf-name-no-number">{t('registerPersonnelForm.fullNameLabel')}</Label>
             <Input
               id="rpf-name-no-number"
               autoFocus
@@ -452,10 +472,10 @@ export default function RegisterPersonnelForm({
       {needsName && (
         <>
           <Alert className={cn(alertToneClass('warning'), 'py-1')}>
-            Empleado {employeeNumber} no registrado — captura su nombre.
+            {t('registerPersonnelForm.employeeNotRegisteredMessage', { employeeNumber })}
           </Alert>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rpf-name">Nombre completo</Label>
+            <Label htmlFor="rpf-name">{t('registerPersonnelForm.fullNameLabel')}</Label>
             <Input
               id="rpf-name"
               value={form.name}
@@ -467,12 +487,12 @@ export default function RegisterPersonnelForm({
 
       {fixedAreaId ? (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rpf-area">Área / Línea</Label>
+          <Label htmlFor="rpf-area">{t('registerPersonnelForm.areaFieldLabel')}</Label>
           <Input id="rpf-area" value={areaName} disabled />
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rpf-area">Área / Línea</Label>
+          <Label htmlFor="rpf-area">{t('registerPersonnelForm.areaFieldLabel')}</Label>
           <Select
             value={form.areaId}
             onValueChange={(v) => setForm((f) => ({ ...f, areaId: v, stationId: '' }))}
@@ -492,7 +512,7 @@ export default function RegisterPersonnelForm({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="rpf-station">Rol / Estación de hoy</Label>
+        <Label htmlFor="rpf-station">{t('registerPersonnelForm.stationLabel')}</Label>
         <Select
           value={form.stationId}
           onValueChange={(v) => setForm((f) => ({ ...f, stationId: v }))}
@@ -506,8 +526,13 @@ export default function RegisterPersonnelForm({
               const compatible = form.employee ? hasSkill(form.employee.id, s.name) : false
               return (
                 <SelectItem key={s.id} value={s.name} disabled={occ.isFull}>
-                  {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
-                  {compatible ? ' ✓ habilidad' : ''}
+                  {t('registerPersonnelForm.stationOption', {
+                    name: s.name,
+                    count: occ.count,
+                    capacity: occ.capacity,
+                  })}
+                  {occ.isFull ? t('registerPersonnelForm.stationFullSuffix') : ''}
+                  {compatible ? t('registerPersonnelForm.compatibleSkillSuffix') : ''}
                 </SelectItem>
               )
             })}
@@ -516,7 +541,7 @@ export default function RegisterPersonnelForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="rpf-shift">Turno</Label>
+        <Label htmlFor="rpf-shift">{t('registerPersonnelForm.shiftLabel')}</Label>
         <Select value={form.shift} onValueChange={(v) => setForm((f) => ({ ...f, shift: v }))}>
           <SelectTrigger id="rpf-shift">
             <SelectValue />
@@ -534,11 +559,11 @@ export default function RegisterPersonnelForm({
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
           <Button variant="ghost" onClick={onCancel}>
-            {cancelLabel}
+            {resolvedCancelLabel}
           </Button>
         )}
         <Button onClick={handleConfirm} disabled={!canSubmit || submitting} className="font-bold">
-          Confirmar registro
+          {t('registerPersonnelForm.confirmRegistrationButton')}
         </Button>
       </div>
     </div>
