@@ -87,6 +87,15 @@
     "hasStaff": "Staffed",
     "noStaffing": "No staffing plan"
   },
+  "criticalAreasCard": {
+    "title": "Critical Areas",
+    "subtitle": "Areas with the biggest staffing gaps, ordered by severity.",
+    "emptyMessage": "No critical areas — staffing is fully covered.",
+    "severityCritical": "Critical",
+    "severityHigh": "High",
+    "severityMedium": "Medium",
+    "severityLow": "Low"
+  },
   "bajasTab": {
     "title": "Non-Assignable Personnel",
     "subtitle": "Personnel marked as terminated — cannot be registered, moved, or assigned to any station",
@@ -912,7 +921,7 @@
     "mixedProductsLabel": "Mixed Products",
     "palletizingTitle": "WC Palletizing",
     "accessoriesTitle": "WC Accessories",
-    "conveyorGeneralTitle": "GENERAL CONVEYOR",
+    "conveyorGeneralTitle": "WC GENERAL CONVEYOR",
     "dropHereLabel": "Drop here",
     "vacantLabel": "Vacant",
     "occupiedStatusLabel": "OCCUPIED",

@@ -87,6 +87,15 @@
     "hasStaff": "已有人员",
     "noStaffing": "无编制"
   },
+  "criticalAreasCard": {
+    "title": "紧急区域",
+    "subtitle": "按人员缺口严重程度排序的区域。",
+    "emptyMessage": "没有紧急区域——人员已全部到位。",
+    "severityCritical": "紧急",
+    "severityHigh": "较高",
+    "severityMedium": "中等",
+    "severityLow": "较低"
+  },
   "bajasTab": {
     "title": "不可分配人员",
     "subtitle": "已标记为离职的人员——无法登记、调动或分配至任何工位",
@@ -912,7 +921,7 @@
     "mixedProductsLabel": "混合产品",
     "palletizingTitle": "WC 码垛区（Palletizing）",
     "accessoriesTitle": "WC 配件区",
-    "conveyorGeneralTitle": "总传送带（CONVEYOR）",
+    "conveyorGeneralTitle": "WC 总传送带（CONVEYOR）",
     "dropHereLabel": "拖放到此处",
     "vacantLabel": "空缺",
     "occupiedStatusLabel": "已占用",

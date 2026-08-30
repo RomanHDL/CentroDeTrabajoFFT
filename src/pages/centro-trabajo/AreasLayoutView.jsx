@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { describeZoneSelection, getPhysicalZones } from '../../data/production/layoutZones'
-import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
+import { BASE_SNAPSHOT_DATE } from '../../data/production/personnelByArea'
 import AreaDetailPanel from './AreaDetailPanel'
 import WorkAreaBottomSummary from './WorkAreaBottomSummary'
 
@@ -44,7 +44,6 @@ export default function AreasLayoutView({ onOpenLine }) {
   const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const [selection, setSelection] = useState(null)
-  const sinZona = getPeopleWithoutArea()
 
   function handleSelectArea(id) {
     if (id === 'FFT' || id === '__FFT__') {
@@ -104,7 +103,7 @@ export default function AreasLayoutView({ onOpenLine }) {
 
       {/* Rediseño 2026-08-25 (a peticion explicita del usuario) -- ver
           WorkAreaBottomSummary.jsx. */}
-      <WorkAreaBottomSummary onSelectArea={handleSelectArea} sinZona={sinZona} />
+      <WorkAreaBottomSummary onSelectArea={handleSelectArea} />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { LINES_ONLY } from './catalog'
+import { LINE_FAMILY_AREA_IDS } from './catalog'
 
 /* ─────────────────────────────────────────────
    Plano 2D "Área operando" (rediseño 2026-08-24 a partir del mockup
@@ -58,9 +58,23 @@ import { LINES_ONLY } from './catalog'
 
    IMPORTANTE sobre las 10 líneas: no hay forma confirmada de mapear
    bahía física → número de línea desde la imagen (aviso visible en
-   pantalla); se muestran en el orden del catálogo LINEA1..LINEA10. */
+   pantalla); se muestran en el orden del catálogo LINEA1..LINEA10.
 
-export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
+   2026-08-30 (a peticion explicita del usuario, "WC LINEA 0 ya no debe
+   mostrarse como area/card independiente"): FFT_LINE_IDS ahora deriva de
+   LINE_FAMILY_AREA_IDS (catalog.js, ya incluia PROYECTO desde antes para
+   el detalle de linea) en vez de LINES_ONLY -- una sola fuente, sin
+   duplicar el criterio de "que cuenta como linea de FFT" entre este
+   archivo y layoutZones.js. Efecto real: PROYECTO ("WC LINEA 0") y
+   LINEA1 (que ya sumaban en el total de FFT pero se dibujaban aparte,
+   ver OperatingFloorPlan.jsx) ahora tambien entran como columna dentro
+   del bloque "WC Líneas de producción (FFT)". Efecto colateral aceptado
+   explicitamente por el usuario: EstacionesTab.jsx consume esta misma
+   constante para su fila-resumen de FFT, asi que su conteo de "lineas"
+   tambien pasa a incluirlas -- no se toco ese archivo, solo refleja la
+   nueva fuente compartida. */
+
+export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
 
 /* Cards pequeñas de apoyo, fila inferior del mismo plano -- mismo
    sistema visual que las zonas grandes, solo más compactas (no

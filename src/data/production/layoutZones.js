@@ -7,10 +7,14 @@
 
    PHYSICAL_ZONES son las zonas del plano fisico compartido por el
    Dashboard y Centro de Trabajo (mismo <WorkAreaMap>). "FFT" no es
-   un area real del catalogo — es el bloque que agrupa LINEA1..10
-   (10 lineas reales; NO existe "Linea 0" — lo que antes se leia
-   como L0 es en realidad PROYECTO/"Linea de proyecto", un area
-   independiente que se muestra en el layout, no dentro de FFT).
+   un area real del catalogo — es el bloque que agrupa LINEA1..10 +
+   PROYECTO (2026-08-30, a peticion explicita del usuario: PROYECTO/
+   "WC LINEA 0" se integra visualmente dentro de "WC Líneas de
+   producción (FFT)" en vez de mostrarse como card independiente --
+   ver LINE_FAMILY_AREA_IDS en catalog.js, ya incluia PROYECTO desde
+   antes para otros usos (detalle de linea); FFT_LINE_IDS ahora
+   deriva de esa misma constante, una sola fuente, en vez de
+   LINES_ONLY (que solo cubria LINEA1..10). No se toco catalog.js.
    Sorting se elimino del layout operativo a peticion del usuario
    (no aporta valor visual actual); no se borro ningun dato de
    catalogo/backend relacionado, solo dejo de pintarse aqui.
@@ -26,9 +30,9 @@
    ───────────────────────────────────────────── */
 
 import i18n from '../../i18n'
-import { LINES_ONLY, WORK_CENTERS } from './catalog'
+import { LINE_FAMILY_AREA_IDS, WORK_CENTERS } from './catalog'
 
-export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
+export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
 
 /* Definiciones puras (id/areaIds, nunca cambian) -- separadas del label
    traducido para que IDS_IN_PHYSICAL_ZONES (calculo estatico de solo ids,
@@ -37,7 +41,9 @@ export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
    queden "congelados" en el idioma que estaba activo cuando el modulo se
    importo -- ver HARD RULE de i18n en src/i18n.js. */
 const PHYSICAL_ZONE_DEFS = {
-  PROYECTO: { id: 'PROYECTO', areaIds: ['PROYECTO'] },
+  // PROYECTO ya NO es su propia zona (2026-08-30, a peticion explicita
+  // del usuario): "WC LINEA 0" se absorbe dentro de FFT, ver FFT_LINE_IDS
+  // arriba -- ya viene incluido en areaIds de FFT, sin duplicarlo aqui.
   FFT: { id: 'FFT', areaIds: FFT_LINE_IDS },
   HIGHVALUE: { id: 'HIGHVALUE', areaIds: ['HIGH_VALUE'] },
   SELLADO: { id: 'SELLADO', areaIds: ['SELLADO'] },
@@ -49,10 +55,6 @@ const PHYSICAL_ZONE_DEFS = {
 
 export function getPhysicalZones() {
   return {
-    PROYECTO: {
-      ...PHYSICAL_ZONE_DEFS.PROYECTO,
-      label: i18n.t('dataLayer:layoutZones.proyecto'),
-    },
     FFT: { ...PHYSICAL_ZONE_DEFS.FFT, label: i18n.t('dataLayer:layoutZones.fft') },
     HIGHVALUE: {
       ...PHYSICAL_ZONE_DEFS.HIGHVALUE,
@@ -117,10 +119,12 @@ export function getColorGroups() {
   }
 }
 
+// PROYECTO ya no necesita entrada aqui (2026-08-30): colorGroupForArea()
+// abajo devuelve 'PRODUCCION' via FFT_LINE_IDS.includes() -- ya lo
+// incluye -- antes de llegar siquiera a consultar este mapa.
 const AREA_TO_GROUP = {
   PALETIZADO: 'PRODUCCION',
   ACCESORIOS: 'PRODUCCION',
-  PROYECTO: 'PRODUCCION',
   CONVEYOR_PRINCIPAL: 'PRODUCCION',
   CONVEYOR_SECUNDARIO: 'PRODUCCION',
   SELLADO: 'SOPORTE_PRODUCCION',

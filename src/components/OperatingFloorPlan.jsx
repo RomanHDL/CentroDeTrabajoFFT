@@ -559,32 +559,31 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              Fila 0 ("conveyor", 2026-08-28, segunda correccion, a peticion
              explicita del usuario -- "de extremo a extremo... que empiece
              desde WC LINEA 1 y termine en WC Paletizado"): ocupa las 15
-             columnas completas -- desde la columna 1 (donde arranca el area
-             "paletizado", que dibuja WC LINEA 1 arriba de WC LINEA 0) hasta
-             la columna 15 (area "palletizing", WC Paletizado). Antes dejaba
-             "." en columnas 1-2 y 15 para no invadir esas dos cards; ahora
-             las cubre por completo (edge-to-edge del grid), a peticion
+             columnas completas -- desde la columna 1 hasta la columna 15
+             (area "palletizing", WC Paletizado). Antes dejaba "." en
+             columnas 1-2 y 15 para no invadir esas dos cards; ahora las
+             cubre por completo (edge-to-edge del grid), a peticion
              explicita del usuario -- las cards de abajo (fila 1/2) no
              cambian de posicion/tamaño, el Conveyor solo pasa por ENCIMA de
-             ellas en su propia fila. */
+             ellas en su propia fila.
+             Columnas 1-2, fila 1 (2026-08-30, a peticion explicita del
+             usuario, "WC LINEA 0 ya no debe mostrarse como area/card
+             independiente"): el area "paletizado" (que dibujaba WC LINEA 1
+             y WC LINEA 0/PROYECTO como barras horizontales aparte) se quita
+             -- esas 2 columnas ahora son parte del area "fft", que crece de
+             10 a 12 columnas (mismo ancho total del grid, 15 columnas,
+             ningun otro area se mueve ni cambia de tamaño). Dentro de
+             FftBlock, LINEA1 y PROYECTO pasan a ser una columna vertical
+             mas (LineColumn), junto con LINEA2..10 -- ver FFT_LINE_IDS en
+             floorPlanZones.js, ya no se filtra ningun id. */
           gridTemplateAreas: `
             "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor"
-            "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
+            "fft fft fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
         <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
-
-        <div style={{ gridArea: 'paletizado' }} className="flex flex-col gap-2">
-          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
-          <HorizontalLineBar
-            lineId="PROYECTO"
-            title={t('operatingFloorPlan.line0Title')}
-            onOpen={onOpen}
-            readOnly={readOnly}
-          />
-        </div>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
@@ -698,11 +697,12 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
     // biome-ignore lint/a11y/useKeyWithClickEvents: contenedor no interactivo -- cada ConveyorNode adentro ya es un <button> real con su propio soporte de teclado; este onClick es solo una conveniencia de mouse ("click en cualquier parte de la barra"), no la única forma de llegar a la acción.
     // biome-ignore lint/a11y/noStaticElementInteractions: mismo motivo -- no puede ser <button> porque contendría botones anidados (ConveyorNode), HTML invalido.
     <div
+      id="area-CONVEYOR_PRINCIPAL"
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       style={{ gridArea }}
       className={cn(
-        'cursor-pointer select-none rounded-[20px] border border-t-[3px] p-2 transition-[box-shadow,background-color] duration-150',
+        'cursor-pointer select-none rounded-[20px] border border-t-[3px] p-2 scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,
@@ -802,11 +802,12 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   return (
     <button
       type="button"
+      id={`area-${areaId}`}
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       style={{ gridArea }}
       className={cn(
-        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,
@@ -834,12 +835,13 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   )
 }
 
-/* LINEA1 se dibuja aparte (HorizontalLineBar, acostada junto a WC LINEA 0 --
-   a peticion del usuario 2026-08-24) pero sigue sumando en el total de este
-   bloque: sigue siendo parte real de "WC Líneas de producción (FFT)", solo
-   cambia donde se dibuja su columna. */
-const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1')
-
+/* 2026-08-30 (a peticion explicita del usuario, "WC LINEA 0 ya no debe
+   mostrarse como area/card independiente"): LINEA1 y PROYECTO ya no se
+   filtran de FFT_LINE_IDS -- las 11 lineas (LINEA1..10 + PROYECTO) se
+   dibujan como columna dentro de este bloque, ninguna aparte. id="area-fft"
+   (usado por CriticalAreasCard para scroll+highlight del agregado FFT --
+   no tiene sentido hacer scroll a una sola linea cuando el summary es del
+   bloque agregado). */
 function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   const { t } = useTranslation('centroTrabajo')
   const totalReal = FFT_LINE_IDS.reduce((sum, id) => sum + getAreaHeadcount(id), 0)
@@ -849,8 +851,9 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
   )
   return (
     <div
+      id="area-FFT"
       style={{ gridArea: 'fft' }}
-      className="flex flex-col gap-2 overflow-hidden rounded-[20px] border border-t-[3px] border-border border-t-blue-500 bg-blue-500/[0.035] p-2.5 dark:bg-blue-500/[0.05]"
+      className="flex flex-col gap-2 overflow-hidden rounded-[20px] border border-t-[3px] border-border border-t-blue-500 bg-blue-500/[0.035] p-2.5 dark:bg-blue-500/[0.05] scroll-mt-4"
     >
       <button
         type="button"
@@ -869,62 +872,11 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
           columnas y FftBlock (overflow:hidden) recortaba el personal
           sobrante en silencio. */}
       <div className="flex min-h-0 flex-1 gap-[4.8px]">
-        {FFT_COLUMN_LINE_IDS.map((id) => (
+        {FFT_LINE_IDS.map((id) => (
           <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />
         ))}
       </div>
     </div>
-  )
-}
-
-/* Barra horizontal ("acostada") -- usada para LINEA1 y WC LINEA 0
-   (PROYECTO), apiladas en el espacio que dejó libre la caja de
-   Paletizado de arriba a la izquierda (a petición del usuario
-   2026-08-24). Mismo lenguaje visual que BigZone, solo horizontal. */
-function HorizontalLineBar({ lineId, title, onOpen, readOnly }) {
-  const { t } = useTranslation('centroTrabajo')
-  const wc = workCenterById(lineId)
-  const staffing = getAreaStaffing(lineId)
-  const status = statusFor(staffing.real, staffing.ideal) || 'SIN_PERSONAL'
-  const tone = toneFor(status)
-  const label =
-    staffing.ideal != null
-      ? `${staffing.real} / ${staffing.ideal}`
-      : t('operatingFloorPlan.personCount', { count: staffing.real })
-  const pct = staffing.ideal ? Math.min(1, staffing.real / staffing.ideal) : 0
-  const { isOver, dropProps } = useEmployeeDropTarget(readOnly ? null : lineId)
-  return (
-    <button
-      type="button"
-      {...(readOnly ? {} : dropProps)}
-      onClick={() => onOpen(lineId)}
-      className={cn(
-        'flex min-h-0 flex-1 cursor-pointer select-none flex-col justify-center gap-1 rounded-[20px] border border-t-[3px] p-2 text-left transition-[box-shadow,background-color] duration-150',
-        isOver ? 'border-blue-500' : tone.border,
-        isOver ? 'border-t-blue-500' : tone.borderTop,
-        isOver ? OVER_TONE.bg : tone.bgIdle,
-        tone.ring25,
-      )}
-    >
-      <div className="flex items-baseline justify-between">
-        <p className="text-[12.5px] font-extrabold">{title || wc?.name}</p>
-        <p className="text-[13.5px] font-bold">
-          {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
-        </p>
-      </div>
-      {status && (
-        <p className={cn('text-[9.5px] font-bold', tone.text)}>{statusText(t, status, staffing)}</p>
-      )}
-      <div className={cn('h-1.5 w-full overflow-hidden rounded-full', tone.track18)}>
-        <div className={cn('h-full rounded-full', tone.solid)} style={{ width: `${pct * 100}%` }} />
-      </div>
-      {/* Nombres reales (2026-08-25, a peticion explicita del usuario): si hay
-          personal, debe verse su nombre igual que en WC Accesorios, no solo la
-          barra de avance. */}
-      <div className="mt-1 max-h-[70px] overflow-auto">
-        <PersonList areaId={lineId} columns={2} readOnly={readOnly} />
-      </div>
-    </button>
   )
 }
 
@@ -1039,11 +991,12 @@ function InsumosSuministroZone({ gridArea, onOpen, onOpenSummary, readOnly }) {
   return (
     <button
       type="button"
+      id="area-INSUMOS"
       {...(readOnly ? {} : dropProps)}
       onClick={() => (readOnly ? onOpenSummary('INSUMOS_SUMINISTRO_ALL') : onOpen('INSUMOS'))}
       style={{ gridArea }}
       className={cn(
-        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,
@@ -1129,10 +1082,11 @@ function SupportCard({ areaId, onOpen, readOnly }) {
   return (
     <button
       type="button"
+      id={`area-${areaId}`}
       {...(readOnly ? {} : dropProps)}
       onClick={() => onOpen(areaId)}
       className={cn(
-        'max-w-[230px] min-w-[168px] flex-[1_1_168px] cursor-pointer select-none rounded-[20px] border border-l-[3px] p-2.5 text-left transition-[box-shadow,background-color] duration-150',
+        'max-w-[230px] min-w-[168px] flex-[1_1_168px] cursor-pointer select-none rounded-[20px] border border-l-[3px] p-2.5 text-left scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-l-blue-500' : tone.borderLeft,
         isOver ? OVER_TONE.bg : tone.bgIdle,
