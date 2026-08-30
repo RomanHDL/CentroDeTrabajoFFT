@@ -1,1 +1,26 @@
-{}
+{
+  "appLayout": {},
+  "headerUserActions": {
+    "idiomaTitle": "Idioma / Language / 语言",
+    "modoOscuro": "深色模式",
+    "modoClaro": "浅色模式",
+    "miCuenta": "{{value}} · 我的账户",
+    "cambiarContrasena": "修改密码",
+    "cerrarSesion": "退出登录"
+  },
+  "notificationBell": {
+    "haceUnMomento": "刚刚",
+    "hace1Min": "1分钟前",
+    "haceNMin": "{{mins}}分钟前",
+    "rechazar": "拒绝",
+    "aprobar": "批准",
+    "solicitadoPor": "申请人：{{name}} · {{time}}",
+    "otroUsuario": "其他用户",
+    "movimientosPendientesTitle": "待审批的调动",
+    "aprobacionesPendientes": "待审批事项",
+    "noHaySolicitudesPendientes": "暂无待处理的申请。",
+    "solicitudCambioArea": "🔔 区域变更申请",
+    "masEnCampana_one": "通知中心还有{{count}}条申请。",
+    "masEnCampana_other": "通知中心还有{{count}}条申请。"
+  }
+}

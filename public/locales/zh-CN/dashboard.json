@@ -1,1 +1,170 @@
-{}
+{
+  "chartCard": {
+    "loadErrorMessage": "无法加载此数据。",
+    "retryButton": "重试",
+    "emptyDefaultMessage": "暂无可用数据。"
+  },
+  "dailyMovementsSummaryCard": {
+    "title": "今日动态",
+    "subtitle": "今日的分配、释放和重新分配情况",
+    "emptyMessage": "今日尚无动态记录。",
+    "assignmentsLabel": "分配",
+    "removedLabel": "移除/释放",
+    "movementsLabel": "调动/重新分配",
+    "netLabel": "净值"
+  },
+  "dashboardExecKpiCard": {},
+  "fftIndicatorsCard": {
+    "title": "FFT 指标",
+    "subtitle": "该区域的效率、延误、产量及计划达成情况",
+    "noSourceMessage": "未配置数据源"
+  },
+  "recentActivityCard": {
+    "title": "近期活动",
+    "subtitle": "今日实际人员事件",
+    "emptyMessage": "今日尚无活动记录。",
+    "viewAllButton": "查看全部活动",
+    "dialogTitle": "今日活动"
+  },
+  "dashboardKpiCard": {},
+  "findingsCard": {
+    "title": "今日发现",
+    "emptyTitle": "暂无发现",
+    "emptyDescription": "根据当前数据，没有需要关注的异常情况。"
+  },
+  "dashboardPage": {
+    "pageTitle": "仪表盘",
+    "pageSubtitle": "工作中心总体概览",
+    "shiftLabel": "班次：{{shift}}",
+    "todayLabel": "今日：{{date}}",
+    "kpiPersonalActualTitle": "当前在岗人数",
+    "kpiPersonalActualUnit": "在岗人数",
+    "kpiFooterIdeal": "理想值",
+    "kpiPersonalFaltanteTitle": "缺岗人数",
+    "kpiPersonalFaltanteUnit": "缺岗人数",
+    "kpiFaltantePctFooter": "占理想值的 {{pct}}%",
+    "kpiNoIdealFooter": "未设定理想编制",
+    "kpiPlantillaIdealTitle": "理想编制",
+    "kpiPersonasUnit": "人",
+    "kpiTotalIdealFooter": "已定义的理想编制总数",
+    "kpiLineasOperandoTitle": "运行中产线",
+    "kpiLineasUnit": "条运行中产线",
+    "kpiLineasPctFooter": "占产线总数的 {{pct}}%",
+    "kpiCoberturaTotalTitle": "总体覆盖率",
+    "kpiCoberturaUnit": "总体覆盖率",
+    "kpiCoberturaFooter": "{{real}} / {{ideal}}（理想值）",
+    "lastUpdatedLabel": "最后更新时间：{{time}}"
+  },
+  "dashboardQuickSummaryStrip": {
+    "noCoverageGoal": "无目标",
+    "headerTitle": "工作中心快速摘要",
+    "totalAreasLabel": "区域总数",
+    "personnelOnShiftLabel": "在岗人数",
+    "missingPersonnelLabel": "缺岗人数",
+    "operatingLinesLabel": "运行中产线",
+    "overallCoverageLabel": "总体覆盖率",
+    "movementsTodayLabel": "今日动态数"
+  },
+  "dashboardExportButton": {
+    "buttonLabel": "下载 Excel",
+    "summarySheetName": "摘要",
+    "areasSheetName": "区域",
+    "shiftsSheetName": "班次",
+    "movementsSheetName": "动态",
+    "attendanceSheetName": "考勤",
+    "metricColumnHeader": "指标",
+    "valueColumnHeader": "数值",
+    "metricPersonalActual": "当前在岗人数",
+    "metricPlantillaIdeal": "理想编制",
+    "metricPersonalFaltante": "缺岗人数",
+    "metricCoberturaGeneral": "总体覆盖率 (%)",
+    "metricLineasOperando": "运行中产线",
+    "metricMovimientosHoy": "今日动态数",
+    "metricMovimientosPendientes": "待审批的动态",
+    "areaColumnHeader": "区域",
+    "actualColumnHeader": "当前值",
+    "idealColumnHeader": "理想值",
+    "faltanteColumnHeader": "缺口",
+    "coberturaColumnHeader": "覆盖率",
+    "estadoColumnHeader": "状态",
+    "noTemplateStatus": "无编制模板",
+    "turnoColumnHeader": "班次",
+    "personasColumnHeader": "人数",
+    "horaColumnHeader": "时间",
+    "empleadoColumnHeader": "员工",
+    "tipoColumnHeader": "类型",
+    "desdeColumnHeader": "原位置",
+    "haciaColumnHeader": "目标位置",
+    "movementTypeCheckIn": "签到",
+    "movementTypeRelease": "释放",
+    "movementTypeMovement": "调动",
+    "employeeNumberColumnHeader": "员工编号",
+    "checkInTimeColumnHeader": "签到时间"
+  },
+  "areaStatusDonutCard": {
+    "title": "区域状态",
+    "subtitle": "已定义理想编制的区域，按覆盖状态分类",
+    "emptyMessage": "目前还没有区域定义理想编制。",
+    "totalLabel": "总计",
+    "areaCountPct_one": "{{count}} 个区域（{{pct}}%）",
+    "areaCountPct_other": "{{count}} 个区域（{{pct}}%）"
+  },
+  "coverageDonutCard": {
+    "title": "各区域覆盖情况",
+    "subtitle": "当前人员在各区域间的分布",
+    "emptyMessage": "目前还没有人员分配到任何区域。",
+    "tooltipText": "{{actual}} 人 · 占当前人员的 {{share}}%",
+    "totalCoverageLabel": "总体覆盖率"
+  },
+  "missingVsIdealComboCard": {
+    "title": "各区域缺口与理想值对比",
+    "subtitle": "按区域列出当前人数、理想编制及计算所得的缺口",
+    "emptyMessage": "目前还没有区域定义理想编制。",
+    "actualLabel": "当前值：{{value}}",
+    "idealLabel": "理想值：{{value}}",
+    "missingLabel": "缺口：{{value}}",
+    "actualSeriesLabel": "当前人数",
+    "idealSeriesLabel": "理想编制",
+    "missingSeriesLabel": "缺口"
+  },
+  "movementsDailyCard": {
+    "title": "每日动态数",
+    "subtitle": "最近 7 个日历日",
+    "emptyMessage": "最近 7 天内没有动态记录。",
+    "todayLabel": "今天",
+    "weekdaySun": "周日",
+    "weekdayMon": "周一",
+    "weekdayTue": "周二",
+    "weekdayWed": "周三",
+    "weekdayThu": "周四",
+    "weekdayFri": "周五",
+    "weekdaySat": "周六",
+    "movementCount_one": "{{count}} 次动态",
+    "movementCount_other": "{{count}} 次动态"
+  },
+  "movementsHourlyCard": {
+    "title": "每小时动态数（今日）",
+    "subtitle": "本班次内实际记录的签到与调动",
+    "emptyMessage": "今日尚无动态记录。",
+    "movementCount_one": "{{count}} 次动态",
+    "movementCount_other": "{{count}} 次动态"
+  },
+  "personnelByAreaBarCard": {
+    "title": "各区域人员数",
+    "subtitle": "各区域当前人数，按从高到低排列",
+    "emptyMessage": "目前还没有区域登记人员。",
+    "personCount_one": "{{count}} 人",
+    "personCount_other": "{{count}} 人",
+    "idealSuffix": " · 理想值 {{ideal}}"
+  },
+  "shiftDistributionDonutCard": {
+    "title": "按班次分布",
+    "subtitle": "今日已记录实际班次的人员",
+    "emptyMessage": "今日尚无人员记录班次。",
+    "totalLabel": "总计",
+    "personCountPct_one": "{{count}} 人（{{pct}}%）",
+    "personCountPct_other": "{{count}} 人（{{pct}}%）",
+    "personCount_one": "{{count}} 人",
+    "personCount_other": "{{count}} 人"
+  }
+}

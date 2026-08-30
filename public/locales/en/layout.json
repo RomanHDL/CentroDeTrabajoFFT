@@ -1,1 +1,26 @@
-{}
+{
+  "appLayout": {},
+  "headerUserActions": {
+    "idiomaTitle": "Idioma / Language / 语言",
+    "modoOscuro": "Dark mode",
+    "modoClaro": "Light mode",
+    "miCuenta": "{{value}} · My account",
+    "cambiarContrasena": "Change password",
+    "cerrarSesion": "Log out"
+  },
+  "notificationBell": {
+    "haceUnMomento": "Just now",
+    "hace1Min": "1 min ago",
+    "haceNMin": "{{mins}} min ago",
+    "rechazar": "Reject",
+    "aprobar": "Approve",
+    "solicitadoPor": "Requested by: {{name}} · {{time}}",
+    "otroUsuario": "another user",
+    "movimientosPendientesTitle": "Moves pending approval",
+    "aprobacionesPendientes": "Pending approvals",
+    "noHaySolicitudesPendientes": "There are no pending requests.",
+    "solicitudCambioArea": "🔔 Area change request",
+    "masEnCampana_one": "+{{count}} more request in the bell.",
+    "masEnCampana_other": "+{{count}} more requests in the bell."
+  }
+}

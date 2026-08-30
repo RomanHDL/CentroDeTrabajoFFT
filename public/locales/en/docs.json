@@ -1,1 +1,67 @@
-{}
+{
+  "userManualData": {
+    "dashboardBody": "A general overview of operational status: people assigned today vs.\nideal headcount, coverage by area, today's movements, FFT indicators\n(Efficiency/Delays/Production/Compliance), and distribution charts\nby shift/area. It is read-only -- to assign or move personnel, use\nWork Center.",
+    "centroTrabajoBody": "The main module. Three tabs:\n\n- Stations: an operational map of all work centers (Lines 0-10, Palletizing,\n  Accessories, Supplies, Midea/High Value, Conveyor, and support areas).\n  Click any area to see the detail of its positions and who occupies them.\n- Personnel: a search tool for people and their current location, with\n  movement history.\n- Terminated: personnel marked as terminated (no longer part of the\n  active roster) -- they are never deleted from the system, only marked inactive.\n\nInside each area's detail view you can: register someone at an open\nposition, move someone between positions, release a position, and (if your\nrole allows) configure that area's positions. A move requested by a LIDER\nrequires approval from a SUPERVISOR or ADMINISTRADOR before it takes\neffect -- that pending request stays flagged until it is resolved.",
+    "usuariosBody": "Visible only to those with the \"Users\" module enabled (typically\nADMINISTRADOR). Create/edit/deactivate accounts, reset passwords,\nand configure which modules each role or individual person can see\n(individual overrides take precedence over the role's general permission).",
+    "registroPersonalBody": "A screen designed for quick check-in on a tablet/floor: search for a\nperson and assign them to an open position in a few taps, without going\nthrough the full Work Center detail view.",
+    "kpisBody": "Module under construction -- it does not yet have its own functionality.",
+    "asistenciaBody": "Module under construction -- it does not yet have its own functionality.",
+    "auditoriaBody": "Module under construction -- it does not yet have its own functionality.",
+    "statusDisponible": "available",
+    "statusProximamente": "coming soon",
+    "faq1Question": "Why can't I see a module I used to see?",
+    "faq1Answer": "An ADMINISTRADOR can change at any time which modules your role or your specific account can see, from Users -> Permission Management. If you think this is a mistake, ask them to review it there.",
+    "faq2Question": "What does it mean when someone is missing a \"station\"?",
+    "faq2Answer": "This happens when the station that person was assigned to no longer exists in the area's current configuration (for example, an administrator deleted or renamed it). The person is never removed from the system -- they appear under \"Personnel without a station\" until someone reassigns them to an actual position.",
+    "faq3Question": "Can a movement be undone?",
+    "faq3Answer": "Movement history is never deleted or edited (it is a permanent record). To correct a location, you simply make a new movement -- the system does not \"rewrite\" the past."
+  },
+  "userManualPage": {
+    "title": "User Manual",
+    "introText": "How to use Work Center FFT.",
+    "developerManualLink": "View the Developer Manual",
+    "faqHeading": "Frequently Asked Questions"
+  },
+  "developerManualData": {
+    "architectureOverview": "Work Center FFT is a production floor personnel management app: who is\nassigned to which station today, movement history, attendance, import of\nthe official headcount template (Excel), and role/module-based permissions.\n\nCurrent stack: React 18 + Vite (JS, permissive tsconfig since Compliance\nPhase 1) + MUI + Drizzle ORM on top of Postgres (Neon) + in-house\nauthentication via a signed cookie (JWT) + automatic deployment on Vercel\n(GitHub -> Preview on every push to desarrollo-personal, Production on every\npush to main).\n\nData layer (server-lib/db/): schema.ts + relations.ts were generated with\n\"drizzle-kit introspect\" directly against the real database (never written\nby hand) -- 18 tables/12 enums. client.ts exports \"db\" (a singleton, the\nsame pattern as the old Prisma client) plus every table, for direct import\nfrom any server file. Migrated from Prisma in Compliance Phase 3 (see\nCHANGELOG.md) -- same business behavior, verified file by file.\n\nFrontend (src/): pages organized by module in src/pages/<module>/, session\nstate in src/state/auth.jsx, personnel data layer in\nsrc/data/personnel/ and src/data/production/ (area/shift catalog,\nimported base snapshot, etc.).\n\nBackend (api/, server-lib/): every file under api/**/*.js is a Vercel\nserverless function (routed by folder convention, with no extra config in\nvercel.json). server-lib/dev-server.js mounts those same functions 1:1 on\nExpress for local development\n(concurrently \"vite\" + \"node server-lib/dev-server.js\"). server-lib/auth.js\nhandles authentication (getSessionUser) and the 3 authorization wrappers\n(requireAuth/requireRole/requireModuleAccess) that wrap nearly every\nendpoint -- that is the single chokepoint Sentry uses to capture errors\nwithout touching each endpoint individually.\n\nMaintenance scripts (scripts/*.mjs): one-off idempotent migrations\n(soft-deleting obsolete stations, never a physical DELETE) and\nscripts/seed-personnel.mjs, which syncs Workstation with the pure generator\nsrc/data/personnel/workstations.js. scripts/verify-line-logic.mjs is the\nproject's pure logic verification suite (there is no Vitest/Playwright\nyet) -- it is run after any change to catalog.js/workstations.js.",
+    "authOverview": "Authentication today: login by employeeNumber or username (there is no\nemail field in the User model), bcrypt-hashed password, an httpOnly cookie\nnamed \"fft_session\" signed with JWT (8-hour session). getSessionUser always\nre-queries the real User from the database on every request -- it never\ntrusts the role/status the token claims to have, only the userId.\n\nPlanned migration (see the credentials checklist): replacement with real\nNextcloud SSO (OIDC). The 25 files that call requireAuth/requireRole/\nrequireModuleAccess do NOT change with that migration -- only how req.user\ngets populated in api/auth/login.js and api/auth/session.js changes.",
+    "dataDictionary_User_purpose": "System access account (login) -- completely separate from Employee.",
+    "dataDictionary_Employee_purpose": "The real floor personnel catalog, populated by the LAYOUT FFT.xlsx import.",
+    "dataDictionary_ImportBatch_purpose": "Each import run of LAYOUT FFT.xlsx -- idempotent by fileHash.",
+    "dataDictionary_EmployeeImportSource_purpose": "Raw BASE/BAJAS row that originated or updated an Employee (traceability).",
+    "dataDictionary_Skill_purpose": "Catalog of skills/activities (code = raw Excel code: LC, EM, L, PE...).",
+    "dataDictionary_EmployeeSkill_purpose": "An employee's skill. Removing one is ALWAYS a soft delete, never a physical DELETE.",
+    "dataDictionary_BajaConflict_purpose": "Admin review queue: a possible name match between BASE and BAJAS. Never resolves itself.",
+    "dataDictionary_EmployeeReconciliationCandidate_purpose": "Admin review queue: a possible duplicate between an existing Employee and a new import row.",
+    "dataDictionary_ImportedAttendanceReference_purpose": "Raw ASISTENCIA code (A/F/I/V) exactly as it came from the Excel -- NOT related to the real Attendance table.",
+    "dataDictionary_Attendance_purpose": "The real day-by-day roll call, generated by the app (not by the Excel).",
+    "dataDictionary_WorkArea_purpose": "Physical work area (line, palletizing, accessories, etc.).",
+    "dataDictionary_Workstation_purpose": "Physical position within a WorkArea. name is the real technical identifier (used by DailyAssignment/EmployeeMovement).",
+    "dataDictionary_DailyAssignment_purpose": "Where each person is TODAY. Only one ACTIVE row per employee/day (partial unique index).",
+    "dataDictionary_EmployeeMovement_purpose": "Movement history -- append-only; the API must never expose UPDATE/DELETE on this table.",
+    "dataDictionary_PendingMove_purpose": "Movement request made by a LIDER, pending approval from a SUPERVISOR/ADMINISTRADOR.",
+    "dataDictionary_RoleModulePermission_purpose": "A ROLE's permission on a module (dynamic, editable from Users).",
+    "dataDictionary_UserModulePermission_purpose": "An individual user's override on a module. ALLOW/DENY takes precedence over the role's permission.",
+    "dataDictionary_RoleModuleAccess_purpose": "LEGACY -- effectively replaced by RoleModulePermission, kept unused as a historical backup.",
+    "apiMap_auth": "Authentication -- see AUTH_OVERVIEW",
+    "apiMap_personnel": "The heaviest group: checkin, move, release, roster, area-history, approve/reject-move, employees, suppress/restore-baseline",
+    "apiMap_users": "User account CRUD + reset-password + individual permissions (requireModuleAccess(\"/usuarios\"))",
+    "apiMap_workAreaWorkstations": "Position configuration by an administrator (create/edit/delete/reorder)",
+    "apiMap_rolePermissions": "Permissions by role",
+    "apiMap_permissionModuleUsers": "Which users have access to a module",
+    "apiMap_dashboardTrends": "Aggregated metrics for the Dashboard",
+    "apiMap_modules": "List of modules enabled for the current user (useEffectiveModules)"
+  },
+  "developerManualPage": {
+    "title": "Developer Manual",
+    "intro": "Real architecture and data dictionary for Work Center FFT.",
+    "userManualLink": "View the User Manual",
+    "architectureHeading": "Architecture",
+    "authHeading": "Authentication",
+    "apiMapHeading": "API Map",
+    "dataDictionaryHeading": "Data Dictionary ({{count}} tables)",
+    "fieldColumn": "Field",
+    "typeColumn": "Type",
+    "notesColumn": "Notes"
+  }
+}

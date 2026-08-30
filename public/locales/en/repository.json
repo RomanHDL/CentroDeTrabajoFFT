@@ -1,1 +1,15 @@
-{}
+{
+  "enterEmployeeNumber": "Enter an employee number.",
+  "employeeNumberInUse": "Employee number {{number}} is already in use by another person.",
+  "selectAreaLine": "Select the area/line.",
+  "selectStation": "Select the role/station.",
+  "employeeNotFound": "Employee not found.",
+  "stationFull": "{{stationId}} is already full ({{count}}/{{capacity}}).",
+  "selectDestinationAreaLine": "Select the destination area/line.",
+  "selectDestinationStation": "Select the destination role/station.",
+  "noActiveAssignmentToday": "The employee does not have an active assignment today.",
+  "stationNotOccupied": "The station is no longer occupied.",
+  "alreadyAtStation": "Already at that station.",
+  "noLocationAssignedToday": "The employee does not have a location assigned today.",
+  "requestNoLongerExists": "That request no longer exists."
+}

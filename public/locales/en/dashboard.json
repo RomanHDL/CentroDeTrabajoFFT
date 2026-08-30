@@ -1,1 +1,170 @@
-{}
+{
+  "chartCard": {
+    "loadErrorMessage": "This data could not be loaded.",
+    "retryButton": "Retry",
+    "emptyDefaultMessage": "No data available."
+  },
+  "dailyMovementsSummaryCard": {
+    "title": "Today's movements",
+    "subtitle": "Assignments, releases, and reassignments for today",
+    "emptyMessage": "No movements have been recorded today yet.",
+    "assignmentsLabel": "Assignments",
+    "removedLabel": "Removed / Released",
+    "movementsLabel": "Movements / Reassignments",
+    "netLabel": "Net"
+  },
+  "dashboardExecKpiCard": {},
+  "fftIndicatorsCard": {
+    "title": "FFT Indicators",
+    "subtitle": "Efficiency, delays, production, and schedule compliance for the area",
+    "noSourceMessage": "No data source configured"
+  },
+  "recentActivityCard": {
+    "title": "Recent activity",
+    "subtitle": "Real personnel events for today",
+    "emptyMessage": "No activity has been recorded today yet.",
+    "viewAllButton": "View all activity",
+    "dialogTitle": "Today's activity"
+  },
+  "dashboardKpiCard": {},
+  "findingsCard": {
+    "title": "Today's findings",
+    "emptyTitle": "No findings right now",
+    "emptyDescription": "There are no notable conditions in the current data."
+  },
+  "dashboardPage": {
+    "pageTitle": "Dashboard",
+    "pageSubtitle": "General overview of the work center",
+    "shiftLabel": "Shift: {{shift}}",
+    "todayLabel": "Today: {{date}}",
+    "kpiPersonalActualTitle": "Current staff",
+    "kpiPersonalActualUnit": "people on shift",
+    "kpiFooterIdeal": "Ideal",
+    "kpiPersonalFaltanteTitle": "Missing staff",
+    "kpiPersonalFaltanteUnit": "people missing",
+    "kpiFaltantePctFooter": "{{pct}}% of ideal",
+    "kpiNoIdealFooter": "No ideal headcount set",
+    "kpiPlantillaIdealTitle": "Ideal headcount",
+    "kpiPersonasUnit": "people",
+    "kpiTotalIdealFooter": "Total ideal headcount defined",
+    "kpiLineasOperandoTitle": "Lines running",
+    "kpiLineasUnit": "operating lines",
+    "kpiLineasPctFooter": "{{pct}}% of lines",
+    "kpiCoberturaTotalTitle": "Total coverage",
+    "kpiCoberturaUnit": "overall coverage",
+    "kpiCoberturaFooter": "{{real}} / {{ideal}} of ideal",
+    "lastUpdatedLabel": "Last updated: {{time}}"
+  },
+  "dashboardQuickSummaryStrip": {
+    "noCoverageGoal": "No target",
+    "headerTitle": "Work center quick summary",
+    "totalAreasLabel": "Total areas",
+    "personnelOnShiftLabel": "Staff on shift",
+    "missingPersonnelLabel": "Missing staff",
+    "operatingLinesLabel": "Operating lines",
+    "overallCoverageLabel": "Overall coverage",
+    "movementsTodayLabel": "Movements today"
+  },
+  "dashboardExportButton": {
+    "buttonLabel": "Download Excel",
+    "summarySheetName": "Summary",
+    "areasSheetName": "Areas",
+    "shiftsSheetName": "Shifts",
+    "movementsSheetName": "Movements",
+    "attendanceSheetName": "Attendance",
+    "metricColumnHeader": "Metric",
+    "valueColumnHeader": "Value",
+    "metricPersonalActual": "Current staff",
+    "metricPlantillaIdeal": "Ideal headcount",
+    "metricPersonalFaltante": "Missing staff",
+    "metricCoberturaGeneral": "Overall coverage (%)",
+    "metricLineasOperando": "Lines running",
+    "metricMovimientosHoy": "Movements today",
+    "metricMovimientosPendientes": "Movements pending approval",
+    "areaColumnHeader": "Area",
+    "actualColumnHeader": "Current",
+    "idealColumnHeader": "Ideal",
+    "faltanteColumnHeader": "Missing",
+    "coberturaColumnHeader": "Coverage",
+    "estadoColumnHeader": "Status",
+    "noTemplateStatus": "No template",
+    "turnoColumnHeader": "Shift",
+    "personasColumnHeader": "People",
+    "horaColumnHeader": "Time",
+    "empleadoColumnHeader": "Employee",
+    "tipoColumnHeader": "Type",
+    "desdeColumnHeader": "From",
+    "haciaColumnHeader": "To",
+    "movementTypeCheckIn": "Check-in",
+    "movementTypeRelease": "Release",
+    "movementTypeMovement": "Movement",
+    "employeeNumberColumnHeader": "Employee no.",
+    "checkInTimeColumnHeader": "Check-in time"
+  },
+  "areaStatusDonutCard": {
+    "title": "Area status",
+    "subtitle": "Areas with an ideal headcount defined, by coverage status",
+    "emptyMessage": "No area has an ideal headcount defined yet.",
+    "totalLabel": "Total",
+    "areaCountPct_one": "{{count}} area ({{pct}}%)",
+    "areaCountPct_other": "{{count}} areas ({{pct}}%)"
+  },
+  "coverageDonutCard": {
+    "title": "Coverage by area",
+    "subtitle": "Distribution of current staff across areas",
+    "emptyMessage": "No staff assigned to any area yet.",
+    "tooltipText": "{{actual}} people · {{share}}% of current staff",
+    "totalCoverageLabel": "Total coverage"
+  },
+  "missingVsIdealComboCard": {
+    "title": "Missing vs. ideal by area",
+    "subtitle": "Current staff, ideal headcount, and calculated shortfall, by area",
+    "emptyMessage": "No area has an ideal headcount defined yet.",
+    "actualLabel": "Current: {{value}}",
+    "idealLabel": "Ideal: {{value}}",
+    "missingLabel": "Missing: {{value}}",
+    "actualSeriesLabel": "Current staff",
+    "idealSeriesLabel": "Ideal headcount",
+    "missingSeriesLabel": "Missing"
+  },
+  "movementsDailyCard": {
+    "title": "Movements by day",
+    "subtitle": "Last 7 calendar days",
+    "emptyMessage": "No movements recorded in the last 7 days.",
+    "todayLabel": "Today",
+    "weekdaySun": "Sun",
+    "weekdayMon": "Mon",
+    "weekdayTue": "Tue",
+    "weekdayWed": "Wed",
+    "weekdayThu": "Thu",
+    "weekdayFri": "Fri",
+    "weekdaySat": "Sat",
+    "movementCount_one": "{{count}} movement",
+    "movementCount_other": "{{count}} movements"
+  },
+  "movementsHourlyCard": {
+    "title": "Movements by hour (today)",
+    "subtitle": "Actual check-ins and movements recorded during the shift",
+    "emptyMessage": "No movements have been recorded today yet.",
+    "movementCount_one": "{{count}} movement",
+    "movementCount_other": "{{count}} movements"
+  },
+  "personnelByAreaBarCard": {
+    "title": "Staff by area",
+    "subtitle": "Current staff in each area, highest to lowest",
+    "emptyMessage": "No areas with staff registered yet.",
+    "personCount_one": "{{count}} person",
+    "personCount_other": "{{count}} people",
+    "idealSuffix": " · ideal {{ideal}}"
+  },
+  "shiftDistributionDonutCard": {
+    "title": "Distribution by shift",
+    "subtitle": "Staff with an actual shift recorded today",
+    "emptyMessage": "No staff with a shift recorded today yet.",
+    "totalLabel": "Total",
+    "personCountPct_one": "{{count}} person ({{pct}}%)",
+    "personCountPct_other": "{{count}} people ({{pct}}%)",
+    "personCount_one": "{{count}} person",
+    "personCount_other": "{{count}} people"
+  }
+}
