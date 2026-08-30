@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
@@ -18,12 +19,9 @@ import EmployeeAvatar from './EmployeeAvatar'
  * (autoHighlight/flechas) como en MUI, solo click; el contrato
  * onChange(selected, typedText) se conserva identico.
  */
-export default function EmployeeSearchField({
-  label = 'Número o nombre de empleado',
-  value,
-  onChange,
-  autoFocus,
-}) {
+export default function EmployeeSearchField({ label, value, onChange, autoFocus }) {
+  const { t } = useTranslation('centroTrabajo')
+  const resolvedLabel = label ?? t('employeeSearchField.defaultLabel')
   const id = useId()
   const [open, setOpen] = useState(false)
   const [inputValue, setInputValue] = useState(value?.employeeNumber || '')
@@ -38,7 +36,7 @@ export default function EmployeeSearchField({
   return (
     <div>
       <Label htmlFor={id} className="mb-1.5 block text-xs">
-        {label}
+        {resolvedLabel}
       </Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverAnchor asChild>
@@ -47,7 +45,7 @@ export default function EmployeeSearchField({
             <Input
               id={id}
               autoFocus={autoFocus}
-              placeholder="3647 o Román"
+              placeholder={t('employeeSearchField.searchPlaceholder')}
               value={inputValue}
               className="pl-10"
               onChange={(e) => {
@@ -66,7 +64,9 @@ export default function EmployeeSearchField({
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
           {options.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</p>
+            <p className="px-3 py-2 text-sm text-muted-foreground">
+              {t('employeeSearchField.noResults')}
+            </p>
           ) : (
             options.map((option) => (
               <button
@@ -81,7 +81,9 @@ export default function EmployeeSearchField({
                     {option.employeeNumber} — {option.name}
                   </p>
                   {option.fechaIngreso && (
-                    <p className="text-[11.5px] opacity-60">Ingreso: {option.fechaIngreso}</p>
+                    <p className="text-[11.5px] opacity-60">
+                      {t('employeeSearchField.admissionDate', { date: option.fechaIngreso })}
+                    </p>
                   )}
                 </div>
               </button>

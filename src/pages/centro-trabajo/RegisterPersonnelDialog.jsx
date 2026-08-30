@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import RegisterPersonnelForm from './RegisterPersonnelForm'
 
@@ -7,11 +8,12 @@ import RegisterPersonnelForm from './RegisterPersonnelForm'
  * (RegisterPersonnelForm centraliza todo, ver ese archivo).
  */
 export default function RegisterPersonnelDialog({ open, onClose, fixedAreaId = null, onDone }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[420px]">
         <DialogHeader>
-          <DialogTitle>+ Registrar personal</DialogTitle>
+          <DialogTitle>{t('registerPersonnelDialog.title')}</DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-6">
           {open && (

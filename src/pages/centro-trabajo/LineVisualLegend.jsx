@@ -1,4 +1,5 @@
 import { Award, Package, Settings, Shield, User, Wrench } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { LINE_VISUAL_TYPE_ORDER } from '../../data/personnel/lineVisualType'
 
@@ -35,18 +36,19 @@ export function LineTypeIcon({ type, size = 14, className, style }) {
 }
 
 const STATION_STATES = [
-  { label: 'Ocupada', color: '#10B981' },
-  { label: 'Disponible', color: '#F59E0B' },
-  { label: 'Vacante crítica', color: '#EF4444' },
-  { label: 'Sin asignación', color: '#94A3B8' },
+  { id: 'occupied', labelKey: 'lineVisualLegend.stationOccupied', color: '#10B981' },
+  { id: 'available', labelKey: 'lineVisualLegend.stationAvailable', color: '#F59E0B' },
+  { id: 'criticalVacancy', labelKey: 'lineVisualLegend.stationCriticalVacancy', color: '#EF4444' },
+  { id: 'unassigned', labelKey: 'lineVisualLegend.stationUnassigned', color: '#94A3B8' },
 ]
 
 export default function LineVisualLegend() {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className="flex flex-wrap items-center gap-4 md:gap-8">
       <div className="flex flex-wrap items-center gap-[10px]">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-          Jerarquía / Tipo de puesto
+          {t('lineVisualLegend.hierarchyTitle')}
         </p>
         {LINE_VISUAL_TYPE_ORDER.map((type) => (
           <div key={type.key} className="flex items-center gap-1">
@@ -57,12 +59,12 @@ export default function LineVisualLegend() {
       </div>
       <div className="flex items-center gap-3">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-          Estado de estación
+          {t('lineVisualLegend.stationStateTitle')}
         </p>
         {STATION_STATES.map((s) => (
-          <div key={s.label} className="flex items-center gap-1">
+          <div key={s.id} className="flex items-center gap-1">
             <div className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-            <p className="text-[11px] font-bold text-muted-foreground">{s.label}</p>
+            <p className="text-[11px] font-bold text-muted-foreground">{t(s.labelKey)}</p>
           </div>
         ))}
       </div>

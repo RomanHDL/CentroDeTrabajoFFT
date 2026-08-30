@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,6 +40,7 @@ function DetailRow({ label, value }) {
    "Asignar" reutiliza el flujo existente (onAssign, provisto por quien
    renderiza esto) -- nunca una segunda logica de asignacion. ───────────────────────────────────────────── */
 export default function EmployeeAvailableDetailDialog({ employee, open, onClose, onAssign }) {
+  const { t } = useTranslation('centroTrabajo')
   if (!employee) return null
   const numberLabel = formatEmployeeNumber(employee.employeeNumber)
   const actividad = getActividadForEmployee(employee.id)
@@ -47,7 +49,7 @@ export default function EmployeeAvailableDetailDialog({ employee, open, onClose,
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Detalle del empleado</DialogTitle>
+          <DialogTitle>{t('employeeAvailableDetailDialog.title')}</DialogTitle>
           <DialogClose asChild>
             <button
               type="button"
@@ -63,30 +65,44 @@ export default function EmployeeAvailableDetailDialog({ employee, open, onClose,
             <p className="text-[16px] font-extrabold leading-[1.2]">{employee.name}</p>
           </div>
           <div className="flex flex-col gap-3.5">
-            <DetailRow label="No. empleado" value={numberLabel} />
             <DetailRow
-              label="Estado"
+              label={t('employeeAvailableDetailDialog.employeeNumberLabel')}
+              value={numberLabel}
+            />
+            <DetailRow
+              label={t('employeeAvailableDetailDialog.statusLabel')}
               value={
                 <Badge
                   variant="outline"
                   className="border-[#10B98155] bg-[#10B98122] font-bold text-[#047857]"
                 >
-                  Disponible
+                  {t('employeeAvailableDetailDialog.availableBadge')}
                 </Badge>
               }
             />
-            <DetailRow label="Área actual" value="Sin área asignada" />
-            <DetailRow label="Turno" value="Sin turno asignado hoy" />
-            {actividad && <DetailRow label="Actividad registrada (BASE)" value={actividad} />}
+            <DetailRow
+              label={t('employeeAvailableDetailDialog.currentAreaLabel')}
+              value={t('employeeAvailableDetailDialog.noAreaAssigned')}
+            />
+            <DetailRow
+              label={t('employeeAvailableDetailDialog.shiftLabel')}
+              value={t('employeeAvailableDetailDialog.noShiftToday')}
+            />
+            {actividad && (
+              <DetailRow
+                label={t('employeeAvailableDetailDialog.registeredActivityLabel')}
+                value={actividad}
+              />
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 pb-5">
           <Button variant="ghost" onClick={onClose} className="font-bold">
-            Cancelar
+            {t('employeeAvailableDetailDialog.cancelButton')}
           </Button>
           {onAssign && (
             <Button onClick={onAssign} className="rounded-[20px] font-bold">
-              Asignar
+              {t('employeeAvailableDetailDialog.assignButton')}
             </Button>
           )}
         </div>
