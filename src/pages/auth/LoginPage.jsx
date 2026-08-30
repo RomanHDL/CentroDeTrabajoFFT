@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/BrandLogo'
 import { Alert } from '@/components/ui/alert'
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '../../state/auth'
 
 export default function LoginPage() {
+  const { t } = useTranslation('auth')
   const { user, loading: sessionLoading, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -42,7 +44,7 @@ export default function LoginPage() {
     setError('')
 
     if (!identifier.trim() || !password) {
-      setError('Completa número de empleado/usuario y contraseña.')
+      setError(t('errorRequired'))
       return
     }
 
@@ -52,10 +54,9 @@ export default function LoginPage() {
       const from = location.state?.from?.pathname || '/'
       navigate(from, { replace: true })
     } catch (err) {
-      if (err.status === 401) setError('Credenciales incorrectas.')
-      else if (err.status === 403)
-        setError('Tu usuario está inactivo. Contacta a un administrador.')
-      else setError('No se pudo iniciar sesión. Intenta de nuevo.')
+      if (err.status === 401) setError(t('errorInvalidCredentials'))
+      else if (err.status === 403) setError(t('errorInactiveUser'))
+      else setError(t('errorGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -69,14 +70,12 @@ export default function LoginPage() {
             El login/autenticacion en si no cambia, solo esta cabecera visual. */}
         <div className="mb-6 flex flex-col items-center gap-2">
           <BrandLogo variant="login" />
-          <p className="text-center text-[13px] text-muted-foreground">
-            Organización de áreas, líneas, estaciones y personal
-          </p>
+          <p className="text-center text-[13px] text-muted-foreground">{t('tagline')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="login-identifier">Número de empleado / Usuario</Label>
+            <Label htmlFor="login-identifier">{t('identifierLabel')}</Label>
             <Input
               id="login-identifier"
               value={identifier}
@@ -87,7 +86,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="login-password">Contraseña</Label>
+            <Label htmlFor="login-password">{t('passwordLabel')}</Label>
             <Input
               id="login-password"
               type="password"
@@ -101,7 +100,7 @@ export default function LoginPage() {
           {error && <Alert variant="destructive">{error}</Alert>}
 
           <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
-            {submitting ? <Loader2 size={22} className="animate-spin" /> : 'Iniciar sesión'}
+            {submitting ? <Loader2 size={22} className="animate-spin" /> : t('submit')}
           </Button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import { Construction } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cardClass, pageClass, pageTitleClass } from '@/lib/pageStyles'
 import EmptyState from '../../ui/EmptyState'
 
@@ -14,6 +15,7 @@ import EmptyState from '../../ui/EmptyState'
    Fase 6c: portado de MUI a Tailwind (mismo componente para los 3
    consumidores, ninguno necesita su propio cambio). */
 export default function ComingSoonPage({ title }) {
+  const { t } = useTranslation('common')
   return (
     <div className={pageClass}>
       <div className="mb-5">
@@ -22,8 +24,8 @@ export default function ComingSoonPage({ title }) {
       <div className={`${cardClass} mx-auto max-w-[520px]`}>
         <EmptyState
           icon={<Construction />}
-          title="Trabajando en ello"
-          description="Este módulo se encuentra actualmente en desarrollo."
+          title={t('comingSoonPage.title')}
+          description={t('comingSoonPage.description')}
         />
       </div>
     </div>

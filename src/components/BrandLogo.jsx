@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 /* ─────────────────────────────────────────────
@@ -86,8 +87,6 @@ function BrandIcon({ className, 'aria-hidden': ariaHidden = true, ...rest }) {
   )
 }
 
-const SUBTITLE = 'CONTROL OPERATIVO'
-
 /* variant:
    - "header": lockup completo (icono + titulo + subtitulo), una linea de
      texto por fila -- usado en el header propio de CentroTrabajoPage.jsx.
@@ -101,13 +100,15 @@ const SUBTITLE = 'CONTROL OPERATIVO'
    - "icon": solo el icono, sin texto -- para contextos futuros donde no
      quepa ni la variante compacta. */
 export default function BrandLogo({ variant = 'header', className }) {
+  const { t } = useTranslation('common')
+
   if (variant === 'icon') {
     return (
       <BrandIcon
         className={cn('h-8 w-8', className)}
         aria-hidden={false}
         role="img"
-        aria-label="Centro de Control"
+        aria-label={t('brandLogo.brandName')}
       />
     )
   }
@@ -117,7 +118,7 @@ export default function BrandLogo({ variant = 'header', className }) {
       <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
         <BrandIcon className="h-6 w-6" />
         <p className="truncate text-[15px] font-extrabold tracking-[-0.2px] text-foreground">
-          Centro de Control
+          {t('brandLogo.brandName')}
         </p>
       </div>
     )
@@ -129,13 +130,13 @@ export default function BrandLogo({ variant = 'header', className }) {
         <BrandIcon className="h-9 w-9" />
         <div className="min-w-0 flex-1 leading-[1.15]">
           <p className="truncate text-[13px] font-extrabold leading-[1.2] text-foreground">
-            Centro de
+            {t('brandLogo.brandNameLine1')}
           </p>
           <p className="truncate text-[13px] font-extrabold leading-[1.2] text-foreground">
-            Control
+            {t('brandLogo.brandNameLine2')}
           </p>
           <p className="mt-0.5 truncate text-[9px] font-bold tracking-[0.8px] text-muted-foreground">
-            {SUBTITLE}
+            {t('brandLogo.subtitle')}
           </p>
         </div>
       </div>
@@ -148,10 +149,10 @@ export default function BrandLogo({ variant = 'header', className }) {
         <BrandIcon className="h-12 w-12" />
         <div className="text-center">
           <p className="text-[19px] font-extrabold leading-tight text-foreground">
-            Centro de Control
+            {t('brandLogo.brandName')}
           </p>
           <p className="mt-0.5 text-[10.5px] font-bold tracking-[1.2px] text-muted-foreground">
-            {SUBTITLE}
+            {t('brandLogo.subtitle')}
           </p>
         </div>
       </div>
@@ -164,10 +165,10 @@ export default function BrandLogo({ variant = 'header', className }) {
       <BrandIcon className="h-[30px] w-[30px]" />
       <div className="min-w-0">
         <p className="truncate text-[1.15rem] font-extrabold leading-tight tracking-[-0.4px] text-foreground sm:text-[1.4rem]">
-          Centro de Control
+          {t('brandLogo.brandName')}
         </p>
         <p className="mt-0.5 truncate text-[11px] font-bold tracking-[1.2px] text-muted-foreground">
-          {SUBTITLE}
+          {t('brandLogo.subtitle')}
         </p>
       </div>
     </div>

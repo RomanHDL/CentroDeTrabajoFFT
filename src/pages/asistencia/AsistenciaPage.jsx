@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next'
 import ComingSoonPage from '../shared/ComingSoonPage'
 
 export default function AsistenciaPage() {
-  return <ComingSoonPage title="Asistencia" />
+  const { t } = useTranslation('navigation')
+  return <ComingSoonPage title={t('asistencia')} />
 }

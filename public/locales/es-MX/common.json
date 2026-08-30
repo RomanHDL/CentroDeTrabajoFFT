@@ -6,5 +6,15 @@
   "confirm": "Confirmar",
   "close": "Cerrar",
   "search": "Buscar",
-  "language": "Idioma"
+  "language": "Idioma",
+  "brandLogo": {
+    "brandName": "Centro de Control",
+    "brandNameLine1": "Centro de",
+    "brandNameLine2": "Control",
+    "subtitle": "CONTROL OPERATIVO"
+  },
+  "comingSoonPage": {
+    "title": "Trabajando en ello",
+    "description": "Este módulo se encuentra actualmente en desarrollo."
+  }
 }

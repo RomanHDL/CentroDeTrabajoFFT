@@ -7,7 +7,10 @@
 // se quedan vacios a proposito hasta que alguien los traduzca de verdad
 // -- fallbackLng='es-MX' hace que cualquier clave faltante en esos 2
 // idiomas se vea en español mientras tanto, nunca una clave cruda ni un
-// texto vacío.
+// texto vacío. layout (2026-08-29, mismo patron, src/layout/AppLayout.jsx,
+// HeaderUserActions.jsx, NotificationBell.jsx -- ver
+// public/locales/*/layout.json) sigue exactamente la misma convencion:
+// en/zh-CN vacios a proposito, es-MX con el contenido real.
 //
 // Idioma por defecto = es-MX, NO el que detecte el navegador: el personal
 // de piso habla español, y la mayoría de los dispositivos en producción
@@ -32,7 +35,7 @@ i18n
   .init({
     fallbackLng: 'es-MX',
     supportedLngs: ['es-MX', 'en', 'zh-CN'],
-    ns: ['common', 'navigation', 'auth', 'centroTrabajo'],
+    ns: ['common', 'navigation', 'auth', 'centroTrabajo', 'layout'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage'],
