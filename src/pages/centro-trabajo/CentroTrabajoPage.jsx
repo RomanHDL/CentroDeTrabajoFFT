@@ -1,24 +1,18 @@
+import { Factory, LayoutGrid, Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Tabs from '@mui/material/Tabs'
-import Tab from '@mui/material/Tab'
-import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
-import GridViewIcon from '@mui/icons-material/GridView'
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing'
-import MenuIcon from '@mui/icons-material/Menu'
-import { usePageStyles } from '../../ui/pageStyles'
-import RotateDeviceHint from '../../ui/RotateDeviceHint'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cardClass, pageClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 import HeaderUserActions from '../../layout/HeaderUserActions'
-import AreasLayoutView from './AreasLayoutView'
-import LineasTab from './LineasTab'
-import EstacionesTab from './EstacionesTab'
-import PersonalDeHoyTab from './PersonalDeHoyTab'
-import BajasTab from './BajasTab'
+import RotateDeviceHint from '../../ui/RotateDeviceHint'
 import AreaDetail from './AreaDetail'
+import AreasLayoutView from './AreasLayoutView'
+import BajasTab from './BajasTab'
+import EstacionesTab from './EstacionesTab'
+import LineasTab from './LineasTab'
+import PersonalDeHoyTab from './PersonalDeHoyTab'
 import { useSelectedWorkCenter } from './useSelectedWorkCenter'
 
 const TABS = [
@@ -35,7 +29,6 @@ const TABS = [
    personal, con datos reales (snapshot de BASE + asignacion diaria
    real cuando exista). */
 export default function CentroTrabajoPage() {
-  const ps = usePageStyles()
   const [tab, setTab] = useState('areas')
   const {
     workCenterId: selectedLine,
@@ -52,136 +45,86 @@ export default function CentroTrabajoPage() {
   const { mode, setMode, onOpenMobileSidebar, showMobileMenuButton } = useOutletContext()
 
   return (
-    <Box sx={ps.page}>
-      <Paper elevation={0} sx={{ ...ps.card, mb: 2, borderRadius: '20px' }}>
-        <Box
-          sx={{
-            px: { xs: 1.75, md: 3 },
-            py: { xs: 1.5, md: 2 },
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            flexWrap: 'wrap',
-          }}
-        >
+    <div className={pageClass}>
+      <div className={cn(cardClass, 'mb-4 rounded-[20px]')}>
+        <div className="flex flex-wrap items-center gap-3 px-3.5 py-3 md:px-6 md:py-4">
           {showMobileMenuButton && (
-            <IconButton size="small" onClick={onOpenMobileSidebar} sx={{ flexShrink: 0 }}>
-              <MenuIcon fontSize="small" />
-            </IconButton>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenMobileSidebar}
+              className="h-9 w-9 shrink-0"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
           )}
 
           {/* Logo + titulo: mismo simbolo/color que antes vivian en la barra
-              superior global (PrecisionManufacturingIcon, #3B82F6), un poco
-              mas grande aqui para darle identidad al nuevo header
-              principal. Hover sutil (seccion "EFECTO DEL LOGO + TITULO" del
-              pedido) -- puramente decorativo, sin navegacion asociada. */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.25,
-              px: 1,
-              py: 0.5,
-              borderRadius: 2.5,
-              transition: 'background-color 200ms ease',
-              '&:hover': {
-                bgcolor: (t) =>
-                  t.palette.mode === 'dark' ? 'rgba(59,130,246,.10)' : 'rgba(59,130,246,.06)',
-                '& .ct-header-icon': {
-                  transform: 'scale(1.05)',
-                  filter: 'drop-shadow(0 0 6px rgba(59,130,246,.45))',
-                },
-                '& .ct-header-title': { color: '#3B82F6' },
-              },
-            }}
-          >
-            <PrecisionManufacturingIcon
-              className="ct-header-icon"
-              sx={{
-                color: '#3B82F6',
-                fontSize: 30,
-                transition: 'transform 200ms ease, filter 200ms ease',
-                flexShrink: 0,
-              }}
-            />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                className="ct-header-title"
-                sx={{
-                  ...ps.pageTitle,
-                  fontSize: { xs: '1.15rem', sm: '1.4rem' },
-                  transition: 'color 200ms ease',
-                }}
+              superior global (Factory, #3B82F6), un poco mas grande aqui
+              para darle identidad al nuevo header principal. Hover sutil
+              (seccion "EFECTO DEL LOGO + TITULO" del pedido) -- puramente
+              decorativo, sin navegacion asociada. */}
+          <div className="group flex items-center gap-2.5 rounded-[25px] px-2 py-1 transition-colors duration-200 hover:bg-blue-500/[0.06] dark:hover:bg-blue-500/[0.1]">
+            <Factory className="h-[30px] w-[30px] shrink-0 text-blue-500 transition-[transform,filter] duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_6px_rgba(59,130,246,.45)]" />
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  pageTitleClass,
+                  'text-[1.15rem] transition-colors duration-200 group-hover:text-blue-500 sm:text-[1.4rem]',
+                )}
               >
                 Centro de Trabajo
-              </Typography>
-              <Typography sx={ps.pageSubtitle}>
+              </p>
+              <p className={pageSubtitleClass}>
                 Organización operativa por áreas, líneas, estaciones y personal
-              </Typography>
-            </Box>
-          </Box>
+              </p>
+            </div>
+          </div>
 
-          <Box sx={{ flex: 1, minWidth: 16 }} />
+          <div className="min-w-[16px] flex-1" />
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap items-center gap-1">
             <HeaderUserActions mode={mode} setMode={setMode} />
             {/* Acceso directo al layout/plano (Áreas de trabajo) desde
                 cualquier pestaña -- a peticion explicita del usuario
                 (2026-08-24, mockup de la pestaña Lineas). Misma ruta/handler
                 de siempre (setTab('areas')), solo se le agrega hover. */}
             <Button
-              variant="outlined"
-              size="small"
-              startIcon={<GridViewIcon sx={{ fontSize: 17 }} />}
+              variant="outline"
+              size="sm"
               onClick={() => setTab('areas')}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                flexShrink: 0,
-                ml: 1,
-                borderRadius: 2.5,
-                transition:
-                  'background-color 200ms ease, border-color 200ms ease, transform 200ms ease',
-                '&:hover': {
-                  bgcolor: (t) =>
-                    t.palette.mode === 'dark' ? 'rgba(59,130,246,.14)' : 'rgba(59,130,246,.06)',
-                  transform: 'translateY(-1px)',
-                },
-              }}
+              className="ml-2 shrink-0 gap-1.5 rounded-[25px] font-bold transition-[background-color,border-color,transform] duration-200 hover:-translate-y-px hover:bg-blue-500/[0.06] dark:hover:bg-blue-500/[0.14]"
             >
+              <LayoutGrid className="h-[17px] w-[17px]" />
               Ver layout general
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        <Box sx={{ px: { xs: 1, md: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Tabs
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              minHeight: 46,
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: 13.5,
-                minHeight: 46,
-              },
-            }}
-          >
-            {TABS.map((t) => (
-              <Tab key={t.key} value={t.key} label={t.label} />
-            ))}
+        <div className="border-t border-border px-2 md:px-4">
+          <Tabs value={tab} onValueChange={setTab}>
+            <div className="overflow-x-auto">
+              <TabsList className="h-auto w-max gap-1 rounded-none bg-transparent p-0">
+                {TABS.map((t) => (
+                  <TabsTrigger
+                    key={t.key}
+                    value={t.key}
+                    className="h-[46px] rounded-none border-b-2 border-transparent px-3 text-[13.5px] font-semibold text-muted-foreground data-[state=active]:border-blue-500 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  >
+                    {t.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
           </Tabs>
-        </Box>
-      </Paper>
+        </div>
+      </div>
 
       {tab === 'areas' && (
         <>
-          {/* Solo aqui: el mapa de areas (WorkAreaMap) esta pensado para
-              pantallas anchas (10 lineas + zonas lado a lado); las demas
-              tabs (Lineas/Estaciones/Personal) son listas/tablas que
+          {/* Solo aqui: el mapa de areas (OperatingFloorPlan) esta pensado
+              para pantallas anchas (10 lineas + zonas lado a lado); las
+              demas tabs (Lineas/Estaciones/Personal) son listas/tablas que
               funcionan bien en portrait, no necesitan el aviso. */}
           <RotateDeviceHint />
           <AreasLayoutView onOpenLine={setSelectedLine} />
@@ -202,6 +145,6 @@ export default function CentroTrabajoPage() {
         onClose={closeWorkCenter}
         onNavigate={setSelectedLine}
       />
-    </Box>
+    </div>
   )
 }
