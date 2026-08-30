@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -28,6 +29,7 @@ const ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
    revierte el checkbox y muestra un toast de error -- nunca deja la UI
    diciendo que guardo cuando el backend fallo. */
 export default function RoleModulePermissionsCard() {
+  const { t } = useTranslation('usuarios')
   const [modules, setModules] = useState([])
   const [permissions, setPermissions] = useState(null) // { [role]: { [moduleKey]: boolean } }
   const [loading, setLoading] = useState(true)
@@ -81,10 +83,10 @@ export default function RoleModulePermissionsCard() {
         body: { moduleKey, allowed: checked },
       })
       setPermissions((prev) => ({ ...prev, [role]: data.modules }))
-      showToast('Permiso actualizado', 'success')
+      showToast(t('roleModulePermissionsCard.permissionUpdatedToast'), 'success')
     } catch (err) {
       setPermissions(previous)
-      showToast(err.message || 'No se pudo actualizar el permiso', 'error')
+      showToast(err.message || t('roleModulePermissionsCard.permissionUpdateErrorToast'), 'error')
     } finally {
       setSavingKey(null)
     }
@@ -121,13 +123,15 @@ export default function RoleModulePermissionsCard() {
         <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
-              <TableHead>Módulos del sistema</TableHead>
+              <TableHead>{t('roleModulePermissionsCard.systemModulesHeader')}</TableHead>
               {ROLES.map((role) => (
                 <TableHead key={role} className="text-center">
                   {ROLE_LABELS[role]}
                 </TableHead>
               ))}
-              <TableHead className="text-right">Acciones</TableHead>
+              <TableHead className="text-right">
+                {t('roleModulePermissionsCard.actionsHeader')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,7 +172,7 @@ export default function RoleModulePermissionsCard() {
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                              El rol Administrador tiene acceso completo.
+                              {t('roleModulePermissionsCard.adminFullAccessTooltip')}
                             </TooltipContent>
                           </Tooltip>
                         ) : (
@@ -179,7 +183,7 @@ export default function RoleModulePermissionsCard() {
                   })}
                   <TableCell className="text-right">
                     <Button variant="link" size="sm" onClick={() => openUsersDialog(m)}>
-                      Usuarios con acceso
+                      {t('roleModulePermissionsCard.usersWithAccessButton')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -193,7 +197,11 @@ export default function RoleModulePermissionsCard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {usersDialog?.module ? `Usuarios con acceso a ${usersDialog.module.name}` : ''}
+              {usersDialog?.module
+                ? t('roleModulePermissionsCard.usersWithAccessToModuleTitle', {
+                    moduleName: usersDialog.module.name,
+                  })
+                : ''}
             </DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto px-6 pb-6">
@@ -205,7 +213,7 @@ export default function RoleModulePermissionsCard() {
               <Alert variant="destructive">{usersDialog.error}</Alert>
             ) : usersDialog?.users.length === 0 ? (
               <p className="text-[13.5px] text-muted-foreground">
-                Nadie tiene acceso a este módulo actualmente.
+                {t('roleModulePermissionsCard.noUsersWithAccess')}
               </p>
             ) : (
               <div className="space-y-1">

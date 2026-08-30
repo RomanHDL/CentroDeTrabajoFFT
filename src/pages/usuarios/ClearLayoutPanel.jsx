@@ -1,5 +1,6 @@
 import { Eraser } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -27,6 +28,7 @@ import { showToast } from '../../ui/toast'
    sigue vaciando las WC LINEA (LINEA1-10 + WC LINEA 0/Proyecto), que son
    las que de verdad cambian de personal dia a dia. */
 export default function ClearLayoutPanel() {
+  const { t } = useTranslation('usuarios')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [result, setResult] = useState(null)
 
@@ -41,34 +43,21 @@ export default function ClearLayoutPanel() {
     // Supervisor, Accesorios, Paletizado -- ver getBaselineOnlyPeopleIds).
     const ids = getBaselineOnlyPeopleIds()
     if (ids.length === 0) {
-      showToast(
-        'No hay nadie por snapshot en las WC LINEA ahorita — Calidad, Accesorios, Paletizado y las demás áreas de apoyo nunca se ven afectadas por este botón.',
-        'info',
-      )
+      showToast(t('clearLayoutPanel.toastNoneFound'), 'info')
       return
     }
     suppressBaselinePlacement(ids)
     setResult(ids.length)
-    showToast(
-      `Layout vaciado: ${ids.length} personas quedaron sin área hasta que se les reasigne.`,
-      'success',
-    )
+    showToast(t('clearLayoutPanel.toastSuccess', { total: ids.length }), 'success')
   }
 
   return (
     <div className="mt-6 rounded-[20px] border border-border p-5">
-      <p className="mb-1 text-base font-extrabold">Vaciar layout de las WC LINEA</p>
-      <p className="mb-4 text-[13px] text-muted-foreground">
-        Deja sin área asignada, en el mapa visual, solo al personal de las WC LINEA (líneas de
-        producción + WC LINEA 0) para que los líderes los vayan ubicando desde Registro de personal.
-        Calidad, Capacitación, Team Leader, Soporte, Limpieza, Gerente, Supervisor, Accesorios y
-        Paletizado nunca se ven afectados por este botón. No borra a nadie ni los quita de
-        Personal/buscadores — solo del layout. A diferencia de liberar por hoy, esto no se revierte
-        al cambiar de día.
-      </p>
+      <p className="mb-1 text-base font-extrabold">{t('clearLayoutPanel.title')}</p>
+      <p className="mb-4 text-[13px] text-muted-foreground">{t('clearLayoutPanel.subtitle')}</p>
       {result != null && (
         <Alert className="mb-4 border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]">
-          {result} personas quedaron sin ubicación en el layout.
+          {t('clearLayoutPanel.resultBanner', { total: result })}
         </Alert>
       )}
       <Button
@@ -77,26 +66,21 @@ export default function ClearLayoutPanel() {
         onClick={() => setConfirmOpen(true)}
       >
         <Eraser className="h-4 w-4" />
-        Vaciar layout ahora
+        {t('clearLayoutPanel.buttonAction')}
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={(next) => !next && setConfirmOpen(false)}>
         <DialogContent className="max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Vaciar layout de las WC LINEA</DialogTitle>
+            <DialogTitle>{t('clearLayoutPanel.title')}</DialogTitle>
           </DialogHeader>
-          <div className="px-6 pb-2 text-sm">
-            Todo el personal ubicado hoy por el snapshot histórico en una WC LINEA quedará sin área
-            en el mapa visual, de forma permanente hasta que alguien lo reasigne. Calidad,
-            Capacitación, Team Leader, Soporte, Limpieza, Gerente, Supervisor, Accesorios y
-            Paletizado no se tocan. Esto no afecta el módulo de Personal ni la búsqueda. ¿Confirmas?
-          </div>
+          <div className="px-6 pb-2 text-sm">{t('clearLayoutPanel.dialogConfirmText')}</div>
           <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
             <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-              Cancelar
+              {t('clearLayoutPanel.cancel')}
             </Button>
             <Button variant="warning" onClick={handleConfirm}>
-              Vaciar layout
+              {t('clearLayoutPanel.confirmButton')}
             </Button>
           </div>
         </DialogContent>

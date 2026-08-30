@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -18,6 +19,7 @@ import { apiRequest } from '../../state/auth'
 const EMPTY = { employeeNumber: '', username: '', name: '', role: 'SUPERVISOR', password: '' }
 
 export default function CreateUserDialog({ open, onClose, onCreated }) {
+  const { t } = useTranslation('usuarios')
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -29,15 +31,15 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
   async function handleSubmit() {
     setError('')
     if (!form.employeeNumber && !form.username) {
-      setError('Indica al menos número de empleado o username.')
+      setError(t('createUserDialog.missingIdentifierError'))
       return
     }
     if (!form.name.trim()) {
-      setError('El nombre es requerido.')
+      setError(t('createUserDialog.nameRequiredError'))
       return
     }
     if (form.password.length < 8) {
-      setError('La contraseña temporal debe tener al menos 8 caracteres.')
+      setError(t('createUserDialog.passwordMinLengthError'))
       return
     }
 
@@ -66,12 +68,14 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Agregar usuario</DialogTitle>
+          <DialogTitle>{t('createUserDialog.title')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 pb-2">
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="create-user-employee-number">Número de empleado</Label>
+              <Label htmlFor="create-user-employee-number">
+                {t('createUserDialog.employeeNumberLabel')}
+              </Label>
               <Input
                 id="create-user-employee-number"
                 value={form.employeeNumber}
@@ -88,7 +92,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="create-user-name">Nombre completo</Label>
+            <Label htmlFor="create-user-name">{t('createUserDialog.nameLabel')}</Label>
             <Input
               id="create-user-name"
               value={form.name}
@@ -96,7 +100,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="create-user-role">Rol</Label>
+            <Label htmlFor="create-user-role">{t('createUserDialog.roleLabel')}</Label>
             <Select value={form.role} onValueChange={(v) => set('role', v)}>
               <SelectTrigger id="create-user-role">
                 <SelectValue />
@@ -111,24 +115,26 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="create-user-password">Contraseña temporal</Label>
+            <Label htmlFor="create-user-password">{t('createUserDialog.passwordLabel')}</Label>
             <Input
               id="create-user-password"
               value={form.password}
               onChange={(e) => set('password', e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              Mínimo 8 caracteres. El usuario deberá cambiarla en su primer inicio de sesión.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('createUserDialog.passwordHint')}</p>
           </div>
           {error && <Alert variant="destructive">{error}</Alert>}
         </div>
         <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
           <Button variant="ghost" onClick={onClose} disabled={submitting}>
-            Cancelar
+            {t('createUserDialog.cancelButton')}
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear usuario'}
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t('createUserDialog.submitButton')
+            )}
           </Button>
         </div>
       </DialogContent>

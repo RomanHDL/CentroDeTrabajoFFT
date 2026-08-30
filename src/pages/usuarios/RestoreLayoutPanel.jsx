@@ -1,5 +1,6 @@
 import { RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -17,6 +18,7 @@ import { showToast } from '../../ui/toast'
    Proyecto) y "PRODUCCION" generico — nunca toca a quien ya tiene una
    asignacion real de hoy (esas siempre ganan sobre el snapshot). */
 export default function RestoreLayoutPanel() {
+  const { t } = useTranslation('usuarios')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [result, setResult] = useState(null)
 
@@ -24,32 +26,21 @@ export default function RestoreLayoutPanel() {
     setConfirmOpen(false)
     const ids = getSuppressedLinePeopleIds()
     if (ids.length === 0) {
-      showToast(
-        'No hay nadie suprimido en las WC LINEA ahorita — no hace falta restaurar nada.',
-        'info',
-      )
+      showToast(t('restoreLayoutPanel.toastNoneFound'), 'info')
       return
     }
     restoreBaselinePlacement(ids)
     setResult(ids.length)
-    showToast(
-      `Layout restaurado: ${ids.length} personas volvieron a su área de las WC LINEA.`,
-      'success',
-    )
+    showToast(t('restoreLayoutPanel.toastSuccess', { total: ids.length }), 'success')
   }
 
   return (
     <div className="mt-6 rounded-[20px] border border-border p-5">
-      <p className="mb-1 text-base font-extrabold">Restaurar layout de las WC LINEA</p>
-      <p className="mb-4 text-[13px] text-muted-foreground">
-        Regresa, en el mapa visual, a todo el personal que quedó sin área por "Vaciar layout" a su
-        línea histórica de LAYOUT FFT.xlsx (sin puesto/estación inventado dentro de la línea — el
-        Excel no dice quién hace qué puesto). Nunca toca a quien ya tiene una asignación real de hoy
-        hecha desde Registro de personal.
-      </p>
+      <p className="mb-1 text-base font-extrabold">{t('restoreLayoutPanel.title')}</p>
+      <p className="mb-4 text-[13px] text-muted-foreground">{t('restoreLayoutPanel.subtitle')}</p>
       {result != null && (
         <Alert className="mb-4 border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]">
-          {result} personas volvieron a aparecer en su WC LINEA.
+          {t('restoreLayoutPanel.resultBanner', { total: result })}
         </Alert>
       )}
       <Button
@@ -58,26 +49,21 @@ export default function RestoreLayoutPanel() {
         onClick={() => setConfirmOpen(true)}
       >
         <RotateCcw className="h-4 w-4" />
-        Restaurar layout ahora
+        {t('restoreLayoutPanel.buttonAction')}
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={(next) => !next && setConfirmOpen(false)}>
         <DialogContent className="max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Restaurar layout de las WC LINEA</DialogTitle>
+            <DialogTitle>{t('restoreLayoutPanel.title')}</DialogTitle>
           </DialogHeader>
-          <div className="px-6 pb-2 text-sm">
-            Todo el personal suprimido de las WC LINEA volverá a ubicarse por su zona histórica de
-            LAYOUT FFT.xlsx, sin puesto específico asignado (queda como "—" hasta que un líder lo
-            registre de verdad). No afecta a quien ya tiene una asignación real hecha hoy.
-            ¿Confirmas?
-          </div>
+          <div className="px-6 pb-2 text-sm">{t('restoreLayoutPanel.dialogConfirmText')}</div>
           <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
             <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-              Cancelar
+              {t('restoreLayoutPanel.cancel')}
             </Button>
             <Button variant="success" onClick={handleConfirm}>
-              Restaurar layout
+              {t('restoreLayoutPanel.confirmButton')}
             </Button>
           </div>
         </DialogContent>

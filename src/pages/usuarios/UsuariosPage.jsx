@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { Copy, KeyRound, Loader2, MoreVertical, Pencil, Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ import EditUserDialog from './EditUserDialog'
 import PermissionsManagementCard from './permissions/PermissionsManagementCard'
 
 export default function UsuariosPage() {
+  const { t } = useTranslation('usuarios')
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -108,7 +110,7 @@ export default function UsuariosPage() {
 
   async function handleResetManual(user) {
     if (manualPassword.length < 8) {
-      showToast('La contraseña debe tener al menos 8 caracteres', 'error')
+      showToast(t('usuariosPage.passwordTooShort'), 'error')
       return
     }
     setResetSaving(true)
@@ -120,10 +122,10 @@ export default function UsuariosPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === user.id ? { ...u, mustChangePassword: false } : u)),
       )
-      showToast('Contraseña actualizada', 'success')
+      showToast(t('usuariosPage.passwordUpdated'), 'success')
       closeResetChoice()
     } catch (err) {
-      showToast(err.message || 'No se pudo actualizar la contraseña', 'error')
+      showToast(err.message || t('usuariosPage.passwordUpdateError'), 'error')
     } finally {
       setResetSaving(false)
     }
@@ -131,20 +133,24 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <p className="mb-4 text-[20px] font-extrabold">Usuarios del sistema</p>
+      <p className="mb-4 text-[20px] font-extrabold">{t('usuariosPage.pageTitle')}</p>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <KpiCard title="Usuarios activos" value={kpis.activos} accent="blue" />
-        <KpiCard title="Administradores" value={kpis.admins} accent="purple" />
-        <KpiCard title="Supervisores" value={kpis.supervisores} accent="green" />
-        <KpiCard title="Líderes" value={kpis.lideres} accent="amber" />
+        <KpiCard title={t('usuariosPage.kpiActiveUsers')} value={kpis.activos} accent="blue" />
+        <KpiCard title={t('usuariosPage.kpiAdmins')} value={kpis.admins} accent="purple" />
+        <KpiCard
+          title={t('usuariosPage.kpiSupervisors')}
+          value={kpis.supervisores}
+          accent="green"
+        />
+        <KpiCard title={t('usuariosPage.kpiLeaders')} value={kpis.lideres} accent="amber" />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="relative w-full sm:w-[280px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, número o username"
+            placeholder={t('usuariosPage.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -153,7 +159,7 @@ export default function UsuariosPage() {
         <div className="hidden flex-1 sm:block" />
         <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4" />
-          Agregar usuario
+          {t('usuariosPage.addUserButton')}
         </Button>
       </div>
 
@@ -167,13 +173,13 @@ export default function UsuariosPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Número empleado</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Último acceso</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              <TableHead>{t('usuariosPage.columnEmployeeNumber')}</TableHead>
+              <TableHead>{t('usuariosPage.columnName')}</TableHead>
+              <TableHead>{t('usuariosPage.columnUsername')}</TableHead>
+              <TableHead>{t('usuariosPage.columnRole')}</TableHead>
+              <TableHead>{t('usuariosPage.columnStatus')}</TableHead>
+              <TableHead>{t('usuariosPage.columnLastAccess')}</TableHead>
+              <TableHead className="text-right">{t('usuariosPage.columnActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -187,7 +193,7 @@ export default function UsuariosPage() {
             {!loading && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                  Sin usuarios que coincidan
+                  {t('usuariosPage.noMatchingUsers')}
                 </TableCell>
               </TableRow>
             )}
@@ -199,17 +205,19 @@ export default function UsuariosPage() {
                 <TableCell>{ROLE_LABELS[u.role] || u.role}</TableCell>
                 <TableCell>
                   <Badge variant={u.active ? 'success' : 'outline'}>
-                    {u.active ? 'Activo' : 'Inactivo'}
+                    {u.active ? t('usuariosPage.statusActive') : t('usuariosPage.statusInactive')}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {u.lastLoginAt ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm') : 'Nunca'}
+                  {u.lastLoginAt
+                    ? dayjs(u.lastLoginAt).format('DD/MM/YYYY HH:mm')
+                    : t('usuariosPage.neverLoggedIn')}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-0.5">
                     <button
                       type="button"
-                      title="Permisos"
+                      title={t('usuariosPage.permissionsButtonTitle')}
                       onClick={() => openPermissionsFor(u)}
                       className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
@@ -217,7 +225,7 @@ export default function UsuariosPage() {
                     </button>
                     <button
                       type="button"
-                      title="Editar"
+                      title={t('usuariosPage.editAction')}
                       onClick={() => setEditUser(u)}
                       className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
@@ -233,18 +241,20 @@ export default function UsuariosPage() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditUser(u)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditUser(u)}>
-                          Cambiar rol
+                          {t('usuariosPage.editAction')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditUser(u)}>
+                          {t('usuariosPage.changeRoleMenuItem')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!u.active}
                           onClick={() => setConfirmDeactivate(u)}
                         >
-                          Desactivar
+                          {t('usuariosPage.deactivateAction')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setResetChoiceUser(u)}>
-                          Restablecer contraseña
+                          {t('usuariosPage.resetPasswordMenuItem')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -289,18 +299,18 @@ export default function UsuariosPage() {
       >
         <DialogContent className="max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Desactivar usuario</DialogTitle>
+            <DialogTitle>{t('usuariosPage.deactivateDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="px-6 pb-2 text-sm">
-            ¿Desactivar a <b>{confirmDeactivate?.name}</b>? No podrá iniciar sesión hasta que se
-            reactive. Esto no elimina su cuenta.
+            {t('usuariosPage.deactivateConfirmPrefix')} <b>{confirmDeactivate?.name}</b>
+            {t('usuariosPage.deactivateConfirmSuffix')}
           </div>
           <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
             <Button variant="ghost" onClick={() => setConfirmDeactivate(null)}>
-              Cancelar
+              {t('usuariosPage.cancelButton')}
             </Button>
             <Button variant="destructive" onClick={handleDeactivate}>
-              Desactivar
+              {t('usuariosPage.deactivateAction')}
             </Button>
           </div>
         </DialogContent>
@@ -309,40 +319,48 @@ export default function UsuariosPage() {
       <Dialog open={!!resetChoiceUser} onOpenChange={(next) => !next && closeResetChoice()}>
         <DialogContent className="max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Restablecer contraseña de {resetChoiceUser?.name}</DialogTitle>
+            <DialogTitle>
+              {t('usuariosPage.resetPasswordDialogTitle', { name: resetChoiceUser?.name })}
+            </DialogTitle>
           </DialogHeader>
           <div className="px-6 pb-2">
             <p className="mb-4 text-[13.5px] text-muted-foreground">
-              Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.
+              {t('usuariosPage.resetPasswordDescription')}
             </p>
             <Button
               variant="outline"
               className="mb-5 w-full font-normal normal-case"
               onClick={() => handleResetRandom(resetChoiceUser)}
             >
-              Generar aleatoria
+              {t('usuariosPage.generateRandomButton')}
             </Button>
             <p className="mb-2 text-xs font-bold text-muted-foreground">
-              O define la contraseña manualmente
+              {t('usuariosPage.manualPasswordLabel')}
             </p>
             <Input
-              placeholder="Mínimo 8 caracteres"
+              placeholder={t('usuariosPage.minPasswordLengthHint')}
               value={manualPassword}
               onChange={(e) => setManualPassword(e.target.value)}
             />
             <p className="mt-1 h-4 text-xs text-destructive">
-              {manualPassword && manualPassword.length < 8 ? 'Mínimo 8 caracteres' : ' '}
+              {manualPassword && manualPassword.length < 8
+                ? t('usuariosPage.minPasswordLengthHint')
+                : ' '}
             </p>
           </div>
           <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
             <Button variant="ghost" onClick={closeResetChoice}>
-              Cancelar
+              {t('usuariosPage.cancelButton')}
             </Button>
             <Button
               disabled={resetSaving || manualPassword.length < 8}
               onClick={() => handleResetManual(resetChoiceUser)}
             >
-              {resetSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar contraseña'}
+              {resetSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t('usuariosPage.savePasswordButton')
+              )}
             </Button>
           </div>
         </DialogContent>
@@ -351,12 +369,11 @@ export default function UsuariosPage() {
       <Dialog open={!!resetResult} onOpenChange={(next) => !next && setResetResult(null)}>
         <DialogContent className="max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Contraseña temporal generada</DialogTitle>
+            <DialogTitle>{t('usuariosPage.temporaryPasswordDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="px-6 pb-2">
             <Alert variant="destructive" className="mb-4">
-              Esta contraseña solo se muestra una vez. Entrégasela a {resetResult?.user?.name} de
-              forma segura.
+              {t('usuariosPage.temporaryPasswordWarning', { name: resetResult?.user?.name })}
             </Alert>
             <div className="relative">
               <Input readOnly value={resetResult?.temporaryPassword || ''} className="pr-10" />
@@ -370,7 +387,7 @@ export default function UsuariosPage() {
             </div>
           </div>
           <div className="flex justify-end px-6 pb-6 pt-2">
-            <Button onClick={() => setResetResult(null)}>Listo</Button>
+            <Button onClick={() => setResetResult(null)}>{t('usuariosPage.doneButton')}</Button>
           </div>
         </DialogContent>
       </Dialog>
