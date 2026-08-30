@@ -1,71 +1,53 @@
-import React, { useState } from 'react'
-import Button from '@mui/material/Button'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import TodayIcon from '@mui/icons-material/Today'
-import DateRangeIcon from '@mui/icons-material/DateRange'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import AllInboxIcon from '@mui/icons-material/AllInbox'
+import { Archive, BarChart3, Calendar, CalendarRange, Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
-  exportDailyExcel,
-  exportWeeklyExcel,
-  exportLineComparisonExcel,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   exportCompleteExcel,
+  exportDailyExcel,
+  exportLineComparisonExcel,
+  exportWeeklyExcel,
 } from '../../data/production/excelExport'
 
+/* Fase 6c: convertido de MUI (Button/Menu/MenuItem/ListItemIcon/ListItemText
+   + sx) a Tailwind + shadcn/ui (DropdownMenu, mismo patron ya usado en
+   LineWorkstationCard.jsx) + lucide-react. Sin estado de anchorEl manual --
+   Radix DropdownMenu maneja su propio open/close (uncontrolled), y cada item
+   cierra el menu solo al seleccionarse (mismo criterio de onClick directo
+   en DropdownMenuItem ya usado en LineWorkstationCard.jsx). Iconos MUI ->
+   lucide: FileDownloadIcon -> Download, TodayIcon -> Calendar, DateRangeIcon
+   -> CalendarRange, BarChartIcon -> BarChart3, AllInboxIcon -> Archive. */
 export default function ExportMenuButton({ dateISO }) {
-  const [anchorEl, setAnchorEl] = useState(null)
-  const open = Boolean(anchorEl)
-
-  const handle = (fn) => {
-    fn(dateISO)
-    setAnchorEl(null)
-  }
-
   return (
-    <>
-      <Button
-        variant="contained"
-        startIcon={<FileDownloadIcon />}
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={{ height: 40, borderRadius: 2, fontWeight: 600, textTransform: 'none', px: 2.5 }}
-      >
-        Descargar Excel
-      </Button>
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => setAnchorEl(null)}
-        PaperProps={{ sx: { minWidth: 240, borderRadius: 2 } }}
-      >
-        <MenuItem onClick={() => handle(exportDailyExcel)}>
-          <ListItemIcon>
-            <TodayIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Producción del día" />
-        </MenuItem>
-        <MenuItem onClick={() => handle(exportWeeklyExcel)}>
-          <ListItemIcon>
-            <DateRangeIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Producción semanal" />
-        </MenuItem>
-        <MenuItem onClick={() => handle(exportLineComparisonExcel)}>
-          <ListItemIcon>
-            <BarChartIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Producción por línea" />
-        </MenuItem>
-        <MenuItem onClick={() => handle(exportCompleteExcel)}>
-          <ListItemIcon>
-            <AllInboxIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Producción completa" />
-        </MenuItem>
-      </Menu>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="h-10 rounded-[20px] px-5">
+          <Download className="h-4 w-4" />
+          Descargar Excel
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[240px] rounded-[20px]">
+        <DropdownMenuItem onClick={() => exportDailyExcel(dateISO)}>
+          <Calendar className="mr-2 h-4 w-4" />
+          Producción del día
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportWeeklyExcel(dateISO)}>
+          <CalendarRange className="mr-2 h-4 w-4" />
+          Producción semanal
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportLineComparisonExcel(dateISO)}>
+          <BarChart3 className="mr-2 h-4 w-4" />
+          Producción por línea
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportCompleteExcel(dateISO)}>
+          <Archive className="mr-2 h-4 w-4" />
+          Producción completa
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

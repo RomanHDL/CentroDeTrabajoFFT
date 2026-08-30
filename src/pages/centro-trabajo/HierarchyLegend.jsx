@@ -1,15 +1,14 @@
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
-import StarIcon from '@mui/icons-material/Star'
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
-import GroupsIcon from '@mui/icons-material/Groups'
-import SettingsIcon from '@mui/icons-material/Settings'
-import PersonIcon from '@mui/icons-material/Person'
-import FavoriteIcon from '@mui/icons-material/Favorite'
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
-import { alpha } from '@mui/material/styles'
+import {
+  ArrowLeftRight,
+  Award,
+  Heart,
+  Settings,
+  ShieldCheck,
+  Star,
+  User,
+  Users,
+} from 'lucide-react'
+import { cn, hexToRgba } from '@/lib/utils'
 import { PERSONNEL_RANK_ORDER } from '../../data/personnel/rankSystem'
 
 /* Rediseño "tablero operativo" (2026-08-28, a peticion explicita del
@@ -18,22 +17,35 @@ import { PERSONNEL_RANK_ORDER } from '../../data/personnel/rankSystem'
    las 6 cards de soporte siguen usando su propia experiencia (LineDetailDrawer
    lineLike=false / SupportAreaDetail), nunca este componente.
 
-   `iconKey` (rankSystem.js, campo aditivo) -> icono real de MUI, mapeo
-   vive aqui (capa de presentacion), nunca en el archivo de datos. */
+   `iconKey` (rankSystem.js, campo aditivo) -> icono real, mapeo vive aqui
+   (capa de presentacion), nunca en el archivo de datos.
+
+   Fase 6c: convertido de MUI (Box/Stack/Typography + iconos @mui/icons-material
+   + sx) a Tailwind + lucide-react. Iconos MUI -> lucide: WorkspacePremiumIcon
+   -> Award, StarIcon -> Star, VerifiedUserIcon -> ShieldCheck, GroupsIcon ->
+   Users, SettingsIcon -> Settings, PersonIcon -> User, FavoriteIcon -> Heart,
+   CompareArrowsIcon -> ArrowLeftRight. rank.color es dinamico por dato
+   (PERSONNEL_RANK_ORDER), asi que sigue resolviendose con hexToRgba()/style
+   inline, nunca interpolando un className (mismo criterio que LineCard.jsx). */
 export const RANK_ICONS = {
-  headChief: WorkspacePremiumIcon,
-  gerente: StarIcon,
-  supervisor: VerifiedUserIcon,
-  teamLeader: GroupsIcon,
-  compatibilidad: CompareArrowsIcon,
-  operador: SettingsIcon,
-  ayudante: PersonIcon,
-  apoyo: FavoriteIcon,
+  headChief: Award,
+  gerente: Star,
+  supervisor: ShieldCheck,
+  teamLeader: Users,
+  compatibilidad: ArrowLeftRight,
+  operador: Settings,
+  ayudante: User,
+  apoyo: Heart,
 }
 
-export function RankIcon({ rank, size = 15, sx }) {
-  const Icon = (rank && RANK_ICONS[rank.iconKey]) || PersonIcon
-  return <Icon sx={{ fontSize: size, color: rank?.color || 'text.disabled', ...sx }} />
+export function RankIcon({ rank, size = 15, className }) {
+  const Icon = (rank && RANK_ICONS[rank.iconKey]) || User
+  return (
+    <Icon
+      className={cn('shrink-0', className)}
+      style={{ width: size, height: size, color: rank?.color }}
+    />
+  )
 }
 
 /* `dense`: fila compacta arriba de "Distribución de estaciones" (icono +
@@ -43,68 +55,40 @@ export function RankIcon({ rank, size = 15, sx }) {
 export default function HierarchyLegend({ expanded = false }) {
   if (!expanded) {
     return (
-      <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" alignItems="center">
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 800,
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-          }}
-        >
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
           Jerarquía / Rango
-        </Typography>
+        </p>
         {PERSONNEL_RANK_ORDER.map((rank) => (
-          <Stack key={rank.key} direction="row" spacing={0.5} alignItems="center">
+          <div key={rank.key} className="flex items-center gap-1">
             <RankIcon rank={rank} />
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>
-              {rank.label}
-            </Typography>
-          </Stack>
+            <p className="text-[11px] font-bold text-muted-foreground">{rank.label}</p>
+          </div>
         ))}
-      </Stack>
+      </div>
     )
   }
   return (
-    <Stack spacing={1}>
-      <Typography
-        sx={{
-          fontSize: 10,
-          fontWeight: 800,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: 0.4,
-          mb: 0.5,
-        }}
-      >
+    <div className="flex flex-col gap-2">
+      <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
         Leyenda de jerarquía / rango
-      </Typography>
+      </p>
       {PERSONNEL_RANK_ORDER.map((rank) => (
-        <Stack key={rank.key} direction="row" spacing={1} alignItems="center">
-          <Box
-            sx={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              flexShrink: 0,
-              display: 'grid',
-              placeItems: 'center',
-              bgcolor: alpha(rank.color, 0.12),
-            }}
+        <div key={rank.key} className="flex items-center gap-2">
+          <div
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full"
+            style={{ backgroundColor: hexToRgba(rank.color, 0.12) }}
           >
             <RankIcon rank={rank} size={13} />
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 12, fontWeight: 700, color: rank.color, lineHeight: 1.25 }}>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] font-bold leading-[1.25]" style={{ color: rank.color }}>
               {rank.label}
-            </Typography>
-            <Typography sx={{ fontSize: 10.5, color: 'text.secondary', lineHeight: 1.25 }}>
-              {rank.description}
-            </Typography>
-          </Box>
-        </Stack>
+            </p>
+            <p className="text-[10.5px] leading-[1.25] text-muted-foreground">{rank.description}</p>
+          </div>
+        </div>
       ))}
-    </Stack>
+    </div>
   )
 }

@@ -1,12 +1,6 @@
-import React from 'react'
-import Paper from '@mui/material/Paper'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Stack from '@mui/material/Stack'
-import Chip from '@mui/material/Chip'
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
-import { alpha } from '@mui/material/styles'
-import { usePageStyles } from '../../ui/pageStyles'
+import { Users } from 'lucide-react'
+import { kpiCardClass, progressBarClass } from '@/lib/pageStyles'
+import { cn, hexToRgba } from '@/lib/utils'
 
 const ACCENT_HEX = {
   blue: '#3B82F6',
@@ -16,104 +10,102 @@ const ACCENT_HEX = {
   slate: '#64748B',
 }
 
+/* Fase 6c: convertido de MUI (Paper/Box/Typography/Stack/Chip + sx) a
+   Tailwind. kpiCardClass(accent)/progressBarClass (src/lib/pageStyles.js)
+   reemplazan ps.kpiCard(accent)/ps.progressBar (la version MUI, src/ui/
+   pageStyles.js) -- mismo mapa de acentos por nombre. summary.status.dot y
+   accentColor siguen siendo colores dinamicos en tiempo de ejecucion (no
+   un set fijo de 5 hex conocidos de antemano por Tailwind), asi que se
+   resuelven con hexToRgba()/style inline (mismo patron ya usado en
+   LineStationCard.jsx/LineWorkstationCard.jsx para colores de acento por
+   estado), nunca interpolando un className. Sin nodos interactivos
+   anidados -> la tarjeta completa es un <button> real (regla de a11y). */
 export default function LineCard({ summary, onOpen }) {
-  const ps = usePageStyles()
   const accentColor = ACCENT_HEX[summary.tone.accent] || ACCENT_HEX.slate
   const pct = summary.pct ?? 0
 
   return (
-    <Paper
-      elevation={0}
+    <button
+      type="button"
       onClick={() => onOpen(summary.id)}
-      sx={{
-        ...ps.kpiCard(summary.tone.accent),
-        cursor: 'pointer',
-        p: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        minHeight: 190,
-      }}
+      className={cn(
+        kpiCardClass(summary.tone.accent),
+        'flex w-full min-h-[190px] flex-col gap-2 p-4 text-left',
+      )}
     >
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-        <Typography
-          sx={{ fontWeight: 800, fontSize: 17, color: 'text.primary', letterSpacing: -0.3 }}
-        >
+      <div className="flex items-start justify-between">
+        <p className="text-[17px] font-extrabold tracking-[-0.3px] text-foreground">
           {summary.name}
-        </Typography>
-        <Box
-          sx={{
-            width: 9,
-            height: 9,
-            borderRadius: '50%',
-            mt: 0.6,
-            flexShrink: 0,
-            bgcolor: summary.status.dot,
-            boxShadow: `0 0 0 3px ${alpha(summary.status.dot, 0.18)}`,
+        </p>
+        <span
+          className="mt-[4.8px] h-[9px] w-[9px] shrink-0 rounded-full"
+          style={{
+            backgroundColor: summary.status.dot,
+            boxShadow: `0 0 0 3px ${hexToRgba(summary.status.dot, 0.18)}`,
           }}
         />
-      </Stack>
+      </div>
 
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={0.5}>
-        <PeopleAltIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-        <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.secondary' }}>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Users className="h-[15px] w-[15px] text-muted-foreground" />
+        <p className="text-[12.5px] font-semibold text-muted-foreground">
           {summary.personnel} / {summary.capacityTotal} personas
-        </Typography>
-        <Chip
-          size="small"
-          label={summary.status.label}
-          sx={{
-            height: 20,
-            fontSize: 10.5,
-            fontWeight: 700,
-            bgcolor: alpha(summary.status.dot, 0.1),
+        </p>
+        <span
+          className="inline-flex h-5 items-center rounded-full border px-2 text-[10.5px] font-bold"
+          style={{
+            backgroundColor: hexToRgba(summary.status.dot, 0.1),
+            borderColor: hexToRgba(summary.status.dot, 0.22),
             color: summary.status.dot,
-            border: `1px solid ${alpha(summary.status.dot, 0.22)}`,
           }}
-        />
-      </Stack>
+        >
+          {summary.status.label}
+        </span>
+      </div>
 
       {summary.stationsAvailable > 0 && (
-        <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#B45309' }}>
+        <p className="text-[11px] font-bold text-[#B45309]">
           ⚠ {summary.stationsAvailable} estación{summary.stationsAvailable !== 1 ? 'es' : ''}{' '}
           disponible{summary.stationsAvailable !== 1 ? 's' : ''}
-        </Typography>
+        </p>
       )}
 
       {summary.target == null ? (
-        <Box sx={{ mt: 0.5 }}>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontStyle: 'italic' }}>
+        <div className="mt-1">
+          <p className="text-[12.5px] italic text-muted-foreground">
             Sin datos de producción todavía
-          </Typography>
-        </Box>
+          </p>
+        </div>
       ) : (
-        <Box sx={{ mt: 0.5 }}>
-          <Stack direction="row" alignItems="baseline" spacing={0.75}>
-            <Typography
-              sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}
-            >
+        <div className="mt-1">
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-2xl font-extrabold leading-none text-foreground">
               {summary.production.toLocaleString('es-MX')}
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+            </p>
+            <p className="text-[13px] font-semibold text-muted-foreground">
               / {summary.target.toLocaleString('es-MX')} piezas
-            </Typography>
-          </Stack>
+            </p>
+          </div>
 
-          <Box sx={{ mt: 1 }}>
-            <Box sx={ps.progressBar}>
-              <Box sx={{ ...ps.progressFill(pct, accentColor), bgcolor: accentColor }} />
-            </Box>
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: accentColor }}>
+          <div className="mt-2">
+            <div className={progressBarClass}>
+              <div
+                className="h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(.4,0,.2,1)]"
+                style={{
+                  width: `${Math.max(0, Math.min(100, pct))}%`,
+                  backgroundColor: accentColor,
+                }}
+              />
+            </div>
+            <div className="mt-1 flex justify-between">
+              <p className="text-xs font-bold" style={{ color: accentColor }}>
                 {pct}% — {summary.tone.label}
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                +{summary.ultimaHora} última hora
-              </Typography>
-            </Stack>
-          </Box>
-        </Box>
+              </p>
+              <p className="text-[11px] text-muted-foreground">+{summary.ultimaHora} última hora</p>
+            </div>
+          </div>
+        </div>
       )}
-    </Paper>
+    </button>
   )
 }

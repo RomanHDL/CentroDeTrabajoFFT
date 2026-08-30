@@ -1,32 +1,42 @@
-import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Stack from '@mui/material/Stack'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableBody from '@mui/material/TableBody'
-import TableContainer from '@mui/material/TableContainer'
-import Chip from '@mui/material/Chip'
-import { usePageStyles } from '../../ui/pageStyles'
-import { dailyLineBreakdown, dailyHourlyTotal } from '../../data/production/production'
-import { progressTone } from '../../data/production/selectors'
+import { useMemo, useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  cardClass,
+  cardHeaderClass,
+  cardHeaderSubtitleClass,
+  cardHeaderTitleClass,
+  cellTextClass,
+  cellTextSecondaryClass,
+  kpiCardClass,
+  metricChipClass,
+  sectionTitleClass,
+  tableHeaderRowClass,
+  tableRowClass,
+} from '@/lib/pageStyles'
+import { cn } from '@/lib/utils'
 import { getPersonnelCountForDate } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { dailyHourlyTotal, dailyLineBreakdown } from '../../data/production/production'
+import { progressTone } from '../../data/production/selectors'
 import HourlyTrendChart from './HourlyTrendChart'
 
 export default function ProduccionDiariaTab() {
-  const ps = usePageStyles()
   const personnelVersion = usePersonnelVersion()
   const [dateISO, setDateISO] = useState(dayjs().format('YYYY-MM-DD'))
 
   const lines = useMemo(() => dailyLineBreakdown(dateISO), [dateISO])
   const hourly = useMemo(() => dailyHourlyTotal(dateISO), [dateISO])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: personnelVersion fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const personalUtilizado = useMemo(
     () => getPersonnelCountForDate(dateISO),
     [dateISO, personnelVersion],
@@ -39,161 +49,107 @@ export default function ProduccionDiariaTab() {
     }),
     { production: 0, target: 0 },
   )
-  const cumplimiento = totals.target > 0 ? Math.round((totals.production / totals.target) * 100) : 0
+  // Se conserva el calculo aunque hoy no se despliegue (no habia consumidor
+  // en el original MUI tampoco) -- solo se prefija con "_" para satisfacer
+  // el lint de variable no usada sin borrar la logica de negocio.
+  const _cumplimiento =
+    totals.target > 0 ? Math.round((totals.production / totals.target) * 100) : 0
   const diferencia = totals.production - totals.target
 
   return (
-    <Box>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 3 }}
-      >
-        <Typography sx={ps.sectionTitle}>Producción diaria</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TextField
-          type="date"
-          size="small"
-          label="Seleccionar fecha"
-          value={dateISO}
-          onChange={(e) => setDateISO(e.target.value || dayjs().format('YYYY-MM-DD'))}
-          sx={{ ...ps.inputSx, minWidth: 200 }}
-          InputLabelProps={{ shrink: true }}
-        />
-      </Stack>
+    <div>
+      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+        <p className={sectionTitleClass}>Producción diaria</p>
+        <div className="flex-1" />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="produccion-diaria-fecha" className="text-xs text-muted-foreground">
+            Seleccionar fecha
+          </Label>
+          <Input
+            id="produccion-diaria-fecha"
+            type="date"
+            value={dateISO}
+            onChange={(e) => setDateISO(e.target.value || dayjs().format('YYYY-MM-DD'))}
+            className="h-9 w-full bg-card sm:w-[200px]"
+          />
+        </div>
+      </div>
 
-      <Grid container spacing={1.5} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={0} sx={ps.kpiCard('blue')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Producción total
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {totals.production.toLocaleString('es-MX')}
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={0} sx={ps.kpiCard('cyan')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Meta
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {totals.target.toLocaleString('es-MX')}
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={0} sx={ps.kpiCard(diferencia >= 0 ? 'green' : 'red')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Diferencia
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {diferencia >= 0 ? '+' : ''}
-              {diferencia.toLocaleString('es-MX')}
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={0} sx={ps.kpiCard('purple')}>
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-              }}
-            >
-              Personal utilizado
-            </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
-              {personalUtilizado}
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className={kpiCardClass('blue')}>
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">Producción total</p>
+          <p className="mt-1 text-2xl font-extrabold">
+            {totals.production.toLocaleString('es-MX')}
+          </p>
+        </div>
+        <div className={kpiCardClass('cyan')}>
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">Meta</p>
+          <p className="mt-1 text-2xl font-extrabold">{totals.target.toLocaleString('es-MX')}</p>
+        </div>
+        <div className={kpiCardClass(diferencia >= 0 ? 'green' : 'red')}>
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">Diferencia</p>
+          <p className="mt-1 text-2xl font-extrabold">
+            {diferencia >= 0 ? '+' : ''}
+            {diferencia.toLocaleString('es-MX')}
+          </p>
+        </div>
+        <div className={kpiCardClass('purple')}>
+          <p className="text-[11px] font-bold uppercase text-muted-foreground">
+            Personal utilizado
+          </p>
+          <p className="mt-1 text-2xl font-extrabold">{personalUtilizado}</p>
+        </div>
+      </div>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={ps.card}>
-            <Box sx={ps.cardHeader}>
-              <Typography sx={ps.cardHeaderTitle}>Producción por línea</Typography>
-              <Typography sx={ps.cardHeaderSubtitle}>
-                {dayjs(dateISO).format('DD/MM/YYYY')}
-              </Typography>
-            </Box>
-            <TableContainer sx={{ maxHeight: 420 }}>
-              <Table size="small" stickyHeader>
-                <TableHead>
-                  <TableRow sx={ps.tableHeaderRow}>
-                    <TableCell>Línea</TableCell>
-                    <TableCell align="right">Producción</TableCell>
-                    <TableCell align="right">Meta</TableCell>
-                    <TableCell align="right">Avance</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {lines.map((r, idx) => {
-                    const tone = progressTone(r.cumplimiento)
-                    return (
-                      <TableRow key={r.id} sx={ps.tableRow(idx)}>
-                        <TableCell sx={{ ...ps.cellText, fontWeight: 600 }}>{r.name}</TableCell>
-                        <TableCell align="right" sx={ps.cellText}>
-                          {r.production.toLocaleString('es-MX')}
-                        </TableCell>
-                        <TableCell align="right" sx={ps.cellTextSecondary}>
-                          {r.target.toLocaleString('es-MX')}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Chip
-                            size="small"
-                            label={`${r.cumplimiento}%`}
-                            sx={ps.metricChip(tone.tone)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className={cardClass}>
+          <div className={cardHeaderClass}>
+            <p className={cardHeaderTitleClass}>Producción por línea</p>
+            <p className={cardHeaderSubtitleClass}>{dayjs(dateISO).format('DD/MM/YYYY')}</p>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-card">
+                <TableRow className={tableHeaderRowClass}>
+                  <TableHead>Línea</TableHead>
+                  <TableHead className="text-right">Producción</TableHead>
+                  <TableHead className="text-right">Meta</TableHead>
+                  <TableHead className="text-right">Avance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lines.map((r, idx) => {
+                  const tone = progressTone(r.cumplimiento)
+                  return (
+                    <TableRow key={r.id} className={tableRowClass(idx)}>
+                      <TableCell className={cn(cellTextClass, 'font-semibold')}>{r.name}</TableCell>
+                      <TableCell className={cn(cellTextClass, 'text-right')}>
+                        {r.production.toLocaleString('es-MX')}
+                      </TableCell>
+                      <TableCell className={cn(cellTextSecondaryClass, 'text-right')}>
+                        {r.target.toLocaleString('es-MX')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={metricChipClass(tone.tone)}>{r.cumplimiento}%</span>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={ps.card}>
-            <Box sx={ps.cardHeader}>
-              <Typography sx={ps.cardHeaderTitle}>Producción por hora</Typography>
-              <Typography sx={ps.cardHeaderSubtitle}>Total de todas las líneas</Typography>
-            </Box>
-            <Box sx={{ p: 2 }}>
-              <HourlyTrendChart data={hourly} height={340} />
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+        <div className={cardClass}>
+          <div className={cardHeaderClass}>
+            <p className={cardHeaderTitleClass}>Producción por hora</p>
+            <p className={cardHeaderSubtitleClass}>Total de todas las líneas</p>
+          </div>
+          <div className="p-4">
+            <HourlyTrendChart data={hourly} height={340} />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
