@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken'
-import { stringifySetCookie, parseCookie } from 'cookie'
+import { parseCookie, stringifySetCookie } from 'cookie'
 import { eq } from 'drizzle-orm'
+import jwt from 'jsonwebtoken'
 import { db, user as userTable } from './db/client.js'
 import { canUserAccessModule } from './permissionService.js'
 import { captureException } from './sentry.js'
@@ -10,7 +10,15 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8 // 8 horas
 
 function isHttpsEnvironment() {
   // Preview y Production de Vercel siempre son HTTPS; localhost no.
-  return process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview'
+  // NODE_ENV === 'production' cubre Coolify (Fase 7, MI Stack Reference) --
+  // ahi no existe VERCEL_ENV, pero el proxy de la plataforma (Traefik)
+  // siempre termina TLS antes de reenviar al contenedor, asi que produccion
+  // real en Coolify tambien es HTTPS de punta a punta para el usuario final.
+  return (
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.NODE_ENV === 'production'
+  )
 }
 
 export function signSessionToken(userId) {
