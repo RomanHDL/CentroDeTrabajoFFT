@@ -87,6 +87,15 @@
     "hasStaff": "Con personal",
     "noStaffing": "Sin plantilla"
   },
+  "criticalAreasCard": {
+    "title": "Áreas críticas",
+    "subtitle": "Áreas con mayor falta de personal, ordenadas por severidad.",
+    "emptyMessage": "No hay áreas críticas — toda la plantilla está cubierta.",
+    "severityCritical": "Crítica",
+    "severityHigh": "Alta",
+    "severityMedium": "Media",
+    "severityLow": "Baja"
+  },
   "bajasTab": {
     "title": "Personal no asignable",
     "subtitle": "Personal marcado como baja — no se puede registrar, mover ni asignar a ninguna estación",
@@ -912,7 +921,7 @@
     "mixedProductsLabel": "Productos Mixtos",
     "palletizingTitle": "WC Paletizado (Palletizing)",
     "accessoriesTitle": "WC Accesorios",
-    "conveyorGeneralTitle": "CONVEYOR GENERAL",
+    "conveyorGeneralTitle": "WC CONVEYOR GENERAL",
     "dropHereLabel": "Soltar aquí",
     "vacantLabel": "Vacante",
     "occupiedStatusLabel": "OCUPADA",

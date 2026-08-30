@@ -552,7 +552,15 @@ export function getActividadForEmployee(employeeId) {
    distintos para lo mismo), y las areas archivadas sin fusion (SOPORTE)
    ya no aparecen como fila propia. Los miembros NO canonicos de un grupo
    (SELLADO, BOX_PREP, SUMINISTRO_MATERIAL) se saltan -- su personal ya se
-   sumo en la fila de su id canonico. */
+   sumo en la fila de su id canonico.
+
+   2026-08-30 (a peticion explicita del usuario): PROYECTO (kind:'area',
+   no 'linea') ahora forma parte de FFT_LINE_IDS (ver floorPlanZones.js/
+   layoutZones.js) -- se excluye aqui del loop generico de areas via
+   `!FFT_LINE_IDS.includes(w.id)` (no se hardcodea 'PROYECTO': cualquier
+   area que en el futuro se agregue a FFT_LINE_IDS queda excluida igual,
+   sin tocar esta funcion de nuevo) para que no aparezca como fila propia
+   Y absorbida dentro de "FFT" al mismo tiempo. */
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
@@ -569,7 +577,11 @@ export function getAllAreaSummaries() {
       group: colorGroupForArea('LINEA1'),
     },
     ...WORK_CENTERS.filter(
-      (w) => w.kind === 'area' && w.active !== false && canonicalOperationalAreaId(w.id) === w.id,
+      (w) =>
+        w.kind === 'area' &&
+        w.active !== false &&
+        !FFT_LINE_IDS.includes(w.id) &&
+        canonicalOperationalAreaId(w.id) === w.id,
     ).map((w) => {
       const count = operationalGroupMembers(w.id).reduce(
         (sum, id) => sum + (byArea[id]?.length || 0),
