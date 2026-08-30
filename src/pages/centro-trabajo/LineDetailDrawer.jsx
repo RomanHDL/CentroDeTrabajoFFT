@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -118,6 +119,7 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    defensivo (area futura sin estaciones que cayera aqui por
    clasificacion por defecto, ver getAreaDetailVariant, catalog.js). */
 function DropZoneBanner({ areaId, label }) {
+  const { t } = useTranslation('centroTrabajo')
   const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
     <div
@@ -137,8 +139,8 @@ function DropZoneBanner({ areaId, label }) {
         )}
       >
         {isOver
-          ? `Soltar para asignar a ${label}`
-          : `Arrastra empleados aquí para asignarlos a ${label}`}
+          ? t('lineDetailDrawer.dropToAssignLabel', { label })
+          : t('lineDetailDrawer.dragEmployeesHereLabel', { label })}
       </p>
     </div>
   )
@@ -159,6 +161,7 @@ export default function LineDetailDrawer({
   next,
   onNavigate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const { user } = useAuth()
@@ -267,16 +270,14 @@ export default function LineDetailDrawer({
   async function handleDeactivateStation(w) {
     setActionError('')
     if (w.occupants?.length > 0) {
-      setActionError(
-        'No se puede eliminar este puesto porque actualmente tiene personal asignado. Reasígnalo primero.',
-      )
+      setActionError(t('lineDetailDrawer.cannotDeleteOccupiedStation'))
       return
     }
     try {
       await deactivateLineStation(canonicalId, w.id)
       handleStationConfigChanged()
     } catch (e) {
-      setActionError(e.message || 'No se pudo eliminar el puesto.')
+      setActionError(e.message || t('lineDetailDrawer.deleteStationError'))
     }
   }
 
@@ -309,17 +310,17 @@ export default function LineDetailDrawer({
         return
       }
       const key = vt?.key || '__SIN_CLASIFICAR__'
-      const label = vt?.label || 'Otros puestos'
+      const label = vt?.label || t('lineDetailDrawer.otherStationsLabel')
       const color = vt?.color || '#94A3B8'
       if (!byCategory.has(key)) byCategory.set(key, { key, label, color, stations: [] })
       byCategory.get(key).stations.push(w)
     })
-    const groups = LINE_VISUAL_TYPE_ORDER.filter((t) => t.key !== 'LIDERAZGO')
-      .map((t) => byCategory.get(t.key))
+    const groups = LINE_VISUAL_TYPE_ORDER.filter((vt2) => vt2.key !== 'LIDERAZGO')
+      .map((vt2) => byCategory.get(vt2.key))
       .filter(Boolean)
     if (byCategory.has('__SIN_CLASIFICAR__')) groups.push(byCategory.get('__SIN_CLASIFICAR__'))
     return { leadership, groups }
-  }, [workstations])
+  }, [workstations, t])
 
   /* Resumen de la linea (Seccion 13/14 del pedido) -- conteos por
      categoria, calculados dinamicamente de las estaciones reales, nunca
@@ -423,7 +424,8 @@ export default function LineDetailDrawer({
         stationId: selectedStation.name,
         shift: CURRENT_SHIFT,
       })
-      if (res.status !== 'OK') setActionError(res.message || 'No se pudo asignar.')
+      if (res.status !== 'OK')
+        setActionError(res.message || t('lineDetailDrawer.assignGenericError'))
     } else {
       setMoveTarget({
         employee: candidate.employee,
@@ -433,13 +435,17 @@ export default function LineDetailDrawer({
     }
   }
 
-  const personnelCountLabel = `${people.length} persona${people.length === 1 ? '' : 's'}`
+  const personnelCountLabel = t('lineDetailDrawer.personnelCountLabel', { count: people.length })
   const headerColor = areaStatusMeta?.color || (people.length > 0 ? '#10B981' : '#94A3B8')
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
-        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('lineDetailDrawer.dialogTitle', {
+            areaName: area?.name || t('lineDetailDrawer.areaFallback'),
+          })}
+        </DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3.5 md:px-6">
           <button
@@ -461,8 +467,8 @@ export default function LineDetailDrawer({
             {areaStatusMeta
               ? areaStatusMeta.label
               : people.length > 0
-                ? 'Con personal'
-                : 'Sin personal hoy'}
+                ? t('lineDetailDrawer.headerLabelHasStaff')
+                : t('lineDetailDrawer.headerLabelNoStaffToday')}
           </span>
           <div className="flex-1" />
           {onNavigate && (
@@ -473,7 +479,9 @@ export default function LineDetailDrawer({
             className="rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('lineDetailDrawer.registerPersonnelButton')
+              : t('lineDetailDrawer.selfAssignButton')}
           </Button>
           <button
             type="button"
@@ -489,29 +497,33 @@ export default function LineDetailDrawer({
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
               <div className={cn(kpiCardClass('blue'), 'md:col-span-1')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Asignación actual
+                  {t('lineDetailDrawer.currentAssignmentLabel')}
                 </p>
                 <p className="mt-0.5 text-xl font-extrabold">
                   {staffing.real} / {staffing.ideal}
                 </p>
-                <p className="text-[11px] text-muted-foreground">personas</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('lineDetailDrawer.peopleUnitLabel')}
+                </p>
               </div>
               <div className={cn(kpiCardClass('slate'), 'md:col-span-1')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Dotación ideal
+                  {t('lineDetailDrawer.idealStaffingLabel')}
                 </p>
                 <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
-                <p className="text-[11px] text-muted-foreground">personas</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('lineDetailDrawer.peopleUnitLabel')}
+                </p>
               </div>
               <div
                 className={cn(kpiCardClass(staffing.diff < 0 ? 'red' : 'green'), 'md:col-span-1')}
               >
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
                   {staffing.diff > 0
-                    ? 'Personal adicional'
+                    ? t('lineDetailDrawer.additionalStaffLabel')
                     : staffing.diff === 0
-                      ? 'Cobertura'
-                      : 'Faltan'}
+                      ? t('lineDetailDrawer.coverageLabel')
+                      : t('lineDetailDrawer.missingLabel')}
                 </p>
                 <p
                   className="mt-0.5 text-xl font-extrabold"
@@ -521,13 +533,13 @@ export default function LineDetailDrawer({
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {staffing.diff === 0
-                    ? 'Completa'
-                    : `persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
+                    ? t('lineDetailDrawer.completeLabel')
+                    : t('lineDetailDrawer.personUnitLabel', { count: Math.abs(staffing.diff) })}
                 </p>
               </div>
               <div className={cn(kpiCardClass('purple'), 'sm:col-span-1 md:col-span-2')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Turno actual
+                  {t('lineDetailDrawer.currentShiftLabel')}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1">
                   <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
@@ -546,7 +558,7 @@ export default function LineDetailDrawer({
               >
                 <div className="mb-2 flex justify-between">
                   <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                    Cobertura de la línea
+                    {t('lineDetailDrawer.lineCoverageTitle')}
                   </p>
                   <p className="text-[15px] font-extrabold">{coveragePct}%</p>
                 </div>
@@ -565,12 +577,15 @@ export default function LineDetailDrawer({
             <div className="mb-4">
               <p className="text-[22px] font-extrabold">
                 {staffing.ideal != null
-                  ? `${staffing.real} / ${staffing.ideal} personas`
+                  ? t('lineDetailDrawer.peopleCountLabel', {
+                      real: staffing.real,
+                      ideal: staffing.ideal,
+                    })
                   : personnelCountLabel}
               </p>
               {staffing.ideal == null && (
                 <p className="text-[13px] font-bold text-muted-foreground">
-                  Sin plantilla definida
+                  {t('lineDetailDrawer.noTemplateDefinedLabel')}
                 </p>
               )}
             </div>
@@ -592,7 +607,7 @@ export default function LineDetailDrawer({
                   className="shrink-0 font-bold"
                 >
                   <Settings className="h-4 w-4" />
-                  Configurar puestos
+                  {t('lineDetailDrawer.configureStationsButton')}
                 </Button>
               )}
             </div>
@@ -622,23 +637,22 @@ export default function LineDetailDrawer({
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
                     <div className="min-w-0 flex-1">
-                      <p className={cardHeaderTitleClass}>Distribución de estaciones</p>
+                      <p className={cardHeaderTitleClass}>
+                        {t('lineDetailDrawer.stationDistributionTitle')}
+                      </p>
                       <p className={cardHeaderSubtitleClass}>
-                        Toca (o arrastra a alguien) sobre una estación disponible
+                        {t('lineDetailDrawer.stationDistributionSubtitle')}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <p className="text-xs font-bold text-muted-foreground">
-                        {workstations.length} posiciones
+                        {t('lineDetailDrawer.positionsCountLabel', { count: workstations.length })}
                       </p>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-[15px] w-[15px] text-muted-foreground/60" />
                         </TooltipTrigger>
-                        <TooltipContent>
-                          Los roles se repiten según la cantidad de posiciones requeridas en la
-                          línea.
-                        </TooltipContent>
+                        <TooltipContent>{t('lineDetailDrawer.rolesRepeatTooltip')}</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
@@ -667,11 +681,12 @@ export default function LineDetailDrawer({
                     <div className={cardHeaderClass}>
                       <div className="min-w-0 flex-1">
                         <p className={cardHeaderTitleClass}>
-                          Personal sin estación ({peopleWithoutStation.length})
+                          {t('lineDetailDrawer.peopleWithoutStationTitle', {
+                            count: peopleWithoutStation.length,
+                          })}
                         </p>
                         <p className={cardHeaderSubtitleClass}>
-                          Siguen asignados a esta línea, pero su puesto ya no existe en la
-                          configuración actual
+                          {t('lineDetailDrawer.peopleWithoutStationSubtitle')}
                         </p>
                       </div>
                     </div>
@@ -687,7 +702,11 @@ export default function LineDetailDrawer({
                               {r.employee?.name || '—'}
                             </p>
                             <p className="truncate text-[11.5px] text-muted-foreground">
-                              {r.stationId ? `Antes: ${r.stationId}` : 'Sin puesto registrado hoy'}
+                              {r.stationId
+                                ? t('lineDetailDrawer.previousStationLabel', {
+                                    stationId: r.stationId,
+                                  })
+                                : t('lineDetailDrawer.noStationRegisteredTodayLabel')}
                             </p>
                           </div>
                           <Button
@@ -699,7 +718,7 @@ export default function LineDetailDrawer({
                             className="shrink-0 font-bold"
                           >
                             <UserSearch className="h-4 w-4" />
-                            Asignar a estación
+                            {t('lineDetailDrawer.assignToStationButton')}
                           </Button>
                         </div>
                       ))}
@@ -710,21 +729,23 @@ export default function LineDetailDrawer({
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
                     <p className={cardHeaderTitleClass}>
-                      Personal asignado a la línea hoy ({roster.length})
+                      {t('lineDetailDrawer.assignedToLineTodayTitle', { count: roster.length })}
                     </p>
                   </div>
                   <div className="max-h-[340px] overflow-y-auto">
                     <Table>
                       <TableHeader className="sticky top-0 z-10 bg-card">
                         <TableRow className={tableHeaderRowClass}>
-                          <TableHead>No. empleado</TableHead>
-                          <TableHead>Nombre</TableHead>
-                          <TableHead>Estación</TableHead>
-                          <TableHead>Rol</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Entrada</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead className="text-right">Acciones</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colEmployeeNumber')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colName')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colStation')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colRole')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.typeLabel')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colEntry')}</TableHead>
+                          <TableHead>{t('lineDetailDrawer.colStatus')}</TableHead>
+                          <TableHead className="text-right">
+                            {t('lineDetailDrawer.colActions')}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -775,10 +796,12 @@ export default function LineDetailDrawer({
                               </TableCell>
                               <TableCell>
                                 {isReal ? (
-                                  <span className={statusChipClass('COMPLETADA')}>Presente</span>
+                                  <span className={statusChipClass('COMPLETADA')}>
+                                    {t('lineDetailDrawer.presentStatus')}
+                                  </span>
                                 ) : (
                                   <span className={statusChipClass('PENDIENTE')}>
-                                    Sin check-in hoy
+                                    {t('lineDetailDrawer.noCheckInTodayStatus')}
                                   </span>
                                 )}
                               </TableCell>
@@ -789,7 +812,7 @@ export default function LineDetailDrawer({
                                   onClick={() => setHistoryEmployee(r.employee)}
                                   className="font-bold"
                                 >
-                                  Ver detalle
+                                  {t('lineDetailDrawer.viewDetailButton')}
                                 </Button>
                                 {isReal && (
                                   <Button
@@ -798,7 +821,7 @@ export default function LineDetailDrawer({
                                     onClick={() => dnd.requestRelease(r.employeeId)}
                                     className="font-bold text-destructive hover:text-destructive"
                                   >
-                                    Quitar
+                                    {t('lineDetailDrawer.removeButton')}
                                   </Button>
                                 )}
                               </TableCell>
@@ -810,8 +833,8 @@ export default function LineDetailDrawer({
                             <TableCell colSpan={8}>
                               <EmptyState
                                 compact
-                                title="Nadie asignado todavía"
-                                description="Usa 'Registrar personal', arrastra a alguien sobre una estación, o asigna un candidato sugerido a la derecha."
+                                title={t('lineDetailDrawer.noOneAssignedYetTitle')}
+                                description={t('lineDetailDrawer.noOneAssignedTableDescription')}
                               />
                             </TableCell>
                           </TableRow>
@@ -827,13 +850,16 @@ export default function LineDetailDrawer({
                       className="font-bold"
                     >
                       <History className="h-4 w-4" />
-                      Ver historial de la línea
+                      {t('lineDetailDrawer.viewLineHistoryButton')}
                     </Button>
                   </div>
                 </div>
 
                 <div className={cn(cardClass, 'p-4')}>
-                  <AvailablePersonnelTray scopedAreaId={canonicalId} title="Personal disponible" />
+                  <AvailablePersonnelTray
+                    scopedAreaId={canonicalId}
+                    title={t('lineDetailDrawer.availablePersonnelTitle')}
+                  />
                 </div>
               </div>
 
@@ -842,10 +868,15 @@ export default function LineDetailDrawer({
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
                     <div className="min-w-0 flex-1">
-                      <p className={cardHeaderTitleClass}>Detalle de estación</p>
+                      <p className={cardHeaderTitleClass}>
+                        {t('lineDetailDrawer.stationDetailTitle')}
+                      </p>
                       {selectedStation && (
                         <p className={cardHeaderSubtitleClass}>
-                          Posición {selectedStation.order} de {workstations.length}
+                          {t('lineDetailDrawer.positionOfLabel', {
+                            order: selectedStation.order,
+                            total: workstations.length,
+                          })}
                         </p>
                       )}
                     </div>
@@ -854,8 +885,8 @@ export default function LineDetailDrawer({
                     {!selectedStation && (
                       <EmptyState
                         compact
-                        title="Selecciona una estación"
-                        description="Toca cualquier estación para ver su detalle."
+                        title={t('lineDetailDrawer.selectStationTitle')}
+                        description={t('lineDetailDrawer.selectStationDescription')}
                       />
                     )}
                     {selectedStation && (
@@ -881,8 +912,9 @@ export default function LineDetailDrawer({
                           </p>
                         </div>
                         <p className="mb-2 text-[12.5px] text-muted-foreground">
-                          Rol requerido: <b>{selectedStation.requiredRole}</b> ·{' '}
-                          {selectedStation.occupants.length}/{selectedStation.capacity}
+                          {t('lineDetailDrawer.requiredRoleLabel')}{' '}
+                          <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}
+                          /{selectedStation.capacity}
                         </p>
                         <div className="mb-3 flex items-center gap-1.5">
                           <span
@@ -895,31 +927,35 @@ export default function LineDetailDrawer({
                             className="text-[11px] font-extrabold tracking-[0.3px]"
                             style={{ color: selectedStation.isAvailable ? '#B45309' : '#059669' }}
                           >
-                            {selectedStation.isAvailable ? 'DISPONIBLE' : 'OCUPADA'}
+                            {selectedStation.isAvailable
+                              ? t('lineDetailDrawer.stationAvailableStatus')
+                              : t('lineDetailDrawer.stationOccupiedStatus')}
                           </p>
                         </div>
 
                         <p className={cn(sectionTitleClass, 'mb-2 text-[12.5px]')}>
-                          Información de la estación
+                          {t('lineDetailDrawer.stationInfoTitle')}
                         </p>
                         <div className="mb-3 flex flex-col gap-2">
                           <div>
                             <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                              Área
+                              {t('lineDetailDrawer.areaLabel')}
                             </p>
                             <p className="text-[13px] font-bold">
-                              {area.isProduction ? 'Producción' : '—'}
+                              {area.isProduction ? t('lineDetailDrawer.productionValue') : '—'}
                             </p>
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                              Tipo
+                              {t('lineDetailDrawer.typeLabel')}
                             </p>
-                            <p className="text-[13px] font-bold">Operativo</p>
+                            <p className="text-[13px] font-bold">
+                              {t('lineDetailDrawer.operativeValue')}
+                            </p>
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                              Turno
+                              {t('lineDetailDrawer.shiftLabel')}
                             </p>
                             <p className="text-[13px] font-bold">
                               {currentOfficialShift.label} (
@@ -929,13 +965,14 @@ export default function LineDetailDrawer({
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                              Categoría
+                              {t('lineDetailDrawer.categoryLabel')}
                             </p>
                             <p
                               className="text-[13px] font-bold"
                               style={{ color: selectedStationVisualType?.color }}
                             >
-                              {selectedStationVisualType?.label || 'Sin clasificar'}
+                              {selectedStationVisualType?.label ||
+                                t('lineDetailDrawer.unclassifiedLabel')}
                             </p>
                           </div>
                         </div>
@@ -944,7 +981,7 @@ export default function LineDetailDrawer({
                           <>
                             <div className="my-3 border-t border-border" />
                             <p className={cn(sectionTitleClass, 'mb-2 text-[12.5px]')}>
-                              Empleado asignado
+                              {t('lineDetailDrawer.assignedEmployeeTitle')}
                             </p>
                             <div className="mb-3 flex flex-col gap-2">
                               {selectedStation.occupants.map((o) => (
@@ -957,10 +994,15 @@ export default function LineDetailDrawer({
                                   <EmployeeAvatar employee={o.employee} size={36} />
                                   <div>
                                     <p className="text-[13px] font-bold">
-                                      {o.employeeNumber} — {o.employee?.name}
+                                      {t('lineDetailDrawer.employeeHeaderLabel', {
+                                        employeeNumber: o.employeeNumber,
+                                        name: o.employee?.name,
+                                      })}
                                     </p>
                                     <p className="text-[11.5px] text-muted-foreground">
-                                      Entrada {o.checkInAt}
+                                      {t('lineDetailDrawer.checkInAtLabel', {
+                                        checkInAt: o.checkInAt,
+                                      })}
                                     </p>
                                     {selectedStationVisualType && (
                                       <p
@@ -984,15 +1026,17 @@ export default function LineDetailDrawer({
                               <div className="mb-3 flex flex-col gap-2">
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Área de origen
+                                    {t('lineDetailDrawer.originAreaLabel')}
                                   </p>
                                   <p className="text-[13px] font-bold">{selectedStation.role}</p>
                                 </div>
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Tipo de apoyo
+                                    {t('lineDetailDrawer.supportTypeLabel')}
                                   </p>
-                                  <p className="text-[13px] font-bold">Transversal</p>
+                                  <p className="text-[13px] font-bold">
+                                    {t('lineDetailDrawer.transversalValue')}
+                                  </p>
                                 </div>
                               </div>
                             )}
@@ -1008,7 +1052,7 @@ export default function LineDetailDrawer({
                                 className="flex-1 font-bold"
                               >
                                 <History className="h-4 w-4" />
-                                Ver historial
+                                {t('lineDetailDrawer.viewHistoryButton')}
                               </Button>
                               <Button
                                 size="sm"
@@ -1018,7 +1062,7 @@ export default function LineDetailDrawer({
                                 className="flex-1 font-bold"
                               >
                                 <ArrowLeftRight className="h-4 w-4" />
-                                Cambiar asignación
+                                {t('lineDetailDrawer.changeAssignmentButton')}
                               </Button>
                             </div>
                           </>
@@ -1028,13 +1072,13 @@ export default function LineDetailDrawer({
                           <>
                             <div className="my-3 border-t border-border" />
                             <p className={cn(sectionTitleClass, 'mb-2.5 text-[13px]')}>
-                              Personal sugerido
+                              {t('lineDetailDrawer.suggestedPersonnelTitle')}
                             </p>
                             {suggestions.length === 0 ? (
                               <EmptyState
                                 compact
-                                title="Sin candidatos"
-                                description="Nadie presente hoy tiene esta habilidad registrada todavía."
+                                title={t('lineDetailDrawer.noCandidatesTitle')}
+                                description={t('lineDetailDrawer.noCandidatesDescription')}
                               />
                             ) : (
                               <div className="flex flex-col gap-2">
@@ -1054,7 +1098,9 @@ export default function LineDetailDrawer({
                               onClick={() => setIncludeAbsent((v) => !v)}
                               className="mt-2 font-bold"
                             >
-                              {includeAbsent ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
+                              {includeAbsent
+                                ? t('lineDetailDrawer.hideUnregisteredButton')
+                                : t('lineDetailDrawer.moreOptionsButton')}
                             </Button>
                           </>
                         )}
@@ -1064,7 +1110,9 @@ export default function LineDetailDrawer({
                 </div>
 
                 <div className={cn(cardClass, 'p-4')}>
-                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>Resumen de la línea</p>
+                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>
+                    {t('lineDetailDrawer.lineSummaryTitle')}
+                  </p>
                   <div className="flex flex-col gap-2">
                     {lineSummary.groups.map((g) => (
                       <div key={g.key} className="flex items-center gap-2">
@@ -1083,14 +1131,18 @@ export default function LineDetailDrawer({
                     <>
                       <div className="my-3 border-t border-border" />
                       <div className="flex items-center gap-2">
-                        <p className="flex-1 text-[12.5px] font-extrabold">Total asignado</p>
+                        <p className="flex-1 text-[12.5px] font-extrabold">
+                          {t('lineDetailDrawer.totalAssignedLabel')}
+                        </p>
                         <p className="text-[12.5px] font-extrabold">
                           {staffing.real} / {staffing.ideal}
                         </p>
                       </div>
                       {staffing.diff < 0 && (
                         <div className="mt-1 flex items-center gap-2">
-                          <p className="flex-1 text-xs text-[#EF4444]">Faltan por cubrir</p>
+                          <p className="flex-1 text-xs text-[#EF4444]">
+                            {t('lineDetailDrawer.missingCoverageLabel')}
+                          </p>
                           <p className="text-xs font-bold text-[#EF4444]">
                             {Math.abs(staffing.diff)}
                           </p>
@@ -1108,14 +1160,16 @@ export default function LineDetailDrawer({
               <div className="md:col-span-8">
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
-                    <p className={cardHeaderTitleClass}>Personal asignado ({people.length})</p>
+                    <p className={cardHeaderTitleClass}>
+                      {t('lineDetailDrawer.assignedPersonnelTitle', { count: people.length })}
+                    </p>
                   </div>
                   <div className="p-4">
                     {people.length === 0 ? (
                       <EmptyState
                         compact
-                        title="Nadie asignado todavía"
-                        description="Registra personal o arrastra a alguien desde 'Personal disponible'."
+                        title={t('lineDetailDrawer.noOneAssignedYetTitle')}
+                        description={t('lineDetailDrawer.emptyAssignedDescription')}
                       />
                     ) : (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">

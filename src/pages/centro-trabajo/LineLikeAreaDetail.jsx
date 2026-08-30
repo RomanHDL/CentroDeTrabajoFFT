@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -109,20 +110,6 @@ function formatHour12(hhmm) {
   return dayjs(`2000-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm').format('hh:mm A')
 }
 
-/* Titulo de SECCION por categoria (2026-08-28, "REFINAMIENTO VISUAL
-   Grupo C", a peticion explicita del usuario) -- SOLO cambia el
-   encabezado del grupo, nunca `rank.label` (ese sigue siendo el que
-   pinta el badge individual de cada tarjeta y la columna Rol/Rango de
-   la tabla, sin cambios). Mapa fijo por `rank.key`, 100% generico -- no
-   hay ningun nombre de area ni de persona aqui, se sigue derivando
-   exclusivamente de getPersonnelRank(role) como antes. */
-const RANK_SECTION_LABEL = {
-  TEAM_LEADER: 'Liderazgo',
-  OPERADOR_ESPECIALIZADO: 'Operación especializada',
-  AYUDANTE_GENERAL: 'Apoyo operativo',
-  PERSONAL_DE_APOYO: 'Apoyo / Calidad',
-}
-
 /* Rangos de tipo "liderazgo" -- se renderizan como fila ancha
    (LeadershipRow) en vez de tarjeta de grid (Seccion 7: "el líder no
    debe verse como una estación normal"). Hoy solo TEAM_LEADER tiene
@@ -166,9 +153,27 @@ export default function LineLikeAreaDetail({
   next,
   onNavigate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const dnd = useDndAssign()
+
+  /* Titulo de SECCION por categoria (2026-08-28, "REFINAMIENTO VISUAL
+     Grupo C", a peticion explicita del usuario) -- SOLO cambia el
+     encabezado del grupo, nunca `rank.label` (ese sigue siendo el que
+     pinta el badge individual de cada tarjeta y la columna Rol/Rango de
+     la tabla, sin cambios). Mapa fijo por `rank.key`, 100% generico -- no
+     hay ningun nombre de area ni de persona aqui, se sigue derivando
+     exclusivamente de getPersonnelRank(role) como antes. */
+  const RANK_SECTION_LABEL = useMemo(
+    () => ({
+      TEAM_LEADER: t('lineLikeAreaDetail.rankSectionLeadership'),
+      OPERADOR_ESPECIALIZADO: t('lineLikeAreaDetail.rankSectionSpecializedOperation'),
+      AYUDANTE_GENERAL: t('lineLikeAreaDetail.rankSectionOperationalSupport'),
+      PERSONAL_DE_APOYO: t('lineLikeAreaDetail.rankSectionSupportQuality'),
+    }),
+    [t],
+  )
 
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
@@ -248,12 +253,14 @@ export default function LineLikeAreaDetail({
     () =>
       stationGroups.map((g) => ({
         key: g.rank ? g.rank.key : '__SIN_CLASIFICAR__',
-        label: g.rank ? RANK_SECTION_LABEL[g.rank.key] || g.rank.label : 'Puestos generales',
+        label: g.rank
+          ? RANK_SECTION_LABEL[g.rank.key] || g.rank.label
+          : t('lineLikeAreaDetail.generalPositionsLabel'),
         color: g.rank ? g.rank.color : '#94A3B8',
         occupied: g.stations.filter((w) => w.occupants.length > 0).length,
         total: g.stations.length,
       })),
-    [stationGroups],
+    [stationGroups, RANK_SECTION_LABEL, t],
   )
 
   // reconcileLineAssignments es para "corregir asignaciones huerfanas dentro de MI PROPIA
@@ -325,7 +332,8 @@ export default function LineLikeAreaDetail({
         stationId: selectedStation.name,
         shift: CURRENT_SHIFT,
       })
-      if (res.status !== 'OK') setActionError(res.message || 'No se pudo asignar.')
+      if (res.status !== 'OK')
+        setActionError(res.message || t('lineLikeAreaDetail.assignErrorFallback'))
     } else {
       setMoveTarget({
         employee: candidate.employee,
@@ -341,7 +349,11 @@ export default function LineLikeAreaDetail({
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
-        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('lineLikeAreaDetail.dialogTitle', {
+            areaName: area?.name || t('lineLikeAreaDetail.areaFallback'),
+          })}
+        </DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3.5 md:px-6">
           <button
@@ -363,8 +375,8 @@ export default function LineLikeAreaDetail({
             {areaStatusMeta
               ? areaStatusMeta.label
               : people.length > 0
-                ? 'Con personal'
-                : 'Sin personal hoy'}
+                ? t('lineLikeAreaDetail.headerLabelHasStaff')
+                : t('lineLikeAreaDetail.headerLabelNoStaffToday')}
           </span>
           <div className="flex-1" />
           {onNavigate && (
@@ -375,7 +387,9 @@ export default function LineLikeAreaDetail({
             className="rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('lineLikeAreaDetail.registerPersonnelButton')
+              : t('lineLikeAreaDetail.selfAssignButton')}
           </Button>
           <button
             type="button"
@@ -392,29 +406,33 @@ export default function LineLikeAreaDetail({
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
               <div className={cn(kpiCardClass('blue'), 'md:col-span-1')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Asignación actual
+                  {t('lineLikeAreaDetail.currentAssignmentLabel')}
                 </p>
                 <p className="mt-0.5 text-xl font-extrabold">
                   {staffing.real} / {staffing.ideal}
                 </p>
-                <p className="text-[11px] text-muted-foreground">personas</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('lineLikeAreaDetail.peopleUnitLabel')}
+                </p>
               </div>
               <div className={cn(kpiCardClass('slate'), 'md:col-span-1')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Dotación ideal
+                  {t('lineLikeAreaDetail.idealStaffingLabel')}
                 </p>
                 <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
-                <p className="text-[11px] text-muted-foreground">personas</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('lineLikeAreaDetail.peopleUnitLabel')}
+                </p>
               </div>
               <div
                 className={cn(kpiCardClass(staffing.diff < 0 ? 'red' : 'green'), 'md:col-span-1')}
               >
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
                   {staffing.diff > 0
-                    ? 'Personal adicional'
+                    ? t('lineLikeAreaDetail.additionalPersonnelLabel')
                     : staffing.diff === 0
-                      ? 'Cobertura'
-                      : 'Faltan'}
+                      ? t('lineLikeAreaDetail.coverageLabel')
+                      : t('lineLikeAreaDetail.missingLabel')}
                 </p>
                 <p
                   className="mt-0.5 text-xl font-extrabold"
@@ -424,13 +442,13 @@ export default function LineLikeAreaDetail({
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {staffing.diff === 0
-                    ? 'Completa'
-                    : `persona${Math.abs(staffing.diff) === 1 ? '' : 's'}`}
+                    ? t('lineLikeAreaDetail.completeLabel')
+                    : t('lineLikeAreaDetail.diffPersonLabel', { count: Math.abs(staffing.diff) })}
                 </p>
               </div>
               <div className={cn(kpiCardClass('purple'), 'sm:col-span-1 md:col-span-2')}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  Turno actual
+                  {t('lineLikeAreaDetail.currentShiftLabel')}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1">
                   <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
@@ -449,7 +467,7 @@ export default function LineLikeAreaDetail({
               >
                 <div className="mb-2 flex justify-between">
                   <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                    Cobertura del área
+                    {t('lineLikeAreaDetail.areaCoverageLabel')}
                   </p>
                   <p className="text-[15px] font-extrabold">{coveragePct}%</p>
                 </div>
@@ -473,19 +491,25 @@ export default function LineLikeAreaDetail({
               <div className="hidden h-8 w-px bg-border md:block" />
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-                  Estado de estación
+                  {t('lineLikeAreaDetail.stationStatusLegendTitle')}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">Ocupada</p>
+                  <p className="text-[11px] font-bold text-muted-foreground">
+                    {t('lineLikeAreaDetail.legendOccupied')}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#F59E0B]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">Disponible</p>
+                  <p className="text-[11px] font-bold text-muted-foreground">
+                    {t('lineLikeAreaDetail.legendAvailable')}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#94A3B8]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">Sin asignación</p>
+                  <p className="text-[11px] font-bold text-muted-foreground">
+                    {t('lineLikeAreaDetail.legendUnassigned')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -514,21 +538,23 @@ export default function LineLikeAreaDetail({
               <div className={cn(cardClass, 'mb-4')}>
                 <div className={cardHeaderClass}>
                   <div className="min-w-0 flex-1">
-                    <p className={cardHeaderTitleClass}>Distribución de estaciones</p>
+                    <p className={cardHeaderTitleClass}>
+                      {t('lineLikeAreaDetail.stationDistributionTitle')}
+                    </p>
                     <p className={cardHeaderSubtitleClass}>
-                      Toca (o arrastra a alguien) sobre una estación disponible
+                      {t('lineLikeAreaDetail.stationDistributionHint')}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <p className="text-xs font-bold text-muted-foreground">
-                      {workstations.length} posiciones
+                      {t('lineLikeAreaDetail.positionsCountLabel', { count: workstations.length })}
                     </p>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="h-[15px] w-[15px] text-muted-foreground/60" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        Cada puesto es una posición individual, 1 persona por puesto.
+                        {t('lineLikeAreaDetail.positionsInfoTooltip')}
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -539,7 +565,7 @@ export default function LineLikeAreaDetail({
                     const isLeadership = group.rank && LEADERSHIP_RANK_KEYS.has(group.rank.key)
                     const sectionLabel = group.rank
                       ? RANK_SECTION_LABEL[group.rank.key] || group.rank.label
-                      : 'Puestos generales'
+                      : t('lineLikeAreaDetail.generalPositionsLabel')
                     const occupiedCount = group.stations.filter(
                       (w) => w.occupants.length > 0,
                     ).length
@@ -574,8 +600,10 @@ export default function LineLikeAreaDetail({
                           </p>
                           <div className="flex-1" />
                           <p className="text-[10.5px] font-bold text-muted-foreground">
-                            {occupiedCount} / {group.stations.length} puesto
-                            {group.stations.length === 1 ? '' : 's'}
+                            {t('lineLikeAreaDetail.stationsCountLabel', {
+                              occupied: occupiedCount,
+                              count: group.stations.length,
+                            })}
                           </p>
                         </div>
                         {isLeadership ? (
@@ -624,11 +652,12 @@ export default function LineLikeAreaDetail({
                   <div className={cardHeaderClass}>
                     <div className="min-w-0 flex-1">
                       <p className={cardHeaderTitleClass}>
-                        Personal sin estación ({peopleWithoutStation.length})
+                        {t('lineLikeAreaDetail.peopleWithoutStationTitle', {
+                          count: peopleWithoutStation.length,
+                        })}
                       </p>
                       <p className={cardHeaderSubtitleClass}>
-                        Siguen asignados a esta área, pero su puesto ya no existe en la
-                        configuración actual
+                        {t('lineLikeAreaDetail.peopleWithoutStationSubtitle')}
                       </p>
                     </div>
                   </div>
@@ -644,7 +673,11 @@ export default function LineLikeAreaDetail({
                             {r.employee?.name || '—'}
                           </p>
                           <p className="truncate text-[11.5px] text-muted-foreground">
-                            {r.stationId ? `Antes: ${r.stationId}` : 'Sin puesto registrado hoy'}
+                            {r.stationId
+                              ? t('lineLikeAreaDetail.previousStationLabel', {
+                                  stationId: r.stationId,
+                                })
+                              : t('lineLikeAreaDetail.noStationRegisteredTodayLabel')}
                           </p>
                         </div>
                         <Button
@@ -656,7 +689,7 @@ export default function LineLikeAreaDetail({
                           className="shrink-0 font-bold"
                         >
                           <PersonStanding className="h-4 w-4" />
-                          Asignar a estación
+                          {t('lineLikeAreaDetail.assignToStationButton')}
                         </Button>
                       </div>
                     ))}
@@ -666,19 +699,23 @@ export default function LineLikeAreaDetail({
 
               <div className={cn(cardClass, 'mb-4')}>
                 <div className={cardHeaderClass}>
-                  <p className={cardHeaderTitleClass}>Personal asignado hoy ({roster.length})</p>
+                  <p className={cardHeaderTitleClass}>
+                    {t('lineLikeAreaDetail.assignedPersonnelTodayTitle', { count: roster.length })}
+                  </p>
                 </div>
                 <div className="max-h-[340px] overflow-y-auto">
                   <Table>
                     <TableHeader className="sticky top-0 z-10 bg-card">
                       <TableRow className={tableHeaderRowClass}>
-                        <TableHead>No. empleado</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Estación</TableHead>
-                        <TableHead>Rol / Rango</TableHead>
-                        <TableHead>Entrada</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.colEmployeeNumber')}</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.colName')}</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.stationLabel')}</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.colRoleRank')}</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.colEntry')}</TableHead>
+                        <TableHead>{t('lineLikeAreaDetail.colStatus')}</TableHead>
+                        <TableHead className="text-right">
+                          {t('lineLikeAreaDetail.colActions')}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -721,10 +758,12 @@ export default function LineLikeAreaDetail({
                             </TableCell>
                             <TableCell>
                               {isReal ? (
-                                <span className={statusChipClass('COMPLETADA')}>Presente</span>
+                                <span className={statusChipClass('COMPLETADA')}>
+                                  {t('lineLikeAreaDetail.presentStatus')}
+                                </span>
                               ) : (
                                 <span className={statusChipClass('PENDIENTE')}>
-                                  Sin check-in hoy
+                                  {t('lineLikeAreaDetail.noCheckInTodayStatus')}
                                 </span>
                               )}
                             </TableCell>
@@ -735,7 +774,7 @@ export default function LineLikeAreaDetail({
                                 onClick={() => setHistoryEmployee(r.employee)}
                                 className="font-bold"
                               >
-                                Ver detalle
+                                {t('lineLikeAreaDetail.viewDetailButton')}
                               </Button>
                               {isReal && (
                                 <Button
@@ -744,7 +783,7 @@ export default function LineLikeAreaDetail({
                                   onClick={() => dnd.requestRelease(r.employeeId)}
                                   className="font-bold text-destructive hover:text-destructive"
                                 >
-                                  Quitar
+                                  {t('lineLikeAreaDetail.removeButton')}
                                 </Button>
                               )}
                             </TableCell>
@@ -756,8 +795,8 @@ export default function LineLikeAreaDetail({
                           <TableCell colSpan={7}>
                             <EmptyState
                               compact
-                              title="Nadie asignado todavía"
-                              description="Usa 'Registrar personal', arrastra a alguien sobre una estación, o asigna un candidato sugerido a la derecha."
+                              title={t('lineLikeAreaDetail.emptyRosterTitle')}
+                              description={t('lineLikeAreaDetail.emptyRosterDescription')}
                             />
                           </TableCell>
                         </TableRow>
@@ -773,13 +812,16 @@ export default function LineLikeAreaDetail({
                     className="font-bold"
                   >
                     <History className="h-4 w-4" />
-                    Ver historial del área
+                    {t('lineLikeAreaDetail.viewAreaHistoryButton')}
                   </Button>
                 </div>
               </div>
 
               <div className={cn(cardClass, 'p-4')}>
-                <AvailablePersonnelTray scopedAreaId={dataAreaId} title="Personal disponible" />
+                <AvailablePersonnelTray
+                  scopedAreaId={dataAreaId}
+                  title={t('lineLikeAreaDetail.availablePersonnelTitle')}
+                />
               </div>
             </div>
 
@@ -789,11 +831,16 @@ export default function LineLikeAreaDetail({
                 <div className={cardHeaderClass}>
                   <div className="min-w-0 flex-1">
                     <p className={cardHeaderTitleClass}>
-                      {selectedStation ? 'Detalle de estación' : 'Estación'}
+                      {selectedStation
+                        ? t('lineLikeAreaDetail.stationDetailTitle')
+                        : t('lineLikeAreaDetail.stationLabel')}
                     </p>
                     {selectedStation && (
                       <p className={cardHeaderSubtitleClass}>
-                        Posición {selectedStation.order} de {workstations.length}
+                        {t('lineLikeAreaDetail.positionOfTotalLabel', {
+                          order: selectedStation.order,
+                          total: workstations.length,
+                        })}
                       </p>
                     )}
                   </div>
@@ -802,8 +849,8 @@ export default function LineLikeAreaDetail({
                   {!selectedStation && (
                     <EmptyState
                       compact
-                      title="Selecciona una estación"
-                      description="Toca cualquier estación para ver su detalle."
+                      title={t('lineLikeAreaDetail.selectStationTitle')}
+                      description={t('lineLikeAreaDetail.selectStationDescription')}
                     />
                   )}
                   {selectedStation && (
@@ -827,8 +874,9 @@ export default function LineLikeAreaDetail({
                         </p>
                       </div>
                       <p className="mb-2 text-[12.5px] text-muted-foreground">
-                        Rol requerido: <b>{selectedStation.requiredRole}</b> ·{' '}
-                        {selectedStation.occupants.length}/{selectedStation.capacity}
+                        {t('lineLikeAreaDetail.requiredRoleLabel')}{' '}
+                        <b>{selectedStation.requiredRole}</b> · {selectedStation.occupants.length}/
+                        {selectedStation.capacity}
                       </p>
                       <div className="mb-3 flex items-center gap-1.5">
                         <span
@@ -841,32 +889,37 @@ export default function LineLikeAreaDetail({
                           className="text-[11px] font-extrabold tracking-[0.3px]"
                           style={{ color: selectedStation.isAvailable ? '#B45309' : '#059669' }}
                         >
-                          {selectedStation.isAvailable ? 'DISPONIBLE' : 'OCUPADA'}
+                          {selectedStation.isAvailable
+                            ? t('lineLikeAreaDetail.stationAvailableStatus')
+                            : t('lineLikeAreaDetail.stationOccupiedStatus')}
                         </p>
                       </div>
 
                       <p className={cn(sectionTitleClass, 'mb-2 text-[12.5px]')}>
-                        Información del puesto
+                        {t('lineLikeAreaDetail.positionInfoTitle')}
                       </p>
                       <div className="mb-3 flex flex-col gap-2">
                         <div>
                           <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                            Área
+                            {t('lineLikeAreaDetail.areaLabel')}
                           </p>
                           <p className="text-[13px] font-bold">{area.name}</p>
                         </div>
                         <div>
                           <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                            Tipo
+                            {t('lineLikeAreaDetail.typeLabel')}
                           </p>
-                          <p className="text-[13px] font-bold">Operativo</p>
+                          <p className="text-[13px] font-bold">
+                            {t('lineLikeAreaDetail.typeValueOperational')}
+                          </p>
                         </div>
                         <div>
                           <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                            Jerarquía
+                            {t('lineLikeAreaDetail.hierarchyLabel')}
                           </p>
                           <p className="text-[13px] font-bold">
-                            {selectedStationRank?.label || 'Sin información disponible'}
+                            {selectedStationRank?.label ||
+                              t('lineLikeAreaDetail.noHierarchyInfoLabel')}
                           </p>
                         </div>
                       </div>
@@ -874,7 +927,7 @@ export default function LineLikeAreaDetail({
                       {selectedStation.occupants.length > 0 && (
                         <>
                           <p className={cn(sectionTitleClass, 'mb-2 text-[12.5px]')}>
-                            Empleado asignado
+                            {t('lineLikeAreaDetail.assignedEmployeeTitle')}
                           </p>
                           <div className="mb-3 flex flex-col gap-2">
                             {selectedStation.occupants.map((o) => (
@@ -887,10 +940,15 @@ export default function LineLikeAreaDetail({
                                 <EmployeeAvatar employee={o.employee} size={36} />
                                 <div>
                                   <p className="text-[13px] font-bold">
-                                    {o.employeeNumber} — {o.employee?.name}
+                                    {t('lineLikeAreaDetail.employeeHeader', {
+                                      employeeNumber: o.employeeNumber,
+                                      name: o.employee?.name,
+                                    })}
                                   </p>
                                   <p className="text-[11.5px] text-muted-foreground">
-                                    Entrada {o.checkInAt}
+                                    {t('lineLikeAreaDetail.checkInAtLabel', {
+                                      checkInAt: o.checkInAt,
+                                    })}
                                   </p>
                                 </div>
                               </button>
@@ -908,30 +966,32 @@ export default function LineLikeAreaDetail({
                             <>
                               <div className="my-3 border-t border-border" />
                               <p className={cn(sectionTitleClass, 'mb-2.5 text-[12.5px]')}>
-                                Información adicional
+                                {t('lineLikeAreaDetail.additionalInfoTitle')}
                               </p>
                               <div className="mb-3 flex flex-col gap-2">
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Área de origen
+                                    {t('lineLikeAreaDetail.originAreaLabel')}
                                   </p>
                                   <p className="text-[13px] font-bold">{selectedStation.role}</p>
                                 </div>
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Apoya en
+                                    {t('lineLikeAreaDetail.supportsAtLabel')}
                                   </p>
                                   <p className="text-[13px] font-bold">{area.name}</p>
                                 </div>
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Tipo de apoyo
+                                    {t('lineLikeAreaDetail.supportTypeLabel')}
                                   </p>
-                                  <p className="text-[13px] font-bold">Transversal</p>
+                                  <p className="text-[13px] font-bold">
+                                    {t('lineLikeAreaDetail.supportTypeTransversal')}
+                                  </p>
                                 </div>
                                 <div>
                                   <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
-                                    Turno
+                                    {t('lineLikeAreaDetail.shiftLabel')}
                                   </p>
                                   <p className="text-[13px] font-bold">
                                     {currentOfficialShift.label} (
@@ -954,7 +1014,7 @@ export default function LineLikeAreaDetail({
                               className="flex-1 font-bold"
                             >
                               <History className="h-4 w-4" />
-                              Ver historial
+                              {t('lineLikeAreaDetail.viewHistoryButton')}
                             </Button>
                             <Button
                               size="sm"
@@ -964,7 +1024,7 @@ export default function LineLikeAreaDetail({
                               className="flex-1 font-bold"
                             >
                               <ArrowLeftRight className="h-4 w-4" />
-                              Cambiar asignación
+                              {t('lineLikeAreaDetail.changeAssignmentButton')}
                             </Button>
                           </div>
                         </>
@@ -974,13 +1034,13 @@ export default function LineLikeAreaDetail({
                         <>
                           <div className="my-3 border-t border-border" />
                           <p className={cn(sectionTitleClass, 'mb-2.5 text-[13px]')}>
-                            Personal sugerido
+                            {t('lineLikeAreaDetail.suggestedPersonnelTitle')}
                           </p>
                           {suggestions.length === 0 ? (
                             <EmptyState
                               compact
-                              title="Sin candidatos"
-                              description="Nadie presente hoy tiene esta habilidad registrada todavía."
+                              title={t('lineLikeAreaDetail.noCandidatesTitle')}
+                              description={t('lineLikeAreaDetail.noCandidatesDescription')}
                             />
                           ) : (
                             <div className="flex flex-col gap-2">
@@ -1000,7 +1060,9 @@ export default function LineLikeAreaDetail({
                             onClick={() => setIncludeAbsent((v) => !v)}
                             className="mt-2 font-bold"
                           >
-                            {includeAbsent ? 'Ocultar no registrados hoy' : 'Ver más opciones'}
+                            {includeAbsent
+                              ? t('lineLikeAreaDetail.hideUnregisteredButton')
+                              : t('lineLikeAreaDetail.moreOptionsButton')}
                           </Button>
                         </>
                       )}
