@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from 'recharts'
 import { Button } from '@/components/ui/button'
 import {
@@ -86,20 +87,21 @@ import WorkCenterNavControls from './WorkCenterNavControls'
 
 const PIE_PALETTE = ['#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#06B6D4', '#EC4899', '#64748B']
 
-function relativeTimeEs(iso) {
+function relativeTimeEs(iso, t) {
   const diffMin = Math.max(0, dayjs().diff(dayjs(iso), 'minute'))
-  if (diffMin < 1) return 'Justo ahora'
-  if (diffMin < 60) return `Hace ${diffMin} min`
+  if (diffMin < 1) return t('operationalAreaDetail.relativeJustNow')
+  if (diffMin < 60) return t('operationalAreaDetail.relativeMinutesAgo', { count: diffMin })
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `Hace ${diffH} h`
+  if (diffH < 24) return t('operationalAreaDetail.relativeHoursAgo', { count: diffH })
   const diffD = Math.floor(diffH / 24)
-  return `Hace ${diffD} d`
+  return t('operationalAreaDetail.relativeDaysAgo', { count: diffD })
 }
 
 /* Fila de historial reutilizada tal cual entre la vista compacta (5
    eventos) y el dialogo "Ver todo" (los mismos datos ya obtenidos por
    el unico fetch de arriba -- limit=8 -- nunca una segunda consulta). */
 function HistoryRow({ h }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className="flex items-start gap-2">
       <div
@@ -110,11 +112,17 @@ function HistoryRow({ h }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-bold leading-[1.3]">
-          {h.employeeName} — {h.action === 'MOVED' ? 'Reasignación' : 'Asignación'}
+          {t('operationalAreaDetail.historyEntryLabel', {
+            employeeName: h.employeeName,
+            action:
+              h.action === 'MOVED'
+                ? t('operationalAreaDetail.actionReassigned')
+                : t('operationalAreaDetail.actionAssigned'),
+          })}
         </p>
         <p className="text-[10.5px] text-muted-foreground">
-          {h.byName ? `Por ${h.byName} · ` : ''}
-          {relativeTimeEs(h.movedAt)}
+          {h.byName ? t('operationalAreaDetail.byPrefix', { byName: h.byName }) : ''}
+          {relativeTimeEs(h.movedAt, t)}
         </p>
       </div>
     </div>
@@ -138,6 +146,7 @@ function MetricBlock({ label, children, borderLeft }) {
 }
 
 function DropZone({ areaId, label }) {
+  const { t } = useTranslation('centroTrabajo')
   const { isOver, dropProps } = useEmployeeDropTarget(areaId)
   return (
     <div
@@ -151,9 +160,13 @@ function DropZone({ areaId, label }) {
     >
       <Hand className="h-[30px] w-[30px] text-[#3B82F6]" />
       <p className="text-center text-[13.5px] font-extrabold text-[#3B82F6]">
-        {isOver ? 'Soltar aquí' : 'Arrastra empleados aquí'}
+        {isOver
+          ? t('operationalAreaDetail.dropHereLabel')
+          : t('operationalAreaDetail.dragEmployeesHereLabel')}
       </p>
-      <p className="text-center text-[11.5px] text-muted-foreground">para asignarlos a {label}</p>
+      <p className="text-center text-[11.5px] text-muted-foreground">
+        {t('operationalAreaDetail.dropZoneHint', { label })}
+      </p>
     </div>
   )
 }
@@ -190,6 +203,7 @@ function AvailableCandidateRow({ person, areaId }) {
    se oculta la dona en vez de forzar un grafico vacio o absurdo (Parte
    "Variantes" del prompt: Conveyor con 1 persona no debe verse forzado). */
 function RoleDistributionCard({ people }) {
+  const { t } = useTranslation('centroTrabajo')
   const counts = new Map()
   let withData = 0
   people.forEach((p) => {
@@ -202,11 +216,13 @@ function RoleDistributionCard({ people }) {
   if (withData < 2 || counts.size < 2) {
     return (
       <div className={cn(cardClass, 'p-4')}>
-        <p className="mb-3 text-[14.5px] font-extrabold">Distribución por tipo de puesto</p>
+        <p className="mb-3 text-[14.5px] font-extrabold">
+          {t('operationalAreaDetail.roleDistributionTitle')}
+        </p>
         <EmptyState
           compact
-          title="Sin información suficiente"
-          description="Todavía no hay suficientes registros de actividad/puesto por empleado para esta área."
+          title={t('operationalAreaDetail.emptyRoleDataTitle')}
+          description={t('operationalAreaDetail.emptyRoleDataDescription')}
         />
       </div>
     )
@@ -220,9 +236,11 @@ function RoleDistributionCard({ people }) {
 
   return (
     <div className={cn(cardClass, 'p-4')}>
-      <p className="text-[14.5px] font-extrabold">Distribución por tipo de puesto</p>
+      <p className="text-[14.5px] font-extrabold">
+        {t('operationalAreaDetail.roleDistributionTitle')}
+      </p>
       <p className="mb-2 text-[10.5px] text-muted-foreground">
-        Código de actividad real, sin interpretar (BASE)
+        {t('operationalAreaDetail.roleDistributionSubtitle')}
       </p>
       <div className="flex min-h-[160px] gap-4">
         <div className="relative flex-[0_0_140px]">
@@ -241,12 +259,16 @@ function RoleDistributionCard({ people }) {
                   <Cell key={row.codigo} fill={row.color} />
                 ))}
               </Pie>
-              <RTooltip formatter={(v, n) => [`${v} persona${v === 1 ? '' : 's'}`, n]} />
+              <RTooltip
+                formatter={(v, n) => [t('operationalAreaDetail.personCountLabel', { count: v }), n]}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
             <p className="text-xl font-extrabold leading-none">{withData}</p>
-            <p className="text-[9px] text-muted-foreground">personas</p>
+            <p className="text-[9px] text-muted-foreground">
+              {t('operationalAreaDetail.peopleUnitLabel')}
+            </p>
           </div>
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
@@ -270,44 +292,48 @@ function RoleDistributionCard({ people }) {
 
 /* Clasificacion + recomendacion -- reglas matematicas simples sobre
    real/ideal, nunca texto de IA. */
-function classifyForTip(real, ideal) {
+function classifyForTip(real, ideal, t) {
   if (ideal == null)
     return {
       icon: '⭐',
-      label: 'Sin plantilla oficial',
-      tip: 'Esta área no tiene una plantilla ideal definida todavía.',
+      label: t('operationalAreaDetail.tipNoTemplateLabel'),
+      tip: t('operationalAreaDetail.tipNoTemplate'),
     }
   if (real === 0)
     return {
       icon: '⚠️',
-      label: 'Sin personal',
-      tip: 'Asigna personal para comenzar a operar esta área.',
+      label: t('operationalAreaDetail.tipNoStaffLabel'),
+      tip: t('operationalAreaDetail.tipNoStaff'),
     }
   if (real > ideal)
     return {
       icon: '⭐',
-      label: 'Sobre plantilla',
-      tip: `Esta área tiene ${real - ideal} persona(s) por encima de su ideal.`,
+      label: t('operationalAreaDetail.tipOverTemplateLabel'),
+      tip: t('operationalAreaDetail.tipOverTemplate', { count: real - ideal }),
     }
   if (real === ideal)
-    return { icon: '⭐', label: 'Plantilla completa', tip: 'Esta área alcanzó su plantilla ideal.' }
+    return {
+      icon: '⭐',
+      label: t('operationalAreaDetail.tipCompleteLabel'),
+      tip: t('operationalAreaDetail.tipComplete'),
+    }
   const pct = (real / ideal) * 100
   if (pct < 50)
     return {
       icon: '🔴',
-      label: 'Área crítica',
-      tip: `Faltan ${ideal - real} personas — cobertura por debajo del 50%.`,
+      label: t('operationalAreaDetail.tipCriticalLabel'),
+      tip: t('operationalAreaDetail.tipCritical', { count: ideal - real }),
     }
   if (pct < 90)
     return {
       icon: '⭐',
-      label: 'Área en desarrollo',
-      tip: `Cerca de alcanzar la plantilla ideal. Tip: asigna ${ideal - real} persona(s) más para lograr cobertura completa.`,
+      label: t('operationalAreaDetail.tipDevelopingLabel'),
+      tip: t('operationalAreaDetail.tipDeveloping', { count: ideal - real }),
     }
   return {
     icon: '⭐',
-    label: 'Cerca de completarse',
-    tip: `Solo faltan ${ideal - real} persona(s) para cobertura completa.`,
+    label: t('operationalAreaDetail.tipNearCompleteLabel'),
+    tip: t('operationalAreaDetail.tipNearComplete', { count: ideal - real }),
   }
 }
 
@@ -319,6 +345,7 @@ export default function OperationalAreaDetail({
   next,
   onNavigate,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
   const [registerOpen, setRegisterOpen] = useState(false)
@@ -448,15 +475,15 @@ export default function OperationalAreaDetail({
   const headerLabel = statusMeta
     ? statusMeta.label
     : people.length > 0
-      ? 'Con personal'
-      : 'Sin personal hoy'
+      ? t('operationalAreaDetail.headerLabelHasStaff')
+      : t('operationalAreaDetail.headerLabelNoStaffToday')
   const coveragePct =
     staffing.ideal != null && staffing.ideal > 0
       ? Math.round((staffing.real / staffing.ideal) * 1000) / 10
       : null
   const coverageBarPct = coveragePct != null ? Math.min(100, coveragePct) : 0
   const missing = staffing.ideal != null ? Math.max(0, staffing.ideal - staffing.real) : 0
-  const tip = classifyForTip(staffing.real, staffing.ideal)
+  const tip = classifyForTip(staffing.real, staffing.ideal, t)
   const currentShift = getCurrentShift()
   const shiftRange = formatShiftSchedule(currentShift)
   const headerColor = statusMeta?.color || '#10B981'
@@ -478,7 +505,11 @@ export default function OperationalAreaDetail({
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="inset-0 left-0 top-0 flex h-screen w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none bg-background">
-        <DialogTitle className="sr-only">Detalle de {area?.name || 'área'}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('operationalAreaDetail.dialogTitle', {
+            areaName: area?.name || t('operationalAreaDetail.areaFallback'),
+          })}
+        </DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-3 md:px-6">
           <button
@@ -503,7 +534,7 @@ export default function OperationalAreaDetail({
               </span>
             </div>
             <p className="text-[11.5px] text-muted-foreground">
-              Centro de Trabajo • Área de producción
+              {t('operationalAreaDetail.areaSubtitle')}
             </p>
           </div>
           <div className="flex-1" />
@@ -515,7 +546,9 @@ export default function OperationalAreaDetail({
             className="rounded-[20px] font-bold"
           >
             <UserPlus className="h-4 w-4" />
-            {isSupervisor ? 'Registrar personal' : 'Registrarme / Autoasignarme'}
+            {isSupervisor
+              ? t('operationalAreaDetail.registerPersonnelButton')
+              : t('operationalAreaDetail.selfAssignButton')}
           </Button>
           <button
             type="button"
@@ -528,7 +561,9 @@ export default function OperationalAreaDetail({
 
         <div key={workCenterId} className="min-h-0 flex-1 overflow-y-auto p-3 md:p-6">
           {/* Estado del area */}
-          <p className="mb-2.5 text-[15px] font-extrabold">Estado del área</p>
+          <p className="mb-2.5 text-[15px] font-extrabold">
+            {t('operationalAreaDetail.areaStateTitle')}
+          </p>
           <div className="mb-5 overflow-hidden rounded-2xl border border-border">
             <div className="flex flex-col md:flex-row">
               <div className="flex flex-[1_1_180px] items-center gap-2.5 px-3 py-2.5 md:px-[18px]">
@@ -544,14 +579,18 @@ export default function OperationalAreaDetail({
                       ? `${staffing.real} / ${staffing.ideal}`
                       : staffing.real}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">personas asignadas</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('operationalAreaDetail.peopleAssignedLabel')}
+                  </p>
                   {missing > 0 && (
-                    <p className="text-[11px] font-bold text-[#EF4444]">Faltan {missing}</p>
+                    <p className="text-[11px] font-bold text-[#EF4444]">
+                      {t('operationalAreaDetail.missingCount', { count: missing })}
+                    </p>
                   )}
                 </div>
               </div>
 
-              <MetricBlock label="Cobertura actual" borderLeft>
+              <MetricBlock label={t('operationalAreaDetail.coverageLabel')} borderLeft>
                 <p
                   className={cn(
                     'leading-[1.2] font-extrabold',
@@ -563,7 +602,9 @@ export default function OperationalAreaDetail({
                         : 'text-muted-foreground',
                   )}
                 >
-                  {coveragePct != null ? `${coveragePct}%` : 'Sin meta'}
+                  {coveragePct != null
+                    ? `${coveragePct}%`
+                    : t('operationalAreaDetail.noCoverageGoal')}
                 </p>
                 {coveragePct != null && (
                   <>
@@ -577,13 +618,16 @@ export default function OperationalAreaDetail({
                       />
                     </div>
                     <p className="text-[10.5px] text-muted-foreground">
-                      {staffing.real} de {staffing.ideal}
+                      {t('operationalAreaDetail.coverageOfLabel', {
+                        real: staffing.real,
+                        ideal: staffing.ideal,
+                      })}
                     </p>
                   </>
                 )}
               </MetricBlock>
 
-              <MetricBlock label="Plantilla ideal" borderLeft>
+              <MetricBlock label={t('operationalAreaDetail.idealTemplateLabel')} borderLeft>
                 <p
                   className={cn(
                     'leading-[1.2] font-extrabold',
@@ -591,14 +635,18 @@ export default function OperationalAreaDetail({
                     staffing.ideal != null ? 'text-foreground' : 'text-muted-foreground',
                   )}
                 >
-                  {staffing.ideal != null ? staffing.ideal : 'Sin definir'}
+                  {staffing.ideal != null
+                    ? staffing.ideal
+                    : t('operationalAreaDetail.undefinedLabel')}
                 </p>
                 {staffing.ideal != null && (
-                  <p className="text-[10.5px] text-muted-foreground">personas</p>
+                  <p className="text-[10.5px] text-muted-foreground">
+                    {t('operationalAreaDetail.peopleUnitLabel')}
+                  </p>
                 )}
               </MetricBlock>
 
-              <MetricBlock label="Faltante" borderLeft>
+              <MetricBlock label={t('operationalAreaDetail.missingLabel')} borderLeft>
                 <p
                   className={cn(
                     'leading-[1.2] font-extrabold',
@@ -610,14 +658,16 @@ export default function OperationalAreaDetail({
                         : 'text-foreground',
                   )}
                 >
-                  {staffing.ideal != null ? missing : 'No calculable'}
+                  {staffing.ideal != null ? missing : t('operationalAreaDetail.notCalculableLabel')}
                 </p>
                 {staffing.ideal != null && (
-                  <p className="text-[10.5px] text-muted-foreground">personas</p>
+                  <p className="text-[10.5px] text-muted-foreground">
+                    {t('operationalAreaDetail.peopleUnitLabel')}
+                  </p>
                 )}
               </MetricBlock>
 
-              <MetricBlock label="Estado del área" borderLeft>
+              <MetricBlock label={t('operationalAreaDetail.areaStateTitle')} borderLeft>
                 <div className="flex items-center gap-1.5">
                   <span
                     className="h-2 w-2 rounded-full"
@@ -626,11 +676,13 @@ export default function OperationalAreaDetail({
                   <p className="text-[15px] font-extrabold">{headerLabel}</p>
                 </div>
                 <p className="text-[10.5px] text-muted-foreground">
-                  {status === 'COMPLETA' || status === null ? 'Al día' : 'Requiere atención'}
+                  {status === 'COMPLETA' || status === null
+                    ? t('operationalAreaDetail.upToDateLabel')
+                    : t('operationalAreaDetail.requiresAttentionLabel')}
                 </p>
               </MetricBlock>
 
-              <MetricBlock label="Turno actual" borderLeft>
+              <MetricBlock label={t('operationalAreaDetail.currentShiftLabel')} borderLeft>
                 <div className="flex items-center gap-1.5">
                   <Sun className="h-4 w-4 text-[#F59E0B]" />
                   <p className="text-[15px] font-extrabold">{currentShift.label}</p>
@@ -644,13 +696,13 @@ export default function OperationalAreaDetail({
           <div className="mb-5 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className={cn(cardClass, 'p-4 lg:col-span-2')}>
               <p className="mb-3 text-[14.5px] font-extrabold">
-                Personal asignado ({people.length})
+                {t('operationalAreaDetail.assignedPersonnelTitle', { count: people.length })}
               </p>
               {people.length === 0 ? (
                 <EmptyState
                   compact
-                  title="Nadie asignado todavía"
-                  description="Registra personal o arrastra a alguien desde 'Disponibles para asignar'."
+                  title={t('operationalAreaDetail.emptyAssignedTitle')}
+                  description={t('operationalAreaDetail.emptyAssignedDescription')}
                 />
               ) : (
                 <div className="grid max-h-[420px] grid-cols-1 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 md:grid-cols-3">
@@ -674,7 +726,9 @@ export default function OperationalAreaDetail({
               el grid: sin eso, Disponibles (sin limite propio de altura
               antes de su max-h local) forzaria a las otras dos columnas a
               estirarse igual de altas. */}
-          <p className="mb-2.5 text-[15px] font-extrabold">Gestión de personal</p>
+          <p className="mb-2.5 text-[15px] font-extrabold">
+            {t('operationalAreaDetail.personnelManagementTitle')}
+          </p>
           <div className="mb-5 rounded-2xl border border-border bg-black/[.012] p-3 dark:bg-white/[.02] md:p-4">
             <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
               <div
@@ -687,19 +741,18 @@ export default function OperationalAreaDetail({
                 )}
               >
                 <p className="mb-2 text-[14.5px] font-extrabold">
-                  Disponibles para asignar ({available.length})
+                  {t('operationalAreaDetail.availableToAssignTitle', { count: available.length })}
                   {availableQuery.trim() && (
                     <span className="ml-1.5 text-[11.5px] font-bold text-muted-foreground">
-                      · {filteredAvailable.length} resultado
-                      {filteredAvailable.length === 1 ? '' : 's'}
+                      {t('operationalAreaDetail.resultsCount', { count: filteredAvailable.length })}
                     </span>
                   )}
                 </p>
                 {available.length === 0 ? (
                   <EmptyState
                     compact
-                    title="Sin personal disponible"
-                    description="Todo el personal activo ya tiene ubicación asignada hoy."
+                    title={t('operationalAreaDetail.emptyAvailableTitle')}
+                    description={t('operationalAreaDetail.emptyAvailableDescription')}
                   />
                 ) : (
                   <>
@@ -708,15 +761,15 @@ export default function OperationalAreaDetail({
                       <Input
                         value={availableQuery}
                         onChange={(e) => setAvailableQuery(e.target.value)}
-                        placeholder="Buscar por nombre o número..."
+                        placeholder={t('operationalAreaDetail.searchPlaceholder')}
                         className="h-9 rounded-lg pl-9 text-[12.5px]"
                       />
                     </div>
                     {filteredAvailable.length === 0 ? (
                       <EmptyState
                         compact
-                        title="Sin coincidencias"
-                        description="Nadie disponible coincide con la búsqueda."
+                        title={t('operationalAreaDetail.emptyNoMatchTitle')}
+                        description={t('operationalAreaDetail.emptyNoMatchDescription')}
                       />
                     ) : (
                       <div className="flex max-h-[300px] flex-col gap-2 overflow-y-auto pr-1 md:max-h-[340px]">
@@ -733,14 +786,31 @@ export default function OperationalAreaDetail({
 
               <div className="flex flex-col gap-4">
                 <div className="rounded-2xl border border-border bg-card p-4">
-                  <p className="mb-3 text-[14.5px] font-extrabold">Resumen rápido</p>
+                  <p className="mb-3 text-[14.5px] font-extrabold">
+                    {t('operationalAreaDetail.quickSummaryTitle')}
+                  </p>
                   <div className="flex flex-col gap-2">
                     {[
-                      ['Total en el área', staffing.real],
-                      ['Plantilla ideal', staffing.ideal != null ? staffing.ideal : 'Sin definir'],
-                      ['Faltante', staffing.ideal != null ? missing : 'No calculable'],
-                      ['Cobertura', coveragePct != null ? `${coveragePct}%` : 'Sin meta'],
-                      ['Disponibles', available.length],
+                      [t('operationalAreaDetail.totalInAreaLabel'), staffing.real],
+                      [
+                        t('operationalAreaDetail.idealTemplateLabel'),
+                        staffing.ideal != null
+                          ? staffing.ideal
+                          : t('operationalAreaDetail.undefinedLabel'),
+                      ],
+                      [
+                        t('operationalAreaDetail.missingLabel'),
+                        staffing.ideal != null
+                          ? missing
+                          : t('operationalAreaDetail.notCalculableLabel'),
+                      ],
+                      [
+                        t('operationalAreaDetail.coverageShortLabel'),
+                        coveragePct != null
+                          ? `${coveragePct}%`
+                          : t('operationalAreaDetail.noCoverageGoal'),
+                      ],
+                      [t('operationalAreaDetail.availableLabel'), available.length],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between">
                         <p className="text-[12.5px] text-muted-foreground">{label}</p>
@@ -751,26 +821,32 @@ export default function OperationalAreaDetail({
                 </div>
                 <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-[14.5px] font-extrabold">Historial reciente</p>
+                    <p className="text-[14.5px] font-extrabold">
+                      {t('operationalAreaDetail.recentHistoryTitle')}
+                    </p>
                     {history.items.length > 5 && (
                       <button
                         type="button"
                         onClick={() => setHistoryDialogOpen(true)}
                         className="text-[11.5px] font-bold text-[#3B82F6]"
                       >
-                        Ver todo
+                        {t('operationalAreaDetail.viewAllButton')}
                       </button>
                     )}
                   </div>
                   {history.loading ? (
-                    <p className="text-xs text-muted-foreground">Cargando…</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('operationalAreaDetail.loadingLabel')}
+                    </p>
                   ) : history.error ? (
-                    <p className="text-xs text-muted-foreground">No se pudo cargar el historial.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('operationalAreaDetail.historyLoadErrorMessage')}
+                    </p>
                   ) : history.items.length === 0 ? (
                     <EmptyState
                       compact
-                      title="Sin movimientos recientes"
-                      description="Todavía no hay asignaciones o movimientos registrados para esta área."
+                      title={t('operationalAreaDetail.emptyHistoryTitle')}
+                      description={t('operationalAreaDetail.emptyHistoryDescription')}
                     />
                   ) : (
                     <div className="flex flex-col gap-2.5">
@@ -787,10 +863,14 @@ export default function OperationalAreaDetail({
           <div className="mb-5 border-t border-border" />
 
           {/* Analisis del area */}
-          <p className="mb-3 text-[15px] font-extrabold">Análisis del área</p>
+          <p className="mb-3 text-[15px] font-extrabold">
+            {t('operationalAreaDetail.areaAnalysisTitle')}
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className={cn(cardClass, 'p-4 text-center')}>
-              <p className="mb-3 text-left text-[13.5px] font-extrabold">Cobertura vs ideal</p>
+              <p className="mb-3 text-left text-[13.5px] font-extrabold">
+                {t('operationalAreaDetail.coverageVsIdealTitle')}
+              </p>
               {coveragePct != null ? (
                 <>
                   <div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full bg-muted">
@@ -803,16 +883,21 @@ export default function OperationalAreaDetail({
                     <div className="absolute inset-[6px] rounded-full bg-background" />
                     <p className="relative z-10 text-[17px] font-extrabold">{coveragePct}%</p>
                   </div>
-                  <p className="mt-2 text-[11.5px] text-muted-foreground">Cobertura actual</p>
+                  <p className="mt-2 text-[11.5px] text-muted-foreground">
+                    {t('operationalAreaDetail.coverageLabel')}
+                  </p>
                   <p className="text-[11px] text-muted-foreground">
-                    {staffing.real} de {staffing.ideal} personas
+                    {t('operationalAreaDetail.coverageOfPeopleLabel', {
+                      real: staffing.real,
+                      ideal: staffing.ideal,
+                    })}
                   </p>
                 </>
               ) : (
                 <EmptyState
                   compact
-                  title="Sin plantilla ideal"
-                  description="No hay meta definida para calcular cobertura."
+                  title={t('operationalAreaDetail.noIdealTemplateTitle')}
+                  description={t('operationalAreaDetail.noIdealTemplateDescription')}
                 />
               )}
             </div>
@@ -820,7 +905,9 @@ export default function OperationalAreaDetail({
             <div className={cn(cardClass, 'p-4')}>
               <div className="mb-3 flex items-center gap-1.5">
                 <LineChart className="h-4 w-4 text-muted-foreground" />
-                <p className="text-[13.5px] font-extrabold">Tendencia de cobertura (7 días)</p>
+                <p className="text-[13.5px] font-extrabold">
+                  {t('operationalAreaDetail.coverageTrendTitle')}
+                </p>
               </div>
               {/* Investigado (2026-08-25): el headcount real de cada dia pasado
                   viene mayormente de un snapshot SIN fecha (REAL_PERSONNEL_SNAPSHOT),
@@ -831,13 +918,15 @@ export default function OperationalAreaDetail({
                   documentado en el rediseño del Dashboard (useDashboardMetrics.js). */}
               <EmptyState
                 compact
-                title="Aún no hay suficiente historial"
-                description="Todavía no hay suficiente historial para calcular la tendencia de cobertura de esta área."
+                title={t('operationalAreaDetail.emptyTrendTitle')}
+                description={t('operationalAreaDetail.emptyTrendDescription')}
               />
             </div>
 
             <div className={cn(cardClass, 'p-4')}>
-              <p className="mb-3 text-[13.5px] font-extrabold">Clasificación del área</p>
+              <p className="mb-3 text-[13.5px] font-extrabold">
+                {t('operationalAreaDetail.areaClassificationTitle')}
+              </p>
               <div className="flex items-start gap-2">
                 <Star className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#F59E0B]" />
                 <div>
@@ -850,23 +939,25 @@ export default function OperationalAreaDetail({
             <div className={cn(cardClass, 'flex flex-col p-4')}>
               <div className="mb-2 flex items-center gap-1.5">
                 <UserCog className="h-[17px] w-[17px] text-[#3B82F6]" />
-                <p className="text-[13.5px] font-extrabold">Recomendación automática</p>
+                <p className="text-[13.5px] font-extrabold">
+                  {t('operationalAreaDetail.autoRecommendationTitle')}
+                </p>
               </div>
               {missing > 0 && (
                 <span className={cn(metricChipClass('warn'), 'mb-2 self-start')}>
                   {missing >= 5
-                    ? 'Prioridad alta'
+                    ? t('operationalAreaDetail.priorityHigh')
                     : missing >= 2
-                      ? 'Prioridad media'
-                      : 'Prioridad baja'}
+                      ? t('operationalAreaDetail.priorityMedium')
+                      : t('operationalAreaDetail.priorityLow')}
                 </span>
               )}
               <p className="mb-3 flex-1 text-xs text-muted-foreground">
                 {missing > 0
-                  ? `Se requieren ${missing} persona${missing === 1 ? '' : 's'} adicionales para alcanzar la plantilla ideal.`
+                  ? t('operationalAreaDetail.recommendationMissing', { count: missing })
                   : staffing.ideal != null
-                    ? 'Esta área ya alcanzó su plantilla ideal. No se requieren acciones.'
-                    : 'Esta área no tiene una plantilla ideal definida todavía.'}
+                    ? t('operationalAreaDetail.recommendationComplete')
+                    : t('operationalAreaDetail.tipNoTemplate')}
               </p>
               {missing > 0 && (
                 <Button
@@ -876,7 +967,7 @@ export default function OperationalAreaDetail({
                   className="self-start font-bold"
                 >
                   <Lightbulb className="h-4 w-4" />
-                  Ver candidatos disponibles
+                  {t('operationalAreaDetail.viewAvailableCandidatesButton')}
                 </Button>
               )}
             </div>
@@ -905,7 +996,9 @@ export default function OperationalAreaDetail({
         >
           <DialogContent className="max-w-xs">
             <DialogHeader>
-              <DialogTitle className="text-base">Historial de {area.name}</DialogTitle>
+              <DialogTitle className="text-base">
+                {t('operationalAreaDetail.historyDialogTitle', { areaName: area.name })}
+              </DialogTitle>
               <DialogClose asChild>
                 <button
                   type="button"
