@@ -8,6 +8,7 @@ import ChangePasswordPage from './pages/auth/ChangePasswordPage'
 import LoginPage from './pages/auth/LoginPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import ChangelogPage from './pages/docs/ChangelogPage'
 import DeveloperManualPage from './pages/docs/DeveloperManualPage'
 import UserManualPage from './pages/docs/UserManualPage'
 import KpisPage from './pages/kpis/KpisPage'
@@ -107,9 +108,21 @@ export default function App() {
 
                 {/* Documentación (MI Stack Reference, secciones 14d/17a) -- accesible a
                   cualquier usuario autenticado, sin gate por módulo (no son una
-                  funcionalidad de negocio, son ayuda/referencia). */}
-                <Route path="/developer-manual" element={<DeveloperManualPage />} />
+                  funcionalidad de negocio, son ayuda/referencia). Developer Manual
+                  es la única excepción: contenido técnico (esquema de BD,
+                  arquitectura interna) sin utilidad para personal de piso, restringido
+                  a ADMINISTRADOR por rol (no por módulo) -- decisión explícita del
+                  usuario, 2026-08-30. */}
+                <Route
+                  path="/developer-manual"
+                  element={
+                    <ProtectedRoute roles={['ADMINISTRADOR']}>
+                      <DeveloperManualPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/manual" element={<UserManualPage />} />
+                <Route path="/changelog" element={<ChangelogPage />} />
               </Route>
 
               {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el

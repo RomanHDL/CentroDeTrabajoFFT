@@ -15,8 +15,9 @@ para poder desplegar en el servidor privado (Coolify). Ver
 - `tsconfig.json` permisivo (`allowJs`) — código nuevo se escribe en TypeScript
   real desde ahora; el `.jsx` existente se convierte de forma oportunista.
 - Observabilidad Sentry (frontend + backend), inactiva hasta recibir un DSN real.
-- Developer Manual (`/developer-manual`) y Manual de Usuario (`/manual`).
-- Este `CHANGELOG.md`.
+- Developer Manual (`/developer-manual`, solo ADMINISTRADOR) y Manual de
+  Usuario (`/manual`), ambos enlazados desde el menú de navegación.
+- Este `CHANGELOG.md`, ahora también visible dentro de la app en `/changelog`.
 - **Migración completa Prisma → Drizzle ORM.** Schema (`server-lib/db/schema.ts`
   + `relations.ts`) generado por introspección directa contra la base real
   (18 tablas/12 enums, cero riesgo de definición divergente). Los 25 archivos
@@ -25,14 +26,21 @@ para poder desplegar en el servidor privado (Coolify). Ver
   con `FOR UPDATE`, claves compuestas, upserts, joins anidados). `@prisma/*`
   y `prisma` eliminados de las dependencias; `prisma/`, `prisma.config.js`,
   `server-lib/prisma.js` y `generated/` eliminados del repo.
+- **i18n real (react-i18next).** Framework completo más extracción de TODO
+  el texto visible de la app (Centro de Trabajo, dashboard, usuarios,
+  registro de personal, docs, y la capa de lógica de negocio/catálogos
+  compartidos) a claves de traducción, con contenido REAL (no placeholders)
+  en español, inglés y chino simplificado en los 13 namespaces. Selector de
+  idioma persistente (localStorage), español como idioma por defecto.
+- **Migración completa MUI → Tailwind CSS + shadcn/ui.** Los 88 archivos del
+  frontend convertidos uno por uno; MUI eliminado por completo de las
+  dependencias del proyecto.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
-- Andamiaje i18n (en / es-MX / zh-CN).
 - SSO real de Nextcloud (OIDC), reemplaza el login propio.
-- Migración MUI → Tailwind CSS + shadcn/ui.
 - Despliegue a Coolify (Docker + PM2), reemplaza Vercel.
 
 ## [1.0.0]
