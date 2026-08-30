@@ -11,6 +11,7 @@ import {
   UserX,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -55,10 +56,20 @@ import { useEmployeeDropTarget } from '../../ui/dnd'
    la paleta por defecto de Tailwind -- se usan esas clases con nombre en
    vez de hex arbitrario para mantenerse dentro del sistema de diseño. */
 
+// Fase 4 (i18n): las etiquetas visibles de este mapa ya no viven aqui --
+// `dot`/`text` son clases CSS (nunca texto de usuario), y `label` se
+// resuelve via t() solo donde se muestra (SummaryPanel, unico lugar que
+// renderiza la leyenda), ver STATUS_LABEL_KEYS mas abajo.
 const VISUAL_STATUS = {
-  COMPLETA: { label: 'Completa (100%)', dot: 'bg-emerald-500', text: 'text-emerald-500' },
-  EN_PROGRESO: { label: 'En progreso (1-99%)', dot: 'bg-amber-500', text: 'text-amber-500' },
-  SIN_PERSONAL: { label: 'Sin personal (0%)', dot: 'bg-red-500', text: 'text-red-500' },
+  COMPLETA: { dot: 'bg-emerald-500', text: 'text-emerald-500' },
+  EN_PROGRESO: { dot: 'bg-amber-500', text: 'text-amber-500' },
+  SIN_PERSONAL: { dot: 'bg-red-500', text: 'text-red-500' },
+}
+
+const STATUS_LABEL_KEYS = {
+  COMPLETA: 'lineasTab.statusComplete',
+  EN_PROGRESO: 'lineasTab.statusInProgress',
+  SIN_PERSONAL: 'lineasTab.statusNoStaff',
 }
 
 function visualStatusFor(pct) {
@@ -90,6 +101,7 @@ function matchesQuery(linea, rawQuery) {
 }
 
 export default function LineasTab({ onOpenLine }) {
+  const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const [query, setQuery] = useState('')
   const [view, setView] = useState('grid')
@@ -136,15 +148,14 @@ export default function LineasTab({ onOpenLine }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
-          <p className="text-[15px] font-extrabold">Líneas de producción FFT ({lineas.length})</p>
+          <p className="text-[15px] font-extrabold">
+            {t('lineasTab.title', { count: lineas.length })}
+          </p>
           <Tooltip>
             <TooltipTrigger asChild>
               <Info className="h-4 w-4 cursor-help text-muted-foreground" />
             </TooltipTrigger>
-            <TooltipContent>
-              Solo Línea 1 a Línea 10 — Cajas, Accesorios, Paletizado, Línea de Proyecto y demás
-              áreas viven en 'Áreas de trabajo'.
-            </TooltipContent>
+            <TooltipContent>{t('lineasTab.tooltipInfo')}</TooltipContent>
           </Tooltip>
         </div>
 
@@ -152,7 +163,7 @@ export default function LineasTab({ onOpenLine }) {
           <div className="relative min-w-[220px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar línea..."
+              placeholder={t('lineasTab.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9"
@@ -161,7 +172,7 @@ export default function LineasTab({ onOpenLine }) {
           <div className="inline-flex items-center rounded-md border border-input p-0.5">
             <button
               type="button"
-              aria-label="Vista de cuadrícula"
+              aria-label={t('lineasTab.gridViewLabel')}
               onClick={() => setView('grid')}
               className={cn(
                 'inline-flex h-8 w-9 items-center justify-center rounded-sm transition-colors',
@@ -174,7 +185,7 @@ export default function LineasTab({ onOpenLine }) {
             </button>
             <button
               type="button"
-              aria-label="Vista de lista"
+              aria-label={t('lineasTab.listViewLabel')}
               onClick={() => setView('lista')}
               className={cn(
                 'inline-flex h-8 w-9 items-center justify-center rounded-sm transition-colors',
@@ -201,22 +212,21 @@ export default function LineasTab({ onOpenLine }) {
 
       {filteredRows.length === 0 && (
         <p className="py-8 text-center text-[13px] text-muted-foreground">
-          Ninguna línea coincide con "{query}".
+          {t('lineasTab.noMatch', { query })}
         </p>
       )}
 
       <SummaryPanel totals={totals} />
 
       <p className="mt-3 text-center text-[11px] text-muted-foreground/60">
-        Los datos se actualizan según las asignaciones del día actual (snapshot histórico mientras
-        nadie registre a alguien hoy; en cuanto se registra o mueve, esa asignación real siempre
-        gana).
+        {t('lineasTab.dataNote')}
       </p>
     </div>
   )
 }
 
 function LineaCard({ row, onOpenLine }) {
+  const { t } = useTranslation('centroTrabajo')
   const { linea, real, ideal, pct, missing, complete, stationsCount } = row
   const statusKey = visualStatusFor(pct)
   const status = VISUAL_STATUS[statusKey]
@@ -241,7 +251,7 @@ function LineaCard({ row, onOpenLine }) {
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-bold text-muted-foreground">
-          {real} / {ideal} personas
+          {t('lineasTab.peopleCount', { real, ideal })}
         </p>
         <span
           className={cn(
@@ -249,7 +259,7 @@ function LineaCard({ row, onOpenLine }) {
             complete ? 'bg-emerald-500/[0.14] text-emerald-500' : 'bg-red-500/[0.12] text-red-500',
           )}
         >
-          {complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
+          {complete ? t('lineasTab.complete') : t('lineasTab.missingCount', { count: missing })}
         </span>
       </div>
 
@@ -266,37 +276,38 @@ function LineaCard({ row, onOpenLine }) {
         <div className="flex items-center gap-[4.8px]">
           <Cog className="h-[15px] w-[15px] text-muted-foreground" />
           <p className="text-xs font-semibold text-muted-foreground">
-            {stationsCount} estaci{stationsCount === 1 ? 'ón' : 'ones'}
+            {t('lineasTab.stationsCount', { count: stationsCount })}
           </p>
         </div>
         <ChevronRight className="h-[18px] w-[18px] text-muted-foreground/60" />
       </div>
 
-      {isOver && <p className="text-[10px] font-bold text-blue-500">Soltar para elegir estación</p>}
+      {isOver && <p className="text-[10px] font-bold text-blue-500">{t('lineasTab.dropHint')}</p>}
     </button>
   )
 }
 
 function LineasListView({ rows, onOpenLine }) {
+  const { t } = useTranslation('centroTrabajo')
   return (
     <div className="overflow-auto rounded-[20px] border border-border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="text-[11.5px] font-extrabold uppercase text-muted-foreground">
-              Línea
+              {t('lineasTab.colLinea')}
             </TableHead>
             <TableHead className="text-[11.5px] font-extrabold uppercase text-muted-foreground">
-              Personal
+              {t('lineasTab.colPersonal')}
             </TableHead>
             <TableHead className="text-[11.5px] font-extrabold uppercase text-muted-foreground">
-              Estado
+              {t('lineasTab.colEstado')}
             </TableHead>
             <TableHead className="text-[11.5px] font-extrabold uppercase text-muted-foreground">
-              Cobertura
+              {t('lineasTab.colCobertura')}
             </TableHead>
             <TableHead className="text-[11.5px] font-extrabold uppercase text-muted-foreground">
-              Estaciones
+              {t('lineasTab.colEstaciones')}
             </TableHead>
             <TableHead />
           </TableRow>
@@ -337,7 +348,9 @@ function LineasListView({ rows, onOpenLine }) {
                         : 'bg-red-500/[0.12] text-red-500',
                     )}
                   >
-                    {complete ? 'Completa' : missing === 1 ? 'Falta 1' : `Faltan ${missing}`}
+                    {complete
+                      ? t('lineasTab.complete')
+                      : t('lineasTab.missingCount', { count: missing })}
                   </span>
                 </TableCell>
                 <TableCell className={cn('text-[13px] font-bold', status.text)}>
@@ -357,9 +370,10 @@ function LineasListView({ rows, onOpenLine }) {
 }
 
 function SummaryPanel({ totals }) {
+  const { t } = useTranslation('centroTrabajo')
   const items = [
     {
-      label: 'Líneas totales',
+      label: t('lineasTab.totalLinesLabel'),
       value: totals.count,
       icon: <Users className="h-[17px] w-[17px]" />,
       border: 'border-blue-500/20',
@@ -368,7 +382,7 @@ function SummaryPanel({ totals }) {
       iconText: 'text-blue-500',
     },
     {
-      label: 'Personal asignado',
+      label: t('lineasTab.assignedPersonnelLabel'),
       value: `${totals.totalReal} / ${totals.totalIdeal}`,
       icon: <Users2 className="h-[17px] w-[17px]" />,
       border: 'border-emerald-500/20',
@@ -377,7 +391,7 @@ function SummaryPanel({ totals }) {
       iconText: 'text-emerald-500',
     },
     {
-      label: 'Personal faltante',
+      label: t('lineasTab.missingPersonnelLabel'),
       value: totals.faltante,
       icon: <UserX className="h-[17px] w-[17px]" />,
       border: 'border-red-500/20',
@@ -386,7 +400,7 @@ function SummaryPanel({ totals }) {
       iconText: 'text-red-500',
     },
     {
-      label: 'Cobertura general',
+      label: t('lineasTab.overallCoverageLabel'),
       value: `${totals.coverage.toFixed(1)}%`,
       icon: <PieChart className="h-[17px] w-[17px]" />,
       border: 'border-purple-500/20',
@@ -400,13 +414,15 @@ function SummaryPanel({ totals }) {
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-            Leyenda de estado
+            {t('lineasTab.statusLegendTitle')}
           </p>
           <div className="flex flex-wrap gap-3">
-            {Object.values(VISUAL_STATUS).map((meta) => (
-              <div key={meta.label} className="flex items-center gap-[4.8px]">
+            {Object.entries(VISUAL_STATUS).map(([key, meta]) => (
+              <div key={key} className="flex items-center gap-[4.8px]">
                 <div className={cn('h-2 w-2 rounded-full', meta.dot)} />
-                <p className="text-xs font-semibold text-muted-foreground">{meta.label}</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t(STATUS_LABEL_KEYS[key])}
+                </p>
               </div>
             ))}
           </div>
