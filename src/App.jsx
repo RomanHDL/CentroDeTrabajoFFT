@@ -1,6 +1,4 @@
-import CssBaseline from '@mui/material/CssBaseline'
-import ThemeProvider from '@mui/material/styles/ThemeProvider'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { TooltipProvider } from './components/ui/tooltip'
 import AppLayout from './layout/AppLayout'
@@ -22,118 +20,113 @@ import { AuthProvider } from './state/auth'
 import { DndAssignProvider } from './state/dndAssign'
 import { RoleModeProvider } from './state/roleMode'
 import ToastHost from './ui/ToastHost'
-import { buildTheme } from './ui/theme'
 
 export default function App() {
   const [mode, setMode] = useState('light')
-  const theme = useMemo(() => buildTheme(mode), [mode])
 
-  // Fase 6 (MI Stack Reference): mantiene la clase `dark` de Tailwind
-  // sincronizada con el mismo estado `mode` que ya controla el
-  // ThemeProvider de MUI, para que ambos sistemas convivan sin duplicar
-  // el toggle mientras dura la migracion pagina por pagina.
+  // Fase 6 (MI Stack Reference, cierre): unica fuente de modo claro/oscuro --
+  // ya no convive con el ThemeProvider de MUI (removido, ver CHANGELOG),
+  // solo controla la clase `dark` que usan las clases Tailwind `dark:` en
+  // toda la app.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', mode === 'dark')
   }, [mode])
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <TooltipProvider delayDuration={200}>
-        <AuthProvider>
-          <RoleModeProvider>
-            <DndAssignProvider>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
+    <TooltipProvider delayDuration={200}>
+      <AuthProvider>
+        <RoleModeProvider>
+          <DndAssignProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
 
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppLayout mode={mode} setMode={setMode} />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DefaultRedirect />} />
                 <Route
+                  path="/dashboard"
                   element={
-                    <ProtectedRoute>
-                      <AppLayout mode={mode} setMode={setMode} />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<DefaultRedirect />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <RequireModuleAccess>
-                        <DashboardPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/centro-trabajo"
-                    element={
-                      <RequireModuleAccess>
-                        <CentroTrabajoPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/registro-personal"
-                    element={
-                      <RequireModuleAccess>
-                        <RegistroPersonalPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/usuarios"
-                    element={
-                      <RequireModuleAccess>
-                        <UsuariosPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/kpis"
-                    element={
-                      <RequireModuleAccess>
-                        <KpisPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/asistencia"
-                    element={
-                      <RequireModuleAccess>
-                        <AsistenciaPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-                  <Route
-                    path="/auditoria"
-                    element={
-                      <RequireModuleAccess>
-                        <AuditoriaPage />
-                      </RequireModuleAccess>
-                    }
-                  />
-
-                  {/* Documentación (MI Stack Reference, secciones 14d/17a) -- accesible a
-                    cualquier usuario autenticado, sin gate por módulo (no son una
-                    funcionalidad de negocio, son ayuda/referencia). */}
-                  <Route path="/developer-manual" element={<DeveloperManualPage />} />
-                  <Route path="/manual" element={<UserManualPage />} />
-                </Route>
-
-                {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
-                  usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
-                <Route
-                  path="/cambiar-contrasena"
-                  element={
-                    <ProtectedRoute>
-                      <ChangePasswordPage />
-                    </ProtectedRoute>
+                    <RequireModuleAccess>
+                      <DashboardPage />
+                    </RequireModuleAccess>
                   }
                 />
-              </Routes>
-              <ToastHost />
-            </DndAssignProvider>
-          </RoleModeProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
+                <Route
+                  path="/centro-trabajo"
+                  element={
+                    <RequireModuleAccess>
+                      <CentroTrabajoPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/registro-personal"
+                  element={
+                    <RequireModuleAccess>
+                      <RegistroPersonalPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/usuarios"
+                  element={
+                    <RequireModuleAccess>
+                      <UsuariosPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/kpis"
+                  element={
+                    <RequireModuleAccess>
+                      <KpisPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/asistencia"
+                  element={
+                    <RequireModuleAccess>
+                      <AsistenciaPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/auditoria"
+                  element={
+                    <RequireModuleAccess>
+                      <AuditoriaPage />
+                    </RequireModuleAccess>
+                  }
+                />
+
+                {/* Documentación (MI Stack Reference, secciones 14d/17a) -- accesible a
+                  cualquier usuario autenticado, sin gate por módulo (no son una
+                  funcionalidad de negocio, son ayuda/referencia). */}
+                <Route path="/developer-manual" element={<DeveloperManualPage />} />
+                <Route path="/manual" element={<UserManualPage />} />
+              </Route>
+
+              {/* Fuera del AppLayout (sin sidebar) pero igual protegida: se usa antes de que el
+                usuario pueda ver el resto del sistema cuando mustChangePassword = true. */}
+              <Route
+                path="/cambiar-contrasena"
+                element={
+                  <ProtectedRoute>
+                    <ChangePasswordPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+            <ToastHost />
+          </DndAssignProvider>
+        </RoleModeProvider>
+      </AuthProvider>
+    </TooltipProvider>
   )
 }

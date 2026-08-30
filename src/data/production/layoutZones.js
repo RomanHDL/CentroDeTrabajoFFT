@@ -25,7 +25,7 @@
    la caja y el titulo del detalle/drawer coincidan siempre.
    ───────────────────────────────────────────── */
 
-import { WORK_CENTERS, LINES_ONLY } from './catalog'
+import { LINES_ONLY, WORK_CENTERS } from './catalog'
 
 export const FFT_LINE_IDS = LINES_ONLY.map((w) => w.id)
 
@@ -45,6 +45,19 @@ export const PHYSICAL_ZONES = {
 }
 
 const IDS_IN_PHYSICAL_ZONES = new Set(Object.values(PHYSICAL_ZONES).flatMap((z) => z.areaIds))
+
+/* Fase 6 (MI Stack Reference, cierre): extraida de WorkAreaMap.jsx (890
+   lineas, MUI) al eliminar ese componente muerto -- ya no se renderiza en
+   ningun lado desde que OperatingFloorPlan.jsx lo reemplazo, pero este
+   helper puro (sin JSX/MUI) seguia en uso real por AreasLayoutView.jsx
+   para el caso especial "click en FFT". Clasifica una PHYSICAL_ZONE segun
+   cuantas areas reales agrupa, para decidir que tipo de panel de detalle
+   mostrar (vacio/area unica/grupo de zona). */
+export function describeZoneSelection(zone) {
+  if (zone.areaIds.length === 0) return { type: 'empty', id: zone.id, label: zone.label }
+  if (zone.areaIds.length === 1) return { type: 'area', id: zone.areaIds[0] }
+  return { type: 'zoneGroup', id: zone.id, areaIds: zone.areaIds, label: zone.label }
+}
 
 /* Areas auxiliares = todo lo que existe en el catalogo real pero no
    aparece ya representado dentro del bloque fisico principal
