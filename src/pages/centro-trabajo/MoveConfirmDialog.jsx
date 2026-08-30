@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -37,6 +38,7 @@ export default function MoveConfirmDialog({
   presetTo,
   onDone,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const { user } = useAuth()
   const isLider = user?.role === 'LIDER'
   const [toAreaId, setToAreaId] = useState(
@@ -73,7 +75,7 @@ export default function MoveConfirmDialog({
         onDone?.({ pending: true, request: res.request })
         onClose()
       } else {
-        setError(res.message || 'No se pudo enviar la solicitud.')
+        setError(res.message || t('moveConfirmDialog.requestFailedMessage'))
       }
       return
     }
@@ -89,7 +91,7 @@ export default function MoveConfirmDialog({
       onDone?.(res)
       onClose()
     } else {
-      setError(res.message || 'No se pudo mover al empleado.')
+      setError(res.message || t('moveConfirmDialog.moveFailedMessage'))
     }
   }
 
@@ -97,22 +99,29 @@ export default function MoveConfirmDialog({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mover empleado</DialogTitle>
+          <DialogTitle>{t('moveConfirmDialog.title')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 pb-2">
           <p className="font-extrabold">
-            {employee.employeeNumber} — {employee.name}
+            {t('moveConfirmDialog.employeeHeader', {
+              employeeNumber: employee.employeeNumber,
+              name: employee.name,
+            })}
           </p>
 
           <div className="flex items-center gap-3 rounded-[20px] bg-black/[.04] p-3 dark:bg-white/[.08]">
             <div>
-              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Origen</p>
+              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
+                {t('moveConfirmDialog.originLabel')}
+              </p>
               <p className="text-[13.5px] font-bold">{areaLabel(currentAssignment.areaId)}</p>
               <p className="text-[12.5px] text-muted-foreground">{currentAssignment.stationId}</p>
             </div>
             <ArrowRight className="text-muted-foreground" />
             <div>
-              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">Destino</p>
+              <p className="text-[10.5px] font-bold uppercase text-muted-foreground">
+                {t('moveConfirmDialog.destinationLabel')}
+              </p>
               <p className="text-[13.5px] font-bold">{areaLabel(toAreaId)}</p>
               <p className="text-[12.5px] text-muted-foreground">{toStationId || '—'}</p>
             </div>
@@ -121,7 +130,7 @@ export default function MoveConfirmDialog({
           {!presetTo && (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="move-to-area">Línea destino</Label>
+                <Label htmlFor="move-to-area">{t('moveConfirmDialog.lineDestinationLabel')}</Label>
                 <Select
                   value={toAreaId}
                   onValueChange={(v) => {
@@ -142,7 +151,9 @@ export default function MoveConfirmDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="move-to-station">Estación destino</Label>
+                <Label htmlFor="move-to-station">
+                  {t('moveConfirmDialog.stationDestinationLabel')}
+                </Label>
                 <Select value={toStationId} onValueChange={setToStationId}>
                   <SelectTrigger id="move-to-station">
                     <SelectValue />
@@ -152,7 +163,12 @@ export default function MoveConfirmDialog({
                       const occ = getStationOccupancy(toAreaId, s.name, undefined, employee.id)
                       return (
                         <SelectItem key={s.id} value={s.name} disabled={occ.isFull}>
-                          {s.name} ({occ.count}/{occ.capacity}){occ.isFull ? ' — completa' : ''}
+                          {t('moveConfirmDialog.stationOption', {
+                            name: s.name,
+                            count: occ.count,
+                            capacity: occ.capacity,
+                          })}
+                          {occ.isFull ? t('moveConfirmDialog.stationFull') : ''}
                         </SelectItem>
                       )
                     })}
@@ -164,22 +180,23 @@ export default function MoveConfirmDialog({
 
           {isLider && (
             <Alert className={cn(alertToneClass('info'), 'py-1')}>
-              Como líder, este movimiento se enviará a un supervisor o administrador para su
-              aprobación — no se aplica de inmediato.
+              {t('moveConfirmDialog.liderNotice')}
             </Alert>
           )}
           {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
         </div>
         <div className="flex justify-end gap-2 px-6 pb-5">
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t('moveConfirmDialog.cancelButton')}
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!toStationId || submitting}
             className="font-bold"
           >
-            {isLider ? 'Solicitar cambio' : 'Confirmar movimiento'}
+            {isLider
+              ? t('moveConfirmDialog.requestChangeButton')
+              : t('moveConfirmDialog.confirmMoveButton')}
           </Button>
         </div>
       </DialogContent>

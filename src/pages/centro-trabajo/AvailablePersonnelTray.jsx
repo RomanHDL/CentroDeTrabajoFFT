@@ -1,5 +1,6 @@
 import { GripVertical, Search, X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
@@ -37,11 +38,9 @@ import EmployeeAvatar from './EmployeeAvatar'
    Scroll horizontal LOCAL de esta lista unicamente; la pagina nunca
    scrollea horizontal por esto.
    ───────────────────────────────────────────── */
-export default function AvailablePersonnelTray({
-  scopedAreaId,
-  title = 'Personal disponible para asignar',
-  hideTitle = false,
-}) {
+export default function AvailablePersonnelTray({ scopedAreaId, title, hideTitle = false }) {
+  const { t } = useTranslation('centroTrabajo')
+  const resolvedTitle = title ?? t('availablePersonnelTray.defaultTitle')
   usePersonnelVersion()
   const dnd = useDndAssign()
   const people = getAvailablePersonnelToday()
@@ -76,18 +75,18 @@ export default function AvailablePersonnelTray({
       {!hideTitle && (
         <div className="mb-2 flex flex-wrap items-baseline gap-1.5">
           <p className="text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-muted-foreground">
-            {title} ({people.length})
+            {resolvedTitle} ({people.length})
           </p>
           {q && (
             <p className="text-[11px] text-muted-foreground">
-              · {filtered.length} resultado{filtered.length === 1 ? '' : 's'}
+              {t('availablePersonnelTray.resultsCount', { count: filtered.length })}
             </p>
           )}
         </div>
       )}
       {isOver && (
         <p className="mb-2 text-[11.5px] font-bold text-[#3B82F6]">
-          Soltar aquí para quitar la asignación
+          {t('availablePersonnelTray.dropHint')}
         </p>
       )}
 
@@ -97,7 +96,7 @@ export default function AvailablePersonnelTray({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre o número de empleado..."
+            placeholder={t('availablePersonnelTray.searchPlaceholder')}
             className="h-9 rounded-[20px] bg-card pl-9 pr-9 text-sm"
           />
           {query && (
@@ -115,14 +114,14 @@ export default function AvailablePersonnelTray({
       {people.length === 0 ? (
         <EmptyState
           compact
-          title="No hay personal disponible sin asignación."
-          description="Todo el personal activo ya tiene ubicación asignada hoy."
+          title={t('availablePersonnelTray.emptyTitle')}
+          description={t('availablePersonnelTray.emptyDescription')}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
           compact
-          title="No se encontraron empleados"
-          description="Prueba con otro nombre o número."
+          title={t('availablePersonnelTray.noResultsTitle')}
+          description={t('availablePersonnelTray.noResultsDescription')}
         />
       ) : (
         <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1.5">

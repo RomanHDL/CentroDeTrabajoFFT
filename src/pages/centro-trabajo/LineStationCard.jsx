@@ -1,4 +1,5 @@
 import { UserX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn, hexToRgba } from '@/lib/utils'
 import { getPersonnelRank } from '../../data/personnel/rankSystem'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
@@ -39,6 +40,7 @@ export default function LineStationCard({
   onEmployeeClick,
   lineLike = false,
 }) {
+  const { t } = useTranslation('centroTrabajo')
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
   // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- por
@@ -192,7 +194,7 @@ export default function LineStationCard({
           occupant ? 'text-[#059669]' : 'text-[#B45309]',
         )}
       >
-        {occupant ? 'OCUPADA' : 'DISPONIBLE'}
+        {occupant ? t('lineStationCard.statusOccupied') : t('lineStationCard.statusAvailable')}
       </p>
     </div>
   )
