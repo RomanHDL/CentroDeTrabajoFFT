@@ -1,0 +1,15 @@
+# nixpacks.toml — Coolify build fix
+# 1. Bypass corepack ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING (corepack 0.24.1 + Node 22 bug)
+#    when packageManager: pnpm@11.22.0 triggers corepack download in nixpacks build.
+# 2. Override start to run Node.js server (pm2-runtime), not nixpacks Caddy SPA mode.
+
+[phases.install]
+cmds = [
+  "corepack disable",
+  "npm install --global pnpm@11.22.0",
+  "pnpm install --frozen-lockfile"
+]
+
+[start]
+cmd = "pnpm start"
+
