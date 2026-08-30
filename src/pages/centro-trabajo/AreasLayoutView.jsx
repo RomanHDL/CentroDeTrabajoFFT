@@ -4,9 +4,8 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui
 import { cardClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import OperatingFloorPlan from '../../components/OperatingFloorPlan'
-import { describeZoneSelection } from '../../components/WorkAreaMap'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { PHYSICAL_ZONES } from '../../data/production/layoutZones'
+import { describeZoneSelection, PHYSICAL_ZONES } from '../../data/production/layoutZones'
 import { BASE_SNAPSHOT_DATE, getPeopleWithoutArea } from '../../data/production/personnelByArea'
 import AreaDetailPanel from './AreaDetailPanel'
 import WorkAreaBottomSummary from './WorkAreaBottomSummary'
@@ -18,10 +17,11 @@ import WorkAreaBottomSummary from './WorkAreaBottomSummary'
    el componente compartido -- para que Centro de Trabajo, Layout 2D
    y (antes) Dashboard nunca muestren dos disenos distintos del mismo
    piso. No-readOnly: click/drag&drop/asignar siguen funcionando
-   exactamente igual que antes con WorkAreaMap. WorkAreaMap.jsx sigue
-   existiendo solo por su helper describeZoneSelection (usado abajo
-   para el caso especial "FFT" que dispara AreaCoverageSummaryCard),
-   ya no se renderiza en ningun lado.
+   exactamente igual que antes con WorkAreaMap. WorkAreaMap.jsx (890
+   lineas, MUI) se eliminó al cerrar Fase 6 -- ya no se renderizaba en
+   ningun lado; su unico export real, describeZoneSelection (usado
+   abajo para el caso especial "FFT"), se movió a
+   data/production/layoutZones.js, la misma fuente de PHYSICAL_ZONES.
 
    El panel de detalle (AreaDetailPanel + Drawer lateral/inferior)
    sigue existiendo tal cual, pero ahora solo lo abre un click en
