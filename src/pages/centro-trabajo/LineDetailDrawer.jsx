@@ -622,8 +622,11 @@ export default function LineDetailDrawer({
                produccion" debe cubrir el ancho COMPLETO del contenido
                (de extremo a extremo), no solo la columna principal -- por
                eso vive FUERA del grid de 12 columnas de abajo, como su
-               propia seccion de ancho completo. */
-            <LineProcessFlow />
+               propia seccion de ancho completo. `workstations` se pasa
+               para que los nodos con posicion real (P.E/LIM/ACE/ET/EM/CAL)
+               muestren numero+nombre del empleado ocupante -- mismo array
+               ya usado por el resto de este drawer, sin recalcular nada. */
+            <LineProcessFlow workstations={workstations} />
           )}
 
           {isStationBased ? (
