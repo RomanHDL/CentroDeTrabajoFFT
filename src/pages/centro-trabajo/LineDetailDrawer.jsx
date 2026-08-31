@@ -4,7 +4,6 @@ import {
   ArrowLeftRight,
   Hand,
   History,
-  Info,
   Moon,
   Settings,
   Sun,
@@ -25,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   alertToneClass,
   cardClass,
@@ -43,10 +41,7 @@ import {
 } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
-import {
-  deactivateLineStation,
-  fetchLineStationConfig,
-} from '../../data/personnel/lineStationConfig'
+import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
 import {
   getLineVisualTypeOrder,
   getLineVisualTypes,
@@ -88,13 +83,12 @@ import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
 import EmployeeAvatar from './EmployeeAvatar'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
+import LineProcessFlow from './LineProcessFlow'
 import LineStationConfigDrawer from './LineStationConfigDrawer'
 import LineVisualLegend, { LineTypeIcon } from './LineVisualLegend'
-import LineWorkstationCard from './LineWorkstationCard'
 import MoveConfirmDialog from './MoveConfirmDialog'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
-import StationAssignDialog from './StationAssignDialog'
 import SuggestedEmployeeCard from './SuggestedEmployeeCard'
 import WorkCenterNavControls from './WorkCenterNavControls'
 
@@ -106,10 +100,23 @@ import WorkCenterNavControls from './WorkCenterNavControls'
    Conveyor), AreaDetail.jsx solo lo invoca para la variante LINE -- por
    eso se edita directamente aqui, con identidad visual PROPIA (nunca la
    de Paletizado): TIPO DE PERSONAL (lineVisualType.js/LineVisualLegend.jsx)
-   separado de ESTADO DE ESTACION, tarjeta de estacion propia
-   (LineWorkstationCard.jsx, LineStationCard.jsx queda intacta para
-   LINE_LIKE). Rama "vista simple" (DropZoneBanner) se conserva tal cual,
-   solo por defensividad (ver getAreaDetailVariant, catalog.js).
+   separado de ESTADO DE ESTACION. Rama "vista simple" (DropZoneBanner) se
+   conserva tal cual, solo por defensividad (ver getAreaDetailVariant,
+   catalog.js).
+
+   2026-08-31 (a peticion explicita del usuario, foto de pizarron fisico):
+   "Distribución de estaciones" (antes una cuadricula de LineWorkstationCard
+   con drag&drop para asignar personal puesto por puesto -- ese archivo se
+   elimino, sin otro consumidor) se reemplaza por LineProcessFlow.jsx, un
+   diagrama de flujo ESTATICO (mismo para las 11 lineas, no depende de
+   personal/ocupacion) que al hacer click en un nodo abre una ventana
+   flotante de 2 pasos ("Hoja de Proceso" / "Planos por puesto") con
+   contenido placeholder -- el usuario confirmo explicitamente que la
+   asignacion por puesto especifico ya no hace falta desde aqui (se sigue
+   asignando a la linea en general desde el layout). `selectedStation`
+   (sidebar derecho) ya no se puede elegir manualmente sin ese grid --
+   sigue mostrando su fallback de siempre (primera disponible o primera
+   estacion), efecto aceptado de este cambio.
 
    Fase 6c (Centro de Trabajo): portado de MUI a Tailwind. Es el archivo
    mas grande del repo -- reutiliza integramente toda la logica de
@@ -174,7 +181,6 @@ export default function LineDetailDrawer({
   const [historyEmployee, setHistoryEmployee] = useState(null)
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
   const [selectedStationName, setSelectedStationName] = useState(null)
-  const [assignStation, setAssignStation] = useState(null)
   const [includeAbsent, setIncludeAbsent] = useState(false)
   const [actionError, setActionError] = useState('')
   /* "estaciones configurables por ADMINISTRADOR" (2026-08-27): configLoaded
@@ -201,7 +207,6 @@ export default function LineDetailDrawer({
     setHistoryEmployee(null)
     setMoveTarget(null)
     setSelectedStationName(null)
-    setAssignStation(null)
     setIncludeAbsent(false)
     setActionError('')
     setConfigDrawerOpen(false)
@@ -265,25 +270,6 @@ export default function LineDetailDrawer({
 
   function handleStationConfigChanged() {
     setConfigVersion((v) => v + 1)
-  }
-
-  async function handleDeactivateStation(w) {
-    setActionError('')
-    if (w.occupants?.length > 0) {
-      setActionError(t('lineDetailDrawer.cannotDeleteOccupiedStation'))
-      return
-    }
-    try {
-      await deactivateLineStation(canonicalId, w.id)
-      handleStationConfigChanged()
-    } catch (e) {
-      setActionError(e.message || t('lineDetailDrawer.deleteStationError'))
-    }
-  }
-
-  function handleEditStation(w) {
-    setEditStationId(w.id)
-    setConfigDrawerOpen(true)
   }
 
   /* Agrupacion por categoria -- usada SOLO por "Resumen de la linea" (sidebar,
@@ -635,47 +621,7 @@ export default function LineDetailDrawer({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
               {/* Columna principal */}
               <div className="md:col-span-8">
-                <div className={cn(cardClass, 'mb-4')}>
-                  <div className={cardHeaderClass}>
-                    <div className="min-w-0 flex-1">
-                      <p className={cardHeaderTitleClass}>
-                        {t('lineDetailDrawer.stationDistributionTitle')}
-                      </p>
-                      <p className={cardHeaderSubtitleClass}>
-                        {t('lineDetailDrawer.stationDistributionSubtitle')}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <p className="text-xs font-bold text-muted-foreground">
-                        {t('lineDetailDrawer.positionsCountLabel', { count: workstations.length })}
-                      </p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-[15px] w-[15px] text-muted-foreground/60" />
-                        </TooltipTrigger>
-                        <TooltipContent>{t('lineDetailDrawer.rolesRepeatTooltip')}</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 p-4">
-                    {workstations.map((w) => (
-                      <LineWorkstationCard
-                        key={w.id}
-                        workAreaId={canonicalId}
-                        workstation={w}
-                        selected={selectedStation?.name === w.name}
-                        onSelect={(ws) => {
-                          setSelectedStationName(ws.name)
-                          if (ws.isAvailable) setAssignStation(ws)
-                        }}
-                        onEmployeeClick={(emp) => setHistoryEmployee(emp)}
-                        isAdmin={isAdmin && configLoaded}
-                        onEdit={handleEditStation}
-                        onDeactivate={handleDeactivateStation}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <LineProcessFlow />
 
                 {peopleWithoutStation.length > 0 && (
                   <div className={cn(cardClass, 'mb-4')}>
@@ -866,6 +812,55 @@ export default function LineDetailDrawer({
 
               {/* Columna lateral */}
               <div className="md:col-span-4">
+                {/* 2026-08-31 (a peticion explicita del usuario): "Resumen de la
+                    linea" sube al primer lugar (junto al nuevo diagrama de flujo,
+                    LineProcessFlow) y "Detalle de estacion" baja debajo -- ya no
+                    tiene sentido que compita visualmente arriba con lo nuevo,
+                    dado que quedo fijo en una sola estacion (ver comentario junto
+                    a `selectedStation` mas arriba). No se elimino, solo se movio. */}
+                <div className={cn(cardClass, 'mb-4 p-4')}>
+                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>
+                    {t('lineDetailDrawer.lineSummaryTitle')}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {lineSummary.groups.map((g) => (
+                      <div key={g.key} className="flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: g.color }}
+                        />
+                        <p className="flex-1 truncate text-[12.5px]">{g.label}</p>
+                        <p className="text-[12.5px] font-bold">
+                          {g.occupied} / {g.total}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {staffing.ideal != null && (
+                    <>
+                      <div className="my-3 border-t border-border" />
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-[12.5px] font-extrabold">
+                          {t('lineDetailDrawer.totalAssignedLabel')}
+                        </p>
+                        <p className="text-[12.5px] font-extrabold">
+                          {staffing.real} / {staffing.ideal}
+                        </p>
+                      </div>
+                      {staffing.diff < 0 && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className="flex-1 text-xs text-[#EF4444]">
+                            {t('lineDetailDrawer.missingCoverageLabel')}
+                          </p>
+                          <p className="text-xs font-bold text-[#EF4444]">
+                            {Math.abs(staffing.diff)}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
                     <div className="min-w-0 flex-1">
@@ -1109,49 +1104,6 @@ export default function LineDetailDrawer({
                     )}
                   </div>
                 </div>
-
-                <div className={cn(cardClass, 'p-4')}>
-                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>
-                    {t('lineDetailDrawer.lineSummaryTitle')}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {lineSummary.groups.map((g) => (
-                      <div key={g.key} className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: g.color }}
-                        />
-                        <p className="flex-1 truncate text-[12.5px]">{g.label}</p>
-                        <p className="text-[12.5px] font-bold">
-                          {g.occupied} / {g.total}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  {staffing.ideal != null && (
-                    <>
-                      <div className="my-3 border-t border-border" />
-                      <div className="flex items-center gap-2">
-                        <p className="flex-1 text-[12.5px] font-extrabold">
-                          {t('lineDetailDrawer.totalAssignedLabel')}
-                        </p>
-                        <p className="text-[12.5px] font-extrabold">
-                          {staffing.real} / {staffing.ideal}
-                        </p>
-                      </div>
-                      {staffing.diff < 0 && (
-                        <div className="mt-1 flex items-center gap-2">
-                          <p className="flex-1 text-xs text-[#EF4444]">
-                            {t('lineDetailDrawer.missingCoverageLabel')}
-                          </p>
-                          <p className="text-xs font-bold text-[#EF4444]">
-                            {Math.abs(staffing.diff)}
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           ) : (
@@ -1194,13 +1146,6 @@ export default function LineDetailDrawer({
           )}
         </div>
 
-        <StationAssignDialog
-          open={Boolean(assignStation)}
-          onClose={() => setAssignStation(null)}
-          areaId={canonicalId}
-          station={assignStation}
-          onDone={() => {}}
-        />
         <RegisterPersonnelDialog
           open={registerOpen}
           onClose={() => setRegisterOpen(false)}
