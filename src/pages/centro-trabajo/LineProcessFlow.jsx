@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft, ChevronRight, FileText, Map as MapIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Map as MapIcon, Tv } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import {
   cardHeaderSubtitleClass,
   cardHeaderTitleClass,
 } from '@/lib/pageStyles'
-import { cn } from '@/lib/utils'
+import { cn, hexToRgba } from '@/lib/utils'
 
 /* ─────────────────────────────────────────────
    Reemplazo de "Distribución de estaciones" en LineDetailDrawer.jsx
@@ -24,16 +24,22 @@ import { cn } from '@/lib/utils'
 
    Las etiquetas (N, P.E, LIM, ACE, ET, EM, LIM CAJ, CAL) son las del
    pizarron, tal cual, sin expandir su significado (a peticion
-   explicita del usuario -- no inventar). El pizarron tiene una
-   pequeña desviacion vertical entre los nodos 3-4-5; se simplifica
-   aqui a una fila horizontal continua con wrap responsivo, priorizando
-   claridad sobre replicar la geometria exacta (decision explicita del
-   usuario al pedir la implementacion).
+   explicita del usuario -- no inventar).
 
-   Contenido del modal (Hoja de Proceso / Planos por puesto) es
-   ESTRUCTURA VACIA a proposito -- el usuario confirmo que arme el
-   diseño primero, sin fotos/manuales/plan de accion reales todavia
-   (nada inventado). */
+   2026-08-31, segunda ronda (a peticion explicita del usuario -- el
+   primer diseño, circulos azules planos con flechas, se rechazo
+   visualmente: "esa basura", "que la linea de trabajo haya teles"):
+   se redibuja como una banda de ensamblaje ilustrada (icono Tv de
+   lucide-react por estacion, sobre un track tipo "banda industrial"
+   con patron de rayas), mucho mas grande que el diseño anterior. Sin
+   imagen de referencia del usuario -- se uso criterio propio, pero
+   reutilizando la MISMA paleta de 6 colores ya usada en
+   lineVisualType.js (nunca una paleta inventada de cero), ciclada
+   entre las 8 estaciones. Sigue siendo la misma referencia ESTATICA
+   de proceso (no depende de personal/ocupacion) y el mismo click-to-
+   open de ProcessSheetModal (sin cambios de comportamiento). */
+const STATION_COLORS = ['#0D9488', '#DB2777', '#2563EB', '#F59E0B', '#7C3AED', '#64748B']
+
 const PROCESS_FLOW_NODES = [
   { order: 1, label: 'N' },
   { order: 2, label: 'P.E' },
@@ -43,7 +49,7 @@ const PROCESS_FLOW_NODES = [
   { order: 6, label: 'EM' },
   { order: 7, label: 'LIM CAJ' },
   { order: 8, label: 'CAL' },
-]
+].map((node, idx) => ({ ...node, color: STATION_COLORS[idx % STATION_COLORS.length] }))
 
 function ProcessSheetModal({ node, onClose }) {
   const { t } = useTranslation('centroTrabajo')
@@ -115,6 +121,7 @@ function ProcessSheetModal({ node, onClose }) {
 export default function LineProcessFlow() {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
+  const columns = PROCESS_FLOW_NODES.length
 
   return (
     <div className={cn(cardClass, 'mb-4')}>
@@ -126,27 +133,65 @@ export default function LineProcessFlow() {
           </p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-1 gap-y-4 p-4">
-        {PROCESS_FLOW_NODES.map((node, idx) => (
-          <div key={node.order} className="flex items-center gap-1">
-            {idx > 0 && (
-              <ArrowRight
-                className="h-4 w-4 shrink-0 text-muted-foreground/50"
-                aria-hidden="true"
-              />
-            )}
+      <div className="overflow-x-auto p-5 md:p-7">
+        <div
+          className="grid gap-x-2 gap-y-3"
+          style={{
+            gridTemplateColumns: `repeat(${columns}, minmax(92px, 1fr))`,
+            gridTemplateRows: 'auto auto',
+          }}
+        >
+          {/* "Banda transportadora": track de fondo con patron de rayas
+              diagonales tipo banda industrial, centrado en la fila de
+              iconos (fila 1) -- las estaciones "descansan" visualmente
+              encima. Un solo elemento continuo, sin depender de flechas
+              individuales entre nodos. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none h-3.5 self-center rounded-full shadow-inner"
+            style={{
+              gridColumn: `1 / span ${columns}`,
+              gridRow: 1,
+              backgroundColor: 'rgba(100,116,139,0.16)',
+              backgroundImage:
+                'repeating-linear-gradient(-45deg, rgba(0,0,0,0.14) 0, rgba(0,0,0,0.14) 5px, transparent 5px, transparent 12px)',
+            }}
+          />
+          {PROCESS_FLOW_NODES.map((node, idx) => (
             <button
+              key={node.order}
               type="button"
               onClick={() => setActiveNode(node)}
-              className="flex flex-col items-center gap-1.5 rounded-xl px-1.5 py-1 transition-colors hover:bg-accent"
+              className="group relative z-10 flex flex-col items-center gap-1 rounded-2xl py-1 transition-transform hover:-translate-y-0.5"
+              style={{ gridColumn: idx + 1, gridRow: 1 }}
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-blue-500 bg-blue-500/[0.08] text-[15px] font-extrabold text-blue-600 dark:text-blue-400">
+              <span
+                className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-full border-[3px] shadow-md transition-shadow group-hover:shadow-lg"
+                style={{
+                  borderColor: node.color,
+                  backgroundColor: hexToRgba(node.color, 0.14),
+                }}
+              >
+                <Tv className="h-8 w-8" style={{ color: node.color }} strokeWidth={1.75} />
+              </span>
+              <span
+                className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full border-2 border-background text-[11px] font-extrabold text-white shadow-sm"
+                style={{ backgroundColor: node.color }}
+              >
                 {node.order}
               </span>
-              <span className="text-[10.5px] font-bold text-muted-foreground">{node.label}</span>
             </button>
-          </div>
-        ))}
+          ))}
+          {PROCESS_FLOW_NODES.map((node) => (
+            <p
+              key={`${node.order}-label`}
+              className="text-center text-[11px] font-bold uppercase tracking-[0.3px] text-muted-foreground"
+              style={{ gridColumn: node.order, gridRow: 2 }}
+            >
+              {node.label}
+            </p>
+          ))}
+        </div>
       </div>
       <ProcessSheetModal node={activeNode} onClose={() => setActiveNode(null)} />
     </div>
