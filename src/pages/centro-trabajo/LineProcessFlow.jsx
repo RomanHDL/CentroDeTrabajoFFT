@@ -85,9 +85,37 @@ function baseRoleName(name) {
   return name.replace(/\s+\d+$/, '').trim()
 }
 
+/* Orden de FLUJO del diagrama (2026-08-31, septima ronda, a peticion
+   explicita del usuario viendo el resultado en vivo): Montaje primero,
+   Calidad SIEMPRE al final -- calca el orden real del pizarron
+   original (fisicamente se monta primero, la inspeccion de calidad es
+   el ultimo paso antes de salir de la linea). Esto es un orden
+   PURAMENTE VISUAL para este diagrama -- el usuario confirmo
+   explicitamente que NO debe tocar el orden real de `workstations`
+   usado en el resto de LineDetailDrawer.jsx (el panel "Detalle de
+   estacion" sigue mostrando "Posicion X de Y" con Calidad como
+   posicion 1 real, sin cambios -- esa regla de negocio real vive en
+   workstations.js y no se toca aqui). */
+const FLOW_ORDER_ROLES = [
+  'Montaje',
+  'Prueba eléctrica',
+  'Limpieza de TV',
+  'Suministro de Accesorios',
+  'Etiquetado',
+  'Empaque',
+]
+
+function flowPriority(base) {
+  if (base === 'Calidad') return Number.POSITIVE_INFINITY
+  const idx = FLOW_ORDER_ROLES.indexOf(base)
+  return idx === -1 ? FLOW_ORDER_ROLES.length : idx
+}
+
 /* Arma los nodos del diagrama a partir de las estaciones REALES de la
    linea actual (workstations, ya viene con occupancy resuelta desde
-   LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy). El row
+   LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy), pero
+   REORDENADAS solo para este diagrama segun FLOW_ORDER_ROLES (ver
+   arriba) -- nunca se muta ni se reordena el array original. El row
    (fila superior/inferior del zigzag) cambia solo cuando cambia el
    rol base respecto al nodo anterior -- asi las posiciones repetidas
    del mismo rol (ej. "Etiquetado"/"Etiquetado 2") quedan agrupadas en
@@ -95,9 +123,12 @@ function baseRoleName(name) {
    peticion explicita del usuario). */
 function buildNodes(workstations) {
   if (!workstations?.length) return []
+  const ordered = [...workstations].sort(
+    (a, b) => flowPriority(baseRoleName(a.name)) - flowPriority(baseRoleName(b.name)),
+  )
   let lastBase = null
   let row = 2
-  return workstations.map((ws, idx) => {
+  return ordered.map((ws, idx) => {
     const base = baseRoleName(ws.name)
     if (base !== lastBase) {
       row = row === 1 ? 2 : 1
