@@ -1,4 +1,13 @@
-import { ArrowRight, ChevronLeft, ChevronRight, FileText, Map as MapIcon } from 'lucide-react'
+import {
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Map as MapIcon,
+  Tv,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -26,33 +35,74 @@ import { cn, hexToRgba } from '@/lib/utils'
    pizarron, tal cual, sin expandir su significado (a peticion
    explicita del usuario -- no inventar).
 
-   2026-08-31, tercera ronda (a peticion explicita del usuario -- las
-   primeras 2 versiones se rechazaron: circulos azules planos primero
-   ("esa basura"), luego circulos ilustrados con icono de Tv y sombra
-   ("no es asi, quiero un diseño 2D") -- confirmo explicitamente que
-   "2D" significa el mismo lenguaje visual de "Areas de trabajo"
-   (OperatingFloorPlan.jsx): cajas de plano de planta, sin sombras ni
-   relieve. Se replica aqui el patron REAL de esas cajas (rounded-[20px]
-   border border-t-[3px] p-2.5, fondo con tinte muy sutil del color,
-   visto en BigZone/ConveyorGeneralBar de OperatingFloorPlan.jsx) en vez
-   de circulos ilustrados. Los colores son los mismos 6 ya usados en
-   lineVisualType.js (ciclados), no una paleta nueva -- OperatingFloorPlan.jsx
-   no usa iconos decorativos dentro de sus cajas (solo texto/barras), asi
-   que aqui tampoco se le puso ninguno. Sigue siendo la misma referencia
-   ESTATICA de proceso y el mismo click-to-open de ProcessSheetModal (sin
-   cambios de comportamiento). */
+   2026-08-31, cuarta ronda (a peticion explicita del usuario, con foto
+   del pizarron de nuevo como referencia exacta): las 3 rondas
+   anteriores fallaron en 3 cosas puntuales que el usuario aclaro
+   viendo el Preview en vivo:
+   1) Faltaba una "linea de trabajo" con TVs arriba -- se agrega
+      LineTrack, una barra horizontal con iconos Tv repetidos, ARRIBA
+      del diagrama de estaciones (no ligada 1:1 a cada estacion, es la
+      linea principal de producto).
+   2) El orden de las estaciones NO es una fila recta -- el pizarron
+      tiene un patron de zigzag (fila superior/inferior alternada,
+      ver ROW por nodo abajo, calcado de la foto real, no inventado).
+   3) Debe cubrir el ancho completo -- eso se resolvio en
+      LineDetailDrawer.jsx (esta seccion ahora vive FUERA del grid de
+      2 columnas, como su propia fila de ancho completo).
+   Se conserva el estilo de caja 2D (rounded-[20px] border-t-[3px],
+   mismo patron de OperatingFloorPlan.jsx) de la ronda anterior -- el
+   usuario no lo rechazo, solo pidio corregir orden/ancho/linea. */
 const STATION_COLORS = ['#0D9488', '#DB2777', '#2563EB', '#F59E0B', '#7C3AED', '#64748B']
 
+// row: 1 = fila superior, 2 = fila inferior -- calcado del pizarron real
+// (foto), no inventado. col: posicion horizontal (1 a 7).
 const PROCESS_FLOW_NODES = [
-  { order: 1, label: 'N' },
-  { order: 2, label: 'P.E' },
-  { order: 3, label: 'LIM' },
-  { order: 4, label: 'ACE' },
-  { order: 5, label: 'ET' },
-  { order: 6, label: 'EM' },
-  { order: 7, label: 'LIM CAJ' },
-  { order: 8, label: 'CAL' },
+  { order: 1, label: 'N', row: 2, col: 1 },
+  { order: 2, label: 'P.E', row: 1, col: 2 },
+  { order: 3, label: 'LIM', row: 1, col: 3 },
+  { order: 4, label: 'ACE', row: 2, col: 3 },
+  { order: 5, label: 'ET', row: 2, col: 4 },
+  { order: 6, label: 'EM', row: 1, col: 5 },
+  { order: 7, label: 'LIM CAJ', row: 2, col: 6 },
+  { order: 8, label: 'CAL', row: 2, col: 7 },
 ].map((node, idx) => ({ ...node, color: STATION_COLORS[idx % STATION_COLORS.length] }))
+
+const TOTAL_COLS = 7
+
+/* Icono de conector segun el cambio de fila entre un nodo y el
+   siguiente (sube/baja/misma fila) -- deriva el zigzag real del
+   pizarron sin hardcodear un dibujo por transicion. */
+function connectorIcon(fromRow, toRow) {
+  if (toRow < fromRow) return ArrowUpRight
+  if (toRow > fromRow) return ArrowDownRight
+  return ArrowRight
+}
+
+/* Barra "linea de trabajo": franja horizontal con iconos de TV
+   repetidos, arriba del diagrama de estaciones -- representa la linea
+   principal de producto (a peticion explicita del usuario, foto de
+   pizarron: "que la linea de trabajo haya teles"). No esta ligada 1:1
+   a las 8 estaciones de abajo, es decorativa/referencial. */
+function LineTrack() {
+  const tvCount = 8
+  return (
+    <div className="relative mb-5 flex h-11 items-center overflow-hidden rounded-full border border-border bg-muted/40">
+      <div
+        className="absolute inset-y-0 left-0 right-0"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(-45deg, rgba(100,116,139,0.12) 0, rgba(100,116,139,0.12) 6px, transparent 6px, transparent 14px)',
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative flex w-full items-center justify-around px-3">
+        {Array.from({ length: tvCount }, (_, i) => `tv-${i}`).map((key) => (
+          <Tv key={key} className="h-5 w-5 text-muted-foreground/70" strokeWidth={1.75} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function ProcessSheetModal({ node, onClose }) {
   const { t } = useTranslation('centroTrabajo')
@@ -135,21 +185,25 @@ export default function LineProcessFlow() {
           </p>
         </div>
       </div>
-      <div className="overflow-x-auto p-4">
-        <div className="flex min-w-max items-stretch gap-1.5">
-          {PROCESS_FLOW_NODES.map((node, idx) => (
-            <div key={node.order} className="flex items-center gap-1.5">
-              {idx > 0 && (
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-muted-foreground/40"
-                  aria-hidden="true"
-                />
-              )}
+      <div className="overflow-x-auto p-5 md:p-7">
+        <div className="min-w-[820px]">
+          <LineTrack />
+          <div
+            className="grid items-center gap-x-1 gap-y-6"
+            style={{
+              gridTemplateColumns: `repeat(${TOTAL_COLS}, 1fr)`,
+              gridTemplateRows: 'auto auto',
+            }}
+          >
+            {PROCESS_FLOW_NODES.map((node) => (
               <button
+                key={node.order}
                 type="button"
                 onClick={() => setActiveNode(node)}
-                className="flex w-[104px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
+                className="relative z-10 flex w-[104px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
                 style={{
+                  gridColumn: node.col,
+                  gridRow: node.row,
                   borderColor: hexToRgba(node.color, 0.35),
                   borderTopColor: node.color,
                   backgroundColor: hexToRgba(node.color, 0.05),
@@ -165,8 +219,25 @@ export default function LineProcessFlow() {
                   {node.label}
                 </p>
               </button>
-            </div>
-          ))}
+            ))}
+            {PROCESS_FLOW_NODES.slice(0, -1).map((node, idx) => {
+              const next = PROCESS_FLOW_NODES[idx + 1]
+              const Icon = connectorIcon(node.row, next.row)
+              return (
+                <div
+                  key={`connector-${node.order}`}
+                  className="pointer-events-none flex items-center justify-center"
+                  style={{
+                    gridColumn: node.col < next.col ? `${node.col} / span 2` : node.col,
+                    gridRow:
+                      node.row === next.row ? node.row : `${Math.min(node.row, next.row)} / span 2`,
+                  }}
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
       <ProcessSheetModal node={activeNode} onClose={() => setActiveNode(null)} />
