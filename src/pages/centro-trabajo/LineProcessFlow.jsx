@@ -19,6 +19,7 @@ import {
   cardHeaderTitleClass,
 } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
+import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 
 /* ─────────────────────────────────────────────
    Reemplazo de "Distribución de estaciones" en LineDetailDrawer.jsx
@@ -51,21 +52,47 @@ import { cn, hexToRgba } from '@/lib/utils'
       2 columnas, como su propia fila de ancho completo).
    Se conserva el estilo de caja 2D (rounded-[20px] border-t-[3px],
    mismo patron de OperatingFloorPlan.jsx) de la ronda anterior -- el
-   usuario no lo rechazo, solo pidio corregir orden/ancho/linea. */
+   usuario no lo rechazo, solo pidio corregir orden/ancho/linea.
+
+   2026-08-31, quinta ronda (a peticion explicita del usuario): cada
+   nodo con posicion real conocida muestra numero+nombre del empleado
+   ocupante. Mapeo confirmado EXPLICITAMENTE por el usuario (pregunta
+   directa, no adivinado): P.E->'Prueba eléctrica', LIM->'Limpieza de
+   TV', ACE->'Suministro de Accesorios', ET->'Etiquetado',
+   EM->prefijo 'Empaque' (primera posicion que empiece asi, cubre
+   tanto 'Empaque' solo como 'Empaque 1'/'Empaque 2' segun la linea),
+   CAL->'Calidad'. N y LIM CAJ NO tienen posicion real equivalente en
+   el catalogo -- el usuario confirmo explicitamente dejarlos sin
+   empleado (solo la etiqueta), en vez de inventar una posicion que
+   no existe. */
 const STATION_COLORS = ['#0D9488', '#DB2777', '#2563EB', '#F59E0B', '#7C3AED', '#64748B']
 
 // row: 1 = fila superior, 2 = fila inferior -- calcado del pizarron real
-// (foto), no inventado. col: posicion horizontal (1 a 7).
+// (foto), no inventado. col: posicion horizontal (1 a 7). stationName /
+// stationPrefix: como encontrar la Workstation real dentro de
+// `workstations` (null = sin posicion real equivalente, ver nota arriba).
 const PROCESS_FLOW_NODES = [
-  { order: 1, label: 'N', row: 2, col: 1 },
-  { order: 2, label: 'P.E', row: 1, col: 2 },
-  { order: 3, label: 'LIM', row: 1, col: 3 },
-  { order: 4, label: 'ACE', row: 2, col: 3 },
-  { order: 5, label: 'ET', row: 2, col: 4 },
-  { order: 6, label: 'EM', row: 1, col: 5 },
-  { order: 7, label: 'LIM CAJ', row: 2, col: 6 },
-  { order: 8, label: 'CAL', row: 2, col: 7 },
+  { order: 1, label: 'N', row: 2, col: 1, stationName: null },
+  { order: 2, label: 'P.E', row: 1, col: 2, stationName: 'Prueba eléctrica' },
+  { order: 3, label: 'LIM', row: 1, col: 3, stationName: 'Limpieza de TV' },
+  { order: 4, label: 'ACE', row: 2, col: 3, stationName: 'Suministro de Accesorios' },
+  { order: 5, label: 'ET', row: 2, col: 4, stationName: 'Etiquetado' },
+  { order: 6, label: 'EM', row: 1, col: 5, stationPrefix: 'Empaque' },
+  { order: 7, label: 'LIM CAJ', row: 2, col: 6, stationName: null },
+  { order: 8, label: 'CAL', row: 2, col: 7, stationName: 'Calidad' },
 ].map((node, idx) => ({ ...node, color: STATION_COLORS[idx % STATION_COLORS.length] }))
+
+/* Busca la Workstation real de un nodo dentro de `workstations` (mismo
+   array de LineDetailDrawer.jsx, ver getLineWorkstationsWithOccupancy) --
+   por nombre exacto o por prefijo (Empaque). Devuelve null si el nodo no
+   tiene posicion real (N/LIM CAJ) o si esa linea no tiene esa posicion. */
+function findWorkstation(node, workstations) {
+  if (!workstations?.length) return null
+  if (node.stationName) return workstations.find((w) => w.name === node.stationName) || null
+  if (node.stationPrefix)
+    return workstations.find((w) => w.name.startsWith(node.stationPrefix)) || null
+  return null
+}
 
 const TOTAL_COLS = 7
 
@@ -171,7 +198,7 @@ function ProcessSheetModal({ node, onClose }) {
   )
 }
 
-export default function LineProcessFlow() {
+export default function LineProcessFlow({ workstations }) {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
 
@@ -186,7 +213,7 @@ export default function LineProcessFlow() {
         </div>
       </div>
       <div className="overflow-x-auto p-5 md:p-7">
-        <div className="min-w-[820px]">
+        <div className="min-w-[1100px]">
           <LineTrack />
           <div
             className="grid items-center gap-x-1 gap-y-6"
@@ -195,31 +222,49 @@ export default function LineProcessFlow() {
               gridTemplateRows: 'auto auto',
             }}
           >
-            {PROCESS_FLOW_NODES.map((node) => (
-              <button
-                key={node.order}
-                type="button"
-                onClick={() => setActiveNode(node)}
-                className="relative z-10 flex w-[104px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
-                style={{
-                  gridColumn: node.col,
-                  gridRow: node.row,
-                  borderColor: hexToRgba(node.color, 0.35),
-                  borderTopColor: node.color,
-                  backgroundColor: hexToRgba(node.color, 0.05),
-                }}
-              >
-                <span
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-extrabold text-white"
-                  style={{ backgroundColor: node.color }}
+            {PROCESS_FLOW_NODES.map((node) => {
+              const ws = findWorkstation(node, workstations)
+              const occupant = ws?.occupants?.[0]
+              return (
+                <button
+                  key={node.order}
+                  type="button"
+                  onClick={() => setActiveNode(node)}
+                  className="relative z-10 flex w-[144px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
+                  style={{
+                    gridColumn: node.col,
+                    gridRow: node.row,
+                    borderColor: hexToRgba(node.color, 0.35),
+                    borderTopColor: node.color,
+                    backgroundColor: hexToRgba(node.color, 0.05),
+                  }}
                 >
-                  {node.order}
-                </span>
-                <p className="text-[13px] font-extrabold" style={{ color: node.color }}>
-                  {node.label}
-                </p>
-              </button>
-            ))}
+                  <span
+                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-extrabold text-white"
+                    style={{ backgroundColor: node.color }}
+                  >
+                    {node.order}
+                  </span>
+                  <p className="text-[13px] font-extrabold" style={{ color: node.color }}>
+                    {node.label}
+                  </p>
+                  {occupant ? (
+                    <div className="mt-0.5 w-full border-t border-border/60 pt-1">
+                      <p className="truncate text-[11px] font-bold">
+                        {formatEmployeeNumber(occupant.employeeNumber)}
+                      </p>
+                      <p className="truncate text-[10.5px] text-muted-foreground">
+                        {occupant.employee?.name || '—'}
+                      </p>
+                    </div>
+                  ) : ws ? (
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70">
+                      {t('lineDetailDrawer.stationAvailableStatus')}
+                    </p>
+                  ) : null}
+                </button>
+              )
+            })}
             {PROCESS_FLOW_NODES.slice(0, -1).map((node, idx) => {
               const next = PROCESS_FLOW_NODES[idx + 1]
               const Icon = connectorIcon(node.row, next.row)
@@ -233,7 +278,23 @@ export default function LineProcessFlow() {
                       node.row === next.row ? node.row : `${Math.min(node.row, next.row)} / span 2`,
                   }}
                 >
-                  <Icon className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
+                  {/* Flechas "mas marcadas y 3D negreadas" (a peticion
+                      explicita del usuario): icono mas grande, trazo mas
+                      grueso, color oscuro solido en vez del gris tenue
+                      anterior, + una copia desplazada detras (mismo color,
+                      opacidad baja) simulando una sombra/relieve 3D. */}
+                  <div className="relative">
+                    <Icon
+                      className="absolute left-[1.5px] top-[1.5px] h-7 w-7 text-black/25 dark:text-black/40"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                    <Icon
+                      className="relative h-7 w-7 text-slate-700 dark:text-slate-300"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
               )
             })}
