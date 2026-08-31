@@ -590,17 +590,18 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
       >
         <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
 
-        {/* Orden invertido a peticion explicita del usuario (2026-08-30):
-            antes iba LINEA1 arriba y WC LINEA 0/PROYECTO abajo; ahora WC
-            LINEA 0 va primero (arriba) y LINEA1 despues (abajo). */}
+        {/* Orden invertido de nuevo (2026-08-31, a peticion explicita del
+            usuario, segunda correccion): LINEA1 va primero (arriba) y WC
+            LINEA 0/PROYECTO despues (abajo) -- vuelve al orden original de
+            antes del 2026-08-30. */}
         <div style={{ gridArea: 'paletizado' }} className="flex flex-col gap-2">
+          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
           <HorizontalLineBar
             lineId="PROYECTO"
             title={t('operatingFloorPlan.line0Title')}
             onOpen={onOpen}
             readOnly={readOnly}
           />
-          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
         </div>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
