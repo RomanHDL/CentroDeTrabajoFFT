@@ -8,7 +8,7 @@ import {
   Map as MapIcon,
   Tv,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -24,81 +24,99 @@ import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 /* ─────────────────────────────────────────────
    Reemplazo de "Distribución de estaciones" en LineDetailDrawer.jsx
    (2026-08-31, a peticion explicita del usuario, foto de pizarron
-   físico). Antes esa seccion era una cuadricula de estaciones con
-   drag&drop para asignar personal puesto por puesto -- el usuario
-   confirmo explicitamente que esa asignacion por puesto especifico ya
-   NO hace falta aqui (se sigue asignando a la linea en general desde
-   el layout), y que este diagrama de flujo es el MISMO para las 11
-   lineas (WC LINEA 0 a la 10) -- no depende de personal/ocupacion,
-   es una referencia estatica del proceso.
+   físico). Historial de rondas (todas a peticion explicita del
+   usuario, viendo el Preview en vivo cada vez):
+   1) Circulos azules planos con flechas -- rechazado ("esa basura").
+   2) Circulos ilustrados con icono Tv y sombra -- rechazado ("quiero
+      diseño 2D").
+   3) Cajas 2D estilo OperatingFloorPlan.jsx, 8 nodos FIJOS calcados
+      del pizarron (N/P.E/LIM/ACE/ET/EM/LIM CAJ/CAL) en zigzag, ancho
+      completo, linea de TVs arriba -- aceptado en su mayoria.
+   4) Se agrega numero+nombre del empleado real en los nodos con
+      posicion real conocida (P.E/LIM/ACE/ET/EM/CAL), flechas mas
+      marcadas/3D.
+   5) (ESTA VERSION) El usuario aclaro 3 cosas mas: (a) el primer nodo
+      no es "N", es "M" de Montaje -- correccion de lectura del
+      pizarron, no invencion; (b) WC LINEA 0 tiene 10 posiciones
+      reales, no 8 -- el esquema fijo de 8 nodos no le queda; el
+      usuario confirmo explicitamente que el diagrama debe generarse
+      DINAMICAMENTE desde las estaciones reales de CADA linea
+      (`workstations`, mismo array de LineDetailDrawer.jsx) en vez de
+      un esquema fijo -- asi cada linea muestra sus posiciones reales
+      tal cual, sin importar si son 8, 9 o 10; (c) el modal debe
+      mostrar el nombre completo real entre parentesis junto a la
+      abreviacion, ej. "M (Montaje) (1)".
 
-   Las etiquetas (N, P.E, LIM, ACE, ET, EM, LIM CAJ, CAL) son las del
-   pizarron, tal cual, sin expandir su significado (a peticion
-   explicita del usuario -- no inventar).
-
-   2026-08-31, cuarta ronda (a peticion explicita del usuario, con foto
-   del pizarron de nuevo como referencia exacta): las 3 rondas
-   anteriores fallaron en 3 cosas puntuales que el usuario aclaro
-   viendo el Preview en vivo:
-   1) Faltaba una "linea de trabajo" con TVs arriba -- se agrega
-      LineTrack, una barra horizontal con iconos Tv repetidos, ARRIBA
-      del diagrama de estaciones (no ligada 1:1 a cada estacion, es la
-      linea principal de producto).
-   2) El orden de las estaciones NO es una fila recta -- el pizarron
-      tiene un patron de zigzag (fila superior/inferior alternada,
-      ver ROW por nodo abajo, calcado de la foto real, no inventado).
-   3) Debe cubrir el ancho completo -- eso se resolvio en
-      LineDetailDrawer.jsx (esta seccion ahora vive FUERA del grid de
-      2 columnas, como su propia fila de ancho completo).
-   Se conserva el estilo de caja 2D (rounded-[20px] border-t-[3px],
-   mismo patron de OperatingFloorPlan.jsx) de la ronda anterior -- el
-   usuario no lo rechazo, solo pidio corregir orden/ancho/linea.
-
-   2026-08-31, quinta ronda (a peticion explicita del usuario): cada
-   nodo con posicion real conocida muestra numero+nombre del empleado
-   ocupante. Mapeo confirmado EXPLICITAMENTE por el usuario (pregunta
-   directa, no adivinado): P.E->'Prueba eléctrica', LIM->'Limpieza de
-   TV', ACE->'Suministro de Accesorios', ET->'Etiquetado',
-   EM->prefijo 'Empaque' (primera posicion que empiece asi, cubre
-   tanto 'Empaque' solo como 'Empaque 1'/'Empaque 2' segun la linea),
-   CAL->'Calidad'. N y LIM CAJ NO tienen posicion real equivalente en
-   el catalogo -- el usuario confirmo explicitamente dejarlos sin
-   empleado (solo la etiqueta), en vez de inventar una posicion que
-   no existe. */
-const STATION_COLORS = ['#0D9488', '#DB2777', '#2563EB', '#F59E0B', '#7C3AED', '#64748B']
-
-// row: 1 = fila superior, 2 = fila inferior -- calcado del pizarron real
-// (foto), no inventado. col: posicion horizontal (1 a 7). stationName /
-// stationPrefix: como encontrar la Workstation real dentro de
-// `workstations` (null = sin posicion real equivalente, ver nota arriba).
-const PROCESS_FLOW_NODES = [
-  { order: 1, label: 'N', row: 2, col: 1, stationName: null },
-  { order: 2, label: 'P.E', row: 1, col: 2, stationName: 'Prueba eléctrica' },
-  { order: 3, label: 'LIM', row: 1, col: 3, stationName: 'Limpieza de TV' },
-  { order: 4, label: 'ACE', row: 2, col: 3, stationName: 'Suministro de Accesorios' },
-  { order: 5, label: 'ET', row: 2, col: 4, stationName: 'Etiquetado' },
-  { order: 6, label: 'EM', row: 1, col: 5, stationPrefix: 'Empaque' },
-  { order: 7, label: 'LIM CAJ', row: 2, col: 6, stationName: null },
-  { order: 8, label: 'CAL', row: 2, col: 7, stationName: 'Calidad' },
-].map((node, idx) => ({ ...node, color: STATION_COLORS[idx % STATION_COLORS.length] }))
-
-/* Busca la Workstation real de un nodo dentro de `workstations` (mismo
-   array de LineDetailDrawer.jsx, ver getLineWorkstationsWithOccupancy) --
-   por nombre exacto o por prefijo (Empaque). Devuelve null si el nodo no
-   tiene posicion real (N/LIM CAJ) o si esa linea no tiene esa posicion. */
-function findWorkstation(node, workstations) {
-  if (!workstations?.length) return null
-  if (node.stationName) return workstations.find((w) => w.name === node.stationName) || null
-  if (node.stationPrefix)
-    return workstations.find((w) => w.name.startsWith(node.stationPrefix)) || null
-  return null
+   Los 7 roles reales que existen en CT LINEA (Montaje, Prueba
+   eléctrica, Limpieza de TV, Suministro de Accesorios, Etiquetado,
+   Empaque, Calidad -- ver ROLE_TO_CATEGORY_KEY en lineVisualType.js,
+   unica fuente de los nombres reales de rol de este modulo) tienen
+   cada uno una abreviacion fija (confirmadas por el usuario para las
+   primeras 6, mas "M" de Montaje en esta ronda) y un color reutilizado
+   de la paleta YA existente en el proyecto (los mismos 6 hex de
+   lineVisualType.js + #10B981, el verde de "Completa"/"Ocupada" ya
+   usado en el sistema de estados -- nunca una paleta inventada de
+   cero). Calidad reutiliza exactamente su color real de categoria
+   (#DB2777, lineVisualType.js) -- no es coincidencia. */
+const ROLE_SHORT_LABELS = {
+  Montaje: 'M',
+  'Prueba eléctrica': 'P.E',
+  'Limpieza de TV': 'LIM',
+  'Suministro de Accesorios': 'ACE',
+  Etiquetado: 'ET',
+  Empaque: 'EM',
+  Calidad: 'CAL',
 }
 
-const TOTAL_COLS = 7
+const ROLE_COLORS = {
+  Montaje: '#0D9488',
+  'Prueba eléctrica': '#F59E0B',
+  'Limpieza de TV': '#2563EB',
+  'Suministro de Accesorios': '#7C3AED',
+  Etiquetado: '#10B981',
+  Empaque: '#64748B',
+  Calidad: '#DB2777',
+}
+
+// "Empaque 2" -> "Empaque", "Etiquetado" -> "Etiquetado" (sin sufijo
+// numerico no cambia). Mismo patron de normalizacion de rol repetido
+// usado en otras partes de este modulo (ver workstations.js).
+function baseRoleName(name) {
+  return name.replace(/\s+\d+$/, '').trim()
+}
+
+/* Arma los nodos del diagrama a partir de las estaciones REALES de la
+   linea actual (workstations, ya viene con occupancy resuelta desde
+   LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy). El row
+   (fila superior/inferior del zigzag) cambia solo cuando cambia el
+   rol base respecto al nodo anterior -- asi las posiciones repetidas
+   del mismo rol (ej. "Etiquetado"/"Etiquetado 2") quedan agrupadas en
+   la misma fila en vez de dispersas ("ponlos estrategicamente", a
+   peticion explicita del usuario). */
+function buildNodes(workstations) {
+  if (!workstations?.length) return []
+  let lastBase = null
+  let row = 2
+  return workstations.map((ws, idx) => {
+    const base = baseRoleName(ws.name)
+    if (base !== lastBase) {
+      row = row === 1 ? 2 : 1
+      lastBase = base
+    }
+    return {
+      order: idx + 1,
+      col: idx + 1,
+      row,
+      stationName: ws.name,
+      label: ROLE_SHORT_LABELS[base] || base,
+      color: ROLE_COLORS[base] || '#64748B',
+      ws,
+    }
+  })
+}
 
 /* Icono de conector segun el cambio de fila entre un nodo y el
-   siguiente (sube/baja/misma fila) -- deriva el zigzag real del
-   pizarron sin hardcodear un dibujo por transicion. */
+   siguiente (sube/baja/misma fila). */
 function connectorIcon(fromRow, toRow) {
   if (toRow < fromRow) return ArrowUpRight
   if (toRow > fromRow) return ArrowDownRight
@@ -109,7 +127,7 @@ function connectorIcon(fromRow, toRow) {
    repetidos, arriba del diagrama de estaciones -- representa la linea
    principal de producto (a peticion explicita del usuario, foto de
    pizarron: "que la linea de trabajo haya teles"). No esta ligada 1:1
-   a las 8 estaciones de abajo, es decorativa/referencial. */
+   a las estaciones de abajo, es decorativa/referencial. */
 function LineTrack() {
   const tvCount = 8
   return (
@@ -153,7 +171,7 @@ function ProcessSheetModal({ node, onClose }) {
               ? t('lineDetailDrawer.processFlowStep1Title')
               : t('lineDetailDrawer.processFlowStep2Title')}
             {' — '}
-            {node.label} ({node.order})
+            {node.label} ({node.stationName}) ({node.order})
           </DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-2">
@@ -201,6 +219,11 @@ function ProcessSheetModal({ node, onClose }) {
 export default function LineProcessFlow({ workstations }) {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
+  const nodes = useMemo(() => buildNodes(workstations), [workstations])
+
+  if (!nodes.length) return null
+
+  const totalCols = nodes.length
 
   return (
     <div className={cn(cardClass, 'mb-4')}>
@@ -213,18 +236,17 @@ export default function LineProcessFlow({ workstations }) {
         </div>
       </div>
       <div className="overflow-x-auto p-5 md:p-7">
-        <div className="min-w-[1100px]">
+        <div style={{ minWidth: `${Math.max(1100, totalCols * 160)}px` }}>
           <LineTrack />
           <div
             className="grid items-center gap-x-1 gap-y-6"
             style={{
-              gridTemplateColumns: `repeat(${TOTAL_COLS}, 1fr)`,
+              gridTemplateColumns: `repeat(${totalCols}, 1fr)`,
               gridTemplateRows: 'auto auto',
             }}
           >
-            {PROCESS_FLOW_NODES.map((node) => {
-              const ws = findWorkstation(node, workstations)
-              const occupant = ws?.occupants?.[0]
+            {nodes.map((node) => {
+              const occupant = node.ws.occupants?.[0]
               return (
                 <button
                   key={node.order}
@@ -257,32 +279,32 @@ export default function LineProcessFlow({ workstations }) {
                         {occupant.employee?.name || '—'}
                       </p>
                     </div>
-                  ) : ws ? (
+                  ) : (
                     <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70">
                       {t('lineDetailDrawer.stationAvailableStatus')}
                     </p>
-                  ) : null}
+                  )}
                 </button>
               )
             })}
-            {PROCESS_FLOW_NODES.slice(0, -1).map((node, idx) => {
-              const next = PROCESS_FLOW_NODES[idx + 1]
+            {nodes.slice(0, -1).map((node, idx) => {
+              const next = nodes[idx + 1]
               const Icon = connectorIcon(node.row, next.row)
               return (
                 <div
                   key={`connector-${node.order}`}
                   className="pointer-events-none flex items-center justify-center"
                   style={{
-                    gridColumn: node.col < next.col ? `${node.col} / span 2` : node.col,
+                    gridColumn: `${node.col} / span 2`,
                     gridRow:
                       node.row === next.row ? node.row : `${Math.min(node.row, next.row)} / span 2`,
                   }}
                 >
                   {/* Flechas "mas marcadas y 3D negreadas" (a peticion
                       explicita del usuario): icono mas grande, trazo mas
-                      grueso, color oscuro solido en vez del gris tenue
-                      anterior, + una copia desplazada detras (mismo color,
-                      opacidad baja) simulando una sombra/relieve 3D. */}
+                      grueso, color oscuro solido + una copia desplazada
+                      detras (mismo color, opacidad baja) simulando una
+                      sombra/relieve 3D. */}
                   <div className="relative">
                     <Icon
                       className="absolute left-[1.5px] top-[1.5px] h-7 w-7 text-black/25 dark:text-black/40"
