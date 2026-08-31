@@ -617,12 +617,19 @@ export default function LineDetailDrawer({
             </Alert>
           )}
 
+          {isStationBased && (
+            /* 2026-08-31 (a peticion explicita del usuario): "Proceso de
+               produccion" debe cubrir el ancho COMPLETO del contenido
+               (de extremo a extremo), no solo la columna principal -- por
+               eso vive FUERA del grid de 12 columnas de abajo, como su
+               propia seccion de ancho completo. */
+            <LineProcessFlow />
+          )}
+
           {isStationBased ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
               {/* Columna principal */}
               <div className="md:col-span-8">
-                <LineProcessFlow />
-
                 {peopleWithoutStation.length > 0 && (
                   <div className={cn(cardClass, 'mb-4')}>
                     <div className={cardHeaderClass}>
@@ -812,55 +819,12 @@ export default function LineDetailDrawer({
 
               {/* Columna lateral */}
               <div className="md:col-span-4">
-                {/* 2026-08-31 (a peticion explicita del usuario): "Resumen de la
-                    linea" sube al primer lugar (junto al nuevo diagrama de flujo,
-                    LineProcessFlow) y "Detalle de estacion" baja debajo -- ya no
-                    tiene sentido que compita visualmente arriba con lo nuevo,
-                    dado que quedo fijo en una sola estacion (ver comentario junto
-                    a `selectedStation` mas arriba). No se elimino, solo se movio. */}
-                <div className={cn(cardClass, 'mb-4 p-4')}>
-                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>
-                    {t('lineDetailDrawer.lineSummaryTitle')}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {lineSummary.groups.map((g) => (
-                      <div key={g.key} className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: g.color }}
-                        />
-                        <p className="flex-1 truncate text-[12.5px]">{g.label}</p>
-                        <p className="text-[12.5px] font-bold">
-                          {g.occupied} / {g.total}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  {staffing.ideal != null && (
-                    <>
-                      <div className="my-3 border-t border-border" />
-                      <div className="flex items-center gap-2">
-                        <p className="flex-1 text-[12.5px] font-extrabold">
-                          {t('lineDetailDrawer.totalAssignedLabel')}
-                        </p>
-                        <p className="text-[12.5px] font-extrabold">
-                          {staffing.real} / {staffing.ideal}
-                        </p>
-                      </div>
-                      {staffing.diff < 0 && (
-                        <div className="mt-1 flex items-center gap-2">
-                          <p className="flex-1 text-xs text-[#EF4444]">
-                            {t('lineDetailDrawer.missingCoverageLabel')}
-                          </p>
-                          <p className="text-xs font-bold text-[#EF4444]">
-                            {Math.abs(staffing.diff)}
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
+                {/* 2026-08-31 (a peticion explicita del usuario, segunda
+                    correccion): "Detalle de estacion" va PRIMERO (arriba) y
+                    "Resumen de la linea" despues (abajo) -- orden original.
+                    Ya no compite visualmente con "Proceso de produccion"
+                    porque ese ahora es una seccion de ancho completo, fuera
+                    de este grid de 2 columnas (ver mas arriba). */}
                 <div className={cn(cardClass, 'mb-4')}>
                   <div className={cardHeaderClass}>
                     <div className="min-w-0 flex-1">
@@ -1103,6 +1067,49 @@ export default function LineDetailDrawer({
                       </>
                     )}
                   </div>
+                </div>
+
+                <div className={cn(cardClass, 'mb-4 p-4')}>
+                  <p className={cn(sectionTitleClass, 'mb-3 text-[13px]')}>
+                    {t('lineDetailDrawer.lineSummaryTitle')}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {lineSummary.groups.map((g) => (
+                      <div key={g.key} className="flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: g.color }}
+                        />
+                        <p className="flex-1 truncate text-[12.5px]">{g.label}</p>
+                        <p className="text-[12.5px] font-bold">
+                          {g.occupied} / {g.total}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {staffing.ideal != null && (
+                    <>
+                      <div className="my-3 border-t border-border" />
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-[12.5px] font-extrabold">
+                          {t('lineDetailDrawer.totalAssignedLabel')}
+                        </p>
+                        <p className="text-[12.5px] font-extrabold">
+                          {staffing.real} / {staffing.ideal}
+                        </p>
+                      </div>
+                      {staffing.diff < 0 && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className="flex-1 text-xs text-[#EF4444]">
+                            {t('lineDetailDrawer.missingCoverageLabel')}
+                          </p>
+                          <p className="text-xs font-bold text-[#EF4444]">
+                            {Math.abs(staffing.diff)}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
