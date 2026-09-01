@@ -50,6 +50,7 @@ i18n
       'catalog',
       'dataLayer',
       'auditoria',
+      'kpis',
     ],
     defaultNS: 'common',
     detection: {
