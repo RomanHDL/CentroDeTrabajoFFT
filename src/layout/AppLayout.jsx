@@ -120,6 +120,7 @@ export default function AppLayout({ mode, setMode }) {
         onTogglePin={() => setPinned((p) => !p)}
         onMouseEnter={hasFineHover ? openOnHover : undefined}
         onMouseLeave={hasFineHover ? scheduleClose : undefined}
+        topOffset={isWideLayoutRoute ? 0 : 56}
       />
 
       <div
