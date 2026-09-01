@@ -74,7 +74,7 @@ import AvailablePersonnelTray from './AvailablePersonnelTray'
 import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
 import EmployeeAvatar from './EmployeeAvatar'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
-import HierarchyLegend, { RankIcon } from './HierarchyLegend'
+import { RankIcon } from './HierarchyLegend'
 import LeadershipRow from './LeadershipRow'
 import LineHistoryDialog from './LineHistoryDialog'
 import LineStationCard from './LineStationCard'
@@ -483,37 +483,6 @@ export default function LineLikeAreaDetail({
               </div>
             </div>
           )}
-
-          {/* Leyenda doble: Jerarquia/Rango + Estado de estacion. */}
-          <div className={cn(cardClass, 'mb-4 p-3 md:p-4')}>
-            <div className="flex flex-wrap items-center gap-4 md:gap-8">
-              <HierarchyLegend />
-              <div className="hidden h-8 w-px bg-border md:block" />
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.stationStatusLegendTitle')}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">
-                    {t('lineLikeAreaDetail.legendOccupied')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#F59E0B]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">
-                    {t('lineLikeAreaDetail.legendAvailable')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#94A3B8]" />
-                  <p className="text-[11px] font-bold text-muted-foreground">
-                    {t('lineLikeAreaDetail.legendUnassigned')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="mb-6 max-w-[480px]">
             <EmployeeAssignSearchBar areaId={dataAreaId} />
@@ -1077,10 +1046,6 @@ export default function LineLikeAreaDetail({
                 ideal={staffing.ideal}
                 diff={staffing.diff}
               />
-
-              <div className={cn(cardClass, 'mt-4 p-4')}>
-                <HierarchyLegend expanded />
-              </div>
             </div>
           </div>
         </div>
