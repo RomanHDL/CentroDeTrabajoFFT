@@ -2,13 +2,16 @@
 # 1. Bypass corepack ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING (corepack 0.24.1 + Node 22 bug)
 # 2. pnpm@11.22.0 requires Node>=22.13; nixpacks Node 22 image ships v22.11.0.
 #    Use pnpm@10 (requires Node>=18.12) — corepack disabled so packageManager field ignored.
-# 3. Override start to run Node.js server (pm2-runtime), not nixpacks Caddy SPA mode.
+# 3. Symlink pnpm into /usr/local/bin so bare `pnpm` is on PATH.
+#    Without this, pnpm's own subprocess call (pnpm add pnpm@11.22.0) fails with ENOENT.
+# 4. Override start to run Node.js server (pm2-runtime), not nixpacks Caddy SPA mode.
 
 [phases.install]
 cmds = [
   "corepack disable",
   "npm install --global pnpm@10",
-  "$(npm prefix -g)/bin/pnpm install --frozen-lockfile"
+  "ln -sf $(npm prefix -g)/bin/pnpm /usr/local/bin/pnpm",
+  "pnpm install --frozen-lockfile"
 ]
 
 [start]
