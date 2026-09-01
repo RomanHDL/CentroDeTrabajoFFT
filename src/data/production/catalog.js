@@ -250,6 +250,17 @@ export const CUSTOM_STATION_PLANS = {
     // Conveyor General" del plano fisico (OperatingFloorPlan.jsx) ahora lee
     // estas 2 posiciones directamente de aqui, nunca un conteo aparte.
     { role: 'Ayudante General de Conveyor', count: 2 },
+    // 2026-09-01 (a peticion explicita del usuario): "seran 4 [puestos de
+    // conveyor], dos en Conveyor General y dos en Paletizado" -- estos 2
+    // puestos NUEVOS y vacios (confirmado explicitamente: sin relacion con
+    // Roman/Jose Francisco Franco Vara, las 2 personas que quedaron sin
+    // estacion en la consolidacion del 2026-08-28 de arriba) usan un
+    // nombre de rol DISTINTO ("Ayudante General Conveyor General", sin
+    // "de") para que AREA_STATION_SOURCE_OVERRIDE.CONVEYOR_PRINCIPAL
+    // (filtra por role==='Ayudante General de Conveyor' exacto) nunca los
+    // jale a la barra "WC CONVEYOR GENERAL" -- viven y se ven solo aqui,
+    // dentro de Paletizado.
+    { role: 'Ayudante General Conveyor General', count: 2 },
     // 7 (antes 4) -- 2026-08-27, a peticion explicita del usuario: Paletizado ya estaba a
     // plantilla completa (14/14) y necesitaba puesto real para Beckham y Patricia (reubicados
     // desde WC Calidad, +2). Al investigar se encontro ADEMAS a "Roman" (zona real PALETIZADO
