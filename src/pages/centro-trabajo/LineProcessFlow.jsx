@@ -51,23 +51,18 @@ import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
    eléctrica, Limpieza de TV, Suministro de Accesorios, Etiquetado,
    Empaque, Calidad -- ver ROLE_TO_CATEGORY_KEY en lineVisualType.js,
    unica fuente de los nombres reales de rol de este modulo) tienen
-   cada uno una abreviacion fija (confirmadas por el usuario para las
-   primeras 6, mas "M" de Montaje en esta ronda) y un color reutilizado
-   de la paleta YA existente en el proyecto (los mismos 6 hex de
-   lineVisualType.js + #10B981, el verde de "Completa"/"Ocupada" ya
-   usado en el sistema de estados -- nunca una paleta inventada de
-   cero). Calidad reutiliza exactamente su color real de categoria
-   (#DB2777, lineVisualType.js) -- no es coincidencia. */
-const ROLE_SHORT_LABELS = {
-  Montaje: 'M',
-  'Prueba eléctrica': 'P.E',
-  'Limpieza de TV': 'LIM',
-  'Suministro de Accesorios': 'ACE',
-  Etiquetado: 'ET',
-  Empaque: 'EM',
-  Calidad: 'CAL',
-}
+   cada uno un color reutilizado de la paleta YA existente en el
+   proyecto (los mismos 6 hex de lineVisualType.js + #10B981, el verde
+   de "Completa"/"Ocupada" ya usado en el sistema de estados -- nunca
+   una paleta inventada de cero). Calidad reutiliza exactamente su
+   color real de categoria (#DB2777, lineVisualType.js) -- no es
+   coincidencia.
 
+   2026-09-01 (a peticion explicita del usuario): las etiquetas de los
+   nodos usan el NOMBRE COMPLETO del rol (Montaje, Prueba eléctrica,
+   etc.), ya no las abreviaciones (M, P.E, LIM...) que se usaban antes
+   -- se quita ROLE_SHORT_LABELS por completo (sin otros consumidores
+   en el repo). */
 const ROLE_COLORS = {
   Montaje: '#0D9488',
   'Prueba eléctrica': '#F59E0B',
@@ -111,6 +106,15 @@ function flowPriority(base) {
   return idx === -1 ? FLOW_ORDER_ROLES.length : idx
 }
 
+// 2026-09-01 (a peticion explicita del usuario, "el 3 y 4 esten uno
+// frente del otro"): Limpieza de TV (3o rol del flujo) y Suministro de
+// Accesorios (4o) son la unica excepcion al zigzag -- quedan a la MISMA
+// altura ("cara a cara") en vez de alternar fila, a diferencia de
+// cualquier otro cambio de rol.
+function staysLevelWithPrevious(previousBase, base) {
+  return previousBase === 'Limpieza de TV' && base === 'Suministro de Accesorios'
+}
+
 /* Arma los nodos del diagrama a partir de las estaciones REALES de la
    linea actual (workstations, ya viene con occupancy resuelta desde
    LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy), pero
@@ -120,7 +124,8 @@ function flowPriority(base) {
    rol base respecto al nodo anterior -- asi las posiciones repetidas
    del mismo rol (ej. "Etiquetado"/"Etiquetado 2") quedan agrupadas en
    la misma fila en vez de dispersas ("ponlos estrategicamente", a
-   peticion explicita del usuario). */
+   peticion explicita del usuario), y Limpieza de TV -> Suministro de
+   Accesorios tampoco alterna fila (ver staysLevelWithPrevious arriba). */
 function buildNodes(workstations) {
   if (!workstations?.length) return []
   const ordered = [...workstations].sort(
@@ -130,16 +135,16 @@ function buildNodes(workstations) {
   let row = 2
   return ordered.map((ws, idx) => {
     const base = baseRoleName(ws.name)
-    if (base !== lastBase) {
+    if (base !== lastBase && !staysLevelWithPrevious(lastBase, base)) {
       row = row === 1 ? 2 : 1
-      lastBase = base
     }
+    lastBase = base
     return {
       order: idx + 1,
       col: idx + 1,
       row,
       stationName: ws.name,
-      label: ROLE_SHORT_LABELS[base] || base,
+      label: base,
       color: ROLE_COLORS[base] || '#64748B',
       ws,
     }
@@ -202,7 +207,7 @@ function ProcessSheetModal({ node, onClose }) {
               ? t('lineDetailDrawer.processFlowStep1Title')
               : t('lineDetailDrawer.processFlowStep2Title')}
             {' — '}
-            {node.label} ({node.stationName}) ({node.order})
+            {node.stationName} ({node.order})
           </DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-2">
@@ -267,7 +272,7 @@ export default function LineProcessFlow({ workstations }) {
         </div>
       </div>
       <div className="overflow-x-auto p-5 md:p-7">
-        <div style={{ minWidth: `${Math.max(1100, totalCols * 160)}px` }}>
+        <div style={{ minWidth: `${Math.max(1100, totalCols * 184)}px` }}>
           <LineTrack />
           <div
             className="grid items-center gap-x-1 gap-y-6"
@@ -283,7 +288,7 @@ export default function LineProcessFlow({ workstations }) {
                   key={node.order}
                   type="button"
                   onClick={() => setActiveNode(node)}
-                  className="relative z-10 flex w-[144px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
+                  className="relative z-10 flex w-[168px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
                   style={{
                     gridColumn: node.col,
                     gridRow: node.row,
@@ -298,7 +303,10 @@ export default function LineProcessFlow({ workstations }) {
                   >
                     {node.order}
                   </span>
-                  <p className="text-[13px] font-extrabold" style={{ color: node.color }}>
+                  <p
+                    className="text-[11.5px] font-extrabold leading-[1.15]"
+                    style={{ color: node.color }}
+                  >
                     {node.label}
                   </p>
                   {occupant ? (
