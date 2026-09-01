@@ -23,7 +23,10 @@ import { useEffectiveModules } from '../state/auth'
 // referencia") -- antes 232, sube dentro del rango pedido. Es un overlay de
 // posicion fija (nunca reserva espacio en el layout), asi que este cambio
 // no mueve ni redimensiona el contenido principal.
-export const SIDEBAR_WIDTH = 260
+// 2026-09-01 (a peticion explicita del usuario, "hazla mas grande"): sube
+// de 260 a 290 -- sigue siendo overlay/Sheet de posicion fija, el mismo
+// razonamiento de arriba aplica sin cambios.
+export const SIDEBAR_WIDTH = 290
 
 // Mismo azul de marca que ya usa toda la app (AppBar/LoginPage/
 // CentroTrabajoPage, ver PrecisionManufacturingIcon sx={{ color: '#3B82F6' }}
@@ -45,23 +48,28 @@ const BRAND_BLUE = '#3B82F6'
 // NavList mas abajo. es-MX (idioma por defecto, ver src/i18n.js) tiene
 // EXACTAMENTE el mismo texto que antes -- cero cambio visible para el
 // personal actual, solo cambia de donde sale el string.
+// 2026-09-01 (a peticion explicita del usuario, "quiero un orden logico...
+// por area de trabajo o algo por el estilo"): reordenado por flujo
+// funcional en vez del orden de insercion historico (que solo reflejaba
+// cuando se agrego cada modulo). Grupos, en este orden: resumen general
+// (Dashboard) -> operacion diaria de piso (Centro de Trabajo) -> flujo de
+// personal (Registro de personal, Asistencia) -> desempeño/cumplimiento
+// (KPI's, Auditoria) -> administracion (Usuarios) -> ayuda/referencia
+// (Manual de Usuario, Developer Manual, Cambios, ya al final desde antes).
+// Ningun `to`/permiso/configurable cambia, solo el ORDEN del array.
 const NAV_ITEMS = [
   { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, configurable: true },
   { to: '/centro-trabajo', labelKey: 'centroDeTrabajo', icon: Factory, configurable: true },
-  { to: '/usuarios', labelKey: 'usuarios', icon: Users, configurable: true },
   {
     to: '/registro-personal',
     labelKey: 'registroDePersonal',
     icon: UserPlus,
     configurable: true,
   },
-  // 2026-08-28 ("ajustes controlados"): 3 modulos nuevos, mismo patron que
-  // los 4 de arriba -- solo navegacion, el permiso real lo resuelve
-  // useEffectiveModules() (shared/moduleRegistry.js), nunca una lista de
-  // permisos aparte aqui.
-  { to: '/kpis', labelKey: 'kpis', icon: BarChart3, configurable: true },
   { to: '/asistencia', labelKey: 'asistencia', icon: CalendarCheck, configurable: true },
+  { to: '/kpis', labelKey: 'kpis', icon: BarChart3, configurable: true },
   { to: '/auditoria', labelKey: 'auditoria', icon: ClipboardCheck, configurable: true },
+  { to: '/usuarios', labelKey: 'usuarios', icon: Users, configurable: true },
   // 2026-08-30: paginas de ayuda/referencia (no son funcionalidad de
   // negocio) -- `configurable: false` + `roles` fijo en vez del sistema de
   // permisos editable (Usuarios -> Gestion de permisos), decision explicita
