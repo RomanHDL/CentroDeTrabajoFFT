@@ -582,27 +582,13 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              FFT_COLUMN_LINE_IDS mas abajo para las columnas verticales
              (LINEA2..10, sin cambios). */
           gridTemplateAreas: `
-            "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor"
-            "paletizado paletizado fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
+            "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor ."
+            "fft fft fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,
         }}
       >
         <ConveyorGeneralBar gridArea="conveyor" onOpen={onOpen} readOnly={readOnly} />
-
-        {/* Orden invertido de nuevo (2026-08-31, a peticion explicita del
-            usuario, segunda correccion): LINEA1 va primero (arriba) y WC
-            LINEA 0/PROYECTO despues (abajo) -- vuelve al orden original de
-            antes del 2026-08-30. */}
-        <div style={{ gridArea: 'paletizado' }} className="flex flex-col gap-2">
-          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
-          <HorizontalLineBar
-            lineId="PROYECTO"
-            title={t('operatingFloorPlan.line0Title')}
-            onOpen={onOpen}
-            readOnly={readOnly}
-          />
-        </div>
 
         <FftBlock onOpen={onOpen} onOpenSummary={onOpenSummary} readOnly={readOnly} />
 
@@ -721,22 +707,22 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
       onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       style={{ gridArea }}
       className={cn(
-        'cursor-pointer select-none rounded-[20px] border border-t-[3px] p-2 scroll-mt-4 transition-[box-shadow,background-color] duration-150',
+        'cursor-pointer select-none rounded-[16px] border border-t-[3px] p-1.5 scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,
         tone.ring25,
       )}
     >
-      <div className="mb-1.5 flex items-baseline justify-between">
-        <p className="text-[12.5px] font-extrabold tracking-[0.4px]">
+      <div className="mb-1 flex items-baseline justify-between">
+        <p className="text-[11px] font-extrabold tracking-[0.4px]">
           {t('operatingFloorPlan.conveyorGeneralTitle')}
         </p>
-        <p className="text-[13.5px] font-bold">
+        <p className="text-[12px] font-bold">
           {isOver ? t('operatingFloorPlan.dropHereLabel') : label}
         </p>
       </div>
-      <div className={cn('mb-[6.8px] h-px', tone.divider25)} />
+      <div className={cn('mb-1 h-px', tone.divider25)} />
       {/* flexWrap (2026-08-28, a peticion explicita del usuario, Parte 14):
           las 2 posiciones se centran en una sola fila -- si el bloque se
           angostara demasiado (tablet), igual se reparten solas sin dejar de
@@ -782,22 +768,22 @@ function ConveyorNode({ index, station, onOpen }) {
         onOpen()
       }}
       className={cn(
-        'flex min-w-[76px] max-w-[140px] flex-[1_1_84px] cursor-pointer flex-col items-center gap-[1.2px] rounded-[15px] border border-dashed px-1 py-1',
+        'flex min-w-[76px] max-w-[140px] flex-[1_1_84px] cursor-pointer flex-row items-center gap-1.5 rounded-[12px] border border-dashed px-1.5 py-0.5',
         tone.border,
         tone.hoverBg,
       )}
     >
       <p className="text-[9px] font-extrabold leading-none text-muted-foreground/60">{index}</p>
-      <EmployeeAvatar employee={occupant} size={32} dashed={!occupant} />
-      <p className="mt-[1.2px] w-full truncate text-center text-[10px] font-bold leading-[1.15]">
+      <EmployeeAvatar employee={occupant} size={20} dashed={!occupant} />
+      <p className="min-w-0 flex-1 truncate text-left text-[10px] font-bold leading-[1.15]">
         {occupant ? occupant.name : t('operatingFloorPlan.vacantLabel')}
       </p>
       {rank && (
-        <p className="w-full truncate text-center text-[8.5px] leading-[1.1] text-muted-foreground">
+        <p className="hidden truncate text-[8.5px] leading-[1.1] text-muted-foreground sm:block">
           {rank.label}
         </p>
       )}
-      <p className={cn('text-[8px] font-extrabold tracking-[0.3px]', tone.text)}>
+      <p className={cn('shrink-0 text-[8px] font-extrabold tracking-[0.3px]', tone.text)}>
         {occupant
           ? t('operatingFloorPlan.occupiedStatusLabel')
           : t('operatingFloorPlan.availableStatusLabel')}
@@ -854,16 +840,16 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
   )
 }
 
-/* LINEA1 y WC LINEA 0 (PROYECTO) se dibujan aparte (HorizontalLineBar,
-   acostadas en el area "paletizado" -- ver arriba) pero SI cuentan en el
-   total de este bloque: FFT_LINE_IDS (floorPlanZones.js) incluye las 11
-   lineas (LINEA1..10 + PROYECTO, agregado a peticion explicita del usuario
-   2026-08-30) para que totalReal/totalIdeal reflejen el agregado real de
-   "WC Líneas de producción (FFT)". FFT_COLUMN_LINE_IDS filtra ambas de las
-   columnas verticales -- solo LINEA2..10 se dibujan aqui, exactamente como
-   antes del 2026-08-30. id="area-fft" (usado por CriticalAreasCard para
-   scroll+highlight del agregado FFT -- no tiene sentido hacer scroll a una
-   sola linea cuando el summary es del bloque agregado). */
+/* LINEA1 y WC LINEA 0 (PROYECTO) vuelven a dibujarse DENTRO de esta misma
+   card (2026-09-01, a peticion explicita del usuario: "todas son WC lineas
+   de produccion FFT", debe ser una sola card) -- como barras horizontales
+   (HorizontalLineBar, igual que antes) en una columna angosta a la
+   izquierda, junto a las columnas verticales LINEA2..10. FFT_LINE_IDS
+   (floorPlanZones.js) ya incluye las 11 lineas para que totalReal/
+   totalIdeal reflejen el agregado completo. FFT_COLUMN_LINE_IDS sigue
+   filtrando ambas de las columnas verticales -- solo LINEA2..10 se dibujan
+   como columna, LINEA1/PROYECTO como barra. id="area-fft" (usado por
+   CriticalAreasCard para scroll+highlight del agregado FFT). */
 const FFT_COLUMN_LINE_IDS = FFT_LINE_IDS.filter((id) => id !== 'LINEA1' && id !== 'PROYECTO')
 
 function FftBlock({ onOpen, onOpenSummary, readOnly }) {
@@ -896,6 +882,15 @@ function FftBlock({ onOpen, onOpenSummary, readOnly }) {
           columnas y FftBlock (overflow:hidden) recortaba el personal
           sobrante en silencio. */}
       <div className="flex min-h-0 flex-1 gap-[4.8px]">
+        <div className="flex w-[160px] shrink-0 flex-col gap-[4.8px]">
+          <HorizontalLineBar lineId="LINEA1" onOpen={onOpen} readOnly={readOnly} />
+          <HorizontalLineBar
+            lineId="PROYECTO"
+            title={t('operatingFloorPlan.line0Title')}
+            onOpen={onOpen}
+            readOnly={readOnly}
+          />
+        </div>
         {FFT_COLUMN_LINE_IDS.map((id) => (
           <LineColumn key={id} lineId={id} onOpen={onOpen} readOnly={readOnly} />
         ))}
