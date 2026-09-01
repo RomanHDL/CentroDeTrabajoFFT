@@ -543,7 +543,15 @@ export default function LineDetailDrawer({
                   </p>
                 </div>
               </div>
-              <div className={cn(kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'), 'mb-4')}>
+              {/* !h-auto (2026-09-01): kpiCardClass() trae h-full fijo, pensado
+                  para vivir dentro de un grid (donde antes se autolimitaba al
+                  ser el unico item de su fila) -- fuera del grid, h-full se
+                  estira contra el contenedor scrolleable completo de la
+                  pantalla. Bug real reportado por el usuario viendo el
+                  Preview en vivo. */}
+              <div
+                className={cn(kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'), 'mb-4 !h-auto')}
+              >
                 <div className="mb-2 flex justify-between">
                   <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
                     {t('lineDetailDrawer.lineCoverageTitle')}
