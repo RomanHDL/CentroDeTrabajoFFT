@@ -49,6 +49,42 @@ const MONTH_KEYS = [
   'dec',
 ]
 
+/* Semaforo real (2026-09-01, segunda ronda -- "debe ser exactamente igual
+   al excel, los colores y todo"): reproduce la regla de formato
+   condicional REAL del Excel (iconSet "3Symbols2" sobre las columnas de
+   mes de cada fila, comparado contra el Target Max/Min de esa MISMA
+   fila -- ver src/data/kpis/kpiHistorico2017.js, campo "reverse",
+   extraido del XML crudo del archivo, nunca inventado). No es una
+   replica pixel-por-pixel del icono de Excel (esta libreria no renderiza
+   iconSets), pero SI usa los mismos umbrales reales y la misma bandera
+   real de inversion de cada fila -- rojo/amarillo/verde con la misma
+   logica de negocio. reverse=null (filas de Contraloria, sin regla en
+   el Excel original) -- no se colorea, se muestra el valor tal cual. */
+function parseNumeric(value) {
+  const cleaned = (value || '').replace('%', '').trim()
+  if (!cleaned) return null
+  const n = Number(cleaned)
+  return Number.isNaN(n) ? null : n
+}
+
+function trafficLightColor(row, monthValue) {
+  if (row.reverse === null) return null
+  const value = parseNumeric(monthValue)
+  const max = parseNumeric(row.targetMax)
+  const min = parseNumeric(row.targetMin)
+  if (value === null || max === null || min === null) return null
+  const lo = Math.min(max, min)
+  const hi = Math.max(max, min)
+  let zone
+  if (value < lo) zone = 'low'
+  else if (value < hi) zone = 'mid'
+  else zone = 'high'
+  const colorByZone = row.reverse
+    ? { low: '#10B981', mid: '#F59E0B', high: '#EF4444' }
+    : { low: '#EF4444', mid: '#F59E0B', high: '#10B981' }
+  return colorByZone[zone]
+}
+
 export default function KpisPage() {
   const { t } = useTranslation('kpis')
 
@@ -124,11 +160,26 @@ function FragmentGroup({ group, t }) {
           <TableCell className={cellTextSecondaryClass}>{row.targetMax}</TableCell>
           <TableCell className={cellTextSecondaryClass}>{row.targetMin}</TableCell>
           <TableCell className={cellTextSecondaryClass}>{row.unit}</TableCell>
-          {MONTH_KEYS.map((m) => (
-            <TableCell key={m} className={cn(cellTextClass, 'text-right')}>
-              {row.months[m] || t('emptyValuePlaceholder')}
-            </TableCell>
-          ))}
+          {MONTH_KEYS.map((m) => {
+            const color = trafficLightColor(row, row.months[m])
+            return (
+              <TableCell key={m} className={cn(cellTextClass, 'text-right')}>
+                {row.months[m] ? (
+                  <span className="inline-flex items-center justify-end gap-1.5">
+                    {color && (
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                    )}
+                    {row.months[m]}
+                  </span>
+                ) : (
+                  t('emptyValuePlaceholder')
+                )}
+              </TableCell>
+            )
+          })}
         </TableRow>
       ))}
     </>

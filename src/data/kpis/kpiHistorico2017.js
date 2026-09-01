@@ -6,6 +6,15 @@
 // inventa ni se corrige un valor -- se transcribe tal cual viene en el
 // Excel, incluyendo huecos donde el archivo original no tiene dato
 // (columnas de mes vacias = el reporte real nunca se lleno para ese mes).
+//
+// "reverse" (2026-09-01, segunda ronda -- "debe ser exactamente igual al
+// excel, los colores y todo"): bandera real de semaforo (rojo/amarillo/
+// verde) extraida del XML crudo del Excel (conditionalFormatting, iconSet
+// "3Symbols2" sobre I:T de cada fila, comparado contra targetMax/
+// targetMin de esa MISMA fila) -- reverse=true invierte los colores
+// (metricas donde MENOS es mejor). reverse=null = esa fila no tenia
+// regla de semaforo en el Excel original (las 4 filas de Contraloria al
+// final de la hoja) -- nunca se inventa una regla que no exista.
 export const KPI_HISTORICO_2017 = [
   {
     areaCode: 'A',
@@ -16,6 +25,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '85%',
     unit: '%',
     description: '# Horas Reales / # Horas Programadas',
+    reverse: false,
     months: {
       jan: '83.0%',
       feb: '83.7%',
@@ -40,6 +50,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '80%',
     unit: '%',
     description: '# Horas Reales / # Horas Programadas',
+    reverse: true,
     months: {
       jan: '84.7%',
       feb: '80.7%',
@@ -64,6 +75,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '1.0%',
     unit: '%',
     description: '# Demoras / # Total de Horas de Utilización por Mes',
+    reverse: true,
     months: {
       jan: '1.0%',
       feb: '0.8%',
@@ -88,6 +100,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '95%',
     unit: '%',
     description: '# Jobs Fabricados / # Jobs Planeados',
+    reverse: false,
     months: {
       jan: '95.8%',
       feb: '93.3%',
@@ -112,6 +125,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '20',
     unit: '#',
     description: '(# Horas Pendientes / 17 ) + # Jobs No Terminados',
+    reverse: true,
     months: {
       jan: '11',
       feb: '20',
@@ -136,6 +150,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98%',
     unit: '%',
     description: '# Demoras / # Total de Horas de Utilización por Mes',
+    reverse: false,
     months: {
       jan: '98.1%',
       feb: '97.9%',
@@ -160,6 +175,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98%',
     unit: '%',
     description: '# Eventos Realizados / # Eventos Programados',
+    reverse: false,
     months: {
       jan: '100.0%',
       feb: '100.0%',
@@ -184,6 +200,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '100%',
     unit: '%',
     description: '$ Gasto Real / $ Gasto Presupuestado',
+    reverse: true,
     months: {
       jan: '55.3%',
       feb: '85.7%',
@@ -208,6 +225,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98.0%',
     unit: '%',
     description: '# Demoras / # Total de Horas de Utilización por Mes',
+    reverse: false,
     months: {
       jan: '97.6%',
       feb: '98.6%',
@@ -232,6 +250,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '100%',
     unit: '%',
     description: '# Eventos Realizados / # Eventos Programados',
+    reverse: false,
     months: {
       jan: '100%',
       feb: '100%',
@@ -256,6 +275,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '300',
     unit: '#',
     description: '# Piezas Rechazadas / # Piezas Embarcadas * 1,000,000',
+    reverse: true,
     months: {
       jan: '92.8',
       feb: '131.8',
@@ -280,6 +300,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '300',
     unit: '#',
     description: '# Piezas Rechazadas / # Piezas Fabricadas * 1,000,000',
+    reverse: true,
     months: {
       jan: '191',
       feb: '228',
@@ -304,6 +325,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '0.5%',
     unit: '%',
     description: '$ Scrap / $ Venta del período',
+    reverse: true,
     months: {
       jan: '0.3%',
       feb: '0.3%',
@@ -328,6 +350,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '5.0%',
     unit: '%',
     description: '$ Piezas Retrabajadas / $ Piezas Fabricadas en el Mes',
+    reverse: true,
     months: {
       jan: '0.7%',
       feb: '1.6%',
@@ -352,6 +375,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '99.0%',
     unit: '%',
     description: '# de Ordenes preparadas / # de Ordenes solicitadas',
+    reverse: false,
     months: {
       jan: '62.1%',
       feb: '43.3%',
@@ -376,6 +400,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '0',
     unit: '#',
     description: '# de Eventos en el mes',
+    reverse: true,
     months: {
       jan: '6',
       feb: '5',
@@ -400,6 +425,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '4%',
     unit: '%',
     description: '$ cuarentena MP + $ cuarentena PT / $ valor agregado',
+    reverse: true,
     months: {
       jan: '3.8%',
       feb: '4.5%',
@@ -424,6 +450,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98%',
     unit: '%',
     description: 'Entregas Reales / Entregas Programadas',
+    reverse: false,
     months: {
       jan: '100%',
       feb: '100%',
@@ -448,6 +475,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98%',
     unit: '%',
     description: 'Entregas Reales / Entregas Programadas',
+    reverse: false,
     months: {
       jan: '98.0%',
       feb: '98.6%',
@@ -472,6 +500,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '1.0',
     unit: '#',
     description: 'Ventas / Inventario',
+    reverse: false,
     months: {
       jan: '1.0',
       feb: '1.1',
@@ -496,6 +525,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '98%',
     unit: '%',
     description: 'Resultado Inventario Físico VS Resultado Inventario Sistema',
+    reverse: false,
     months: {
       jan: '18%',
       feb: '38%',
@@ -520,6 +550,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '2.0%',
     unit: '%',
     description: '# total de fletes extra / # total de facturas x mes',
+    reverse: true,
     months: {
       jan: '4.0%',
       feb: '6.3%',
@@ -544,6 +575,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '0.5%',
     unit: '%',
     description: '# Horas Extras / # Horas Hombre Totales Pagadas en período',
+    reverse: true,
     months: {
       jan: '0.7%',
       feb: '1.5%',
@@ -568,6 +600,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '2.0%',
     unit: '%',
     description: '# de Bajas / # Promedio de Personal en el mismo período',
+    reverse: true,
     months: {
       jan: '1.1%',
       feb: '3.2%',
@@ -592,6 +625,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '2.0%',
     unit: '%',
     description: '# de Horas por Ausencia / # de Horas Hombre Totales en el mismo período',
+    reverse: true,
     months: {
       jan: '4.5%',
       feb: '2.7%',
@@ -616,6 +650,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '25',
     unit: '#',
     description: '# Eventos Incapacitantes * 1,000,000/# Hrs Hombre Expuestos en Mes',
+    reverse: true,
     months: {
       jan: '22',
       feb: '0',
@@ -640,6 +675,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '350',
     unit: '#',
     description: '# Días Perdidos * 1,000,000/# Hrs Hombre Expuestos en Mes',
+    reverse: true,
     months: {
       jan: '258',
       feb: '0',
@@ -664,6 +700,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '80%',
     unit: '#',
     description: '% de avance del area en 5´s',
+    reverse: false,
     months: {
       jan: '50.2%',
       feb: '62.1%',
@@ -688,6 +725,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '100%',
     unit: '%',
     description: 'Avance del proyecto x etapa de avance',
+    reverse: false,
     months: {
       jan: '',
       feb: '',
@@ -712,6 +750,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '90%',
     unit: '%',
     description: '# Acciones Correctivas Cerradas / # total de acciones generadas',
+    reverse: false,
     months: {
       jan: '0%',
       feb: '0%',
@@ -736,6 +775,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '2.0%',
     unit: '%',
     description: 'Cobranza pendiente por recuperar/Ventas por cliente',
+    reverse: null,
     months: {
       jan: '3.3%',
       feb: '7.0%',
@@ -760,6 +800,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '90.0%',
     unit: '%',
     description: 'Plan de trabajo',
+    reverse: null,
     months: {
       jan: '70.0%',
       feb: '70.0%',
@@ -784,6 +825,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '90.0%',
     unit: '%',
     description: 'Observaciones no contestadas',
+    reverse: null,
     months: {
       jan: '100.0%',
       feb: '100.0%',
@@ -809,6 +851,7 @@ export const KPI_HISTORICO_2017 = [
     targetMin: '90.0%',
     unit: '%',
     description: 'Fecha de entrega de la información 4 dia habil',
+    reverse: null,
     months: {
       jan: '80.0%',
       feb: '80.0%',
