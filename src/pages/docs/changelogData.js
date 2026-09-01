@@ -25,6 +25,7 @@ export const RELEASES = [
           'addedDrizzle',
           'addedI18n',
           'addedTailwind',
+          'addedCoolify',
         ],
       },
       {
@@ -33,7 +34,7 @@ export const RELEASES = [
       },
       {
         labelKey: 'sectionPending',
-        itemKeys: ['pendingSso', 'pendingCoolify'],
+        itemKeys: ['pendingSso'],
       },
     ],
   },

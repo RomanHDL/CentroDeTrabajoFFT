@@ -83,9 +83,9 @@
     "addedDrizzle": "Migración completa Prisma → Drizzle ORM. Schema generado por introspección directa contra la base real (18 tablas/12 enums). Los 25 archivos de API/servidor y los 11 scripts de mantenimiento que usaban Prisma fueron portados uno por uno, mismo comportamiento verificado.",
     "addedI18n": "i18n real (react-i18next). Framework completo más extracción de todo el texto visible de la app a claves de traducción, con contenido real en español, inglés y chino simplificado. Selector de idioma persistente, español como idioma por defecto.",
     "addedTailwind": "Migración completa MUI → Tailwind CSS + shadcn/ui. Los 88 archivos del frontend convertidos uno por uno; MUI eliminado por completo del proyecto.",
+    "addedCoolify": "Despliegue a Coolify (Fase 7): PM2 (pm2-runtime) + servidor Express propio como entrypoint fuera de Vercel. En vivo en https://centro-de-trabajo.mi2.com.mx desde el 2026-09-01.",
     "changedFormat": "Formato de código en todo el repo (Biome), sin cambios de comportamiento.",
     "pendingSso": "SSO real de Nextcloud (OIDC), reemplaza el login propio.",
-    "pendingCoolify": "Despliegue a Coolify (Docker + PM2), reemplaza Vercel.",
     "v100Description": "Estado de producción antes de iniciar la migración de stack. Gestión completa de personal de piso: asignación diaria por estación, movimientos con aprobación (LIDER → SUPERVISOR/ADMINISTRADOR), asistencia, catálogo de personal importado desde Excel (con colas de revisión para conflictos de baja/duplicados), permisos por rol y por usuario, y un plano operativo 2D del piso. Desplegado en Vercel con integración automática de GitHub (desarrollo-personal → Preview, main → Producción)."
   }
 }
