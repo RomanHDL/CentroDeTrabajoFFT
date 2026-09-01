@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Recycle,
+  Search,
   ShieldCheck,
   X,
 } from 'lucide-react'
@@ -19,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -30,7 +32,11 @@ import {
 import { alertToneClass, cardClass, pageClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
-import { getLineWorkstationsWithOccupancy } from '../../data/personnel/repository'
+import {
+  getCurrentAssignment,
+  getLineWorkstationsWithOccupancy,
+  searchEmployees,
+} from '../../data/personnel/repository'
 import {
   canonicalOperationalAreaId,
   WORK_CENTERS,
@@ -204,6 +210,18 @@ function FiveSDialog({ onClose }) {
   const [selectedStationName, setSelectedStationName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  // Buscar por numero de empleado o nombre (2026-09-02, a peticion explicita
+  // del usuario -- "los PROYECTO no cuentan con numero de empleado asi que
+  // debe buscarse tambien por nombre"): forma alternativa/mas rapida de
+  // llegar a la persona sin navegar Centro de trabajo -> Puesto a mano --
+  // reutiliza searchEmployees (mismo buscador de nombre/numero que ya usa
+  // EmployeeAssignSearchBar) y getCurrentAssignment para resolver en que
+  // area/puesto esta esa persona HOY, y rellena los mismos selects de
+  // abajo (nunca un segundo camino de datos). Si la persona no tiene
+  // asignacion activa hoy, no se puede auditar -- se avisa en vez de dejar
+  // avanzar con datos incompletos.
+  const [personSearch, setPersonSearch] = useState('')
+  const [personSearchError, setPersonSearchError] = useState('')
   // Directorio real de Postgres (id/employeeNumber/fullName), para traducir
   // el empleado LOCAL resuelto por estacion a su id real de servidor -- ver
   // comentario junto a PLACEHOLDER_EMPLOYEE_NUMBERS arriba. Se carga una sola
@@ -259,6 +277,20 @@ function FiveSDialog({ onClose }) {
     setSelectedStationName('')
   }
 
+  const personSearchResults = personSearch.trim() ? searchEmployees(personSearch, 8) : []
+
+  function handlePickFromSearch(employee) {
+    const assignment = getCurrentAssignment(employee.id)
+    if (!assignment) {
+      setPersonSearchError(t('personSearchNoAssignmentError', { name: employee.name }))
+      return
+    }
+    setPersonSearchError('')
+    setPersonSearch('')
+    setSelectedAreaId(assignment.areaId)
+    setSelectedStationName(assignment.stationId)
+  }
+
   async function handleNext() {
     if (stepIndex < FIVE_S_STEPS.length - 1) {
       setStep(stepIndex + 1)
@@ -294,6 +326,8 @@ function FiveSDialog({ onClose }) {
     setSelectedAreaId('')
     setSelectedStationName('')
     setSubmitError('')
+    setPersonSearch('')
+    setPersonSearchError('')
     onClose()
   }
 
@@ -319,6 +353,52 @@ function FiveSDialog({ onClose }) {
               <p className="text-[13.5px] font-bold text-muted-foreground">
                 {t('start5sIntroDescription')}
               </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fives-person-search">{t('personSearchLabel')}</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-[16px] w-[16px] -translate-y-1/2 text-muted-foreground opacity-50" />
+                <Input
+                  id="fives-person-search"
+                  value={personSearch}
+                  onChange={(e) => {
+                    setPersonSearch(e.target.value)
+                    setPersonSearchError('')
+                  }}
+                  placeholder={t('personSearchPlaceholder')}
+                  className="pl-9"
+                />
+                {personSearchResults.length > 0 && (
+                  <div className="absolute z-20 mt-1 max-h-[240px] w-full overflow-y-auto rounded-[16px] border border-border bg-card shadow-lg">
+                    {personSearchResults.map((employee) => (
+                      <button
+                        key={employee.id}
+                        type="button"
+                        onClick={() => handlePickFromSearch(employee)}
+                        className="flex w-full items-center gap-3 border-b border-border p-2.5 text-left last:border-b-0 hover:bg-accent"
+                      >
+                        <EmployeeAvatar employee={employee} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-bold">{employee.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {formatEmployeeNumber(employee.employeeNumber)}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {personSearchError && (
+                <Alert className={cn(alertToneClass('warning'), 'mt-1')}>{personSearchError}</Alert>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              {t('personSearchOrDivider')}
+              <div className="h-px flex-1 bg-border" />
             </div>
 
             <div className="flex flex-col gap-1.5">
