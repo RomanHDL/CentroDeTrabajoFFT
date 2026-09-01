@@ -83,6 +83,10 @@ export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
 // usuario): SOPORTE se quita (archivada, `active:false` -- ya no aparece
 // en el plano). ENTRENADOR se agrega (WC nuevo, mismo trato de card
 // pequeña que el resto de areas de apoyo).
+// 2026-09-01 (a peticion explicita del usuario): ENTRENADOR se quita de
+// esta pantalla -- el WORK_CENTER sigue existiendo tal cual en el
+// catalogo (mismo criterio que CALIDAD arriba, ver comentario debajo),
+// solo deja de tener card propia aqui.
 //
 // CALIDAD se quita 2026-08-27 ("CAMBIO DEFINITIVO — PERSONAL + IDENTIDAD
 // VISUAL POR ÁREA, PUESTO Y RANGO", a peticion explicita del usuario): su
@@ -99,7 +103,6 @@ export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
 export const SUPPORT_CARD_AREA_IDS = [
   'CAPACITACION',
   'TEAM_LEADER',
-  'ENTRENADOR',
   'LIMPIEZA',
   'SUPERVISOR',
   'GERENTE',

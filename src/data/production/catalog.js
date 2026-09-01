@@ -735,11 +735,13 @@ export const WORK_CENTERS = [
      `name` mostrado a "WC Gerente FFT" -- el id interno NO se toca (mismo
      criterio de siempre: renombrar visual nunca reescribe el id real).
      2026-08-28 (a peticion explicita del usuario): segundo rename visual,
-     mismo criterio -- "WC Gerente FFT" -> "WC Coordinador de Almacén". El
-     id interno GERENTE sigue igual (historial/asignaciones intactos). */
+     mismo criterio -- "WC Gerente FFT" -> "WC Coordinador de Almacén".
+     2026-09-01 (a peticion explicita del usuario): tercer rename visual --
+     "WC Coordinador de Almacén" -> "WC GERENTE DE FFT". El id interno
+     GERENTE sigue igual en los 3 casos (historial/asignaciones intactos). */
   {
     id: 'GERENTE',
-    name: 'WC Coordinador de Almacén',
+    name: 'WC GERENTE DE FFT',
     nameKey: 'wcCoordinadorAlmacen',
     kind: 'area',
     type: AREA_TYPES.SUPPORT_AREA,
