@@ -189,7 +189,11 @@ export const LINE_STATION_OVERRIDES = {
   // cantidad real de estaciones (mismo bug que este archivo evita en
   // LINEA6-10/PROYECTO) -- se deja SIN CAMBIO, reportado explicitamente al
   // usuario, en vez de adivinar un swap de rol.
-  LINEA1: { repeatOrder: ['Suministro de Accesorios', 'Limpieza de TV'] },
+  // 2026-09-01 (a peticion explicita del usuario, LINEA1 sube a 10
+  // puestos, misma estructura que PROYECTO): repeatOrder cambia para que
+  // el unico puesto repetido del plan base sea "Montaje 2" -- mismo
+  // array que usa PROYECTO/LINEA0 (ver mas abajo), no una lista nueva.
+  LINEA1: { repeatOrder: ['Montaje', 'Etiquetado', 'Suministro de Accesorios', 'Limpieza de TV'] },
   // PROYECTO/WC LINEA 0 (2026-08-28, tercera ronda): antes usaba
   // DEFAULT_REPEAT_ORDER (unica linea que todavia lo consumia) -- ahora
   // necesita su PROPIO override explicito porque, sin Prueba eléctrica,
@@ -225,7 +229,10 @@ export const LINE_STATION_OVERRIDES = {
    repeticion en Etiquetado -- eso no cambia con este ajuste. */
 export const EMPAQUE_COUNT_BY_LINE = {
   PROYECTO: 2,
-  LINEA1: 1,
+  // 2026-09-01 (a peticion explicita del usuario, LINEA1 sube a 10
+  // puestos, misma estructura que PROYECTO): sube de 1 a 2 (Empaque 1 y
+  // Empaque 2, igual que PROYECTO).
+  LINEA1: 2,
   LINEA2: 1,
   LINEA3: 1,
   LINEA4: 1,
