@@ -85,7 +85,7 @@ import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import LineHistoryDialog from './LineHistoryDialog'
 import LineProcessFlow from './LineProcessFlow'
 import LineStationConfigDrawer from './LineStationConfigDrawer'
-import LineVisualLegend, { LineTypeIcon } from './LineVisualLegend'
+import { LineTypeIcon } from './LineVisualLegend'
 import MoveConfirmDialog from './MoveConfirmDialog'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
@@ -481,68 +481,69 @@ export default function LineDetailDrawer({
 
         <div key={workCenterId} className="min-h-0 flex-1 overflow-y-auto p-3 md:p-6">
           {isStationBased && staffing.ideal != null ? (
-            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-              <div className={cn(kpiCardClass('blue'), 'md:col-span-1')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineDetailDrawer.currentAssignmentLabel')}
-                </p>
-                <p className="mt-0.5 text-xl font-extrabold">
-                  {staffing.real} / {staffing.ideal}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t('lineDetailDrawer.peopleUnitLabel')}
-                </p>
-              </div>
-              <div className={cn(kpiCardClass('slate'), 'md:col-span-1')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineDetailDrawer.idealStaffingLabel')}
-                </p>
-                <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t('lineDetailDrawer.peopleUnitLabel')}
-                </p>
-              </div>
-              <div
-                className={cn(kpiCardClass(staffing.diff < 0 ? 'red' : 'green'), 'md:col-span-1')}
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {staffing.diff > 0
-                    ? t('lineDetailDrawer.additionalStaffLabel')
-                    : staffing.diff === 0
-                      ? t('lineDetailDrawer.coverageLabel')
-                      : t('lineDetailDrawer.missingLabel')}
-                </p>
-                <p
-                  className="mt-0.5 text-xl font-extrabold"
-                  style={{ color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}
-                >
-                  {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {staffing.diff === 0
-                    ? t('lineDetailDrawer.completeLabel')
-                    : t('lineDetailDrawer.personUnitLabel', { count: Math.abs(staffing.diff) })}
-                </p>
-              </div>
-              <div className={cn(kpiCardClass('purple'), 'sm:col-span-1 md:col-span-2')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineDetailDrawer.currentShiftLabel')}
-                </p>
-                <div className="mt-0.5 flex items-center gap-1">
-                  <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
-                  <p className="text-[15px] font-extrabold">{currentOfficialShift.label}</p>
+            <>
+              {/* 2026-09-01 (a peticion explicita del usuario, "ordenalas bien
+                  que esten a las mismas medidas"): las 4 tarjetas (antes en un
+                  grid de 6 columnas donde "Turno actual" ocupaba el doble de
+                  ancho que las otras 3) ahora son 4 columnas iguales -- la
+                  barra de cobertura se separa como su propia fila de ancho
+                  completo debajo, ya no comparte el mismo grid. */}
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className={kpiCardClass('blue')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineDetailDrawer.currentAssignmentLabel')}
+                  </p>
+                  <p className="mt-0.5 text-xl font-extrabold">
+                    {staffing.real} / {staffing.ideal}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('lineDetailDrawer.peopleUnitLabel')}
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {formatHour12(currentOfficialShift.start)} –{' '}
-                  {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
-                </p>
+                <div className={kpiCardClass('slate')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineDetailDrawer.idealStaffingLabel')}
+                  </p>
+                  <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('lineDetailDrawer.peopleUnitLabel')}
+                  </p>
+                </div>
+                <div className={kpiCardClass(staffing.diff < 0 ? 'red' : 'green')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {staffing.diff > 0
+                      ? t('lineDetailDrawer.additionalStaffLabel')
+                      : staffing.diff === 0
+                        ? t('lineDetailDrawer.coverageLabel')
+                        : t('lineDetailDrawer.missingLabel')}
+                  </p>
+                  <p
+                    className="mt-0.5 text-xl font-extrabold"
+                    style={{ color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}
+                  >
+                    {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {staffing.diff === 0
+                      ? t('lineDetailDrawer.completeLabel')
+                      : t('lineDetailDrawer.personUnitLabel', { count: Math.abs(staffing.diff) })}
+                  </p>
+                </div>
+                <div className={kpiCardClass('purple')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineDetailDrawer.currentShiftLabel')}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
+                    <p className="text-[15px] font-extrabold">{currentOfficialShift.label}</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatHour12(currentOfficialShift.start)} –{' '}
+                    {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
+                  </p>
+                </div>
               </div>
-              <div
-                className={cn(
-                  kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'),
-                  'col-span-2 flex flex-col justify-center sm:col-span-3 md:col-span-6',
-                )}
-              >
+              <div className={cn(kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'), 'mb-4')}>
                 <div className="mb-2 flex justify-between">
                   <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
                     {t('lineDetailDrawer.lineCoverageTitle')}
@@ -559,7 +560,7 @@ export default function LineDetailDrawer({
                   />
                 </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="mb-4">
               <p className="text-[22px] font-extrabold">
@@ -574,28 +575,6 @@ export default function LineDetailDrawer({
                 <p className="text-[13px] font-bold text-muted-foreground">
                   {t('lineDetailDrawer.noTemplateDefinedLabel')}
                 </p>
-              )}
-            </div>
-          )}
-
-          {isStationBased && (
-            <div className={cn(cardClass, 'mb-4 flex flex-wrap items-center gap-4 p-3 md:p-4')}>
-              <div className="min-w-0 flex-1">
-                <LineVisualLegend />
-              </div>
-              {isAdmin && configLoaded && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditStationId(null)
-                    setConfigDrawerOpen(true)
-                  }}
-                  className="shrink-0 font-bold"
-                >
-                  <Settings className="h-4 w-4" />
-                  {t('lineDetailDrawer.configureStationsButton')}
-                </Button>
               )}
             </div>
           )}
@@ -626,7 +605,26 @@ export default function LineDetailDrawer({
                para que los nodos con posicion real (P.E/LIM/ACE/ET/EM/CAL)
                muestren numero+nombre del empleado ocupante -- mismo array
                ya usado por el resto de este drawer, sin recalcular nada. */
-            <LineProcessFlow workstations={workstations} />
+            <LineProcessFlow
+              workstations={workstations}
+              headerAction={
+                isAdmin &&
+                configLoaded && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditStationId(null)
+                      setConfigDrawerOpen(true)
+                    }}
+                    className="shrink-0 font-bold"
+                  >
+                    <Settings className="h-4 w-4" />
+                    {t('lineDetailDrawer.configureStationsButton')}
+                  </Button>
+                )
+              }
+            />
           )}
 
           {isStationBased ? (
