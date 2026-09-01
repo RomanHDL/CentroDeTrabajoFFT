@@ -8,6 +8,8 @@
 import changePasswordHandler from '../api/auth/change-password.js'
 import loginHandler from '../api/auth/login.js'
 import logoutHandler from '../api/auth/logout.js'
+import oidcCallbackHandler from '../api/auth/oidc/callback.js'
+import oidcStartHandler from '../api/auth/oidc/start.js'
 import sessionHandler from '../api/auth/session.js'
 import dashboardTrendsHandler from '../api/dashboard/trends.js'
 import modulesIndexHandler from '../api/modules/index.js'
@@ -52,6 +54,8 @@ export function mountApiRoutes(app) {
   app.post('/api/auth/logout', wrapAsync(logoutHandler))
   app.get('/api/auth/session', wrapAsync(sessionHandler))
   app.post('/api/auth/change-password', wrapAsync(changePasswordHandler))
+  app.get('/api/auth/oidc/start', wrapAsync(oidcStartHandler))
+  app.get('/api/auth/oidc/callback', wrapAsync(oidcCallbackHandler))
 
   app.get('/api/users', wrapAsync(usersIndexHandler))
   app.post('/api/users', wrapAsync(usersIndexHandler))
