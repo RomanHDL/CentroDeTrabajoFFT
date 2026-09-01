@@ -591,16 +591,17 @@ export default function LineDetailDrawer({
               disponible" se mueve aqui, al lado de la busqueda por
               numero/nombre, para que arrastrar y asignar sea mas rapido --
               antes vivia hasta abajo de la columna principal, lejos de la
-              barra de busqueda. */}
+              barra de busqueda. Orden (mismo dia, segunda correccion):
+              Personal disponible a la izquierda, buscador a la derecha. */}
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start">
-            <div className="w-full max-w-[480px] shrink-0">
-              <EmployeeAssignSearchBar areaId={canonicalId} />
-            </div>
             <div className={cn(cardClass, 'min-w-0 flex-1 p-3')}>
               <AvailablePersonnelTray
                 scopedAreaId={canonicalId}
                 title={t('lineDetailDrawer.availablePersonnelTitle')}
               />
+            </div>
+            <div className="w-full max-w-[480px] shrink-0">
+              <EmployeeAssignSearchBar areaId={canonicalId} />
             </div>
           </div>
 
