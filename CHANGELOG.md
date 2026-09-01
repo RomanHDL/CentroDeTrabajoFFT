@@ -35,13 +35,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
 - **Migración completa MUI → Tailwind CSS + shadcn/ui.** Los 88 archivos del
   frontend convertidos uno por uno; MUI eliminado por completo de las
   dependencias del proyecto.
+- **Despliegue a Coolify (Fase 7).** `ecosystem.config.cjs` (PM2 en modo
+  `pm2-runtime`) + `server-lib/prod-server.js` (Express, bind a `0.0.0.0`,
+  puerto desde `process.env.PORT`) como entrypoint real fuera de Vercel.
+  Repo espejo `mi2-apps/centro-de-trabajo` corriendo en vivo en
+  `https://centro-de-trabajo.mi2.com.mx` desde el 2026-09-01 (fix de
+  `NIXPACKS_START_CMD` para que la fase `start` use la ruta completa de
+  pnpm, mismo problema que ya afectaba a `build`).
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - SSO real de Nextcloud (OIDC), reemplaza el login propio.
-- Despliegue a Coolify (Docker + PM2), reemplaza Vercel.
 
 ## [1.0.0]
 
