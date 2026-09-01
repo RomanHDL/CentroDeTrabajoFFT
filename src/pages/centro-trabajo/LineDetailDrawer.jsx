@@ -7,6 +7,7 @@ import {
   Moon,
   Settings,
   Sun,
+  Timer,
   UserPlus,
   UserSearch,
   X,
@@ -58,6 +59,7 @@ import {
   CURRENT_SHIFT,
   canonicalOperationalAreaId,
   getCurrentShift,
+  getTaktTime,
   LINE_FAMILY_AREA_IDS,
   operationalGroupMembers,
   workCenterById,
@@ -234,6 +236,7 @@ export default function LineDetailDrawer({
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? Moon : Sun
+  const taktTime = getTaktTime(currentOfficialShift)
   // biome-ignore lint/correctness/useExhaustiveDependencies: version/configVersion fuerzan recalcular aunque no se lean en el callback (mismo patron en todo este folder)
   const workstations = useMemo(
     () => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []),
@@ -568,6 +571,46 @@ export default function LineDetailDrawer({
                   />
                 </div>
               </div>
+              {/* "Take Time" (2026-09-02, a peticion explicita del usuario):
+                  meta REAL de piezas por turno (1500 Matutino/500 Noche,
+                  ver TAKT_TARGET_PCS_BY_SHIFT en catalog.js) y el ciclo
+                  TEORICO resultante (duracion del turno / meta) -- "una TV
+                  cada tantos segundos". Es solo el calculo teorico: el
+                  usuario confirmo explicitamente (pregunta directa) que la
+                  captura de piezas REALES producidas por linea/turno se
+                  agrega despues, no se inventa aqui. Tiempo extra no tiene
+                  meta definida por el usuario -- taktTime sale null y la
+                  card lo indica en vez de inventar un numero. */}
+              {taktTime && (
+                <div className={cn(kpiCardClass('purple'), 'mb-4 !h-auto')}>
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <Timer className="h-4 w-4 text-[#A855F7]" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                      {t('lineDetailDrawer.taktTimeTitle')}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                    <div>
+                      <p className="text-xl font-extrabold">
+                        {taktTime.secondsPerUnit.toFixed(1)}s
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t('lineDetailDrawer.taktTimeCycleLabel')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-extrabold">
+                        {taktTime.targetPcs.toLocaleString()}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t('lineDetailDrawer.taktTimeTargetLabel', {
+                          shiftLabel: currentOfficialShift.label,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="mb-4">
@@ -629,6 +672,8 @@ export default function LineDetailDrawer({
                ya usado por el resto de este drawer, sin recalcular nada. */
             <LineProcessFlow
               workstations={workstations}
+              areaId={canonicalId}
+              onViewHistory={setHistoryEmployee}
               headerAction={
                 isAdmin &&
                 configLoaded && (

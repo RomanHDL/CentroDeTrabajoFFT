@@ -11,6 +11,7 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import ChangelogPage from './pages/docs/ChangelogPage'
 import DeveloperManualPage from './pages/docs/DeveloperManualPage'
 import UserManualPage from './pages/docs/UserManualPage'
+import EvaluacionesPage from './pages/evaluaciones/EvaluacionesPage'
 import KpisPage from './pages/kpis/KpisPage'
 import RegistroPersonalPage from './pages/registro-personal/RegistroPersonalPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
@@ -102,6 +103,14 @@ export default function App() {
                   element={
                     <RequireModuleAccess>
                       <AuditoriaPage />
+                    </RequireModuleAccess>
+                  }
+                />
+                <Route
+                  path="/evaluaciones"
+                  element={
+                    <RequireModuleAccess>
+                      <EvaluacionesPage />
                     </RequireModuleAccess>
                   }
                 />

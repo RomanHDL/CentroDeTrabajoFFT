@@ -1,0 +1,20 @@
+{
+  "pageTitle": "Evaluaciones",
+  "pageSubtitle": "Calificaciones de auditorías 5S ya realizadas",
+  "tableTitle": "Evaluaciones registradas",
+  "tableSubtitle": "Resultado de cada auditoría 5S guardada",
+  "loadingMessage": "Cargando evaluaciones...",
+  "loadErrorGeneric": "No se pudieron cargar las evaluaciones.",
+  "emptyStateTitle": "Sin evaluaciones registradas todavía",
+  "emptyStateDescription": "Cuando se complete una auditoría 5S, aparecerá aquí.",
+  "colEmployee": "Empleado",
+  "colArea": "Centro de trabajo",
+  "colStation": "Puesto",
+  "colDate": "Fecha",
+  "colScore": "Calificación",
+  "classificationShort": {
+    "CUMPLE": "C",
+    "CUMPLE_PARCIAL": "P",
+    "NO_CUMPLE": "N"
+  }
+}

@@ -775,3 +775,62 @@ export const userModulePermission = pgTable(
       .onDelete('cascade'),
   ],
 )
+
+// Fase "Evaluaciones" (2026-09-02, a peticion explicita del usuario):
+// resultado real de una auditoria 5S ya completada -- antes el modulo
+// Auditoria era solo interfaz, sin guardar nada (decision explicita
+// original). areaId/stationName son snapshot de TEXTO (no FK a
+// Workstation): el picker de Auditoria puede apuntar a estaciones de
+// cualquier area del catalogo (WC LINEA sintetico o LINE_LIKE), y el
+// resultado debe seguir siendo historicamente correcto aunque esa
+// estacion cambie de nombre o se elimine despues -- mismo criterio que
+// ya usan EmployeeMovement/DailyAssignment para areaId/stationId reales.
+export const fiveSClassification = pgEnum('FiveSClassification', [
+  'CUMPLE',
+  'CUMPLE_PARCIAL',
+  'NO_CUMPLE',
+])
+export const auditEvaluation = pgTable(
+  'AuditEvaluation',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    employeeId: text().notNull(),
+    areaId: text().notNull(),
+    stationName: text().notNull(),
+    auditDate: date({ mode: 'date' }).notNull(),
+    s1: fiveSClassification().notNull(),
+    s2: fiveSClassification().notNull(),
+    s3: fiveSClassification().notNull(),
+    s4: fiveSClassification().notNull(),
+    s5: fiveSClassification().notNull(),
+    scorePct: integer().notNull(),
+    createdByUserId: text().notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index('AuditEvaluation_employeeId_auditDate_idx').using(
+      'btree',
+      table.employeeId.asc().nullsLast().op('text_ops'),
+      table.auditDate.asc().nullsLast().op('date_ops'),
+    ),
+    foreignKey({
+      columns: [table.employeeId],
+      foreignColumns: [employee.id],
+      name: 'AuditEvaluation_employeeId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+    foreignKey({
+      columns: [table.createdByUserId],
+      foreignColumns: [user.id],
+      name: 'AuditEvaluation_createdByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)

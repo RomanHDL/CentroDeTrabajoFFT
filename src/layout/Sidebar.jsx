@@ -8,6 +8,7 @@ import {
   Factory,
   History,
   LayoutDashboard,
+  Star,
   UserPlus,
   Users,
 } from 'lucide-react'
@@ -69,6 +70,7 @@ const NAV_ITEMS = [
   { to: '/asistencia', labelKey: 'asistencia', icon: CalendarCheck, configurable: true },
   { to: '/kpis', labelKey: 'kpis', icon: BarChart3, configurable: true },
   { to: '/auditoria', labelKey: 'auditoria', icon: ClipboardCheck, configurable: true },
+  { to: '/evaluaciones', labelKey: 'evaluaciones', icon: Star, configurable: true },
   { to: '/usuarios', labelKey: 'usuarios', icon: Users, configurable: true },
   // 2026-08-30: paginas de ayuda/referencia (no son funcionalidad de
   // negocio) -- `configurable: false` + `roles` fijo en vez del sistema de
@@ -208,7 +210,12 @@ export default function Sidebar({
   // de 56px arriba del panel, porque no hay header con el que alinearse.
   // AppLayout ya resolvia esto mismo para el hotspot invisible
   // (`top: isWideLayoutRoute ? 0 : 56`); el sidebar real nunca lo recibia.
-  topOffset = 56,
+  // 2026-09-01 (segundo cambio, mismo dia, a peticion explicita del
+  // usuario): AppLayout ahora SIEMPRE pasa topOffset={0} -- el gap de 56px
+  // que quedaba en el resto de rutas (con barra superior global) no se
+  // queria ni ahi. El default de aqui abajo solo es un respaldo si algun
+  // consumidor futuro no pasa la prop.
+  topOffset = 0,
 }) {
   const { modules: allowedModules, loading: permsLoading } = useEffectiveModules()
   // Misma lista de modulos permitidos para CUALQUIER dispositivo (desktop,

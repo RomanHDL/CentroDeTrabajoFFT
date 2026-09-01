@@ -17,6 +17,20 @@
   "start5sIntroTitle": "Auditoría de 5´S",
   "start5sIntroDescription": "Recorre las 5 S en orden, una por una, y clasifica cada área.",
   "startAuditButton": "Comenzar auditoría",
+  "workCenterLabel": "Centro de trabajo",
+  "workCenterPlaceholder": "Selecciona un centro de trabajo",
+  "workstationLabel": "Puesto de trabajo",
+  "workstationPlaceholder": "Selecciona un puesto",
+  "workstationOptionOccupied": "{{name}} — {{employeeName}}",
+  "workstationOptionAvailable": "{{name}} — Disponible",
+  "noWorkstationsMessage": "Este centro de trabajo no tiene puestos configurados.",
+  "auditedPersonLabel": "Persona en auditoría",
+  "noOccupantMessage": "Este puesto no tiene personal asignado hoy — elige otro.",
+  "employeeDirectoryErrorGeneric": "No se pudo verificar el directorio de empleados.",
+  "verifyingEmployeeMessage": "Verificando empleado...",
+  "employeeNotSyncedMessage": "Este empleado todavía no está sincronizado con el servidor. Espera unos segundos e inténtalo de nuevo.",
+  "saveErrorGeneric": "No se pudo guardar la auditoría. Intenta de nuevo.",
+  "savingButton": "Guardando...",
   "stepIndicator": "Paso {{current}} de {{total}}",
   "previousButton": "Anterior",
   "nextButton": "Siguiente",
@@ -36,5 +50,5 @@
   "classificationPartial": "Cumple parcialmente",
   "classificationNonCompliant": "No cumple",
   "auditCompleteTitle": "Auditoría completada",
-  "auditCompleteDescription": "Este resumen todavía no se guarda -- disponible próximamente."
+  "auditCompleteDescription": "Esta evaluación ya quedó guardada y aparece en el módulo Evaluaciones."
 }

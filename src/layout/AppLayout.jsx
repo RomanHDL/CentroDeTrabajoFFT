@@ -102,12 +102,19 @@ export default function AppLayout({ mode, setMode }) {
         // Hotspot invisible: entrar aqui abre el sidebar. Una vez abierto,
         // el propio sidebar (mas ancho, mismo left:0) lo cubre por completo,
         // asi que el mouse nunca "pierde" cobertura entre los dos elementos.
-        // top:0 en /centro-trabajo (sin header arriba), top:56 en el resto.
+        // 2026-09-01 (a peticion explicita del usuario, "no quiero el gap
+        // que tiene hoy" en las rutas con barra superior global): top:0
+        // SIEMPRE, no solo en /centro-trabajo -- antes era top:56 en el
+        // resto de rutas para "empezar debajo" del header, pero eso dejaba
+        // el sidebar mas corto (con un hueco arriba) que en /centro-trabajo.
+        // El sidebar (z-[1202]) ya cubre visualmente el header (z-[1100])
+        // cuando esta abierto, asi que llegar hasta arriba en todas las
+        // rutas es seguro y consistente con /centro-trabajo.
         // biome-ignore lint/a11y/noStaticElementInteractions: zona de deteccion de mouse, el hamburguesa+Sheet cubre teclado/touch sin depender de este div
         <div
           onMouseEnter={openOnHover}
           className="fixed bottom-0 left-0 z-[1201]"
-          style={{ top: isWideLayoutRoute ? 0 : 56, width: HOTSPOT_WIDTH }}
+          style={{ top: 0, width: HOTSPOT_WIDTH }}
         />
       )}
 
@@ -120,7 +127,9 @@ export default function AppLayout({ mode, setMode }) {
         onTogglePin={() => setPinned((p) => !p)}
         onMouseEnter={hasFineHover ? openOnHover : undefined}
         onMouseLeave={hasFineHover ? scheduleClose : undefined}
-        topOffset={isWideLayoutRoute ? 0 : 56}
+        // Mismo razonamiento que el hotspot de arriba: siempre hasta arriba,
+        // en todas las rutas (antes solo en /centro-trabajo).
+        topOffset={0}
       />
 
       <div

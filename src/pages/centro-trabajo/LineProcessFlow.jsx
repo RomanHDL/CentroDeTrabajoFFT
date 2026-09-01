@@ -1,5 +1,6 @@
 import {
   ArrowDownRight,
+  ArrowLeftRight,
   ArrowRight,
   ArrowUpRight,
   ChevronLeft,
@@ -20,6 +21,10 @@ import {
 } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
+import DraggablePersonChip from '../../ui/DraggablePersonChip'
+import { useEmployeeDropTargetStation } from '../../ui/dnd'
+import EmployeeAssignSearchBar from './EmployeeAssignSearchBar'
+import EmployeeAvatar from './EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
    Reemplazo de "Distribución de estaciones" en LineDetailDrawer.jsx
@@ -122,12 +127,21 @@ function staysLevelWithPrevious(previousBase, base) {
    LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy), pero
    REORDENADAS solo para este diagrama segun FLOW_ORDER_ROLES (ver
    arriba) -- nunca se muta ni se reordena el array original. El row
-   (fila superior/inferior del zigzag) cambia solo cuando cambia el
-   rol base respecto al nodo anterior -- asi las posiciones repetidas
-   del mismo rol (ej. "Etiquetado"/"Etiquetado 2") quedan agrupadas en
-   la misma fila en vez de dispersas ("ponlos estrategicamente", a
-   peticion explicita del usuario), y Limpieza de TV -> Suministro de
-   Accesorios tampoco alterna fila (ver staysLevelWithPrevious arriba). */
+   (fila superior/inferior del zigzag) ALTERNA en cada nodo, salvo la
+   unica excepcion explicita (Limpieza de TV -> Suministro de
+   Accesorios, ver staysLevelWithPrevious arriba).
+
+   2026-09-02 (a peticion explicita del usuario, WC LINEA 0 y WC LINEA
+   1, los unicos con un rol repetido consecutivo -- Montaje x2 y
+   Empaque x2): antes, un rol repetido (mismo nombre base que el nodo
+   anterior) NO alternaba fila -- quedaban agrupados uno junto al otro
+   en la misma fila. El usuario pidio que Montaje 2 y Empaque 8 esten
+   uno arriba y el otro abajo, con la misma flecha que el resto del
+   zigzag (la flecha ya sale correcta sola, se calcula del cambio de
+   fila -- ver connectorIcon). Se quita la condicion "solo si cambia el
+   rol": ahora alterna siempre, tambien entre dos estaciones del mismo
+   rol. Para el resto de las 11 lineas (sin roles repetidos
+   consecutivos en este diagrama) el resultado visual no cambia. */
 function buildNodes(workstations) {
   if (!workstations?.length) return []
   const ordered = [...workstations].sort(
@@ -137,7 +151,7 @@ function buildNodes(workstations) {
   let row = 2
   return ordered.map((ws, idx) => {
     const base = baseRoleName(ws.name)
-    if (base !== lastBase && !staysLevelWithPrevious(lastBase, base)) {
+    if (!staysLevelWithPrevious(lastBase, base)) {
       row = row === 1 ? 2 : 1
     }
     lastBase = base
@@ -254,9 +268,181 @@ function ProcessSheetModal({ node, onClose }) {
   )
 }
 
-export default function LineProcessFlow({ workstations, headerAction }) {
+/* 2026-09-02 (a peticion explicita del usuario, "que pueda deslizar al
+   personal como antes pero con este nuevo diseño... y que le dé click a
+   algun trabajador de cualquier linea que este ahi un boton que diga
+   cambiar personal, le de click y este el buscador"): dialogo de 2
+   pasos por puesto -- primero muestra a quien ocupa el puesto (si hay)
+   con un boton "Cambiar personal"; al tocarlo aparece el buscador real
+   (EmployeeAssignSearchBar con `stationName`, misma logica de
+   asignar/mover/intercambiar que ya usa el drag & drop -- nunca un
+   tercer camino). Si el puesto esta DISPONIBLE, el buscador aparece de
+   una vez (no hay a quien reemplazar). */
+function ChangePersonnelDialog({ node, areaId, onClose, onViewHistory }) {
+  const { t } = useTranslation('centroTrabajo')
+  const [changing, setChanging] = useState(false)
+
+  useEffect(() => {
+    if (node) setChanging(!node.ws.occupants?.[0])
+  }, [node])
+
+  if (!node) return null
+  const occupant = node.ws.occupants?.[0]
+
+  return (
+    <Dialog open={Boolean(node)} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>
+            {t('lineDetailDrawer.changePersonnelTitle', { stationName: node.stationName })}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-6 pb-6">
+          {occupant && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-[16px] border border-border p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <EmployeeAvatar employee={occupant.employee} size={40} />
+                <div className="min-w-0">
+                  <p className="truncate text-[13.5px] font-bold">
+                    {occupant.employee?.name || '—'}
+                  </p>
+                  <p className="text-[11.5px] text-muted-foreground">
+                    {t('lineDetailDrawer.currentlyAssignedLabel')}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 font-bold"
+                onClick={() => onViewHistory(occupant.employee)}
+              >
+                {t('lineDetailDrawer.viewHistoryButton')}
+              </Button>
+            </div>
+          )}
+
+          {!changing ? (
+            <Button onClick={() => setChanging(true)} className="w-full font-bold">
+              <ArrowLeftRight className="h-4 w-4" />
+              {t('lineDetailDrawer.changePersonnelButton')}
+            </Button>
+          ) : (
+            <>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                {t('lineDetailDrawer.searchReplacementLabel')}
+              </p>
+              <EmployeeAssignSearchBar areaId={areaId} stationName={node.stationName} />
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* Nodo individual del diagrama -- ahora interactivo (2026-09-02, a
+   peticion explicita del usuario): zona de suelta (drag & drop, misma
+   logica de swap/bump que el resto de la app -- ver dndAssign.jsx) sin
+   importar si esta ocupado o disponible; el ocupante (si hay) es
+   ademas origen de arrastre, para moverlo de aqui a otro puesto. El
+   click en el cuerpo del nodo sigue abriendo la "Hoja de Proceso"
+   (comportamiento original); el click en el ocupante/etiqueta
+   "DISPONIBLE" abre en su lugar "Cambiar personal" (ver
+   ChangePersonnelDialog) -- mismo patron ya usado en LineStationCard.jsx
+   (onSelect vs onEmployeeClick con stopPropagation). */
+function ProcessFlowNode({ node, areaId, onOpenSheet, onOpenChange }) {
+  const { t } = useTranslation('centroTrabajo')
+  const occupant = node.ws.occupants?.[0]
+  const { isOver, dropProps } = useEmployeeDropTargetStation(areaId, node.stationName)
+
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- contiene areas interactivas anidadas (ocupante/DISPONIBLE, mas abajo) y es blanco de drop de HTML5 DnD (dropProps), igual que LineStationCard.jsx.
+    <div
+      {...dropProps}
+      onClick={onOpenSheet}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpenSheet()
+        }
+      }}
+      className="relative z-10 flex w-[168px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
+      style={{
+        gridColumn: node.col,
+        gridRow: node.row,
+        borderColor: isOver ? '#3B82F6' : hexToRgba(node.color, 0.35),
+        borderTopColor: node.color,
+        backgroundColor: isOver ? 'rgba(59,130,246,0.12)' : hexToRgba(node.color, 0.05),
+      }}
+    >
+      <span
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-extrabold text-white"
+        style={{ backgroundColor: node.color }}
+      >
+        {node.order}
+      </span>
+      <p className="text-[11.5px] font-extrabold leading-[1.15]" style={{ color: node.color }}>
+        {node.label}
+      </p>
+      {occupant ? (
+        <DraggablePersonChip employeeId={occupant.employee?.id} className="mt-0.5 w-full">
+          {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya anidado dentro del nodo (role="button" arriba) y dentro de DraggablePersonChip (draggable=true nativo), mismo criterio que LineStationCard.jsx. */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenChange()
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onOpenChange()
+              }
+            }}
+            className="w-full border-t border-border/60 pt-1"
+          >
+            <p className="truncate text-[11px] font-bold">
+              {formatEmployeeNumber(occupant.employeeNumber)}
+            </p>
+            <p className="truncate text-[10.5px] text-muted-foreground">
+              {occupant.employee?.name || '—'}
+            </p>
+          </div>
+        </DraggablePersonChip>
+      ) : (
+        // biome-ignore lint/a11y/useSemanticElements: mismo criterio que arriba -- el nodo padre ya es role="button".
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenChange()
+          }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              e.stopPropagation()
+              onOpenChange()
+            }
+          }}
+          className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70"
+        >
+          {t('lineDetailDrawer.stationAvailableStatus')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function LineProcessFlow({ workstations, areaId, headerAction, onViewHistory }) {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
+  const [changeNode, setChangeNode] = useState(null)
   const nodes = useMemo(() => buildNodes(workstations), [workstations])
 
   if (!nodes.length) return null
@@ -288,51 +474,15 @@ export default function LineProcessFlow({ workstations, headerAction }) {
               gridTemplateRows: 'auto auto',
             }}
           >
-            {nodes.map((node) => {
-              const occupant = node.ws.occupants?.[0]
-              return (
-                <button
-                  key={node.order}
-                  type="button"
-                  onClick={() => setActiveNode(node)}
-                  className="relative z-10 flex w-[168px] shrink-0 cursor-pointer select-none flex-col items-center gap-1 justify-self-center rounded-[20px] border border-t-[3px] p-2.5 text-center transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_2px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
-                  style={{
-                    gridColumn: node.col,
-                    gridRow: node.row,
-                    borderColor: hexToRgba(node.color, 0.35),
-                    borderTopColor: node.color,
-                    backgroundColor: hexToRgba(node.color, 0.05),
-                  }}
-                >
-                  <span
-                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-extrabold text-white"
-                    style={{ backgroundColor: node.color }}
-                  >
-                    {node.order}
-                  </span>
-                  <p
-                    className="text-[11.5px] font-extrabold leading-[1.15]"
-                    style={{ color: node.color }}
-                  >
-                    {node.label}
-                  </p>
-                  {occupant ? (
-                    <div className="mt-0.5 w-full border-t border-border/60 pt-1">
-                      <p className="truncate text-[11px] font-bold">
-                        {formatEmployeeNumber(occupant.employeeNumber)}
-                      </p>
-                      <p className="truncate text-[10.5px] text-muted-foreground">
-                        {occupant.employee?.name || '—'}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70">
-                      {t('lineDetailDrawer.stationAvailableStatus')}
-                    </p>
-                  )}
-                </button>
-              )
-            })}
+            {nodes.map((node) => (
+              <ProcessFlowNode
+                key={node.order}
+                node={node}
+                areaId={areaId}
+                onOpenSheet={() => setActiveNode(node)}
+                onOpenChange={() => setChangeNode(node)}
+              />
+            ))}
             {nodes.slice(0, -1).map((node, idx) => {
               const next = nodes[idx + 1]
               const Icon = connectorIcon(node.row, next.row)
@@ -370,6 +520,15 @@ export default function LineProcessFlow({ workstations, headerAction }) {
         </div>
       </div>
       <ProcessSheetModal node={activeNode} onClose={() => setActiveNode(null)} />
+      <ChangePersonnelDialog
+        node={changeNode}
+        areaId={areaId}
+        onClose={() => setChangeNode(null)}
+        onViewHistory={(employee) => {
+          setChangeNode(null)
+          onViewHistory?.(employee)
+        }}
+      />
     </div>
   )
 }

@@ -92,6 +92,21 @@ export const MODULE_REGISTRY = [
     permissionProtected: true,
     systemReserved: false,
   },
+  // 2026-09-02 (a peticion explicita del usuario): modulo nuevo, SOLO
+  // lectura -- lista las calificaciones ya guardadas de auditorias 5S
+  // (ver AuditEvaluation, server-lib/db/schema.js). Mismo criterio de
+  // permisos que el resto de modulos nuevos: ADMINISTRADOR lo ve
+  // automatico, SUPERVISOR/LIDER necesitan habilitacion manual desde
+  // "Gestion de permisos".
+  {
+    key: '/evaluaciones',
+    name: 'Evaluaciones',
+    description: 'Calificaciones de auditorías 5S realizadas',
+    icon: 'FactCheck',
+    active: true,
+    permissionProtected: true,
+    systemReserved: false,
+  },
 ]
 
 export function listAllModules() {
