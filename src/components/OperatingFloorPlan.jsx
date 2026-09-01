@@ -633,6 +633,7 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
         <BigZone
           areaId="PALETIZADO"
           gridArea="palletizing"
+          squareTopLeft
           title={t('operatingFloorPlan.palletizingTitle')}
           onOpen={onOpen}
           readOnly={readOnly}
@@ -716,7 +717,16 @@ function ConveyorGeneralBar({ gridArea, onOpen, readOnly }) {
       onClick={() => onOpen('CONVEYOR_PRINCIPAL')}
       style={{ gridArea }}
       className={cn(
-        'cursor-pointer select-none rounded-[16px] border border-t-[3px] p-1.5 scroll-mt-4 transition-[box-shadow,background-color] duration-150',
+        // -mr-2 + rounded-r-none (2026-09-02, a peticion explicita del
+        // usuario, "que la card de WC Conveyor y Paletizado se junte, que
+        // sea una sola"): el borde derecho de Conveyor come el gap-2 del
+        // grid y pierde su esquina redondeada para que quede al ras contra
+        // el borde izquierdo de WC Paletizado (ver BigZone, roundedTopLeft)
+        // -- se leen como una sola forma continua sin fusionar el DOM (no
+        // es geometricamente un rectangulo: Conveyor es una franja ancha
+        // arriba, Paletizado una columna angosta a la derecha; fusionarlas
+        // de verdad taparia WC Lineas/WC Midea que quedan entre ellas).
+        '-mr-2 cursor-pointer select-none rounded-[16px] rounded-r-none border border-t-[3px] p-1.5 scroll-mt-4 transition-[box-shadow,background-color] duration-150',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,
@@ -801,7 +811,7 @@ function ConveyorNode({ index, station, onOpen }) {
   )
 }
 
-function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
+function BigZone({ areaId, gridArea, title, onOpen, readOnly, children, squareTopLeft }) {
   const { t } = useTranslation('centroTrabajo')
   const wc = workCenterById(areaId)
   const staffing = getAreaStaffing(areaId)
@@ -822,6 +832,11 @@ function BigZone({ areaId, gridArea, title, onOpen, readOnly, children }) {
       style={{ gridArea }}
       className={cn(
         'flex cursor-pointer select-none flex-col gap-[4.8px] overflow-hidden rounded-[20px] border border-t-[3px] p-2.5 text-left scroll-mt-4 transition-[box-shadow,background-color] duration-150',
+        // squareTopLeft (2026-09-02, a peticion explicita del usuario --
+        // ver comentario en ConveyorGeneralBar): SOLO WC Paletizado lo usa,
+        // para que su esquina superior izquierda quede al ras contra el
+        // borde derecho (sin rounding) de WC Conveyor General.
+        squareTopLeft && 'rounded-tl-none',
         isOver ? 'border-blue-500' : tone.border,
         isOver ? 'border-t-blue-500' : tone.borderTop,
         isOver ? OVER_TONE.bg : tone.bgIdle,

@@ -128,9 +128,8 @@ function staysLevelWithPrevious(previousBase, base) {
    LineDetailDrawer.jsx -- getLineWorkstationsWithOccupancy), pero
    REORDENADAS solo para este diagrama segun FLOW_ORDER_ROLES (ver
    arriba) -- nunca se muta ni se reordena el array original. El row
-   (fila superior/inferior del zigzag) ALTERNA en cada nodo, salvo la
-   unica excepcion explicita (Limpieza de TV -> Suministro de
-   Accesorios, ver staysLevelWithPrevious arriba).
+   (fila superior/inferior del zigzag) ALTERNA en cada nodo, salvo las
+   excepciones explicitas de abajo.
 
    2026-09-02 (a peticion explicita del usuario, WC LINEA 0 y WC LINEA
    1, los unicos con un rol repetido consecutivo -- Montaje x2 y
@@ -141,8 +140,17 @@ function staysLevelWithPrevious(previousBase, base) {
    zigzag (la flecha ya sale correcta sola, se calcula del cambio de
    fila -- ver connectorIcon). Se quita la condicion "solo si cambia el
    rol": ahora alterna siempre, tambien entre dos estaciones del mismo
-   rol. Para el resto de las 11 lineas (sin roles repetidos
-   consecutivos en este diagrama) el resultado visual no cambia. */
+   rol.
+
+   2026-09-02, segunda correccion (a peticion explicita del usuario,
+   viendo WC LINEA 0 en vivo -- "los numeros 4 y 5 van arriba y el
+   numero 3 va abajo"): Prueba electrica y Limpieza de TV/Suministro de
+   Accesorios tienen fila FIJA (no alternada) -- en las 11 lineas el rol
+   inmediatamente antes de Prueba electrica siempre alterna igual, asi
+   que fijar esta fila no cambia nada en WC LINEA 2-10 (coincide con lo
+   que ya salia solo); el UNICO caso real donde esto importa es WC LINEA
+   0/1, donde el Montaje duplicado corria la fase del zigzag y dejaba a
+   Prueba electrica arriba en vez de abajo. */
 function buildNodes(workstations) {
   if (!workstations?.length) return []
   const ordered = [...workstations].sort(
@@ -152,7 +160,11 @@ function buildNodes(workstations) {
   let row = 2
   return ordered.map((ws, idx) => {
     const base = baseRoleName(ws.name)
-    if (!staysLevelWithPrevious(lastBase, base)) {
+    if (base === 'Prueba eléctrica') {
+      row = 2
+    } else if (base === 'Limpieza de TV') {
+      row = 1
+    } else if (!staysLevelWithPrevious(lastBase, base)) {
       row = row === 1 ? 2 : 1
     }
     lastBase = base
@@ -417,7 +429,7 @@ export default function LineProcessFlow({
             {t('lineDetailDrawer.stationDistributionSubtitle')}
           </p>
         </div>
-        {/* "Take Time" (2026-09-02, a peticion explicita del usuario --
+        {/* "Takt Time" (2026-09-02, a peticion explicita del usuario --
             segunda correccion: "debe estar ahi a lado de configurar
             puesto"): ya no es una card aparte arriba, vive compacto aqui
             mismo, justo a la izquierda de "Configurar puestos". Meta REAL

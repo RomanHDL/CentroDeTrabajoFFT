@@ -833,7 +833,7 @@
     "personUnitLabel_other": "people",
     "currentShiftLabel": "Current shift",
     "lineCoverageTitle": "Line coverage",
-    "taktTimeTitle": "Take Time",
+    "taktTimeTitle": "Takt Time",
     "taktTimeCycleLabel": "Theoretical cycle (sec. per TV)",
     "taktTimeTargetLabel": "{{shiftLabel}} shift target (units)",
     "taktTimeCompactMeta": "(target {{targetPcs}} units, {{shiftLabel}})",

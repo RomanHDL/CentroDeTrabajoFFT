@@ -833,7 +833,7 @@
     "personUnitLabel_other": "personas",
     "currentShiftLabel": "Turno actual",
     "lineCoverageTitle": "Cobertura de la línea",
-    "taktTimeTitle": "Take Time",
+    "taktTimeTitle": "Takt Time",
     "taktTimeCycleLabel": "Ciclo teórico (seg. por TV)",
     "taktTimeTargetLabel": "Meta turno {{shiftLabel}} (pzs)",
     "taktTimeCompactMeta": "(meta {{targetPcs}} pzs, {{shiftLabel}})",
