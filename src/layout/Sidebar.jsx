@@ -201,6 +201,14 @@ export default function Sidebar({
   onTogglePin,
   onMouseEnter,
   onMouseLeave,
+  // 2026-09-01 (a peticion explicita del usuario, "le falta un poco mas
+  // para arriba"): antes el overlay usaba top-14 (56px) fijo SIN IMPORTAR
+  // la ruta -- en /centro-trabajo (unica ruta sin la barra superior
+  // global, ver AppLayout.jsx isWideLayoutRoute) eso dejaba un hueco vacio
+  // de 56px arriba del panel, porque no hay header con el que alinearse.
+  // AppLayout ya resolvia esto mismo para el hotspot invisible
+  // (`top: isWideLayoutRoute ? 0 : 56`); el sidebar real nunca lo recibia.
+  topOffset = 56,
 }) {
   const { modules: allowedModules, loading: permsLoading } = useEffectiveModules()
   // Misma lista de modulos permitidos para CUALQUIER dispositivo (desktop,
@@ -223,8 +231,9 @@ export default function Sidebar({
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className="fixed bottom-0 left-0 top-14 z-[1202] flex flex-col border-r border-border bg-card transition-[transform,box-shadow] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+        className="fixed bottom-0 left-0 z-[1202] flex flex-col border-r border-border bg-card transition-[transform,box-shadow] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{
+          top: topOffset,
           width: SIDEBAR_WIDTH,
           transform: open || pinned ? 'translateX(0)' : 'translateX(-100%)',
           boxShadow: open || pinned ? '4px 0 20px rgba(15,23,42,0.08)' : 'none',

@@ -587,8 +587,21 @@ export default function LineDetailDrawer({
             </div>
           )}
 
-          <div className="mb-6 max-w-[480px]">
-            <EmployeeAssignSearchBar areaId={canonicalId} />
+          {/* 2026-09-01 (a peticion explicita del usuario): "Personal
+              disponible" se mueve aqui, al lado de la busqueda por
+              numero/nombre, para que arrastrar y asignar sea mas rapido --
+              antes vivia hasta abajo de la columna principal, lejos de la
+              barra de busqueda. */}
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start">
+            <div className="w-full max-w-[480px] shrink-0">
+              <EmployeeAssignSearchBar areaId={canonicalId} />
+            </div>
+            <div className={cn(cardClass, 'min-w-0 flex-1 p-3')}>
+              <AvailablePersonnelTray
+                scopedAreaId={canonicalId}
+                title={t('lineDetailDrawer.availablePersonnelTitle')}
+              />
+            </div>
           </div>
 
           {actionError && (
@@ -816,13 +829,6 @@ export default function LineDetailDrawer({
                       {t('lineDetailDrawer.viewLineHistoryButton')}
                     </Button>
                   </div>
-                </div>
-
-                <div className={cn(cardClass, 'p-4')}>
-                  <AvailablePersonnelTray
-                    scopedAreaId={canonicalId}
-                    title={t('lineDetailDrawer.availablePersonnelTitle')}
-                  />
                 </div>
               </div>
 
