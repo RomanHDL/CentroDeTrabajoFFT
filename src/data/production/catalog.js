@@ -364,6 +364,15 @@ function sumStationPlan(plan) {
 // LINEA6-10/PROYECTO aparece en "Personal sin estación"
 // (getPeopleWithoutStation) sin que se toque su
 // DailyAssignment/EmployeeMovement real.
+//
+// 2026-09-01 (a peticion explicita del usuario, "en WC LINEA 1 es de 10 y
+// las mismas 10 puestos que tenemos [en WC LINEA 0]"): LINEA1 sube de 8 a
+// 10 -- misma estructura exacta que PROYECTO/WC LINEA 0 (Montaje, Montaje
+// 2, Prueba electrica, Limpieza de TV, Etiquetado, Suministro de
+// Accesorios, Limpieza de caja, Empaque 1, Empaque 2, Calidad).
+// EMPAQUE_COUNT_BY_LINE.LINEA1 sube de 1 a 2 y su repeatOrder cambia para
+// que el unico puesto repetido del plan base sea "Montaje 2" (igual que
+// PROYECTO), ver workstations.js.
 export const WORK_CENTERS = [
   {
     id: 'LINEA1',
@@ -373,8 +382,8 @@ export const WORK_CENTERS = [
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
     dailyTarget: null,
-    idealHeadcount: 8,
-  }, // 1 Calidad + 6 plan base (5 roles + 1 repetido, piso minimo, ver nota abajo) + 1 Empaque
+    idealHeadcount: 10,
+  }, // 1 Calidad + 6 plan base (5 roles + 1 repetido: Montaje 2) + 1 Limpieza de caja + 2 Empaque
   {
     id: 'LINEA2',
     name: 'WC LINEA 2',
