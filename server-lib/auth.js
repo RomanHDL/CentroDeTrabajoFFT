@@ -8,7 +8,7 @@ import { captureException } from './sentry.js'
 const COOKIE_NAME = 'fft_session'
 const SESSION_TTL_SECONDS = 60 * 60 * 8 // 8 horas
 
-function isHttpsEnvironment() {
+export function isHttpsEnvironment() {
   // Preview y Production de Vercel siempre son HTTPS; localhost no.
   // NODE_ENV === 'production' cubre Coolify (Fase 7, MI Stack Reference) --
   // ahi no existe VERCEL_ENV, pero el proxy de la plataforma (Traefik)
