@@ -49,6 +49,7 @@ i18n
       'app',
       'catalog',
       'dataLayer',
+      'auditoria',
     ],
     defaultNS: 'common',
     detection: {
