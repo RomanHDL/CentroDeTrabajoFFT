@@ -246,13 +246,18 @@ export const EMPAQUE_COUNT_BY_LINE = {
    en LINEA2..10 -- quien ya estuviera asignado a esos nombres queda en
    "Personal sin estación" (mismo mecanismo ya usado en cambios previos
    de plan de linea), decision EXPLICITA del usuario (eligio "reemplaza
-   un puesto repetido" en vez de "sube el ideal +1"). PROYECTO/WC LINEA 0
-   queda FUERA (tiene 10 posiciones, no 8 -- el usuario solo pidio esto
-   "donde son 8 de personal"). Requiere volver a correr
-   `pnpm run seed-personnel` contra la base real para que los Workstation
-   reales se sincronicen con este generador. */
+   un puesto repetido" en vez de "sube el ideal +1"). Requiere volver a
+   correr `pnpm run seed-personnel` contra la base real para que los
+   Workstation reales se sincronicen con este generador.
+
+   2026-09-01 (segunda ronda, a peticion explicita del usuario): PROYECTO/
+   WC LINEA 0 se agrega tambien (antes 0, quedaba fuera por tener 10
+   posiciones en vez de 8) -- reemplaza especificamente "Etiquetado 2"
+   (el usuario lo pidio por nombre), "Montaje 2" NO se toca. idealHeadcount
+   sigue en 10 (sin cambio), solo baja de 2 a 1 posiciones repetidas del
+   plan base de 5 roles. */
 export const LIMPIEZA_CAJA_COUNT_BY_LINE = {
-  PROYECTO: 0,
+  PROYECTO: 1,
   LINEA1: 1,
   LINEA2: 1,
   LINEA3: 1,
