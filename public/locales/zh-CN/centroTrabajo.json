@@ -836,6 +836,7 @@
     "taktTimeTitle": "节拍时间",
     "taktTimeCycleLabel": "理论周期（秒/台）",
     "taktTimeTargetLabel": "{{shiftLabel}}班次目标（件）",
+    "taktTimeCompactMeta": "（目标{{targetPcs}}件，{{shiftLabel}}）",
     "noTemplateDefinedLabel": "未定义编制",
     "peopleCountLabel": "{{real}} / {{ideal}} 人",
     "configureStationsButton": "配置工位",

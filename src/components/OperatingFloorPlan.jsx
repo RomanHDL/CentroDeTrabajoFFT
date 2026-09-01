@@ -581,8 +581,17 @@ function FloorPlan({ floorRef, onOpen, onOpenSummary, readOnly }) {
              las 11 lineas (antes solo sumaba LINEA1..10); ver
              FFT_COLUMN_LINE_IDS mas abajo para las columnas verticales
              (LINEA2..10, sin cambios). */
+          /* 2026-09-02 (a peticion explicita del usuario, "has mas grande
+             paletizado a la altura de conveyor y juntalas cards, es uno
+             solo, pero no le cambies los nombres solo juntalos"): la
+             columna 15 ("palletizing") ahora ocupa TAMBIEN la fila 0
+             (antes "." -- un hueco vacio arriba de WC Paletizado, a la
+             misma altura que WC Conveyor General). Paletizado crece hacia
+             arriba y su borde superior queda al ras del de Conveyor,
+             leyendose como un solo bloque vertical continuo -- ningun
+             nombre/etiqueta cambia, ninguna otra columna/fila se toca. */
           gridTemplateAreas: `
-            "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor ."
+            "conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor conveyor palletizing"
             "fft fft fft fft fft fft fft fft fft fft fft fft highvalue highvalue palletizing"
             "insumos insumos insumos insumos insumos insumos insumos accessories accessories accessories accessories accessories accessories accessories palletizing"
           `,

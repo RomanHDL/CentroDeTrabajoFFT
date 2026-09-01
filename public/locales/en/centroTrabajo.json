@@ -836,6 +836,7 @@
     "taktTimeTitle": "Take Time",
     "taktTimeCycleLabel": "Theoretical cycle (sec. per TV)",
     "taktTimeTargetLabel": "{{shiftLabel}} shift target (units)",
+    "taktTimeCompactMeta": "(target {{targetPcs}} units, {{shiftLabel}})",
     "noTemplateDefinedLabel": "No template defined",
     "peopleCountLabel": "{{real}} / {{ideal}} people",
     "configureStationsButton": "Configure stations",

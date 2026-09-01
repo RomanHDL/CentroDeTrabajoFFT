@@ -7,6 +7,7 @@ import {
   ChevronRight,
   FileText,
   Map as MapIcon,
+  Timer,
   Tv,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -201,18 +202,37 @@ function LineTrack() {
   )
 }
 
-function ProcessSheetModal({ node, onClose }) {
+/* 2026-09-02, segunda correccion (a peticion explicita del usuario --
+   "nunca te dije que quitaras lo de la hoja de proceso, te dije que ahi
+   mismo pusieras ese boton de cambiar personal"): "Cambiar personal" NO
+   es un dialogo aparte -- vive DENTRO de este mismo modal de "Hoja de
+   Proceso"/"Planos por puesto", siempre visible arriba del contenido de
+   paso 1/2 (no depende de en que paso este el usuario). Primero muestra
+   a quien ocupa el puesto (si hay) + boton "Cambiar personal"; al
+   tocarlo aparece el buscador real (EmployeeAssignSearchBar con
+   `stationName`, misma logica de asignar/mover/intercambiar que ya usa
+   el drag & drop -- nunca un tercer camino). Si el puesto esta
+   DISPONIBLE, el buscador aparece de una vez (no hay a quien
+   reemplazar). */
+function ProcessSheetModal({ node, areaId, onClose, onViewHistory }) {
   const { t } = useTranslation('centroTrabajo')
   const [step, setStep] = useState(0)
+  const [changing, setChanging] = useState(false)
 
-  // Reinicia al paso 1 cada vez que se abre con un nodo distinto.
+  // Reinicia al paso 1 y a "no cambiando" cada vez que se abre con un
+  // nodo distinto (si esta disponible, el buscador arranca abierto de
+  // una vez, no hay a quien reemplazar).
   useEffect(() => {
-    if (node) setStep(0)
+    if (node) {
+      setStep(0)
+      setChanging(!node.ws.occupants?.[0])
+    }
   }, [node])
 
   if (!node) return null
 
   const isFirstStep = step === 0
+  const occupant = node.ws.occupants?.[0]
 
   return (
     <Dialog open={Boolean(node)} onOpenChange={(next) => !next && onClose()}>
@@ -227,6 +247,43 @@ function ProcessSheetModal({ node, onClose }) {
           </DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-2">
+          {occupant && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-[16px] border border-border p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <EmployeeAvatar employee={occupant.employee} size={40} />
+                <div className="min-w-0">
+                  <p className="truncate text-[13.5px] font-bold">
+                    {occupant.employee?.name || '—'}
+                  </p>
+                  <p className="text-[11.5px] text-muted-foreground">
+                    {t('lineDetailDrawer.currentlyAssignedLabel')}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 font-bold"
+                onClick={() => onViewHistory(occupant.employee)}
+              >
+                {t('lineDetailDrawer.viewHistoryButton')}
+              </Button>
+            </div>
+          )}
+          {!changing ? (
+            <Button onClick={() => setChanging(true)} className="mb-4 w-full font-bold">
+              <ArrowLeftRight className="h-4 w-4" />
+              {t('lineDetailDrawer.changePersonnelButton')}
+            </Button>
+          ) : (
+            <div className="mb-4">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                {t('lineDetailDrawer.searchReplacementLabel')}
+              </p>
+              <EmployeeAssignSearchBar areaId={areaId} stationName={node.stationName} />
+            </div>
+          )}
+
           <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
             {t('lineDetailDrawer.processFlowStepIndicator', { current: step + 1, total: 2 })}
           </p>
@@ -268,96 +325,23 @@ function ProcessSheetModal({ node, onClose }) {
   )
 }
 
-/* 2026-09-02 (a peticion explicita del usuario, "que pueda deslizar al
-   personal como antes pero con este nuevo diseño... y que le dé click a
-   algun trabajador de cualquier linea que este ahi un boton que diga
-   cambiar personal, le de click y este el buscador"): dialogo de 2
-   pasos por puesto -- primero muestra a quien ocupa el puesto (si hay)
-   con un boton "Cambiar personal"; al tocarlo aparece el buscador real
-   (EmployeeAssignSearchBar con `stationName`, misma logica de
-   asignar/mover/intercambiar que ya usa el drag & drop -- nunca un
-   tercer camino). Si el puesto esta DISPONIBLE, el buscador aparece de
-   una vez (no hay a quien reemplazar). */
-function ChangePersonnelDialog({ node, areaId, onClose, onViewHistory }) {
-  const { t } = useTranslation('centroTrabajo')
-  const [changing, setChanging] = useState(false)
-
-  useEffect(() => {
-    if (node) setChanging(!node.ws.occupants?.[0])
-  }, [node])
-
-  if (!node) return null
-  const occupant = node.ws.occupants?.[0]
-
-  return (
-    <Dialog open={Boolean(node)} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>
-            {t('lineDetailDrawer.changePersonnelTitle', { stationName: node.stationName })}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="px-6 pb-6">
-          {occupant && (
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-[16px] border border-border p-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <EmployeeAvatar employee={occupant.employee} size={40} />
-                <div className="min-w-0">
-                  <p className="truncate text-[13.5px] font-bold">
-                    {occupant.employee?.name || '—'}
-                  </p>
-                  <p className="text-[11.5px] text-muted-foreground">
-                    {t('lineDetailDrawer.currentlyAssignedLabel')}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 font-bold"
-                onClick={() => onViewHistory(occupant.employee)}
-              >
-                {t('lineDetailDrawer.viewHistoryButton')}
-              </Button>
-            </div>
-          )}
-
-          {!changing ? (
-            <Button onClick={() => setChanging(true)} className="w-full font-bold">
-              <ArrowLeftRight className="h-4 w-4" />
-              {t('lineDetailDrawer.changePersonnelButton')}
-            </Button>
-          ) : (
-            <>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                {t('lineDetailDrawer.searchReplacementLabel')}
-              </p>
-              <EmployeeAssignSearchBar areaId={areaId} stationName={node.stationName} />
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 /* Nodo individual del diagrama -- ahora interactivo (2026-09-02, a
    peticion explicita del usuario): zona de suelta (drag & drop, misma
    logica de swap/bump que el resto de la app -- ver dndAssign.jsx) sin
    importar si esta ocupado o disponible; el ocupante (si hay) es
-   ademas origen de arrastre, para moverlo de aqui a otro puesto. El
-   click en el cuerpo del nodo sigue abriendo la "Hoja de Proceso"
-   (comportamiento original); el click en el ocupante/etiqueta
-   "DISPONIBLE" abre en su lugar "Cambiar personal" (ver
-   ChangePersonnelDialog) -- mismo patron ya usado en LineStationCard.jsx
-   (onSelect vs onEmployeeClick con stopPropagation). */
-function ProcessFlowNode({ node, areaId, onOpenSheet, onOpenChange }) {
+   ademas origen de arrastre, para moverlo de aqui a otro puesto.
+   Segunda correccion (mismo dia, "nunca te dije que quitaras lo de la
+   hoja de proceso"): el click en TODO el nodo abre el mismo modal de
+   siempre (Hoja de Proceso), sin dividir la zona de click -- "Cambiar
+   personal" vive DENTRO de ese modal (ver ProcessSheetModal arriba),
+   nunca como una zona de click separada aqui. */
+function ProcessFlowNode({ node, areaId, onOpenSheet }) {
   const { t } = useTranslation('centroTrabajo')
   const occupant = node.ws.occupants?.[0]
   const { isOver, dropProps } = useEmployeeDropTargetStation(areaId, node.stationName)
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- contiene areas interactivas anidadas (ocupante/DISPONIBLE, mas abajo) y es blanco de drop de HTML5 DnD (dropProps), igual que LineStationCard.jsx.
+    // biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- el ocupante es ademas origen de drag (DraggablePersonChip, draggable=true nativo) y el nodo es blanco de drop de HTML5 DnD (dropProps); ambos casos son incompatibles con un <button> nativo.
     <div
       {...dropProps}
       onClick={onOpenSheet}
@@ -388,61 +372,36 @@ function ProcessFlowNode({ node, areaId, onOpenSheet, onOpenChange }) {
         {node.label}
       </p>
       {occupant ? (
-        <DraggablePersonChip employeeId={occupant.employee?.id} className="mt-0.5 w-full">
-          {/* biome-ignore lint/a11y/useSemanticElements: no puede ser <button> real -- ya anidado dentro del nodo (role="button" arriba) y dentro de DraggablePersonChip (draggable=true nativo), mismo criterio que LineStationCard.jsx. */}
-          <div
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenChange()
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                e.stopPropagation()
-                onOpenChange()
-              }
-            }}
-            className="w-full border-t border-border/60 pt-1"
-          >
-            <p className="truncate text-[11px] font-bold">
-              {formatEmployeeNumber(occupant.employeeNumber)}
-            </p>
-            <p className="truncate text-[10.5px] text-muted-foreground">
-              {occupant.employee?.name || '—'}
-            </p>
-          </div>
+        <DraggablePersonChip
+          employeeId={occupant.employee?.id}
+          className="mt-0.5 w-full border-t border-border/60 pt-1"
+        >
+          <p className="truncate text-[11px] font-bold">
+            {formatEmployeeNumber(occupant.employeeNumber)}
+          </p>
+          <p className="truncate text-[10.5px] text-muted-foreground">
+            {occupant.employee?.name || '—'}
+          </p>
         </DraggablePersonChip>
       ) : (
-        // biome-ignore lint/a11y/useSemanticElements: mismo criterio que arriba -- el nodo padre ya es role="button".
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenChange()
-          }}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              e.stopPropagation()
-              onOpenChange()
-            }
-          }}
-          className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70"
-        >
+        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground/70">
           {t('lineDetailDrawer.stationAvailableStatus')}
-        </div>
+        </p>
       )}
     </div>
   )
 }
 
-export default function LineProcessFlow({ workstations, areaId, headerAction, onViewHistory }) {
+export default function LineProcessFlow({
+  workstations,
+  areaId,
+  headerAction,
+  onViewHistory,
+  taktTime,
+  shiftLabel,
+}) {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
-  const [changeNode, setChangeNode] = useState(null)
   const nodes = useMemo(() => buildNodes(workstations), [workstations])
 
   if (!nodes.length) return null
@@ -458,6 +417,31 @@ export default function LineProcessFlow({ workstations, areaId, headerAction, on
             {t('lineDetailDrawer.stationDistributionSubtitle')}
           </p>
         </div>
+        {/* "Take Time" (2026-09-02, a peticion explicita del usuario --
+            segunda correccion: "debe estar ahi a lado de configurar
+            puesto"): ya no es una card aparte arriba, vive compacto aqui
+            mismo, justo a la izquierda de "Configurar puestos". Meta REAL
+            de piezas por turno (1500 Matutino/500 Noche, ver
+            TAKT_TARGET_PCS_BY_SHIFT en catalog.js) y el ciclo TEORICO
+            resultante -- solo el calculo teorico, sin captura de piezas
+            reales (confirmado explicitamente con el usuario). Tiempo
+            extra no tiene meta definida -- taktTime sale null y no se
+            muestra nada en vez de inventar un numero. */}
+        {taktTime && (
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#E9D5FF] bg-[#FAF5FF] px-3 py-1.5 dark:border-[rgba(168,85,247,.25)] dark:bg-[rgba(168,85,247,.08)]">
+            <Timer className="h-3.5 w-3.5 text-[#A855F7]" />
+            <p className="text-[10px] font-bold uppercase tracking-[0.3px] text-muted-foreground">
+              {t('lineDetailDrawer.taktTimeTitle')}
+            </p>
+            <p className="text-[13px] font-extrabold">{taktTime.secondsPerUnit.toFixed(1)}s</p>
+            <p className="text-[11px] text-muted-foreground">
+              {t('lineDetailDrawer.taktTimeCompactMeta', {
+                targetPcs: taktTime.targetPcs.toLocaleString(),
+                shiftLabel,
+              })}
+            </p>
+          </div>
+        )}
         {/* 2026-09-01 (a peticion explicita del usuario): "Configurar
             puestos" se mueve aqui (arriba a la derecha) -- antes vivia en su
             propia card junto con la leyenda de JERARQUIA/TIPO DE PUESTO
@@ -480,7 +464,6 @@ export default function LineProcessFlow({ workstations, areaId, headerAction, on
                 node={node}
                 areaId={areaId}
                 onOpenSheet={() => setActiveNode(node)}
-                onOpenChange={() => setChangeNode(node)}
               />
             ))}
             {nodes.slice(0, -1).map((node, idx) => {
@@ -519,13 +502,12 @@ export default function LineProcessFlow({ workstations, areaId, headerAction, on
           </div>
         </div>
       </div>
-      <ProcessSheetModal node={activeNode} onClose={() => setActiveNode(null)} />
-      <ChangePersonnelDialog
-        node={changeNode}
+      <ProcessSheetModal
+        node={activeNode}
         areaId={areaId}
-        onClose={() => setChangeNode(null)}
+        onClose={() => setActiveNode(null)}
         onViewHistory={(employee) => {
-          setChangeNode(null)
+          setActiveNode(null)
           onViewHistory?.(employee)
         }}
       />

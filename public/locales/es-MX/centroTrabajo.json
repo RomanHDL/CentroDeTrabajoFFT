@@ -836,6 +836,7 @@
     "taktTimeTitle": "Take Time",
     "taktTimeCycleLabel": "Ciclo teórico (seg. por TV)",
     "taktTimeTargetLabel": "Meta turno {{shiftLabel}} (pzs)",
+    "taktTimeCompactMeta": "(meta {{targetPcs}} pzs, {{shiftLabel}})",
     "noTemplateDefinedLabel": "Sin plantilla definida",
     "peopleCountLabel": "{{real}} / {{ideal}} personas",
     "configureStationsButton": "Configurar puestos",
