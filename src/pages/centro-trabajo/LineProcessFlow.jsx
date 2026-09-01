@@ -70,6 +70,7 @@ const ROLE_COLORS = {
   'Suministro de Accesorios': '#7C3AED',
   Etiquetado: '#10B981',
   Empaque: '#64748B',
+  'Limpieza de caja': '#EF4444',
   Calidad: '#DB2777',
 }
 
@@ -98,6 +99,7 @@ const FLOW_ORDER_ROLES = [
   'Suministro de Accesorios',
   'Etiquetado',
   'Empaque',
+  'Limpieza de caja',
 ]
 
 function flowPriority(base) {

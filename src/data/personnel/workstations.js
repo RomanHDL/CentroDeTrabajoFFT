@@ -68,11 +68,11 @@
    pasar antes porque nunca habia roles repetidos de verdad. ───────────────────────────────────────────── */
 
 import {
-  WORK_CENTERS,
+  CUSTOM_STATION_PLANS,
   LINE_FAMILY_AREA_IDS,
   LINE_LIKE_AREA_IDS,
-  CUSTOM_STATION_PLANS,
   operationalGroupMembers,
+  WORK_CENTERS,
 } from '../production/catalog'
 import { getCachedLineStationConfig } from './lineStationConfig'
 
@@ -93,6 +93,7 @@ const ROLE_LABELS = {
   Etiquetado: 'Etiquetador',
   'Suministro de Accesorios': 'Auxiliar de Accesorios',
   Empaque: 'Empacador',
+  'Limpieza de caja': 'Auxiliar de Limpieza de Caja',
   Calidad: 'Inspector de Calidad',
   Supervisión: 'Supervisor de Línea',
   Capacitación: 'Instructor',
@@ -236,12 +237,50 @@ export const EMPAQUE_COUNT_BY_LINE = {
   LINEA10: 1,
 }
 
-/* Plan de roles (uno por posicion, 1..idealHeadcount acotado 6..10) para
+/* Limpieza de caja (2026-09-01, "Proceso de produccion", a peticion
+   explicita del usuario) -- mismo patron que EMPAQUE_COUNT_BY_LINE:
+   puesto REAL adicional, fuera del plan de 5 roles base/repeticion.
+   Reemplaza EXACTAMENTE el unico puesto repetido que hoy existe en cada
+   linea de 8 posiciones (verificado contra WORKSTATIONS_BY_LINE antes de
+   este cambio): "Suministro de Accesorios 2" en LINEA1, "Etiquetado 2"
+   en LINEA2..10 -- quien ya estuviera asignado a esos nombres queda en
+   "Personal sin estación" (mismo mecanismo ya usado en cambios previos
+   de plan de linea), decision EXPLICITA del usuario (eligio "reemplaza
+   un puesto repetido" en vez de "sube el ideal +1"). PROYECTO/WC LINEA 0
+   queda FUERA (tiene 10 posiciones, no 8 -- el usuario solo pidio esto
+   "donde son 8 de personal"). Requiere volver a correr
+   `pnpm run seed-personnel` contra la base real para que los Workstation
+   reales se sincronicen con este generador. */
+export const LIMPIEZA_CAJA_COUNT_BY_LINE = {
+  PROYECTO: 0,
+  LINEA1: 1,
+  LINEA2: 1,
+  LINEA3: 1,
+  LINEA4: 1,
+  LINEA5: 1,
+  LINEA6: 1,
+  LINEA7: 1,
+  LINEA8: 1,
+  LINEA9: 1,
+  LINEA10: 1,
+}
+
+/* Plan de roles (uno por posicion, 1..idealHeadcount acotado 5..10) para
    una linea real -- separado de la generacion de `Workstation` de abajo
    para poder probarlo/reutilizarlo aparte (ej. mostrar "N posiciones"
-   sin construir objetos de estacion completos). */
+   sin construir objetos de estacion completos).
+
+   2026-09-01 (a peticion explicita del usuario, alta de "Limpieza de
+   caja" como puesto fijo -- ver LIMPIEZA_CAJA_COUNT_BY_LINE): el piso
+   baja de 6 a 5 -- LINEA1..10 ahora restan 3 puestos fijos del
+   idealHeadcount antes de llegar aqui (Calidad + Empaque + Limpieza de
+   caja, antes solo Calidad + Empaque), asi que el target real de estas
+   lineas pasa a ser exactamente 5 (los 5 roles base, sin repetir
+   ninguno). Verificado que ninguna otra linea/llamada calculaba antes un
+   valor entre 5 y 6 que este ajuste pudiera afectar (el piso de 6 nunca
+   llegaba a recortar nada, coincidia siempre con el valor natural). */
 export function buildLineRolePlan(lineId, idealHeadcount) {
-  const target = Math.max(6, Math.min(10, idealHeadcount || 6))
+  const target = Math.max(5, Math.min(10, idealHeadcount || 5))
   const repeatOrder = LINE_STATION_OVERRIDES[lineId]?.repeatOrder || DEFAULT_REPEAT_ORDER
 
   const counts = {}
@@ -314,7 +353,11 @@ function buildWorkstations() {
       // primero por ser los puestos "de siempre" de la linea) para no
       // desplazar ninguna posicion ya existente.
       const empaqueCount = EMPAQUE_COUNT_BY_LINE[wc.id] || 0
-      const plan = buildLineRolePlan(wc.id, wc.idealHeadcount - 1 - empaqueCount)
+      const limpiezaCajaCount = LIMPIEZA_CAJA_COUNT_BY_LINE[wc.id] || 0
+      const plan = buildLineRolePlan(
+        wc.id,
+        wc.idealHeadcount - 1 - empaqueCount - limpiezaCajaCount,
+      )
       const calidadStation = {
         id: `${wc.id}-1`,
         lineId: wc.id,
@@ -338,6 +381,16 @@ function buildWorkstations() {
           status: 'ACTIVA',
         }
       })
+      const limpiezaCajaStations = Array.from({ length: limpiezaCajaCount }, (_, i) => ({
+        id: `${wc.id}-limpiezacaja-${i + 1}`,
+        lineId: wc.id,
+        name: limpiezaCajaCount > 1 ? `Limpieza de caja ${i + 1}` : 'Limpieza de caja',
+        role: 'Limpieza de caja',
+        requiredRole: ROLE_LABELS['Limpieza de caja'] || 'Limpieza de caja',
+        capacity: 1,
+        order: stations.length + 2 + i,
+        status: 'ACTIVA',
+      }))
       const empaqueStations = Array.from({ length: empaqueCount }, (_, i) => ({
         id: `${wc.id}-empaque-${i + 1}`,
         lineId: wc.id,
@@ -345,10 +398,10 @@ function buildWorkstations() {
         role: 'Empaque',
         requiredRole: ROLE_LABELS.Empaque || 'Empaque',
         capacity: 1,
-        order: stations.length + 2 + i,
+        order: stations.length + 2 + limpiezaCajaStations.length + i,
         status: 'ACTIVA',
       }))
-      map[wc.id] = [calidadStation, ...stations, ...empaqueStations]
+      map[wc.id] = [calidadStation, ...stations, ...limpiezaCajaStations, ...empaqueStations]
     } else if (CUSTOM_STATION_PLANS[wc.id]) {
       // Accesorios/Paletizado/Insumos (2026-08-26): plantilla real por
       // puesto, ver CUSTOM_STATION_PLANS (catalog.js) -- capacidad 1 por

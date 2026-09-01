@@ -127,6 +127,7 @@ export const ROLE_TO_CATEGORY_KEY = {
   'Suministro de Accesorios': 'APOYO',
   'Prueba eléctrica': 'APOYO',
   Empaque: 'APOYO',
+  'Limpieza de caja': 'APOYO',
 }
 
 export function getPersonnelVisualType({ stationRole, actividad, category } = {}) {
