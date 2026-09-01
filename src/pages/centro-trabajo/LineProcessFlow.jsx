@@ -254,7 +254,7 @@ function ProcessSheetModal({ node, onClose }) {
   )
 }
 
-export default function LineProcessFlow({ workstations }) {
+export default function LineProcessFlow({ workstations, headerAction }) {
   const { t } = useTranslation('centroTrabajo')
   const [activeNode, setActiveNode] = useState(null)
   const nodes = useMemo(() => buildNodes(workstations), [workstations])
@@ -272,6 +272,11 @@ export default function LineProcessFlow({ workstations }) {
             {t('lineDetailDrawer.stationDistributionSubtitle')}
           </p>
         </div>
+        {/* 2026-09-01 (a peticion explicita del usuario): "Configurar
+            puestos" se mueve aqui (arriba a la derecha) -- antes vivia en su
+            propia card junto con la leyenda de JERARQUIA/TIPO DE PUESTO
+            (LineVisualLegend), que se quito por completo de esta pantalla. */}
+        {headerAction}
       </div>
       <div className="overflow-x-auto p-5 md:p-7">
         <div style={{ minWidth: `${Math.max(1100, totalCols * 184)}px` }}>
