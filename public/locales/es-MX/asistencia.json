@@ -1,0 +1,20 @@
+{
+  "pageTitle": "Asistencia",
+  "pageSubtitle": "Personal de FFT agrupado por área de trabajo, con su asistencia de hoy",
+  "tableTitle": "Personal por área",
+  "tableSubtitle": "Verde cuando ya hay un registro de asistencia confirmado hoy",
+  "colEmployee": "Empleado",
+  "colStatus": "Estado",
+  "colDetail": "Detalle",
+  "areaSinAsignar": "Sin área asignada",
+  "statusPresentToday": "Presente hoy",
+  "statusFalta": "Falta",
+  "statusIncapacidad": "Incapacidad",
+  "statusVacaciones": "Vacaciones",
+  "statusAsistioHistorico": "Asistió",
+  "statusUnknown": "Sin dato",
+  "detailCheckedInAt": "Registrado hoy a las {{time}}",
+  "detailHistoricDate": "Según Excel del {{date}} (no confirmado hoy)",
+  "emptyStateTitle": "Sin personal registrado",
+  "emptyStateDescription": "Todavía no hay personal ubicado en ninguna área."
+}

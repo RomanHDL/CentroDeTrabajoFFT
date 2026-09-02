@@ -77,7 +77,7 @@ export const MODULE_REGISTRY = [
   {
     key: '/asistencia',
     name: 'Asistencia',
-    description: 'Control de asistencia (en desarrollo)',
+    description: 'Personal por área de trabajo y su asistencia de hoy',
     icon: 'EventAvailable',
     active: true,
     permissionProtected: true,

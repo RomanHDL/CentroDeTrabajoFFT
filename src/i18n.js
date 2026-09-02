@@ -52,6 +52,7 @@ i18n
       'auditoria',
       'kpis',
       'evaluaciones',
+      'asistencia',
     ],
     defaultNS: 'common',
     detection: {
