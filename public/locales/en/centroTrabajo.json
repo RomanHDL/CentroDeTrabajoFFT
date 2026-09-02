@@ -105,6 +105,7 @@
     "columnLastArea": "Last Known Area/Station",
     "columnHireDate": "Hire Date",
     "columnStatus": "Status",
+    "columnBajaDate": "Termination Date",
     "statusBaja": "Terminated",
     "emptyTitle": "No results",
     "emptyDescription": "No one matches this search."
@@ -626,7 +627,23 @@
     "asignarLineaAction": "Assign to Line",
     "moverPersonalAction": "Move Personnel",
     "verBajasAction": "View Terminated Staff",
-    "verLayoutAction": "View General Layout"
+    "verLayoutAction": "View General Layout",
+    "sinAsignarTitle": "Unassigned Personnel",
+    "sinAsignarSubtitle": "Active personnel with no assigned area today — mark termination, shift change, or absence",
+    "sinAsignarCountChip": "{{count}} unassigned",
+    "sinAsignarEmptyTitle": "Everyone is assigned today",
+    "sinAsignarEmptyDescription": "No one currently appears without an assigned area.",
+    "reasonBajaLabel": "Terminated",
+    "reasonTurnoLabel": "Shift Change",
+    "reasonFaltaLabel": "Absent",
+    "markBajaButton": "Terminate",
+    "markTurnoButton": "Shift Change",
+    "markFaltaButton": "Absent",
+    "clearReasonButton": "Clear Reason",
+    "reasonSetSuccessToast": "Reason saved successfully.",
+    "reasonClearedSuccessToast": "Reason cleared.",
+    "reasonSetErrorFallback": "Could not save the reason. Please try again.",
+    "alertSinAsignarLabel": "Unassigned Personnel"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "Just now",

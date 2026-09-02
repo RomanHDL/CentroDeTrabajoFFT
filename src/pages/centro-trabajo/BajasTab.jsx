@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -34,6 +35,16 @@ import { EmptyState } from '../../ui'
    `eligible` de directory.js -- esta pestaña NO cambia esa exclusion,
    solo la hace visible en vez de silenciosa. Nunca se ofrece
    asignar/mover/registrar desde aqui.
+
+   2026-09-02 (a peticion explicita del usuario): ademas del snapshot
+   ESTATICO historico de siempre (2026-08-24, sin fecha real), BAJA ahora
+   tambien puede venir del nuevo mecanismo en vivo "Personal sin asignar"
+   (PersonalDeHoyTab.jsx, setEmployeeUnassignedReason) -- getBajaEmployees()
+   ya devuelve ambos tipos mezclados sin cambios aqui. La unica diferencia
+   visible es la columna "Fecha de baja": tiene fecha real
+   (unassignedReasonSetAt) SOLO para quien vino del mecanismo en vivo; para
+   el snapshot historico esa fecha nunca existio, asi que se muestra "—",
+   nunca una fecha inventada.
 
    Fase 6c (Centro de Trabajo, primer lote): portado de MUI a Tailwind. */
 export default function BajasTab() {
@@ -77,6 +88,7 @@ export default function BajasTab() {
               <TableHead>{t('bajasTab.columnLastArea')}</TableHead>
               <TableHead>{t('bajasTab.columnHireDate')}</TableHead>
               <TableHead>{t('bajasTab.columnStatus')}</TableHead>
+              <TableHead>{t('bajasTab.columnBajaDate')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -91,11 +103,16 @@ export default function BajasTab() {
                 <TableCell>
                   <span className={statusChipClass('CANCELADA')}>{t('bajasTab.statusBaja')}</span>
                 </TableCell>
+                <TableCell className={cellTextSecondaryClass}>
+                  {e.unassignedReasonSetAt
+                    ? dayjs(e.unassignedReasonSetAt).format('DD/MM/YYYY HH:mm')
+                    : '—'}
+                </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <EmptyState
                     compact
                     title={t('bajasTab.emptyTitle')}

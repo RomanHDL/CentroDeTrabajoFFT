@@ -14,6 +14,7 @@ import {
   syncRelease,
   syncRequestMove,
   syncRestoreBaseline,
+  syncSetUnassignedReason,
   syncSuppressBaseline,
   syncSwapOrBump,
 } from './apiSync'
@@ -25,6 +26,7 @@ import {
   readAssignments,
   readAttendance,
   readBaselineSuppressed,
+  readEmployeeStatusOverrides,
   readEmployees,
   readMovements,
   readPendingMoves,
@@ -33,6 +35,7 @@ import {
   writeAssignments,
   writeAttendance,
   writeBaselineSuppressed,
+  writeEmployeeStatusOverrides,
   writeEmployees,
   writeMovements,
   writePendingMoves,
@@ -75,10 +78,34 @@ startPersonnelSync()
 
 /* ── Employee ── */
 
+/* overrides (2026-09-02, "Personal sin asignar" con motivo): readEmployeeStatusOverrides()
+   (store.js) trae, por id local, cualquier cambio REAL y VIVO hecho via
+   /api/personnel/set-unassigned-reason -- BAJA (real, desactiva) o TURNO/FALTA (etiqueta,
+   sigue activo). Se aplica ENCIMA del `status`/`eligible` que ya trae baked-in
+   EMPLOYEE_DIRECTORY (directory.js, calculado una sola vez del snapshot ESTATICO
+   realPersonnelSnapshot.js) -- asi una correccion real (marcar/quitar baja, poner un motivo)
+   se refleja en todos los dispositivos sin necesitar un nuevo deploy de codigo cada vez, que
+   es como funcionaba antes (ver el caso real de Jonhatan Alfredo Gomez Trujillo, corregido a
+   mano el 2026-09-02 justo por esta limitacion). `eligible` se recalcula tambien: BAJA -> false
+   (igual que ya hacia el snapshot estatico), cualquier otro override -> true (para que
+   alguien recien reactivado/etiquetado sea buscable/asignable de inmediato, sin depender de
+   `areaZona`, que puede seguir siendo null honestamente). */
 export function getAllEmployees() {
   const dynamic = readEmployees()
   const known = new Set(dynamic.map((e) => e.employeeNumber))
-  return [...dynamic, ...EMPLOYEE_DIRECTORY.filter((e) => !known.has(e.employeeNumber))]
+  const base = [...dynamic, ...EMPLOYEE_DIRECTORY.filter((e) => !known.has(e.employeeNumber))]
+  const overrides = readEmployeeStatusOverrides()
+  return base.map((e) => {
+    const o = overrides[e.id]
+    if (!o) return e
+    return {
+      ...e,
+      status: o.active === false ? 'BAJA' : 'Activo',
+      eligible: o.active !== false,
+      unassignedReason: o.unassignedReason ?? null,
+      unassignedReasonSetAt: o.unassignedReasonSetAt ?? null,
+    }
+  })
 }
 
 export function getEmployeeByNumber(employeeNumber) {
@@ -112,6 +139,29 @@ export function getAssignableEmployees() {
    simplemente ausentes de todo. */
 export function getBajaEmployees() {
   return getAllEmployees().filter((e) => e.status === 'BAJA')
+}
+
+/* Motivo real de "Personal sin asignar" (2026-09-02, a peticion explicita del usuario) --
+   DELIBERADAMENTE async/esperado, no fire-and-forget como el resto de escrituras de este
+   archivo (checkInEmployee/moveEmployee/etc. escriben local primero y sincronizan en segundo
+   plano). Marcar BAJA desactiva de verdad a alguien -- justo el tipo de escritura donde el bug
+   real del swap (2026-09-02) enseño que un optimismo silencioso puede mostrar un estado que el
+   servidor nunca aplico. Aqui se espera la confirmacion real del servidor ANTES de tocar el
+   store local; si falla, quien llama debe mostrar el error real (nunca queda un estado
+   fantasma esperando 15s a que un poll lo corrija solo).
+   reason: 'BAJA' | 'TURNO' | 'FALTA' | null (null limpia el motivo -- reactiva si la baja vino
+   de este mismo mecanismo, ver set-unassigned-reason.js). */
+export async function setEmployeeUnassignedReason(employeeId, reason) {
+  const data = await syncSetUnassignedReason({ employeeId, reason })
+  const overrides = readEmployeeStatusOverrides()
+  overrides[employeeId] = {
+    active: data.employee.active,
+    unassignedReason: data.employee.unassignedReason,
+    unassignedReasonSetAt: data.employee.unassignedReasonSetAt,
+  }
+  writeEmployeeStatusOverrides(overrides)
+  notify()
+  return { status: 'OK', employee: data.employee }
 }
 
 /* 'PROYECTO' (sin numero real todavia) y 'PENDIENTE' (placeholder de

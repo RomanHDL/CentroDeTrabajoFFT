@@ -25,12 +25,14 @@ import {
   readAbsentEmployeeIds,
   readAssignments,
   readBaselineSuppressed,
+  readEmployeeStatusOverrides,
   readEmployees,
   readMovements,
   readPendingMoves,
   writeAbsentEmployeeIds,
   writeAssignments,
   writeBaselineSuppressed,
+  writeEmployeeStatusOverrides,
   writeEmployees,
   writeMovements,
   writePendingMoves,
@@ -192,6 +194,29 @@ export function syncSwapOrBump({ employeeIdA, employeeIdB, toAreaId, toStationId
   }).catch((e) => console.error('[personnel-sync] swap', e))
 }
 
+/* Motivo de "Personal sin asignar" (2026-09-02, a peticion explicita del usuario) --
+   DELIBERADAMENTE distinta al resto de sync* de aqui arriba: NUNCA fire-and-forget. Marcar BAJA
+   es una accion real de negocio (desactiva de verdad al empleado) que merece confirmacion real
+   antes de que la UI la de por hecha -- justo la leccion del bug real de swap (2026-09-02,
+   commit de3f74e): un escritura optimista que el servidor rechaza en silencio deja a alguien
+   viendo un estado que nunca paso. Por eso esta funcion es `async` y ES el resultado -- quien la
+   llama (repository.js/setEmployeeUnassignedReason) espera la respuesta real antes de actualizar
+   el store local, y puede mostrar un error real si falla (en vez de revertir solo 15s despues). */
+export async function syncSetUnassignedReason({ employeeId, reason }) {
+  const serverId = serverIdByLocalId.get(employeeId)
+  if (!serverId) {
+    throw new Error(
+      'Este empleado todavía no está sincronizado con el servidor. Espera unos segundos e inténtalo de nuevo.',
+    )
+  }
+  const data = await apiFetch('/api/personnel/set-unassigned-reason', {
+    method: 'POST',
+    body: JSON.stringify({ employeeId: serverId, reason: reason || null }),
+  })
+  markRecentWrite(employeeId)
+  return data
+}
+
 export function syncRelease({ employeeId }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)
@@ -287,6 +312,7 @@ async function pollOnce() {
   const {
     roster,
     absentEmployeeIds: serverAbsentIds = [],
+    statusOverrides: serverStatusOverrides = [],
     pendingMoves = [],
     resolvedMoves = [],
   } = await apiFetch('/api/personnel/roster')
@@ -496,6 +522,34 @@ async function pollOnce() {
     absentIds.length !== prevAbsentIds.length || absentIds.some((id) => !prevAbsentIds.includes(id))
   if (absentChanged) {
     writeAbsentEmployeeIds(absentIds)
+    changed = true
+  }
+
+  // "Personal sin asignar" con motivo (2026-09-02) -- statusOverrides SIEMPRE incluye gente
+  // active:false (BAJA real), que por diseño NUNCA aparece en `roster` de arriba (esa query
+  // filtra active:true a proposito -- ver roster.js) y por lo tanto nunca entra a
+  // serverToLocalId via el forEach de roster. Por eso aqui se resuelve el id local por
+  // employeeNumber directo (byNumber, igual que buildLocalIndex) en vez de reusar
+  // serverToLocalId. isPlaceholderNumber se descarta a proposito: emparejar por nombre aqui
+  // arriesgaria pisar el estado de la persona real activa que comparte nombre con un
+  // "fantasma" desactivado (mismo bug de colision ya documentado arriba en este archivo) --
+  // el flujo real de este feature siempre marca a alguien con numero real conocido, asi que
+  // esto no pierde ningun caso legitimo.
+  const nextStatusOverrides = {}
+  serverStatusOverrides.forEach((row) => {
+    if (isPlaceholderNumber(row.employeeNumber)) return
+    const localId = byNumber.get(row.employeeNumber)
+    if (!localId) return
+    serverIdByLocalId.set(localId, row.id)
+    nextStatusOverrides[localId] = {
+      active: row.active,
+      unassignedReason: row.unassignedReason,
+      unassignedReasonSetAt: row.unassignedReasonSetAt,
+    }
+  })
+  const prevStatusOverrides = readEmployeeStatusOverrides()
+  if (JSON.stringify(nextStatusOverrides) !== JSON.stringify(prevStatusOverrides)) {
+    writeEmployeeStatusOverrides(nextStatusOverrides)
     changed = true
   }
 

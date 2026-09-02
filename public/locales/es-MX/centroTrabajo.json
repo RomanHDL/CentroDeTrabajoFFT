@@ -105,6 +105,7 @@
     "columnLastArea": "Última área/puesto conocido",
     "columnHireDate": "Fecha de ingreso",
     "columnStatus": "Estado",
+    "columnBajaDate": "Fecha de baja",
     "statusBaja": "Baja",
     "emptyTitle": "Sin resultados",
     "emptyDescription": "Nadie coincide con esta búsqueda."
@@ -626,7 +627,23 @@
     "asignarLineaAction": "Asignar a línea",
     "moverPersonalAction": "Mover personal",
     "verBajasAction": "Ver bajas",
-    "verLayoutAction": "Ver layout general"
+    "verLayoutAction": "Ver layout general",
+    "sinAsignarTitle": "Personal sin asignar",
+    "sinAsignarSubtitle": "Personas activas sin área asignada hoy — marca baja, cambio de turno o falta",
+    "sinAsignarCountChip": "{{count}} sin asignar",
+    "sinAsignarEmptyTitle": "Todo el personal está asignado hoy",
+    "sinAsignarEmptyDescription": "Nadie aparece sin área asignada en este momento.",
+    "reasonBajaLabel": "Baja",
+    "reasonTurnoLabel": "Cambio de turno",
+    "reasonFaltaLabel": "Falta",
+    "markBajaButton": "Baja",
+    "markTurnoButton": "Cambio de turno",
+    "markFaltaButton": "Falta",
+    "clearReasonButton": "Quitar motivo",
+    "reasonSetSuccessToast": "Motivo guardado correctamente.",
+    "reasonClearedSuccessToast": "Motivo eliminado.",
+    "reasonSetErrorFallback": "No se pudo guardar el motivo. Intenta de nuevo.",
+    "alertSinAsignarLabel": "Personal sin asignar"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "Justo ahora",

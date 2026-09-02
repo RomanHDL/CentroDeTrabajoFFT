@@ -17,6 +17,7 @@ const KEYS = {
   pendingMoves: 'cp_pending_moves_v1',
   baselineSuppressed: 'cp_baseline_suppressed_v1',
   absentEmployeeIds: 'cp_absent_employee_ids_v1',
+  employeeStatusOverrides: 'cp_employee_status_overrides_v1',
 }
 
 function readList(key) {
@@ -30,6 +31,26 @@ function readList(key) {
 }
 
 function writeList(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* almacenamiento no disponible (modo privado, cuota llena, etc.) */
+  }
+}
+
+// readObject/writeObject: mismo patron que readList/writeList pero para un objeto plano
+// (mapa localId -> valor) en vez de un arreglo -- usado por employeeStatusOverrides, ver abajo.
+function readObject(key) {
+  try {
+    const raw = window.localStorage.getItem(key)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeObject(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value))
   } catch {
@@ -86,6 +107,17 @@ export const writeBaselineSuppressed = (rows) => writeList(KEYS.baselineSuppress
    "Inasistencia") lo lea sin volver a pedirlo por su cuenta. */
 export const readAbsentEmployeeIds = () => readList(KEYS.absentEmployeeIds)
 export const writeAbsentEmployeeIds = (ids) => writeList(KEYS.absentEmployeeIds, ids)
+
+/* "Personal sin asignar" con motivo (2026-09-02, a peticion explicita del usuario -- "poner si
+   ya es baja o cambio de turno o si fue por falta"): mapa localId -> { active, unassignedReason,
+   unassignedReasonSetAt }, sincronizado cross-device via apiSync.js/statusOverrides (roster.js).
+   getAllEmployees() (repository.js) lo aplica encima del status/eligible baked-in de
+   EMPLOYEE_DIRECTORY -- asi BAJA/reactivacion se reflejan en vivo sin necesitar un nuevo deploy
+   de codigo cada vez (a diferencia del mecanismo anterior, 100% estatico en
+   realPersonnelSnapshot.js). */
+export const readEmployeeStatusOverrides = () => readObject(KEYS.employeeStatusOverrides)
+export const writeEmployeeStatusOverrides = (overrides) =>
+  writeObject(KEYS.employeeStatusOverrides, overrides)
 
 /* ── Suscripcion simple para que la UI se refresque cuando cambian
    datos de personal — sea por una escritura local (checkInEmployee,

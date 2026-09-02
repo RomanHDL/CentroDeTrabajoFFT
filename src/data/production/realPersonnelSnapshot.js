@@ -1287,6 +1287,13 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     fechaIngreso: '05/08/2024',
   },
   {
+    // Corregido 2026-09-02 (a peticion explicita del usuario -- "el lider Jhonatan... el no
+    // esta de baja"): estaba marcado BAJA desde el 2026-08-24 con evidencia del Excel de RH de
+    // esa fecha, pero el usuario confirmo hoy que es un error real -- sigue activo, lider de
+    // turno de noche. Se revierte `status: 'BAJA'` (ver tambien
+    // scripts/reactivate-jonhatan-gomez-2026-09-02.mjs, que hizo el mismo cambio en el Employee
+    // real de Postgres). `areaZona` se deja en null a proposito -- no se inventa a que area
+    // especifica lidera, eso lo asigna un supervisor por el flujo normal.
     id: 'base-107',
     photoUrl: '/personnel-photos/base-107.jpg',
     employeeNumber: '3402',
@@ -1296,7 +1303,6 @@ export const REAL_PERSONNEL_SNAPSHOT = [
     actividad: null,
     asistencia: null,
     fechaIngreso: '20/10/2025',
-    status: 'BAJA',
   },
   {
     id: 'base-108',

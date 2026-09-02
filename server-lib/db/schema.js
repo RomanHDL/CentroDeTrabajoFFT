@@ -26,20 +26,21 @@
 // base real (25 caracteres, empieza con "c" -- verificado generando ids
 // de prueba y comparandolos contra filas reales). Sin este default,
 // CUALQUIER insert nuevo via Drizzle fallaria igual que el de prueba.
-import {
-  pgTable,
-  uniqueIndex,
-  index,
-  foreignKey,
-  text,
-  boolean,
-  timestamp,
-  integer,
-  date,
-  pgEnum,
-} from 'drizzle-orm/pg-core'
-import { sql } from 'drizzle-orm'
+
 import cuid from 'cuid'
+import { sql } from 'drizzle-orm'
+import {
+  boolean,
+  date,
+  foreignKey,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 export const assignmentEndReason = pgEnum('AssignmentEndReason', [
   'MOVED',
   'RELEASED',
@@ -64,6 +65,12 @@ export const employeeSkillSource = pgEnum('EmployeeSkillSource', ['IMPORTED', 'M
 export const importBatchStatus = pgEnum('ImportBatchStatus', ['RUNNING', 'COMPLETED', 'FAILED'])
 export const pendingMoveStatus = pgEnum('PendingMoveStatus', ['PENDING', 'APPROVED', 'REJECTED'])
 export const skillLevel = pgEnum('SkillLevel', ['PUEDE_CUBRIR', 'INTERMEDIO', 'EXPERTO'])
+// 2026-09-02 (a peticion explicita del usuario -- "personal sin asignar... poner si ya es baja
+// o cambio de turno o si fue por falta"): motivo real y persistente por el que alguien aparece
+// en "Personal sin asignar". BAJA ademas desactiva al empleado (Employee.active=false, mismo
+// mecanismo real que ya bloqueaba checkin/move -- ver placeEmployee, server-lib/personnel.js);
+// TURNO/FALTA son solo una etiqueta informativa, el empleado se queda activo.
+export const unassignedReason = pgEnum('UnassignedReason', ['BAJA', 'TURNO', 'FALTA'])
 export const userPermissionEffect = pgEnum('UserPermissionEffect', ['ALLOW', 'DENY'])
 export const userRole = pgEnum('UserRole', ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'])
 export const workstationCategory = pgEnum('WorkstationCategory', [
@@ -649,6 +656,9 @@ export const employee = pgTable(
     baselineSuppressed: boolean().default(false).notNull(),
     fechaIngreso: text(),
     rawZona: text(),
+    unassignedReason: unassignedReason(),
+    unassignedReasonSetAt: timestamp({ precision: 3, mode: 'date' }),
+    unassignedReasonSetByUserId: text(),
   },
   (table) => [
     uniqueIndex('Employee_employeeNumber_key').using(
@@ -812,9 +822,7 @@ export const auditEvaluation = pgTable(
     s5: fiveSClassification().notNull(),
     scorePct: integer().notNull(),
     createdByUserId: text().notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'date' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
   (table) => [
     index('AuditEvaluation_areaId_auditDate_idx').using(

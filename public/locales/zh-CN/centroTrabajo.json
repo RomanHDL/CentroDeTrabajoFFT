@@ -105,6 +105,7 @@
     "columnLastArea": "最后已知区域/工位",
     "columnHireDate": "入职日期",
     "columnStatus": "状态",
+    "columnBajaDate": "离职日期",
     "statusBaja": "离职",
     "emptyTitle": "无结果",
     "emptyDescription": "没有符合该搜索条件的人员。"
@@ -626,7 +627,23 @@
     "asignarLineaAction": "分配至产线",
     "moverPersonalAction": "调动人员",
     "verBajasAction": "查看离职人员",
-    "verLayoutAction": "查看整体平面图"
+    "verLayoutAction": "查看整体平面图",
+    "sinAsignarTitle": "未分配人员",
+    "sinAsignarSubtitle": "今日无已分配区域的在岗人员 — 可标记离职、换班或缺勤",
+    "sinAsignarCountChip": "{{count}} 人未分配",
+    "sinAsignarEmptyTitle": "今日所有人员均已分配",
+    "sinAsignarEmptyDescription": "目前没有人处于未分配区域的状态。",
+    "reasonBajaLabel": "离职",
+    "reasonTurnoLabel": "换班",
+    "reasonFaltaLabel": "缺勤",
+    "markBajaButton": "离职",
+    "markTurnoButton": "换班",
+    "markFaltaButton": "缺勤",
+    "clearReasonButton": "清除原因",
+    "reasonSetSuccessToast": "原因已成功保存。",
+    "reasonClearedSuccessToast": "原因已清除。",
+    "reasonSetErrorFallback": "无法保存原因，请重试。",
+    "alertSinAsignarLabel": "未分配人员"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "刚刚",
