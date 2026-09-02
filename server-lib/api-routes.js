@@ -10,8 +10,10 @@ import loginHandler from '../api/auth/login.js'
 import logoutHandler from '../api/auth/logout.js'
 import oidcCallbackHandler from '../api/auth/oidc/callback.js'
 import oidcStartHandler from '../api/auth/oidc/start.js'
+import oidcStatusHandler from '../api/auth/oidc/status.js'
 import sessionHandler from '../api/auth/session.js'
 import dashboardTrendsHandler from '../api/dashboard/trends.js'
+import evaluacionesIndexHandler from '../api/evaluaciones/index.js'
 import modulesIndexHandler from '../api/modules/index.js'
 import moduleEffectiveUsersHandler from '../api/permissions/modules/[moduleKey]/users.js'
 import personnelApproveMoveHandler from '../api/personnel/approve-move.js'
@@ -56,6 +58,7 @@ export function mountApiRoutes(app) {
   app.post('/api/auth/change-password', wrapAsync(changePasswordHandler))
   app.get('/api/auth/oidc/start', wrapAsync(oidcStartHandler))
   app.get('/api/auth/oidc/callback', wrapAsync(oidcCallbackHandler))
+  app.get('/api/auth/oidc/status', wrapAsync(oidcStatusHandler))
 
   app.get('/api/users', wrapAsync(usersIndexHandler))
   app.post('/api/users', wrapAsync(usersIndexHandler))
@@ -89,6 +92,9 @@ export function mountApiRoutes(app) {
   app.get('/api/personnel/area-history', wrapAsync(personnelAreaHistoryHandler))
 
   app.get('/api/dashboard/trends', wrapAsync(dashboardTrendsHandler))
+
+  app.get('/api/evaluaciones', wrapAsync(evaluacionesIndexHandler))
+  app.post('/api/evaluaciones', wrapAsync(evaluacionesIndexHandler))
 
   app.get('/api/work-areas/:code/workstations', withDynamicParams(workAreaWorkstationsIndexHandler))
   app.post(
