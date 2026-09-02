@@ -51,6 +51,8 @@ i18n
       'dataLayer',
       'auditoria',
       'kpis',
+      'evaluaciones',
+      'asistencia',
     ],
     defaultNS: 'common',
     detection: {

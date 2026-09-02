@@ -18,6 +18,20 @@
      no tiene estos dos campos.
    - fechaIngreso: fecha de ingreso tal como viene en SEM 34 ("DD/MM/AAAA"),
      sin interpretar. null cuando SEM 34 no la trae para esa persona.
+   - photoUrl (2026-09-02): foto real de la persona, extraida de la columna
+     FOTO de "BASE " -- ahi la foto esta incrustada como imagen "en celda"
+     (funcion moderna de Excel 365), no como texto/URL, por eso ninguna
+     lectura anterior del Excel la habia visto. Extraida una sola vez con
+     scripts/extract-personnel-photos-2026-09-02.mjs a
+     public/personnel-photos/base-N.jpg (N = numero de fila de BASE, mismo
+     indice que ya usa el id "base-N" de este archivo). Solo 99 de los ids
+     "base-N" que sobreviven en este archivo tienen foto extraida (algunas
+     filas de BASE no traian foto -- 1 caso real -- y otras filas SI tenian
+     foto pero su id ya no existe aqui por ser un duplicado/fantasma
+     borrado en rondas anteriores, ver historial arriba). Nadie mas
+     (ids "sem34-N", empleados creados despues) tiene esta propiedad --
+     no hay foto de origen para ellos, se muestran con iniciales
+     (EmployeeAvatar.jsx ya maneja photoUrl ausente).
 
    BASE no tiene columna de numero de empleado. El cruce contra SEM 34
    ("Asistencia FFT SEM 34", semana del 17-21/08/2026) se hizo en 3
@@ -289,6 +303,7 @@ export const BASE_SNAPSHOT_DATE = '2026-08-18'
 export const REAL_PERSONNEL_SNAPSHOT = [
   {
     id: 'base-1',
+    photoUrl: '/personnel-photos/base-1.jpg',
     name: 'Aide Mendoza Gutierrez',
     areaZona: 'LINEA 1',
     rawZona: 'LINEA 1',
@@ -297,6 +312,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-2',
+    photoUrl: '/personnel-photos/base-2.jpg',
     employeeNumber: '3842',
     name: 'Thelma Virginia Rodriguez Cissneros',
     areaZona: 'LINEA 0',
@@ -307,6 +323,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-3',
+    photoUrl: '/personnel-photos/base-3.jpg',
     employeeNumber: '3591',
     name: 'Rosa Maria Rodriguez Cruz',
     areaZona: null,
@@ -318,6 +335,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-4',
+    photoUrl: '/personnel-photos/base-4.jpg',
     employeeNumber: '3844',
     name: 'Ezelin del Carmen Bohorquez',
     areaZona: 'LINEA 3',
@@ -328,6 +346,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-5',
+    photoUrl: '/personnel-photos/base-5.jpg',
     name: 'Migdalia Georgina Ramirez Díaz',
     areaZona: 'LINEA 2',
     rawZona: 'LINEA 2',
@@ -337,6 +356,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-6',
+    photoUrl: '/personnel-photos/base-6.jpg',
     employeeNumber: '3866',
     name: 'Yailen Rodriguez Perez',
     areaZona: 'LINEA 5',
@@ -347,6 +367,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-7',
+    photoUrl: '/personnel-photos/base-7.jpg',
     employeeNumber: '3865',
     name: 'Yamilia Peraza Luna',
     areaZona: 'LINEA 4',
@@ -357,6 +378,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-8',
+    photoUrl: '/personnel-photos/base-8.jpg',
     employeeNumber: '3285',
     name: 'Francisca Elizabeth Delgado Perez',
     areaZona: 'SOPORTE',
@@ -367,6 +389,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-9',
+    photoUrl: '/personnel-photos/base-9.jpg',
     name: 'Angie Neil Garrido Castellanos',
     areaZona: 'LINEA 1',
     rawZona: 'LINEA 1',
@@ -376,6 +399,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-10',
+    photoUrl: '/personnel-photos/base-10.jpg',
     employeeNumber: '2871',
     name: 'Jose Alfredo Morales Reyes',
     areaZona: 'LINEA 1',
@@ -386,6 +410,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-11',
+    photoUrl: '/personnel-photos/base-11.jpg',
     employeeNumber: '3276',
     name: 'Miguel Angel Ortega Martinez',
     areaZona: null,
@@ -397,6 +422,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-12',
+    photoUrl: '/personnel-photos/base-12.jpg',
     employeeNumber: '3754',
     name: 'Reynaldo Hernández Luciano',
     areaZona: 'PRODUCCION',
@@ -407,6 +433,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-14',
+    photoUrl: '/personnel-photos/base-14.jpg',
     employeeNumber: '2898',
     name: 'Saúl Santiago Hernandez',
     areaZona: 'LINEA 3',
@@ -417,6 +444,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-15',
+    photoUrl: '/personnel-photos/base-15.jpg',
     employeeNumber: '3939',
     name: 'Elian Isai Rosas Regalado',
     areaZona: 'LINEA 4',
@@ -427,6 +455,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-16',
+    photoUrl: '/personnel-photos/base-16.jpg',
     name: 'Ramiro Aguilar Rubio',
     areaZona: null,
     rawZona: 'PRODUCCION',
@@ -437,6 +466,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-17',
+    photoUrl: '/personnel-photos/base-17.jpg',
     name: 'Antonio Rocha Ipiña',
     areaZona: 'PRODUCCION',
     rawZona: 'PRODUCCION',
@@ -445,6 +475,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-19',
+    photoUrl: '/personnel-photos/base-19.jpg',
     employeeNumber: '3499',
     name: 'Pedro Alejandrez Quintero',
     areaZona: 'LINEA 0',
@@ -455,6 +486,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-21',
+    photoUrl: '/personnel-photos/base-21.jpg',
     employeeNumber: '3372',
     name: 'Diego Alberto Tamez Vazquez',
     areaZona: 'LINEA 5',
@@ -465,6 +497,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-22',
+    photoUrl: '/personnel-photos/base-22.jpg',
     name: 'Cesar Hernandez Hernandez',
     areaZona: 'LINEA 2',
     rawZona: 'LINEA 2',
@@ -474,6 +507,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-23',
+    photoUrl: '/personnel-photos/base-23.jpg',
     employeeNumber: '3984',
     name: 'Francisco Gomez Cruz',
     areaZona: 'LINEA 0',
@@ -484,6 +518,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-24',
+    photoUrl: '/personnel-photos/base-24.jpg',
     employeeNumber: '3872',
     name: 'Lidia Esther Rivera Gomez',
     areaZona: 'ACCESORIOS',
@@ -494,6 +529,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-25',
+    photoUrl: '/personnel-photos/base-25.jpg',
     employeeNumber: '3470',
     name: 'Patricia Obregón Cerdas',
     areaZona: 'ACCESORIOS',
@@ -504,6 +540,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-26',
+    photoUrl: '/personnel-photos/base-26.jpg',
     employeeNumber: '2767',
     name: 'Gudelia Hernández Hernández',
     areaZona: 'ACCESORIOS',
@@ -514,6 +551,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-27',
+    photoUrl: '/personnel-photos/base-27.jpg',
     employeeNumber: '3580',
     name: 'Norma Deyanira Gonzalez Ramos',
     areaZona: 'ACCESORIOS',
@@ -524,6 +562,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-28',
+    photoUrl: '/personnel-photos/base-28.jpg',
     employeeNumber: '3101',
     name: 'Veronica Lopez Arroyo',
     areaZona: 'LINEA 1',
@@ -534,6 +573,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-29',
+    photoUrl: '/personnel-photos/base-29.jpg',
     employeeNumber: '3889',
     name: 'Sarah Estefania Juarez Alvarado',
     areaZona: 'LINEA 2',
@@ -544,6 +584,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-30',
+    photoUrl: '/personnel-photos/base-30.jpg',
     employeeNumber: '3864',
     name: 'Victor Gabriel Perez Perez',
     areaZona: 'LINEA 0',
@@ -554,6 +595,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-31',
+    photoUrl: '/personnel-photos/base-31.jpg',
     name: 'Daniela',
     areaZona: null,
     rawZona: null,
@@ -563,6 +605,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-32',
+    photoUrl: '/personnel-photos/base-32.jpg',
     employeeNumber: '2962',
     name: 'Maria del Socorro Juarez Moreno',
     areaZona: 'ACCESORIOS',
@@ -573,6 +616,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-33',
+    photoUrl: '/personnel-photos/base-33.jpg',
     employeeNumber: '2626',
     name: 'Ulises Fernández Huerta',
     areaZona: 'ACCESORIOS',
@@ -583,6 +627,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-34',
+    photoUrl: '/personnel-photos/base-34.jpg',
     name: 'Valentin Cruz Martinez',
     areaZona: null,
     rawZona: 'PRODUCCION',
@@ -592,6 +637,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-35',
+    photoUrl: '/personnel-photos/base-35.jpg',
     employeeNumber: '3871',
     name: 'Karol Patricia de la Rosa Perez',
     areaZona: 'LINEA 3',
@@ -602,6 +648,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-36',
+    photoUrl: '/personnel-photos/base-36.jpg',
     employeeNumber: '3891',
     name: 'Paula Edith Ovalle Gandara',
     areaZona: 'LINEA 4',
@@ -612,6 +659,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-37',
+    photoUrl: '/personnel-photos/base-37.jpg',
     employeeNumber: '3932',
     name: 'Alexis Gomez Jimenez',
     areaZona: 'LINEA 0',
@@ -622,6 +670,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-38',
+    photoUrl: '/personnel-photos/base-38.jpg',
     employeeNumber: '3559',
     name: 'Esly Suyapa Mata Licona',
     areaZona: 'LINEA 1',
@@ -632,6 +681,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-39',
+    photoUrl: '/personnel-photos/base-39.jpg',
     employeeNumber: '3555',
     name: 'Delfina Uribe Rodriguez',
     areaZona: 'LINEA 3',
@@ -642,6 +692,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-41',
+    photoUrl: '/personnel-photos/base-41.jpg',
     name: 'Edgar Solis Cruz',
     areaZona: 'LINEA 5',
     rawZona: 'LINEA 5',
@@ -651,6 +702,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-42',
+    photoUrl: '/personnel-photos/base-42.jpg',
     employeeNumber: '3540',
     name: 'Nancy Vazquez Arredondo',
     areaZona: 'LINEA 2',
@@ -661,6 +713,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-43',
+    photoUrl: '/personnel-photos/base-43.jpg',
     employeeNumber: '2945',
     name: 'Lourdes Dominguez Islas',
     areaZona: 'LINEA 4',
@@ -671,6 +724,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-46',
+    photoUrl: '/personnel-photos/base-46.jpg',
     employeeNumber: '3963',
     name: 'Bryan Uriel Hernandez Hernandez',
     areaZona: 'LINEA 3',
@@ -681,6 +735,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-48',
+    photoUrl: '/personnel-photos/base-48.jpg',
     employeeNumber: '3924',
     name: 'Juan Eduardo Cuellar Ruiz',
     areaZona: null,
@@ -692,6 +747,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-50',
+    photoUrl: '/personnel-photos/base-50.jpg',
     employeeNumber: '3938',
     name: 'Hector Manuel Cisneros Sanchez',
     areaZona: 'LINEA 0',
@@ -702,6 +758,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-54',
+    photoUrl: '/personnel-photos/base-54.jpg',
     name: 'Kevin Alejandro Cira Ramirez',
     areaZona: null,
     rawZona: 'PRODUCCION',
@@ -712,6 +769,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-55',
+    photoUrl: '/personnel-photos/base-55.jpg',
     name: 'Jose Eleazar Hernandez',
     areaZona: 'LINEA 5',
     rawZona: 'LINEA 5',
@@ -721,6 +779,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-56',
+    photoUrl: '/personnel-photos/base-56.jpg',
     employeeNumber: '2446',
     name: 'Sandra Iveth Barrón Marinez',
     areaZona: 'ACCESORIOS',
@@ -731,6 +790,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-57',
+    photoUrl: '/personnel-photos/base-57.jpg',
     employeeNumber: '2641',
     name: 'Jesus Ernesto Rivera Escobar',
     areaZona: 'CAJAS',
@@ -741,6 +801,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-58',
+    photoUrl: '/personnel-photos/base-58.jpg',
     employeeNumber: '2570',
     name: 'Yessica Guadalupe Luna Barboza',
     areaZona: 'LINEA 1',
@@ -751,6 +812,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-59',
+    photoUrl: '/personnel-photos/base-59.jpg',
     employeeNumber: '3650',
     name: 'Lizbeth Esmeralda Monsiváis Rangel',
     areaZona: 'LINEA 2',
@@ -761,6 +823,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-60',
+    photoUrl: '/personnel-photos/base-60.jpg',
     employeeNumber: '3743',
     name: 'Evelin Yasmin Bautista Martinez',
     areaZona: 'LINEA 3',
@@ -771,6 +834,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-61',
+    photoUrl: '/personnel-photos/base-61.jpg',
     employeeNumber: '3310',
     name: 'Edgar Uriel Sanchez Morales',
     areaZona: 'LINEA 7',
@@ -781,6 +845,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-63',
+    photoUrl: '/personnel-photos/base-63.jpg',
     employeeNumber: '3085',
     name: 'Sandra Cecilia Perez Cruz',
     areaZona: 'CAPACITACION',
@@ -791,6 +856,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-64',
+    photoUrl: '/personnel-photos/base-64.jpg',
     employeeNumber: '3912',
     name: 'Joshua Oscar Estrada',
     areaZona: 'LINEA 0',
@@ -801,6 +867,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-65',
+    photoUrl: '/personnel-photos/base-65.jpg',
     employeeNumber: '3048',
     name: 'Marco Antonio Andrade García',
     areaZona: 'PRODUCCION',
@@ -811,6 +878,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-66',
+    photoUrl: '/personnel-photos/base-66.jpg',
     employeeNumber: '3625',
     name: 'Olga Lidia Lara Davila',
     areaZona: null,
@@ -822,6 +890,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-68',
+    photoUrl: '/personnel-photos/base-68.jpg',
     employeeNumber: '3595',
     name: 'Idalia Guereca Banda',
     areaZona: 'LINEA 5',
@@ -832,6 +901,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-69',
+    photoUrl: '/personnel-photos/base-69.jpg',
     employeeNumber: '3942',
     name: 'Jesus David Hernandez Zuniga',
     areaZona: 'PRODUCCION',
@@ -842,6 +912,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-70',
+    photoUrl: '/personnel-photos/base-70.jpg',
     employeeNumber: '3860',
     name: 'Axel Uriel Cruz Mata',
     areaZona: 'PALETIZADO',
@@ -852,6 +923,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-71',
+    photoUrl: '/personnel-photos/base-71.jpg',
     employeeNumber: '3237',
     name: 'Brayan Alejandro Lopez Ibarra',
     areaZona: 'PALETIZADO',
@@ -861,6 +933,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-72',
+    photoUrl: '/personnel-photos/base-72.jpg',
     employeeNumber: '3982',
     name: 'Wiliams de la Cruz',
     areaZona: 'PALETIZADO',
@@ -871,6 +944,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-73',
+    photoUrl: '/personnel-photos/base-73.jpg',
     employeeNumber: '3818',
     name: 'Juan Bohorquez',
     areaZona: 'PALETIZADO',
@@ -881,6 +955,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-74',
+    photoUrl: '/personnel-photos/base-74.jpg',
     employeeNumber: '3981',
     name: 'Jose Sanchez',
     areaZona: 'PALETIZADO',
@@ -891,6 +966,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-75',
+    photoUrl: '/personnel-photos/base-75.jpg',
     name: 'Nathalie del Valle Zapata Lopez',
     areaZona: 'PALETIZADO',
     rawZona: 'PALETIZADO',
@@ -899,6 +975,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-76',
+    photoUrl: '/personnel-photos/base-76.jpg',
     name: 'Yusley Montes',
     areaZona: 'PALETIZADO',
     rawZona: 'PALETIZADO',
@@ -907,6 +984,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-77',
+    photoUrl: '/personnel-photos/base-77.jpg',
     employeeNumber: '2718',
     name: 'Maria de Jesus de Dios Carrazo',
     areaZona: 'ACCESORIOS',
@@ -917,6 +995,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-78',
+    photoUrl: '/personnel-photos/base-78.jpg',
     employeeNumber: '3086',
     name: 'Juana Mendrano Villanueva',
     areaZona: 'ACCESORIOS',
@@ -927,6 +1006,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-79',
+    photoUrl: '/personnel-photos/base-79.jpg',
     employeeNumber: '3719',
     name: 'Damaris Jael Barboza Yañez',
     areaZona: 'ACCESORIOS',
@@ -937,6 +1017,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-80',
+    photoUrl: '/personnel-photos/base-80.jpg',
     employeeNumber: '3575',
     name: 'Karen Rivera Gomez',
     areaZona: 'ACCESORIOS',
@@ -947,6 +1028,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-81',
+    photoUrl: '/personnel-photos/base-81.jpg',
     employeeNumber: '3361',
     name: 'Juan Daniel Gavidia Zavala',
     areaZona: 'ACCESORIOS',
@@ -957,6 +1039,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-82',
+    photoUrl: '/personnel-photos/base-82.jpg',
     employeeNumber: '3626',
     name: 'Esmeralda Catalina Llanas Tinajero',
     areaZona: 'ACCESORIOS',
@@ -967,6 +1050,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-83',
+    photoUrl: '/personnel-photos/base-83.jpg',
     employeeNumber: '3016',
     name: 'Angela Estrada Garcia',
     areaZona: 'ACCESORIOS',
@@ -977,6 +1061,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-84',
+    photoUrl: '/personnel-photos/base-84.jpg',
     employeeNumber: '3678',
     name: 'Aglael Emiret Trujillo Reyes',
     areaZona: 'ACCESORIOS',
@@ -987,6 +1072,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-85',
+    photoUrl: '/personnel-photos/base-85.jpg',
     employeeNumber: '3544',
     name: 'Evelyn Cristal Espinoza Uribe',
     areaZona: 'ACCESORIOS',
@@ -997,6 +1083,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-86',
+    photoUrl: '/personnel-photos/base-86.jpg',
     employeeNumber: '3489',
     name: 'Gustavo Israel Garibay García',
     areaZona: 'CAJAS',
@@ -1007,6 +1094,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-87',
+    photoUrl: '/personnel-photos/base-87.jpg',
     employeeNumber: '2877',
     name: 'Janeth Alejandra Rodriguez Mendoza',
     areaZona: 'CAJAS',
@@ -1017,6 +1105,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-88',
+    photoUrl: '/personnel-photos/base-88.jpg',
     name: 'Alondra',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD1',
@@ -1025,6 +1114,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-89',
+    photoUrl: '/personnel-photos/base-89.jpg',
     name: 'Beckham',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD11',
@@ -1033,6 +1123,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-90',
+    photoUrl: '/personnel-photos/base-90.jpg',
     name: 'Patricia',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD12',
@@ -1041,6 +1132,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-91',
+    photoUrl: '/personnel-photos/base-91.jpg',
     name: 'Gabriela',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD2',
@@ -1049,6 +1141,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-92',
+    photoUrl: '/personnel-photos/base-92.jpg',
     employeeNumber: '3914',
     name: 'Daniela Ivonee Aguilar Sanchez',
     areaZona: 'CALIDAD',
@@ -1059,6 +1152,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-93',
+    photoUrl: '/personnel-photos/base-93.jpg',
     name: 'Jeser',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD4',
@@ -1067,6 +1161,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-94',
+    photoUrl: '/personnel-photos/base-94.jpg',
     employeeNumber: '2738',
     name: 'Arturo Badillo Santillán',
     areaZona: 'CAPACITACION',
@@ -1077,6 +1172,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-96',
+    photoUrl: '/personnel-photos/base-96.jpg',
     employeeNumber: '3568',
     name: 'Angel Jovani Cruz Biviano',
     areaZona: 'DMT',
@@ -1087,6 +1183,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-97',
+    photoUrl: '/personnel-photos/base-97.jpg',
     name: 'Mireya Josefina Lopez Zapata',
     areaZona: 'LIMPIEZA',
     rawZona: 'LIMPIEZA',
@@ -1095,6 +1192,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-98',
+    photoUrl: '/personnel-photos/base-98.jpg',
     employeeNumber: '3280',
     name: 'Sofia Ibañez Rodriguez',
     areaZona: 'LIMPIEZA',
@@ -1105,6 +1203,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-99',
+    photoUrl: '/personnel-photos/base-99.jpg',
     employeeNumber: '3133',
     name: 'Elias Hernádez Gallardo',
     areaZona: 'PALETIZADO',
@@ -1115,6 +1214,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-100',
+    photoUrl: '/personnel-photos/base-100.jpg',
     employeeNumber: '2686',
     name: 'Paulino Cordoba Ulloa',
     areaZona: 'PALETIZADO',
@@ -1125,6 +1225,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-101',
+    photoUrl: '/personnel-photos/base-101.jpg',
     name: 'Roman',
     areaZona: 'PALETIZADO',
     rawZona: 'PALETIZADO',
@@ -1133,6 +1234,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-102',
+    photoUrl: '/personnel-photos/base-102.jpg',
     employeeNumber: '3915',
     name: 'Luis Manuel de Jesus Faz Serrano',
     areaZona: 'PALETIZADO',
@@ -1143,6 +1245,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-103',
+    photoUrl: '/personnel-photos/base-103.jpg',
     employeeNumber: '3401',
     name: 'Rodrigo Martinez Montes',
     areaZona: 'SOPORTE',
@@ -1153,6 +1256,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-104',
+    photoUrl: '/personnel-photos/base-104.jpg',
     name: 'Estime Blaise',
     areaZona: 'SOPORTE',
     rawZona: 'SOPORTE',
@@ -1162,6 +1266,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-105',
+    photoUrl: '/personnel-photos/base-105.jpg',
     employeeNumber: '2701',
     name: 'Caín Bautista Rojas',
     areaZona: 'SUPERVISOR',
@@ -1172,6 +1277,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-106',
+    photoUrl: '/personnel-photos/base-106.jpg',
     employeeNumber: '2573',
     name: 'Diego Julián Marín Zamudio',
     areaZona: 'TEAM_LEADER',
@@ -1182,6 +1288,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-107',
+    photoUrl: '/personnel-photos/base-107.jpg',
     employeeNumber: '3402',
     name: 'Jonhatan Alfredo Gomez Trujillo',
     areaZona: null,
@@ -1193,6 +1300,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-108',
+    photoUrl: '/personnel-photos/base-108.jpg',
     employeeNumber: '3977',
     name: 'Angel Ricardo Flores Vargas',
     areaZona: 'PRODUCCION',
@@ -1203,6 +1311,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-109',
+    photoUrl: '/personnel-photos/base-109.jpg',
     employeeNumber: '3861',
     name: 'Brayan Alejandro Antonio Margarito',
     areaZona: 'CAJAS',
@@ -1213,6 +1322,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-110',
+    photoUrl: '/personnel-photos/base-110.jpg',
     employeeNumber: '3841',
     name: 'Genaro Flores Zalazar',
     areaZona: 'PALETIZADO',
@@ -1223,6 +1333,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-112',
+    photoUrl: '/personnel-photos/base-112.jpg',
     name: 'Jonathan',
     areaZona: 'CALIDAD',
     rawZona: 'CALIDAD6',
@@ -1231,6 +1342,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-114',
+    photoUrl: '/personnel-photos/base-114.jpg',
     name: 'Denilson Edilber Castro',
     areaZona: 'PALETIZADO',
     rawZona: 'PALETIZADO',
@@ -1240,6 +1352,7 @@ export const REAL_PERSONNEL_SNAPSHOT = [
   },
   {
     id: 'base-115',
+    photoUrl: '/personnel-photos/base-115.jpg',
     name: 'Mauricio Hernandez Clixtro',
     areaZona: 'PALETIZADO',
     rawZona: 'PALETIZADO',

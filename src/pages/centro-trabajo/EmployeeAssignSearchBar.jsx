@@ -19,8 +19,16 @@ import EmployeeAvatar from './EmployeeAvatar'
    elegibles — ver directory.js/repository.js) y requestAssign de
    DndAssignProvider — la MISMA logica que ya usa el drag & drop,
    nunca un tercer camino de asignacion.
-   ───────────────────────────────────────────── */
-export default function EmployeeAssignSearchBar({ areaId }) {
+
+   2026-09-02 (a peticion explicita del usuario, "Cambiar personal" en
+   WC LINEA -- ver LineProcessFlow.jsx): prop opcional `stationName`.
+   Sin ella, se comporta exactamente igual que siempre (requestAssign,
+   abre el picker de estacion si el area tiene varias). Con ella, ya
+   se sabe a que puesto especifico se quiere asignar/mover a la
+   persona elegida -- se llama requestAssignToStation en su lugar
+   (misma logica de swap/bump ya probada que usa el drag & drop sobre
+   una estacion puntual, ver dndAssign.jsx). */
+export default function EmployeeAssignSearchBar({ areaId, stationName }) {
   const { t } = useTranslation('centroTrabajo')
   const [query, setQuery] = useState('')
   usePersonnelVersion()
@@ -28,7 +36,8 @@ export default function EmployeeAssignSearchBar({ areaId }) {
   const results = query.trim() ? searchEmployees(query, 8) : []
 
   function handlePick(employee) {
-    dnd.requestAssign(employee.id, areaId)
+    if (stationName) dnd.requestAssignToStation(employee.id, areaId, stationName)
+    else dnd.requestAssign(employee.id, areaId)
     setQuery('')
   }
 
@@ -53,7 +62,13 @@ export default function EmployeeAssignSearchBar({ areaId }) {
               {results.map((employee) => {
                 const current = getCurrentAssignment(employee.id)
                 const effectiveAreaId = current?.areaId ?? getEffectiveAreaForEmployee(employee.id)
-                const sameArea = effectiveAreaId === areaId
+                // Con stationName (puesto especifico, ver comentario arriba): "ya esta
+                // aqui" solo aplica si ya ocupa ESE puesto, no solo la misma linea --
+                // si no, bloquearia mover a alguien de Montaje a Empaque dentro de la
+                // misma WC LINEA (mismo areaId, puesto distinto).
+                const sameArea = stationName
+                  ? current?.areaId === areaId && current?.stationId === stationName
+                  : effectiveAreaId === areaId
                 const formattedNumber = formatEmployeeNumber(employee.employeeNumber)
                 const numberLabel =
                   formattedNumber === 'PROYECTO' ? 'PROYECTO' : `#${formattedNumber}`

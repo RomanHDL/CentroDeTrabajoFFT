@@ -58,6 +58,7 @@ import {
   CURRENT_SHIFT,
   canonicalOperationalAreaId,
   getCurrentShift,
+  getTaktTime,
   LINE_FAMILY_AREA_IDS,
   operationalGroupMembers,
   workCenterById,
@@ -234,6 +235,7 @@ export default function LineDetailDrawer({
   const coveragePct = staffing?.ideal ? Math.round((staffing.real / staffing.ideal) * 100) : null
   const currentOfficialShift = getCurrentShift()
   const ShiftIcon = currentOfficialShift.id === 'NOCHE' ? Moon : Sun
+  const taktTime = getTaktTime(currentOfficialShift)
   // biome-ignore lint/correctness/useExhaustiveDependencies: version/configVersion fuerzan recalcular aunque no se lean en el callback (mismo patron en todo este folder)
   const workstations = useMemo(
     () => (canonicalId ? getLineWorkstationsWithOccupancy(canonicalId) : []),
@@ -629,6 +631,10 @@ export default function LineDetailDrawer({
                ya usado por el resto de este drawer, sin recalcular nada. */
             <LineProcessFlow
               workstations={workstations}
+              areaId={canonicalId}
+              onViewHistory={setHistoryEmployee}
+              taktTime={taktTime}
+              shiftLabel={currentOfficialShift.label}
               headerAction={
                 isAdmin &&
                 configLoaded && (

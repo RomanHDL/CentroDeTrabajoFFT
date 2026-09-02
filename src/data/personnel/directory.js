@@ -34,6 +34,7 @@ export const EMPLOYEE_DIRECTORY = REAL_PERSONNEL_SNAPSHOT.map((p) => ({
   id: p.id,
   employeeNumber: p.employeeNumber || 'PENDIENTE',
   name: p.name,
+  photoUrl: p.photoUrl || null,
   fechaIngreso: p.fechaIngreso || null,
   status: p.status === 'BAJA' ? 'BAJA' : 'Activo',
   createdAt: null,

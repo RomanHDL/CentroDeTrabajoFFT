@@ -5,11 +5,13 @@ import {
   ChevronRight,
   ClipboardCheck,
   Recycle,
+  Search,
   ShieldCheck,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,8 +20,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { cardClass, pageClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  alertToneClass,
+  cardClass,
+  pageClass,
+  pageSubtitleClass,
+  pageTitleClass,
+} from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
+import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
+import { getCurrentAssignment, searchEmployees } from '../../data/personnel/repository'
+import { LINE_FAMILY_AREA_IDS, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
+import EmployeeAvatar from '../centro-trabajo/EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
    Modulo Auditoria (2026-09-01, a peticion explicita del usuario) --
@@ -60,6 +81,29 @@ const MODULE_I18N = {
 // Los 5 pilares reales de la metodologia 5S (estandar, no inventado por
 // este proyecto) -- S1..S5 en el orden pedido explicitamente.
 const FIVE_S_STEPS = ['s1', 's2', 's3', 's4', 's5']
+
+/* 2026-09-02 (a peticion explicita del usuario, "las auditorias son por
+   areas de trabajo GLOBAL... lineas de produccion, insumos, accesorios,
+   midea y paletizado"): antes el selector de "Centro de trabajo" listaba
+   TODO WORK_CENTERS (cada linea individual LINEA1..10/PROYECTO, mas
+   areas administrativas como Team Leader/Supervisor/Capacitacion) --
+   ahora son exactamente estos 5 grupos, los mismos que se ven como cards
+   en "Areas de trabajo". "Lineas de produccion" es especial: agrupa las
+   11 lineas reales (LINE_FAMILY_AREA_IDS) y pide elegir CUAL linea en un
+   segundo select antes de llegar a Puesto de trabajo -- las otras 4 ya
+   son una sola area real, sin ese paso extra. */
+const AUDIT_AREA_GROUPS = [
+  { key: 'LINEAS', labelKey: 'auditAreaLines' },
+  { key: 'INSUMOS', labelKey: 'auditAreaInsumos', areaId: 'INSUMOS' },
+  { key: 'ACCESORIOS', labelKey: 'auditAreaAccesorios', areaId: 'ACCESORIOS' },
+  { key: 'MIDEA', labelKey: 'auditAreaMidea', areaId: 'HIGH_VALUE' },
+  { key: 'PALETIZADO', labelKey: 'auditAreaPaletizado', areaId: 'PALETIZADO' },
+]
+
+function groupKeyForAreaId(areaId) {
+  if (LINE_FAMILY_AREA_IDS.has(areaId)) return 'LINEAS'
+  return AUDIT_AREA_GROUPS.find((g) => g.areaId === areaId)?.key || null
+}
 
 const CLASSIFICATIONS = [
   'classificationCompliant',
@@ -153,32 +197,115 @@ function ComingSoonDialog({ title, onClose }) {
   )
 }
 
-/* Flujo "5S Proceso" -- puramente cliente, sin persistencia (a peticion
-   explicita del usuario, primera version). step=null muestra la intro con
-   "Comenzar auditoria"; step=0..4 recorre S1..S5 en orden fijo con
-   Anterior/Siguiente, cada paso con un selector de clasificacion (solo
-   estado local, se resetea al cerrar). step='done' muestra el cierre. */
+/* Flujo "5S Proceso" (2026-09-02, corregido el mismo dia -- "aqui te
+   comente que solo es por area de trabajo, selecciono un area y ya le
+   doy en comenzar auditoria, quita eso de puesto de trabajo"): la
+   auditoria 5S es por AREA, nunca por puesto/persona especifica -- tiene
+   sentido de negocio real (5S clasifica el orden/limpieza de un espacio
+   de trabajo, no el desempeño de un individuo). step=null muestra la
+   intro con el selector de Area de trabajo (los 5 grupos globales, ver
+   AUDIT_AREA_GROUPS) -> si es "Lineas de produccion", un segundo select
+   para elegir cual de las 11 lineas reales. "Comenzar auditoria" se
+   habilita solo con area resuelta. "Buscar persona" se queda como atajo
+   opcional (por si sabes el nombre de alguien de esa area pero no
+   recuerdas donde esta) -- SOLO resuelve el AREA/linea, ya no arrastra
+   ningun dato de esa persona al guardar. step=0..4 recorre S1..S5 en
+   orden fijo. Al terminar S5 se persiste -- POST a /api/evaluaciones
+   con el score calculado en servidor, solo areaId (sin employeeId ni
+   stationName, ver server-lib/db/schema.js). Si el POST falla se queda
+   en el mismo paso con el error visible, nunca se cierra ni se resetea,
+   para no perder la clasificacion ya hecha. */
 function FiveSDialog({ onClose }) {
   const { t } = useTranslation('auditoria')
   const [step, setStep] = useState(null)
   const [classifications, setClassifications] = useState({})
+  // selectedGroupKey/selectedLineId son SOLO de flujo de UI (ver
+  // AUDIT_AREA_GROUPS arriba) -- selectedAreaId sigue siendo la unica
+  // fuente real que se guarda.
+  const [selectedGroupKey, setSelectedGroupKey] = useState('')
+  const [selectedLineId, setSelectedLineId] = useState('')
+  const [selectedAreaId, setSelectedAreaId] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  // Buscar por numero de empleado o nombre -- SOLO un atajo para llegar
+  // al area/linea correcta (reutiliza searchEmployees + getCurrentAssignment,
+  // mismo buscador de nombre/numero que ya usa EmployeeAssignSearchBar),
+  // nunca guarda a esa persona en la auditoria.
+  const [personSearch, setPersonSearch] = useState('')
+  const [personSearchError, setPersonSearchError] = useState('')
 
   const isIntro = step === null
   const isDone = step === 'done'
   const stepIndex = typeof step === 'number' ? step : 0
   const stepKey = FIVE_S_STEPS[stepIndex]
 
-  function handleNext() {
-    if (stepIndex >= FIVE_S_STEPS.length - 1) {
-      setStep('done')
+  const selectedArea = selectedAreaId ? workCenterById(selectedAreaId) : null
+  const canStartAudit = Boolean(selectedArea)
+
+  function handleGroupChange(groupKey) {
+    setSelectedGroupKey(groupKey)
+    setSelectedLineId('')
+    const group = AUDIT_AREA_GROUPS.find((g) => g.key === groupKey)
+    setSelectedAreaId(group?.areaId || '') // vacio para 'LINEAS' -- falta elegir la linea real
+  }
+
+  function handleLineChange(lineId) {
+    setSelectedLineId(lineId)
+    setSelectedAreaId(lineId)
+  }
+
+  const personSearchResults = personSearch.trim() ? searchEmployees(personSearch, 8) : []
+
+  function handlePickFromSearch(employee) {
+    const assignment = getCurrentAssignment(employee.id)
+    if (!assignment) {
+      setPersonSearchError(t('personSearchNoAssignmentError', { name: employee.name }))
       return
     }
-    setStep(stepIndex + 1)
+    setPersonSearchError('')
+    const groupKey = groupKeyForAreaId(assignment.areaId)
+    setSelectedGroupKey(groupKey || '')
+    setSelectedLineId(groupKey === 'LINEAS' ? assignment.areaId : '')
+    setPersonSearch('')
+    setSelectedAreaId(assignment.areaId)
+  }
+
+  async function handleNext() {
+    if (stepIndex < FIVE_S_STEPS.length - 1) {
+      setStep(stepIndex + 1)
+      return
+    }
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const res = await fetch('/api/evaluaciones', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          areaId: selectedArea.id,
+          classifications,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error((data && data.error) || t('saveErrorGeneric'))
+      setStep('done')
+    } catch (e) {
+      setSubmitError(e.message || t('saveErrorGeneric'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function handleClose() {
     setStep(null)
     setClassifications({})
+    setSelectedGroupKey('')
+    setSelectedLineId('')
+    setSelectedAreaId('')
+    setSubmitError('')
+    setPersonSearch('')
+    setPersonSearchError('')
     onClose()
   }
 
@@ -198,12 +325,95 @@ function FiveSDialog({ onClose }) {
         </DialogHeader>
 
         {isIntro && (
-          <div className="flex flex-col items-center gap-4 px-6 pb-6 text-center">
-            <Recycle className="h-10 w-10 text-[#10B981]" />
-            <p className="text-[13.5px] font-bold text-muted-foreground">
-              {t('start5sIntroDescription')}
-            </p>
-            <Button onClick={() => setStep(0)} className="font-bold">
+          <div className="flex flex-col gap-4 px-6 pb-6">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Recycle className="h-10 w-10 text-[#10B981]" />
+              <p className="text-[13.5px] font-bold text-muted-foreground">
+                {t('start5sIntroDescription')}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fives-person-search">{t('personSearchLabel')}</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-[16px] w-[16px] -translate-y-1/2 text-muted-foreground opacity-50" />
+                <Input
+                  id="fives-person-search"
+                  value={personSearch}
+                  onChange={(e) => {
+                    setPersonSearch(e.target.value)
+                    setPersonSearchError('')
+                  }}
+                  placeholder={t('personSearchPlaceholder')}
+                  className="pl-9"
+                />
+                {personSearchResults.length > 0 && (
+                  <div className="absolute z-20 mt-1 max-h-[240px] w-full overflow-y-auto rounded-[16px] border border-border bg-card shadow-lg">
+                    {personSearchResults.map((employee) => (
+                      <button
+                        key={employee.id}
+                        type="button"
+                        onClick={() => handlePickFromSearch(employee)}
+                        className="flex w-full items-center gap-3 border-b border-border p-2.5 text-left last:border-b-0 hover:bg-accent"
+                      >
+                        <EmployeeAvatar employee={employee} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-bold">{employee.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {formatEmployeeNumber(employee.employeeNumber)}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {personSearchError && (
+                <Alert className={cn(alertToneClass('warning'), 'mt-1')}>{personSearchError}</Alert>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              {t('personSearchOrDivider')}
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fives-area">{t('workCenterLabel')}</Label>
+              <Select value={selectedGroupKey} onValueChange={handleGroupChange}>
+                <SelectTrigger id="fives-area">
+                  <SelectValue placeholder={t('workCenterPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUDIT_AREA_GROUPS.map((g) => (
+                    <SelectItem key={g.key} value={g.key}>
+                      {t(g.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedGroupKey === 'LINEAS' && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="fives-line">{t('lineLabel')}</Label>
+                <Select value={selectedLineId} onValueChange={handleLineChange}>
+                  <SelectTrigger id="fives-line">
+                    <SelectValue placeholder={t('linePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {workCenterById(w.id)?.name || w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Button onClick={() => setStep(0)} disabled={!canStartAudit} className="font-bold">
               {t('startAuditButton')}
             </Button>
           </div>
@@ -242,11 +452,16 @@ function FiveSDialog({ onClose }) {
               ))}
             </div>
 
+            {submitError && (
+              <Alert className={cn(alertToneClass('error'), 'mb-3')}>{submitError}</Alert>
+            )}
+
             <div className="flex justify-between gap-2 pb-4">
               {stepIndex > 0 ? (
                 <Button
                   variant="ghost"
                   onClick={() => setStep(stepIndex - 1)}
+                  disabled={submitting}
                   className="font-bold"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -255,8 +470,12 @@ function FiveSDialog({ onClose }) {
               ) : (
                 <div />
               )}
-              <Button onClick={handleNext} className="font-bold">
-                {stepIndex >= FIVE_S_STEPS.length - 1 ? t('finishButton') : t('nextButton')}
+              <Button onClick={handleNext} disabled={submitting} className="font-bold">
+                {stepIndex >= FIVE_S_STEPS.length - 1
+                  ? submitting
+                    ? t('savingButton')
+                    : t('finishButton')
+                  : t('nextButton')}
                 {stepIndex < FIVE_S_STEPS.length - 1 && <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>

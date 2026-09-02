@@ -136,6 +136,49 @@ export function formatShiftSchedule(shift) {
   return `${to12(shift.start)} – ${to12(shift.end)}`
 }
 
+/* Takt Time (2026-09-02, a peticion explicita del usuario; corregido el
+   mismo dia con la formula real que el usuario mando -- antes usaba la
+   duracion completa del turno segun OFFICIAL_SHIFTS, que no es el
+   tiempo REAL disponible): tiempo neto disponible = 8 h 40 min por
+   turno (520 min = 31,200 segundos), IGUAL para Matutino y Noche --
+   no se deriva de start/end de OFFICIAL_SHIFTS (eso incluye tiempo que
+   no es neto). Meta REAL de piezas por turno (1500 Matutino/dia, 500
+   Noche) -- Tiempo extra no tiene meta propia definida por el usuario,
+   se deja sin calculo en vez de inventar un numero.
+   Takt Time = tiempo neto disponible / demanda del turno:
+     Dia:   31,200 / 1,500 = 20.8 s/pieza
+     Noche: 31,200 /   500 = 62.4 s/pieza
+   (verificado contra los numeros exactos que dio el usuario). Es SOLO
+   el calculo teorico: el usuario confirmo explicitamente (pregunta
+   directa) que la captura real de piezas producidas por linea/turno se
+   agrega despues, cuando definan de donde sale ese dato -- nunca se
+   inventa ni se estima aqui.
+
+   2026-09-02, segunda correccion (a peticion explicita del usuario,
+   reportando que Takt Time "desaparecia" en Tiempo Extra -- 17:11 a
+   22:00): Tiempo Extra se considera parte del turno de dia ("va junto
+   con el turno de dia los 1500", confirmado explicitamente) -- comparte
+   la MISMA meta de 1500 piezas que Matutino, y por lo tanto el mismo
+   Takt Time (20.8 s/pieza). No es un turno con meta propia distinta,
+   es una extension del de dia. */
+export const TAKT_TARGET_PCS_BY_SHIFT = {
+  MATUTINO: 1500,
+  TIEMPO_EXTRA: 1500,
+  NOCHE: 500,
+}
+const TAKT_NET_SHIFT_SECONDS = 8 * 3600 + 40 * 60 // 8 h 40 min netos, mismo valor para ambos turnos
+
+export function getTaktTime(shift) {
+  if (!shift) return null
+  const targetPcs = TAKT_TARGET_PCS_BY_SHIFT[shift.id]
+  if (!targetPcs) return null
+  return {
+    targetPcs,
+    durationSeconds: TAKT_NET_SHIFT_SECONDS,
+    secondsPerUnit: TAKT_NET_SHIFT_SECONDS / targetPcs,
+  }
+}
+
 /* Fecha operativa -- el turno Noche cruza medianoche, asi que entre
    00:00 y 06:59 la jornada que sigue activa empezo AYER (22:01 del dia
    anterior). NOTA (2026-08-26): no existe hoy ningun concepto de

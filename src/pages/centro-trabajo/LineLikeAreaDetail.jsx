@@ -401,69 +401,76 @@ export default function LineLikeAreaDetail({
         </div>
 
         <div key={workCenterId} className="min-h-0 flex-1 overflow-y-auto p-3 md:p-6">
-          {/* KPIs -- mini-cards con acento de color. */}
+          {/* KPIs -- mini-cards con acento de color. 2026-09-01 (a peticion
+              explicita del usuario, "las cards de arriba deben estar de la
+              misma medida como las de WC LINEAS"): mismo patron ya aplicado
+              en LineDetailDrawer.jsx -- 4 columnas iguales (antes 6 columnas
+              con "Turno actual" ocupando el doble de ancho), la barra de
+              cobertura se separa como su propia fila de ancho completo
+              debajo, ya no comparte el mismo grid. */}
           {staffing.ideal != null && (
-            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-              <div className={cn(kpiCardClass('blue'), 'md:col-span-1')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.currentAssignmentLabel')}
-                </p>
-                <p className="mt-0.5 text-xl font-extrabold">
-                  {staffing.real} / {staffing.ideal}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.peopleUnitLabel')}
-                </p>
-              </div>
-              <div className={cn(kpiCardClass('slate'), 'md:col-span-1')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.idealStaffingLabel')}
-                </p>
-                <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.peopleUnitLabel')}
-                </p>
-              </div>
-              <div
-                className={cn(kpiCardClass(staffing.diff < 0 ? 'red' : 'green'), 'md:col-span-1')}
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {staffing.diff > 0
-                    ? t('lineLikeAreaDetail.additionalPersonnelLabel')
-                    : staffing.diff === 0
-                      ? t('lineLikeAreaDetail.coverageLabel')
-                      : t('lineLikeAreaDetail.missingLabel')}
-                </p>
-                <p
-                  className="mt-0.5 text-xl font-extrabold"
-                  style={{ color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}
-                >
-                  {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {staffing.diff === 0
-                    ? t('lineLikeAreaDetail.completeLabel')
-                    : t('lineLikeAreaDetail.diffPersonLabel', { count: Math.abs(staffing.diff) })}
-                </p>
-              </div>
-              <div className={cn(kpiCardClass('purple'), 'sm:col-span-1 md:col-span-2')}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                  {t('lineLikeAreaDetail.currentShiftLabel')}
-                </p>
-                <div className="mt-0.5 flex items-center gap-1">
-                  <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
-                  <p className="text-[15px] font-extrabold">{currentOfficialShift.label}</p>
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className={kpiCardClass('blue')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineLikeAreaDetail.currentAssignmentLabel')}
+                  </p>
+                  <p className="mt-0.5 text-xl font-extrabold">
+                    {staffing.real} / {staffing.ideal}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('lineLikeAreaDetail.peopleUnitLabel')}
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {formatHour12(currentOfficialShift.start)} –{' '}
-                  {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
-                </p>
+                <div className={kpiCardClass('slate')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineLikeAreaDetail.idealStaffingLabel')}
+                  </p>
+                  <p className="mt-0.5 text-xl font-extrabold">{staffing.ideal}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('lineLikeAreaDetail.peopleUnitLabel')}
+                  </p>
+                </div>
+                <div className={kpiCardClass(staffing.diff < 0 ? 'red' : 'green')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {staffing.diff > 0
+                      ? t('lineLikeAreaDetail.additionalPersonnelLabel')
+                      : staffing.diff === 0
+                        ? t('lineLikeAreaDetail.coverageLabel')
+                        : t('lineLikeAreaDetail.missingLabel')}
+                  </p>
+                  <p
+                    className="mt-0.5 text-xl font-extrabold"
+                    style={{ color: staffing.diff < 0 ? '#EF4444' : '#10B981' }}
+                  >
+                    {staffing.diff === 0 ? '✓' : Math.abs(staffing.diff)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {staffing.diff === 0
+                      ? t('lineLikeAreaDetail.completeLabel')
+                      : t('lineLikeAreaDetail.diffPersonLabel', { count: Math.abs(staffing.diff) })}
+                  </p>
+                </div>
+                <div className={kpiCardClass('purple')}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
+                    {t('lineLikeAreaDetail.currentShiftLabel')}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <ShiftIcon className="h-[18px] w-[18px] text-[#A855F7]" />
+                    <p className="text-[15px] font-extrabold">{currentOfficialShift.label}</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatHour12(currentOfficialShift.start)} –{' '}
+                    {formatHour12(currentOfficialShift.end)} · {dayjs().format('DD/MM/YYYY')}
+                  </p>
+                </div>
               </div>
+              {/* !h-auto (2026-09-01): kpiCardClass() trae h-full fijo, pensado
+                  para vivir dentro de un grid -- fuera del grid, h-full se
+                  estira contra el contenedor scrolleable completo de la
+                  pantalla (mismo fix ya aplicado en LineDetailDrawer.jsx). */}
               <div
-                className={cn(
-                  kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'),
-                  'col-span-2 flex flex-col justify-center sm:col-span-3 md:col-span-6',
-                )}
+                className={cn(kpiCardClass(coveragePct >= 100 ? 'green' : 'cyan'), 'mb-4 !h-auto')}
               >
                 <div className="mb-2 flex justify-between">
                   <p className="text-[10px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
@@ -481,7 +488,7 @@ export default function LineLikeAreaDetail({
                   />
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* 2026-09-01 (a peticion explicita del usuario): "Personal

@@ -135,20 +135,29 @@ export default function UserModulePermissionsCard({ users, selectedUserId, onSel
           {t('userModulePermissionsCard.searchUserLabel')}
         </Label>
         <Popover open={comboOpen} onOpenChange={setComboOpen}>
+          {/* div envolvente (2026-09-02, fix de bug real -- "no me sale para
+              ponerle los permisos"): PopoverAnchor asChild necesita clonar
+              una ref hacia un nodo DOM real para posicionar el contenido;
+              Input (components/ui/input.jsx) NO usa React.forwardRef, asi
+              que la ref nunca llegaba al <input> real y el popover jamas
+              se abria. Mismo workaround ya usado en EmployeeSearchField.jsx
+              (Centro de Trabajo) -- un div normal si acepta la ref. */}
           <PopoverAnchor asChild>
-            <Input
-              id="user-search"
-              placeholder={t('userModulePermissionsCard.searchUserPlaceholder')}
-              value={comboOpen ? query : selectedUser ? userLabel(selectedUser) : ''}
-              onFocus={() => {
-                setQuery(selectedUser ? userLabel(selectedUser) : '')
-                setComboOpen(true)
-              }}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                if (!comboOpen) setComboOpen(true)
-              }}
-            />
+            <div>
+              <Input
+                id="user-search"
+                placeholder={t('userModulePermissionsCard.searchUserPlaceholder')}
+                value={comboOpen ? query : selectedUser ? userLabel(selectedUser) : ''}
+                onFocus={() => {
+                  setQuery(selectedUser ? userLabel(selectedUser) : '')
+                  setComboOpen(true)
+                }}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  if (!comboOpen) setComboOpen(true)
+                }}
+              />
+            </div>
           </PopoverAnchor>
           <PopoverContent
             align="start"
