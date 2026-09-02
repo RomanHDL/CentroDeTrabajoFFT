@@ -4,6 +4,7 @@
     "tabLineas": "产线",
     "tabEstaciones": "工位",
     "tabPersonal": "人员",
+    "tabSinAsignar": "未分配",
     "tabBajas": "离职"
   },
   "registerPersonnelDialog": {

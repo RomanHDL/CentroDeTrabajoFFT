@@ -15,6 +15,7 @@ import BajasTab from './BajasTab'
 import EstacionesTab from './EstacionesTab'
 import LineasTab from './LineasTab'
 import PersonalDeHoyTab from './PersonalDeHoyTab'
+import PersonalSinAsignarTab from './PersonalSinAsignarTab'
 import { useSelectedWorkCenter } from './useSelectedWorkCenter'
 
 // Fase 4 (i18n): `labelKey` en vez de un `label` literal -- mismo patron ya
@@ -25,6 +26,7 @@ const TABS = [
   { key: 'lineas', labelKey: 'centroTrabajoPage.tabLineas' },
   { key: 'estaciones', labelKey: 'centroTrabajoPage.tabEstaciones' },
   { key: 'personal', labelKey: 'centroTrabajoPage.tabPersonal' },
+  { key: 'sinAsignar', labelKey: 'centroTrabajoPage.tabSinAsignar' },
   { key: 'bajas', labelKey: 'centroTrabajoPage.tabBajas' },
 ]
 
@@ -114,8 +116,13 @@ export default function CentroTrabajoPage() {
         <EstacionesTab onOpenLine={setSelectedLine} onGoToLineas={() => setTab('lineas')} />
       )}
       {tab === 'personal' && (
-        <PersonalDeHoyTab onGoToBajas={() => setTab('bajas')} onGoToAreas={() => setTab('areas')} />
+        <PersonalDeHoyTab
+          onGoToBajas={() => setTab('bajas')}
+          onGoToAreas={() => setTab('areas')}
+          onGoToSinAsignar={() => setTab('sinAsignar')}
+        />
       )}
+      {tab === 'sinAsignar' && <PersonalSinAsignarTab />}
       {tab === 'bajas' && <BajasTab />}
 
       <AreaDetail

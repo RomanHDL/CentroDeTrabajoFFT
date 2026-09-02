@@ -4,6 +4,7 @@
     "tabLineas": "Líneas",
     "tabEstaciones": "Estaciones",
     "tabPersonal": "Personal",
+    "tabSinAsignar": "Sin asignar",
     "tabBajas": "Bajas"
   },
   "registerPersonnelDialog": {

@@ -1,4 +1,3 @@
-import dayjs from 'dayjs'
 import {
   ArrowLeftRight,
   Badge,
@@ -12,15 +11,13 @@ import {
   LayoutGrid,
   Search,
   TriangleAlert,
-  Undo2,
-  UserCog,
   UserPlus,
   Users,
   UserX,
   X,
   Zap,
 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,7 +52,6 @@ import {
 } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
 import { isEmployeeEligible } from '../../data/personnel/directory'
-import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import {
   approvePendingMoveWithToast,
   rejectPendingMoveWithToast,
@@ -68,7 +64,6 @@ import {
   getPendingMoves,
   getUnassignedPresentToday,
   searchEmployees,
-  setEmployeeUnassignedReason,
   todayISO,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -83,12 +78,10 @@ import {
 import { useAuth } from '../../state/auth'
 import { useRoleMode } from '../../state/roleMode'
 import { EmptyState } from '../../ui'
-import { showToast } from '../../ui/toast'
 // Reutiliza la card KPI compacta y horizontal ya aprobada para el Dashboard
 // (2026-08-24) -- mismo lenguaje visual pedido para Personal en este rediseño
 // (2026-08-25), en vez de duplicar el componente.
 import DashboardKpiCard from '../dashboard/DashboardKpiCard'
-import EmployeeAvatar from './EmployeeAvatar'
 import EmployeeHistoryDialog from './EmployeeHistoryDialog'
 import RegisterPersonnelDialog from './RegisterPersonnelDialog'
 import SelfAssignDialog from './SelfAssignDialog'
@@ -158,7 +151,7 @@ const ROSTER_PAGE_SIZE = 8
 const DIRECTORY_PAGE_SIZE = 8
 const AREA_SUMMARY_TOP_N = 5
 
-export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
+export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas, onGoToSinAsignar }) {
   const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
   const { isSupervisor } = useRoleMode()
@@ -180,8 +173,6 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const [directoryQuery, setDirectoryQuery] = useState('')
   const [showAllRoster, setShowAllRoster] = useState(false)
   const [showAllDirectory, setShowAllDirectory] = useState(false)
-  const [savingReasonId, setSavingReasonId] = useState(null)
-  const unassignedSectionRef = useRef(null)
 
   const estadoOptions = useMemo(() => buildEstadoOptions(t), [t])
 
@@ -209,14 +200,12 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   const rosterSinEstacion = useMemo(() => roster.filter((r) => !r.stationId), [roster])
   const rosterSnapshot = useMemo(() => roster.filter((r) => r.source === 'SNAPSHOT'), [roster])
 
-  // "Personal sin asignar" (2026-09-02, a peticion explicita del usuario):
-  // quien HOY no tiene ubicacion real en ninguna area -- getPeopleWithoutArea()
-  // ya excluye BAJA automaticamente (una vez marcada, la persona desaparece
-  // sola de esta lista en el siguiente refresh via usePersonnelVersion, sin
-  // logica extra aqui). Distinto de rosterSinEstacion (arriba): esos SI tienen
-  // area, solo les falta estacion.
+  // Conteo para la alerta "Personal sin asignar" (2026-09-02) -- la lista completa con
+  // acciones (Baja/Cambio de turno/Falta) vive en su propia pestaña ahora
+  // (PersonalSinAsignarTab.jsx, a peticion explicita del usuario tras el primer intento
+  // metido aqui mismo); aqui solo se necesita el numero para el chip de Alertas.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const unassignedPeople = useMemo(() => getPeopleWithoutArea(), [version])
+  const unassignedCount = useMemo(() => getPeopleWithoutArea().length, [version])
 
   // Directorio completo -- TODO el personal activo (elegible, sin
   // bajas), no solo quien tiene ubicacion hoy. Las 2 KPI de arriba
@@ -341,31 +330,6 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
   function handleAlertClick(estado) {
     setEstadoFilter(estado)
     setShowAllRoster(true)
-  }
-
-  function handleAlertClickSinAsignar() {
-    unassignedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  // setEmployeeUnassignedReason es DELIBERADAMENTE async/esperado (repository.js,
-  // 2026-09-02) -- nunca fire-and-forget aqui. Si falla, no se toca el store local
-  // y se muestra el error real; si tiene exito, ya llamo notify() internamente
-  // (usePersonnelVersion re-renderiza solo, sin estado optimista propio).
-  async function handleSetReason(person, reason) {
-    setSavingReasonId(person.id)
-    try {
-      await setEmployeeUnassignedReason(person.id, reason)
-      showToast(
-        reason
-          ? t('personalDeHoyTab.reasonSetSuccessToast')
-          : t('personalDeHoyTab.reasonClearedSuccessToast'),
-        'success',
-      )
-    } catch (err) {
-      showToast(err.message || t('personalDeHoyTab.reasonSetErrorFallback'), 'error')
-    } finally {
-      setSavingReasonId(null)
-    }
   }
 
   return (
@@ -612,13 +576,6 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
             onToggleShowAll={() => setShowAllRoster((v) => !v)}
             onRowClick={setHistoryEmployee}
           />
-          <div ref={unassignedSectionRef}>
-            <PersonalSinAsignarCard
-              people={unassignedPeople}
-              savingId={savingReasonId}
-              onSetReason={handleSetReason}
-            />
-          </div>
           <DirectorioCard
             tab={directoryTab}
             onTabChange={setDirectoryTab}
@@ -645,11 +602,11 @@ export default function PersonalDeHoyTab({ onGoToBajas, onGoToAreas }) {
               sinEstacion={rosterSinEstacion.length}
               snapshot={rosterSnapshot.length}
               movimientos={movesToday}
-              sinAsignar={unassignedPeople.length}
+              sinAsignar={unassignedCount}
               onClickSinEstacion={() => handleAlertClick('SIN_ESTACION')}
               onClickSnapshot={() => handleAlertClick('SNAPSHOT')}
               onClickMovimientos={() => handleAlertClick('REGISTRADO')}
-              onClickSinAsignar={handleAlertClickSinAsignar}
+              onClickSinAsignar={onGoToSinAsignar}
             />
             <AccionesRapidasCard
               onAsignar={() => (isSupervisor ? setRegisterOpen(true) : setSelfAssignOpen(true))}
@@ -795,131 +752,6 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-      )}
-    </div>
-  )
-}
-
-/* Card "Personal sin asignar" (2026-09-02, a peticion explicita del usuario):
-   quien HOY no tiene ubicacion real en ninguna area (getPeopleWithoutArea, ver
-   arriba) -- una tarjeta por persona con foto/nombre/numero, el motivo YA
-   guardado si existe (chip + fecha real, nunca inventada) y 3 acciones para
-   guardar uno nuevo (Baja/Cambio de turno/Falta) + "Quitar motivo" cuando ya
-   tiene uno. Marcar "Baja" hace que la persona desaparezca sola de esta lista
-   en el siguiente refresh (getPeopleWithoutArea ya la excluye), sin logica
-   extra en este componente. */
-const REASON_LABEL_KEY = {
-  BAJA: 'personalDeHoyTab.reasonBajaLabel',
-  TURNO: 'personalDeHoyTab.reasonTurnoLabel',
-  FALTA: 'personalDeHoyTab.reasonFaltaLabel',
-}
-
-function PersonalSinAsignarCard({ people, savingId, onSetReason }) {
-  const { t } = useTranslation('centroTrabajo')
-  return (
-    <div className={cn(cardClass, 'mb-4')}>
-      <div className={cn(cardHeaderClass, 'justify-between')}>
-        <div className="flex items-center gap-2">
-          <UserCog className="h-[18px] w-[18px] text-muted-foreground" />
-          <div>
-            <p className={cardHeaderTitleClass}>{t('personalDeHoyTab.sinAsignarTitle')}</p>
-            <p className={cardHeaderSubtitleClass}>{t('personalDeHoyTab.sinAsignarSubtitle')}</p>
-          </div>
-        </div>
-        <span className={cn(metricChipClass(people.length > 0 ? 'warn' : 'default'), 'shrink-0')}>
-          {t('personalDeHoyTab.sinAsignarCountChip', { count: people.length })}
-        </span>
-      </div>
-      <div className="p-4">
-        {people.length === 0 ? (
-          <EmptyState
-            compact
-            title={t('personalDeHoyTab.sinAsignarEmptyTitle')}
-            description={t('personalDeHoyTab.sinAsignarEmptyDescription')}
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {people.map((p) => (
-              <PersonaSinAsignarItem
-                key={p.id}
-                person={p}
-                saving={savingId === p.id}
-                onSetReason={onSetReason}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function PersonaSinAsignarItem({ person, saving, onSetReason }) {
-  const { t } = useTranslation('centroTrabajo')
-  const reason = person.unassignedReason || null
-  return (
-    <div className="flex flex-col gap-2.5 rounded-[20px] border border-border p-3">
-      <div className="flex items-center gap-2.5">
-        <EmployeeAvatar employee={person} size={38} />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-bold">{person.name}</p>
-          <p className="font-mono text-[11px] text-muted-foreground">
-            {formatEmployeeNumber(person.employeeNumber)}
-          </p>
-        </div>
-      </div>
-      {reason && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className={statusChipClass(reason === 'BAJA' ? 'CANCELADA' : 'PENDIENTE')}>
-            {t(REASON_LABEL_KEY[reason])}
-          </span>
-          {person.unassignedReasonSetAt && (
-            <span className="text-[10.5px] font-medium text-muted-foreground">
-              {dayjs(person.unassignedReasonSetAt).format('DD/MM/YYYY HH:mm')}
-            </span>
-          )}
-        </div>
-      )}
-      <div className="flex flex-wrap gap-1.5">
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={saving}
-          onClick={() => onSetReason(person, 'BAJA')}
-          className="h-7 flex-1 min-w-[68px] text-[11px] font-bold text-destructive hover:text-destructive"
-        >
-          {t('personalDeHoyTab.markBajaButton')}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={saving}
-          onClick={() => onSetReason(person, 'TURNO')}
-          className="h-7 flex-1 min-w-[68px] text-[11px] font-bold"
-        >
-          {t('personalDeHoyTab.markTurnoButton')}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={saving}
-          onClick={() => onSetReason(person, 'FALTA')}
-          className="h-7 flex-1 min-w-[68px] text-[11px] font-bold"
-        >
-          {t('personalDeHoyTab.markFaltaButton')}
-        </Button>
-      </div>
-      {reason && (
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={saving}
-          onClick={() => onSetReason(person, null)}
-          className="h-6 w-fit self-start px-1.5 text-[10.5px] font-bold text-muted-foreground"
-        >
-          <Undo2 className="h-3 w-3" />
-          {t('personalDeHoyTab.clearReasonButton')}
-        </Button>
       )}
     </div>
   )
