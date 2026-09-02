@@ -1,5 +1,7 @@
 import dayjs from 'dayjs'
 import {
+  BadgeCheck,
+  Boxes,
   Building2,
   Calendar,
   CalendarX,
@@ -7,8 +9,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Crown,
+  Dumbbell,
+  Eye,
+  Factory,
+  Gem,
+  GraduationCap,
+  HelpCircle,
+  PackageCheck,
+  Puzzle,
   Search,
+  Sparkles,
+  Stamp,
+  UserCog,
   Users,
+  Workflow,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -220,6 +235,39 @@ const KPI_ACCENTS = {
 
 const ACTIVE_SELECTION_CLASS = 'border-blue-400 bg-blue-500/[0.06]'
 
+/* Identidad visual por area (2026-09-02, a peticion explicita del usuario:
+   "cada area conserve la misma estructura funcional, pero tenga identidad
+   visual propia mediante icono especifico + color/acento propio" -- SOLO
+   para las cards de nivel 1 de "Personal por area", nunca para las lineas
+   individuales dentro de "Lineas de produccion" -- esas 10 son
+   intercambiables entre si, no tiene sentido darles color distinto, y el
+   pedido hablaba explicitamente de "cada area", no de cada linea).
+   Iconos de lucide-react (ya la unica libreria de iconos del proyecto,
+   nunca se agrega una nueva) elegidos por afinidad semantica con cada
+   WORK_CENTER real de catalog.js. Solo cambia el circulo de icono -- la
+   barra de cobertura sigue usando su propio color FUNCIONAL (verde/ambar
+   segun %, ver coverageBarColor) para no mezclar una señal de estado real
+   con un acento puramente decorativo. Cualquier id de area futuro que no
+   este aqui cae al icono/color generico de siempre (Users/azul). */
+const AREA_VISUALS = {
+  LINEAS: { icon: Factory, bg: 'bg-blue-500/[0.12]', text: 'text-blue-500' },
+  PALETIZADO: { icon: PackageCheck, bg: 'bg-amber-500/[0.12]', text: 'text-amber-500' },
+  ACCESORIOS: { icon: Puzzle, bg: 'bg-purple-500/[0.12]', text: 'text-purple-500' },
+  CONVEYOR_PRINCIPAL: { icon: Workflow, bg: 'bg-cyan-500/[0.12]', text: 'text-cyan-500' },
+  HIGH_VALUE: { icon: Gem, bg: 'bg-rose-500/[0.12]', text: 'text-rose-500' },
+  CALIDAD: { icon: BadgeCheck, bg: 'bg-emerald-500/[0.12]', text: 'text-emerald-500' },
+  SELLADO: { icon: Stamp, bg: 'bg-indigo-500/[0.12]', text: 'text-indigo-500' },
+  INSUMOS: { icon: Boxes, bg: 'bg-orange-500/[0.12]', text: 'text-orange-500' },
+  CAPACITACION: { icon: GraduationCap, bg: 'bg-violet-500/[0.12]', text: 'text-violet-500' },
+  TEAM_LEADER: { icon: UserCog, bg: 'bg-sky-500/[0.12]', text: 'text-sky-500' },
+  ENTRENADOR: { icon: Dumbbell, bg: 'bg-teal-500/[0.12]', text: 'text-teal-500' },
+  LIMPIEZA: { icon: Sparkles, bg: 'bg-lime-500/[0.12]', text: 'text-lime-500' },
+  GERENTE: { icon: Crown, bg: 'bg-yellow-500/[0.12]', text: 'text-yellow-500' },
+  SUPERVISOR: { icon: Eye, bg: 'bg-fuchsia-500/[0.12]', text: 'text-fuchsia-500' },
+  SIN_AREA: { icon: HelpCircle, bg: 'bg-slate-500/[0.12]', text: 'text-slate-500' },
+}
+const DEFAULT_AREA_VISUAL = { icon: Users, bg: 'bg-blue-500/[0.12]', text: 'text-blue-500' }
+
 /* Foto de empleado: reusa el EmployeeAvatar COMPARTIDO de Centro de
    Trabajo (23 consumidores en la app) en vez de una copia local -- ahora
    si tiene con que pintar una foto real, porque `person.photoUrl` ya
@@ -284,8 +332,9 @@ function FlatPersonCard({ person, badgeTone, badgeLabel, showTime, t }) {
    "Areas de trabajo" del resto de Centro de Trabajo (cardClass, hover
    sutil, chip de conteo), ahora con la barra de cobertura que pide el
    mockup (verde/ambar/gris segun presentes-hoy / total-rastreado-hoy). */
-function AreaCard({ name, count, present, total, onClick }) {
+function AreaCard({ name, count, present, total, onClick, visual = DEFAULT_AREA_VISUAL }) {
   const pct = coveragePctInt(present, total)
+  const Icon = visual.icon
   return (
     <button
       type="button"
@@ -296,8 +345,8 @@ function AreaCard({ name, count, present, total, onClick }) {
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-500/[0.12]">
-          <Users className="h-5 w-5 text-blue-500" />
+        <div className={cn('grid h-11 w-11 place-items-center rounded-2xl', visual.bg)}>
+          <Icon className={cn('h-5 w-5', visual.text)} />
         </div>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </div>
@@ -932,6 +981,7 @@ export default function AsistenciaPage() {
                     present={group.people.filter((p) => p.todayAssignment).length}
                     total={group.people.length}
                     onClick={() => openGroup(group)}
+                    visual={AREA_VISUALS[group.id] || DEFAULT_AREA_VISUAL}
                   />
                 ))}
               </div>
