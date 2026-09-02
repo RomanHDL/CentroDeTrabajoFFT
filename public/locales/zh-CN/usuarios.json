@@ -40,6 +40,19 @@
     "temporaryPasswordWarning": "此密码仅显示一次，请将其安全地交给 {{name}}。",
     "doneButton": "完成"
   },
+  "accessRequestsCard": {
+    "title": "SSO 访问申请",
+    "subtitle": "已通过 Nextcloud 登录但还没有本地账号的人员 —— 选择一个角色来创建账号，或拒绝申请。",
+    "loadError": "无法加载申请列表。",
+    "noteLabel": "原因",
+    "requestedAtLabel": "申请时间",
+    "roleLabel": "角色",
+    "approveButton": "批准",
+    "denyButton": "拒绝",
+    "approvedToast": "{{name}} 现在已有本地账号。",
+    "deniedToast": "已拒绝 {{name}} 的申请。",
+    "decideError": "无法处理该申请。"
+  },
   "adminToolsCard": {
     "title": "管理工具",
     "subtitle": "车间可视化布局的维护操作——不影响权限、用户或历史数据。"

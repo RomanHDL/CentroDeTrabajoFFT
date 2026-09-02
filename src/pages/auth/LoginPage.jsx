@@ -43,15 +43,15 @@ export default function LoginPage() {
     }
   }, [])
 
-  // Fase 5 (OIDC): api/auth/oidc/callback.js redirige aqui con
-  // ?oidc_error=<codigo> cuando el login con Nextcloud falla (usuario sin
-  // cuenta local, inactivo, etc.).
+  // api/auth/oidc/callback.js redirige aqui con ?oidc_error=<codigo> cuando el login con
+  // Nextcloud falla de verdad (usuario inactivo, intercambio fallido, etc.) -- 2026-09-02:
+  // "sin cuenta local" (no_local_account) YA NO es un error, redirige a
+  // /solicitar-acceso en vez de aqui (ver callback.js).
   // biome-ignore lint/correctness/useExhaustiveDependencies: solo debe reaccionar a que cambie el querystring, no a t/navigate/location.pathname
   useEffect(() => {
     const oidcError = new URLSearchParams(location.search).get('oidc_error')
     if (!oidcError) return
-    if (oidcError === 'no_local_account') setError(t('oidcErrorNoLocalAccount'))
-    else if (oidcError === 'inactive_user') setError(t('oidcErrorInactiveUser'))
+    if (oidcError === 'inactive_user') setError(t('oidcErrorInactiveUser'))
     else setError(t('oidcErrorGeneric'))
     navigate(location.pathname, { replace: true })
   }, [location.search])

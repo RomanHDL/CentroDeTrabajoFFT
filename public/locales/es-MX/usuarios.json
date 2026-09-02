@@ -40,6 +40,19 @@
     "temporaryPasswordWarning": "Esta contraseña solo se muestra una vez. Entrégasela a {{name}} de forma segura.",
     "doneButton": "Listo"
   },
+  "accessRequestsCard": {
+    "title": "Solicitudes de acceso SSO",
+    "subtitle": "Personas que iniciaron sesión con Nextcloud pero todavía no tienen cuenta local -- elige un rol para dar de alta, o rechaza.",
+    "loadError": "No se pudieron cargar las solicitudes.",
+    "noteLabel": "Motivo",
+    "requestedAtLabel": "Solicitado",
+    "roleLabel": "Rol",
+    "approveButton": "Aprobar",
+    "denyButton": "Rechazar",
+    "approvedToast": "{{name}} ahora tiene cuenta local.",
+    "deniedToast": "Solicitud de {{name}} rechazada.",
+    "decideError": "No se pudo procesar la solicitud."
+  },
   "adminToolsCard": {
     "title": "Herramientas administrativas",
     "subtitle": "Acciones de mantenimiento del layout visual de planta -- no afectan permisos, usuarios ni datos históricos."

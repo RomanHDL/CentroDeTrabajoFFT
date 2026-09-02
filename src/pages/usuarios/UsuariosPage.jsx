@@ -25,6 +25,7 @@ import { getRoleLabels } from '../../layout/roleLabels'
 import { apiRequest } from '../../state/auth'
 import { KpiCard } from '../../ui'
 import { showToast } from '../../ui/toast'
+import AccessRequestsCard from './AccessRequestsCard'
 import AdminToolsCard from './AdminToolsCard'
 import CreateUserDialog from './CreateUserDialog'
 import EditUserDialog from './EditUserDialog'
@@ -265,6 +266,8 @@ export default function UsuariosPage() {
           </TableBody>
         </Table>
       </div>
+
+      <AccessRequestsCard onUserCreated={(user) => setUsers((prev) => [...prev, user])} />
 
       <PermissionsManagementCard
         ref={permissionsCardRef}

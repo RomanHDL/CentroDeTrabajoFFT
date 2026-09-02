@@ -5,10 +5,14 @@
 // de /api se despliega como su propia Serverless Function con este mismo
 // codigo (sin pasar por Express en absoluto).
 
+import accessRequestDecideHandler from '../api/access-requests/[id]/decide.js'
+import accessRequestsIndexHandler from '../api/access-requests/index.js'
 import changePasswordHandler from '../api/auth/change-password.js'
 import loginHandler from '../api/auth/login.js'
 import logoutHandler from '../api/auth/logout.js'
 import oidcCallbackHandler from '../api/auth/oidc/callback.js'
+import oidcPendingHandler from '../api/auth/oidc/pending.js'
+import oidcRequestAccessHandler from '../api/auth/oidc/request-access.js'
 import oidcStartHandler from '../api/auth/oidc/start.js'
 import oidcStatusHandler from '../api/auth/oidc/status.js'
 import sessionHandler from '../api/auth/session.js'
@@ -61,6 +65,11 @@ export function mountApiRoutes(app) {
   app.get('/api/auth/oidc/start', wrapAsync(oidcStartHandler))
   app.get('/api/auth/oidc/callback', wrapAsync(oidcCallbackHandler))
   app.get('/api/auth/oidc/status', wrapAsync(oidcStatusHandler))
+  app.get('/api/auth/oidc/pending', wrapAsync(oidcPendingHandler))
+  app.post('/api/auth/oidc/request-access', wrapAsync(oidcRequestAccessHandler))
+
+  app.get('/api/access-requests', wrapAsync(accessRequestsIndexHandler))
+  app.post('/api/access-requests/:id/decide', withDynamicParams(accessRequestDecideHandler))
 
   app.get('/api/users', wrapAsync(usersIndexHandler))
   app.post('/api/users', wrapAsync(usersIndexHandler))

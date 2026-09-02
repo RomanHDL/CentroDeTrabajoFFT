@@ -40,6 +40,19 @@
     "temporaryPasswordWarning": "This password is shown only once. Deliver it to {{name}} securely.",
     "doneButton": "Done"
   },
+  "accessRequestsCard": {
+    "title": "SSO access requests",
+    "subtitle": "People who signed in with Nextcloud but don't have a local account yet -- pick a role to create one, or deny.",
+    "loadError": "Could not load the requests.",
+    "noteLabel": "Reason",
+    "requestedAtLabel": "Requested",
+    "roleLabel": "Role",
+    "approveButton": "Approve",
+    "denyButton": "Deny",
+    "approvedToast": "{{name}} now has a local account.",
+    "deniedToast": "{{name}}'s request was denied.",
+    "decideError": "Could not process the request."
+  },
   "adminToolsCard": {
     "title": "Administrative tools",
     "subtitle": "Maintenance actions for the plant floor visual layout -- these do not affect permissions, users, or historical data."

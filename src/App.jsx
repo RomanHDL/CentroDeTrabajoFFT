@@ -6,6 +6,7 @@ import AsistenciaPage from './pages/asistencia/AsistenciaPage'
 import AuditoriaPage from './pages/auditoria/AuditoriaPage'
 import ChangePasswordPage from './pages/auth/ChangePasswordPage'
 import LoginPage from './pages/auth/LoginPage'
+import RequestAccessPage from './pages/auth/RequestAccessPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ChangelogPage from './pages/docs/ChangelogPage'
@@ -41,6 +42,7 @@ export default function App() {
           <DndAssignProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/solicitar-acceso" element={<RequestAccessPage />} />
 
               <Route
                 element={

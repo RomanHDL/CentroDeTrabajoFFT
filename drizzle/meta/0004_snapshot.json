@@ -1,0 +1,2776 @@
+{
+  "id": "1035ce0a-f5b2-43be-a079-7269ba48a57f",
+  "prevId": "07ad3bb2-5833-4a8c-a8b2-08a65287b2d0",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.AccessRequest": {
+      "name": "AccessRequest",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "oidcSub": {
+          "name": "oidcSub",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "AccessRequestStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "decidedByUserId": {
+          "name": "decidedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decidedAt": {
+          "name": "decidedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requestedAt": {
+          "name": "requestedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "AccessRequest_oidcSub_idx": {
+          "name": "AccessRequest_oidcSub_idx",
+          "columns": [
+            {
+              "expression": "oidcSub",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "AccessRequest_status_idx": {
+          "name": "AccessRequest_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Attendance": {
+      "name": "Attendance",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shift": {
+          "name": "shift",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GENERAL'"
+        },
+        "checkInAt": {
+          "name": "checkInAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "AttendanceStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registeredByUserId": {
+          "name": "registeredByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Attendance_date_idx": {
+          "name": "Attendance_date_idx",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "Attendance_employeeId_date_shift_key": {
+          "name": "Attendance_employeeId_date_shift_key",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "shift",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Attendance_employeeId_fkey": {
+          "name": "Attendance_employeeId_fkey",
+          "tableFrom": "Attendance",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "Attendance_registeredByUserId_fkey": {
+          "name": "Attendance_registeredByUserId_fkey",
+          "tableFrom": "Attendance",
+          "tableTo": "User",
+          "columnsFrom": [
+            "registeredByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.AuditEvaluation": {
+      "name": "AuditEvaluation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "areaId": {
+          "name": "areaId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auditDate": {
+          "name": "auditDate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s1": {
+          "name": "s1",
+          "type": "FiveSClassification",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s2": {
+          "name": "s2",
+          "type": "FiveSClassification",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3": {
+          "name": "s3",
+          "type": "FiveSClassification",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s4": {
+          "name": "s4",
+          "type": "FiveSClassification",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s5": {
+          "name": "s5",
+          "type": "FiveSClassification",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scorePct": {
+          "name": "scorePct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdByUserId": {
+          "name": "createdByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "AuditEvaluation_areaId_auditDate_idx": {
+          "name": "AuditEvaluation_areaId_auditDate_idx",
+          "columns": [
+            {
+              "expression": "areaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "auditDate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "AuditEvaluation_createdByUserId_fkey": {
+          "name": "AuditEvaluation_createdByUserId_fkey",
+          "tableFrom": "AuditEvaluation",
+          "tableTo": "User",
+          "columnsFrom": [
+            "createdByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.BajaConflict": {
+      "name": "BajaConflict",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bajaFullName": {
+          "name": "bajaFullName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bajaRowNumber": {
+          "name": "bajaRowNumber",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "importBatchId": {
+          "name": "importBatchId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "BajaConflictStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "resolvedByUserId": {
+          "name": "resolvedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolvedAt": {
+          "name": "resolvedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "BajaConflict_importBatchId_idx": {
+          "name": "BajaConflict_importBatchId_idx",
+          "columns": [
+            {
+              "expression": "importBatchId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "BajaConflict_status_idx": {
+          "name": "BajaConflict_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "BajaConflict_employeeId_fkey": {
+          "name": "BajaConflict_employeeId_fkey",
+          "tableFrom": "BajaConflict",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "BajaConflict_importBatchId_fkey": {
+          "name": "BajaConflict_importBatchId_fkey",
+          "tableFrom": "BajaConflict",
+          "tableTo": "ImportBatch",
+          "columnsFrom": [
+            "importBatchId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "BajaConflict_resolvedByUserId_fkey": {
+          "name": "BajaConflict_resolvedByUserId_fkey",
+          "tableFrom": "BajaConflict",
+          "tableTo": "User",
+          "columnsFrom": [
+            "resolvedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.DailyAssignment": {
+      "name": "DailyAssignment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shift": {
+          "name": "shift",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GENERAL'"
+        },
+        "workstationId": {
+          "name": "workstationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "DailyAssignmentStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "assignedAt": {
+          "name": "assignedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "assignedByUserId": {
+          "name": "assignedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endedAt": {
+          "name": "endedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "endedByUserId": {
+          "name": "endedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "endReason": {
+          "name": "endReason",
+          "type": "AssignmentEndReason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "DailyAssignment_employeeId_date_idx": {
+          "name": "DailyAssignment_employeeId_date_idx",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "DailyAssignment_employeeId_date_key": {
+          "name": "DailyAssignment_employeeId_date_key",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": true,
+          "where": "(status = 'ACTIVE'::\"DailyAssignmentStatus\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "DailyAssignment_workstationId_date_idx": {
+          "name": "DailyAssignment_workstationId_date_idx",
+          "columns": [
+            {
+              "expression": "workstationId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "DailyAssignment_employeeId_fkey": {
+          "name": "DailyAssignment_employeeId_fkey",
+          "tableFrom": "DailyAssignment",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "DailyAssignment_workstationId_fkey": {
+          "name": "DailyAssignment_workstationId_fkey",
+          "tableFrom": "DailyAssignment",
+          "tableTo": "Workstation",
+          "columnsFrom": [
+            "workstationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "DailyAssignment_assignedByUserId_fkey": {
+          "name": "DailyAssignment_assignedByUserId_fkey",
+          "tableFrom": "DailyAssignment",
+          "tableTo": "User",
+          "columnsFrom": [
+            "assignedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "DailyAssignment_endedByUserId_fkey": {
+          "name": "DailyAssignment_endedByUserId_fkey",
+          "tableFrom": "DailyAssignment",
+          "tableTo": "User",
+          "columnsFrom": [
+            "endedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Employee": {
+      "name": "Employee",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeNumber": {
+          "name": "employeeNumber",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fullName": {
+          "name": "fullName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photoUrl": {
+          "name": "photoUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actividad": {
+          "name": "actividad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "areaZona": {
+          "name": "areaZona",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "baseAsistencia": {
+          "name": "baseAsistencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "baselineSuppressed": {
+          "name": "baselineSuppressed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fechaIngreso": {
+          "name": "fechaIngreso",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rawZona": {
+          "name": "rawZona",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unassignedReason": {
+          "name": "unassignedReason",
+          "type": "UnassignedReason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unassignedReasonSetAt": {
+          "name": "unassignedReasonSetAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unassignedReasonSetByUserId": {
+          "name": "unassignedReasonSetByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "Employee_employeeNumber_key": {
+          "name": "Employee_employeeNumber_key",
+          "columns": [
+            {
+              "expression": "employeeNumber",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "Employee_fullName_idx": {
+          "name": "Employee_fullName_idx",
+          "columns": [
+            {
+              "expression": "fullName",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.EmployeeImportSource": {
+      "name": "EmployeeImportSource",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "importBatchId": {
+          "name": "importBatchId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sourceSheet": {
+          "name": "sourceSheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sourceRowNumber": {
+          "name": "sourceRowNumber",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rawZona": {
+          "name": "rawZona",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rawActividad": {
+          "name": "rawActividad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rawAsistencia": {
+          "name": "rawAsistencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rawPrestamo": {
+          "name": "rawPrestamo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "importedAt": {
+          "name": "importedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "EmployeeImportSource_employeeId_idx": {
+          "name": "EmployeeImportSource_employeeId_idx",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "EmployeeImportSource_importBatchId_idx": {
+          "name": "EmployeeImportSource_importBatchId_idx",
+          "columns": [
+            {
+              "expression": "importBatchId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "EmployeeImportSource_importBatchId_sourceSheet_sourceRowNum_key": {
+          "name": "EmployeeImportSource_importBatchId_sourceSheet_sourceRowNum_key",
+          "columns": [
+            {
+              "expression": "importBatchId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            },
+            {
+              "expression": "sourceSheet",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "sourceRowNumber",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "EmployeeImportSource_employeeId_fkey": {
+          "name": "EmployeeImportSource_employeeId_fkey",
+          "tableFrom": "EmployeeImportSource",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeImportSource_importBatchId_fkey": {
+          "name": "EmployeeImportSource_importBatchId_fkey",
+          "tableFrom": "EmployeeImportSource",
+          "tableTo": "ImportBatch",
+          "columnsFrom": [
+            "importBatchId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.EmployeeMovement": {
+      "name": "EmployeeMovement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fromWorkstationId": {
+          "name": "fromWorkstationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "toWorkstationId": {
+          "name": "toWorkstationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "movedAt": {
+          "name": "movedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "movedByUserId": {
+          "name": "movedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "EmployeeMovement_employeeId_date_idx": {
+          "name": "EmployeeMovement_employeeId_date_idx",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "EmployeeMovement_toWorkstationId_date_idx": {
+          "name": "EmployeeMovement_toWorkstationId_date_idx",
+          "columns": [
+            {
+              "expression": "toWorkstationId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "EmployeeMovement_employeeId_fkey": {
+          "name": "EmployeeMovement_employeeId_fkey",
+          "tableFrom": "EmployeeMovement",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeMovement_fromWorkstationId_fkey": {
+          "name": "EmployeeMovement_fromWorkstationId_fkey",
+          "tableFrom": "EmployeeMovement",
+          "tableTo": "Workstation",
+          "columnsFrom": [
+            "fromWorkstationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "EmployeeMovement_toWorkstationId_fkey": {
+          "name": "EmployeeMovement_toWorkstationId_fkey",
+          "tableFrom": "EmployeeMovement",
+          "tableTo": "Workstation",
+          "columnsFrom": [
+            "toWorkstationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeMovement_movedByUserId_fkey": {
+          "name": "EmployeeMovement_movedByUserId_fkey",
+          "tableFrom": "EmployeeMovement",
+          "tableTo": "User",
+          "columnsFrom": [
+            "movedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.EmployeeReconciliationCandidate": {
+      "name": "EmployeeReconciliationCandidate",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "existingEmployeeId": {
+          "name": "existingEmployeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "importBatchId": {
+          "name": "importBatchId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "candidateSourceRowNumber": {
+          "name": "candidateSourceRowNumber",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "candidateFullName": {
+          "name": "candidateFullName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "candidateEmployeeNumber": {
+          "name": "candidateEmployeeNumber",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candidateRawZona": {
+          "name": "candidateRawZona",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candidateRawActividad": {
+          "name": "candidateRawActividad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candidateRawAsistencia": {
+          "name": "candidateRawAsistencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "candidateRawPrestamo": {
+          "name": "candidateRawPrestamo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "EmployeeReconciliationStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "resolvedByUserId": {
+          "name": "resolvedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolvedAt": {
+          "name": "resolvedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "EmployeeReconciliationCandidate_existingEmployeeId_idx": {
+          "name": "EmployeeReconciliationCandidate_existingEmployeeId_idx",
+          "columns": [
+            {
+              "expression": "existingEmployeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "EmployeeReconciliationCandidate_importBatchId_idx": {
+          "name": "EmployeeReconciliationCandidate_importBatchId_idx",
+          "columns": [
+            {
+              "expression": "importBatchId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "EmployeeReconciliationCandidate_status_idx": {
+          "name": "EmployeeReconciliationCandidate_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "EmployeeReconciliationCandidate_existingEmployeeId_fkey": {
+          "name": "EmployeeReconciliationCandidate_existingEmployeeId_fkey",
+          "tableFrom": "EmployeeReconciliationCandidate",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "existingEmployeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeReconciliationCandidate_importBatchId_fkey": {
+          "name": "EmployeeReconciliationCandidate_importBatchId_fkey",
+          "tableFrom": "EmployeeReconciliationCandidate",
+          "tableTo": "ImportBatch",
+          "columnsFrom": [
+            "importBatchId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeReconciliationCandidate_resolvedByUserId_fkey": {
+          "name": "EmployeeReconciliationCandidate_resolvedByUserId_fkey",
+          "tableFrom": "EmployeeReconciliationCandidate",
+          "tableTo": "User",
+          "columnsFrom": [
+            "resolvedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.EmployeeSkill": {
+      "name": "EmployeeSkill",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skillId": {
+          "name": "skillId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "SkillLevel",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "EmployeeSkillSource",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'IMPORTED'"
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "addedByUserId": {
+          "name": "addedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deactivatedAt": {
+          "name": "deactivatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deactivatedByUserId": {
+          "name": "deactivatedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "EmployeeSkill_employeeId_skillId_key": {
+          "name": "EmployeeSkill_employeeId_skillId_key",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "skillId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "EmployeeSkill_employeeId_fkey": {
+          "name": "EmployeeSkill_employeeId_fkey",
+          "tableFrom": "EmployeeSkill",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeSkill_skillId_fkey": {
+          "name": "EmployeeSkill_skillId_fkey",
+          "tableFrom": "EmployeeSkill",
+          "tableTo": "Skill",
+          "columnsFrom": [
+            "skillId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "EmployeeSkill_addedByUserId_fkey": {
+          "name": "EmployeeSkill_addedByUserId_fkey",
+          "tableFrom": "EmployeeSkill",
+          "tableTo": "User",
+          "columnsFrom": [
+            "addedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "EmployeeSkill_deactivatedByUserId_fkey": {
+          "name": "EmployeeSkill_deactivatedByUserId_fkey",
+          "tableFrom": "EmployeeSkill",
+          "tableTo": "User",
+          "columnsFrom": [
+            "deactivatedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ImportBatch": {
+      "name": "ImportBatch",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fileName": {
+          "name": "fileName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fileHash": {
+          "name": "fileHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sheet": {
+          "name": "sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "startedAt": {
+          "name": "startedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "finishedAt": {
+          "name": "finishedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "totalRows": {
+          "name": "totalRows",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "newEmployees": {
+          "name": "newEmployees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updatedEmployees": {
+          "name": "updatedEmployees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "skippedRows": {
+          "name": "skippedRows",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "conflictsFound": {
+          "name": "conflictsFound",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "ImportBatchStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'RUNNING'"
+        },
+        "triggeredByUserId": {
+          "name": "triggeredByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "ImportBatch_fileHash_key": {
+          "name": "ImportBatch_fileHash_key",
+          "columns": [
+            {
+              "expression": "fileHash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ImportBatch_triggeredByUserId_fkey": {
+          "name": "ImportBatch_triggeredByUserId_fkey",
+          "tableFrom": "ImportBatch",
+          "tableTo": "User",
+          "columnsFrom": [
+            "triggeredByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ImportedAttendanceReference": {
+      "name": "ImportedAttendanceReference",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employeeImportSourceId": {
+          "name": "employeeImportSourceId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rawCode": {
+          "name": "rawCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "importedAt": {
+          "name": "importedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "ImportedAttendanceReference_employeeId_idx": {
+          "name": "ImportedAttendanceReference_employeeId_idx",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ImportedAttendanceReference_employeeImportSourceId_key": {
+          "name": "ImportedAttendanceReference_employeeImportSourceId_key",
+          "columns": [
+            {
+              "expression": "employeeImportSourceId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ImportedAttendanceReference_employeeId_fkey": {
+          "name": "ImportedAttendanceReference_employeeId_fkey",
+          "tableFrom": "ImportedAttendanceReference",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "ImportedAttendanceReference_employeeImportSourceId_fkey": {
+          "name": "ImportedAttendanceReference_employeeImportSourceId_fkey",
+          "tableFrom": "ImportedAttendanceReference",
+          "tableTo": "EmployeeImportSource",
+          "columnsFrom": [
+            "employeeImportSourceId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.PendingMove": {
+      "name": "PendingMove",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fromWorkstationId": {
+          "name": "fromWorkstationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "toWorkstationId": {
+          "name": "toWorkstationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shift": {
+          "name": "shift",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GENERAL'"
+        },
+        "requestedByUserId": {
+          "name": "requestedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requestedAt": {
+          "name": "requestedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "status": {
+          "name": "status",
+          "type": "PendingMoveStatus",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "resolvedByUserId": {
+          "name": "resolvedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolvedAt": {
+          "name": "resolvedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PendingMove_employeeId_date_idx": {
+          "name": "PendingMove_employeeId_date_idx",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "PendingMove_status_date_idx": {
+          "name": "PendingMove_status_date_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "date_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "PendingMove_employeeId_fkey": {
+          "name": "PendingMove_employeeId_fkey",
+          "tableFrom": "PendingMove",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "PendingMove_fromWorkstationId_fkey": {
+          "name": "PendingMove_fromWorkstationId_fkey",
+          "tableFrom": "PendingMove",
+          "tableTo": "Workstation",
+          "columnsFrom": [
+            "fromWorkstationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "PendingMove_toWorkstationId_fkey": {
+          "name": "PendingMove_toWorkstationId_fkey",
+          "tableFrom": "PendingMove",
+          "tableTo": "Workstation",
+          "columnsFrom": [
+            "toWorkstationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "PendingMove_requestedByUserId_fkey": {
+          "name": "PendingMove_requestedByUserId_fkey",
+          "tableFrom": "PendingMove",
+          "tableTo": "User",
+          "columnsFrom": [
+            "requestedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "PendingMove_resolvedByUserId_fkey": {
+          "name": "PendingMove_resolvedByUserId_fkey",
+          "tableFrom": "PendingMove",
+          "tableTo": "User",
+          "columnsFrom": [
+            "resolvedByUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.RoleModuleAccess": {
+      "name": "RoleModuleAccess",
+      "schema": "",
+      "columns": {
+        "role": {
+          "name": "role",
+          "type": "UserRole",
+          "typeSchema": "public",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "modules": {
+          "name": "modules",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.RoleModulePermission": {
+      "name": "RoleModulePermission",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "UserRole",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moduleKey": {
+          "name": "moduleKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allowed": {
+          "name": "allowed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedByUserId": {
+          "name": "updatedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "RoleModulePermission_role_moduleKey_key": {
+          "name": "RoleModulePermission_role_moduleKey_key",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "moduleKey",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Skill": {
+      "name": "Skill",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Skill_code_key": {
+          "name": "Skill_code_key",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.User": {
+      "name": "User",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "employeeNumber": {
+          "name": "employeeNumber",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "passwordHash": {
+          "name": "passwordHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "UserRole",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "mustChangePassword": {
+          "name": "mustChangePassword",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "lastLoginAt": {
+          "name": "lastLoginAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employeeId": {
+          "name": "employeeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oidcSub": {
+          "name": "oidcSub",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "User_employeeId_key": {
+          "name": "User_employeeId_key",
+          "columns": [
+            {
+              "expression": "employeeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "User_employeeNumber_key": {
+          "name": "User_employeeNumber_key",
+          "columns": [
+            {
+              "expression": "employeeNumber",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "User_oidcSub_key": {
+          "name": "User_oidcSub_key",
+          "columns": [
+            {
+              "expression": "oidcSub",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "User_role_idx": {
+          "name": "User_role_idx",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "User_username_key": {
+          "name": "User_username_key",
+          "columns": [
+            {
+              "expression": "username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "User_employeeId_fkey": {
+          "name": "User_employeeId_fkey",
+          "tableFrom": "User",
+          "tableTo": "Employee",
+          "columnsFrom": [
+            "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.UserModulePermission": {
+      "name": "UserModulePermission",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moduleKey": {
+          "name": "moduleKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effect": {
+          "name": "effect",
+          "type": "UserPermissionEffect",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedByUserId": {
+          "name": "updatedByUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "UserModulePermission_userId_moduleKey_key": {
+          "name": "UserModulePermission_userId_moduleKey_key",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "moduleKey",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "UserModulePermission_userId_fkey": {
+          "name": "UserModulePermission_userId_fkey",
+          "tableFrom": "UserModulePermission",
+          "tableTo": "User",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.WorkArea": {
+      "name": "WorkArea",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "displayOrder": {
+          "name": "displayOrder",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "WorkArea_code_key": {
+          "name": "WorkArea_code_key",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Workstation": {
+      "name": "Workstation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "workAreaId": {
+          "name": "workAreaId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requiredSkillId": {
+          "name": "requiredSkillId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capacity": {
+          "name": "capacity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "displayOrder": {
+          "name": "displayOrder",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "category": {
+          "name": "category",
+          "type": "WorkstationCategory",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requiredRoleLabel": {
+          "name": "requiredRoleLabel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "Workstation_workAreaId_name_key": {
+          "name": "Workstation_workAreaId_name_key",
+          "columns": [
+            {
+              "expression": "workAreaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Workstation_workAreaId_fkey": {
+          "name": "Workstation_workAreaId_fkey",
+          "tableFrom": "Workstation",
+          "tableTo": "WorkArea",
+          "columnsFrom": [
+            "workAreaId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "Workstation_requiredSkillId_fkey": {
+          "name": "Workstation_requiredSkillId_fkey",
+          "tableFrom": "Workstation",
+          "tableTo": "Skill",
+          "columnsFrom": [
+            "requiredSkillId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.AccessRequestStatus": {
+      "name": "AccessRequestStatus",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "APPROVED",
+        "DENIED"
+      ]
+    },
+    "public.AssignmentEndReason": {
+      "name": "AssignmentEndReason",
+      "schema": "public",
+      "values": [
+        "MOVED",
+        "RELEASED",
+        "SHIFT_END",
+        "CORRECTION"
+      ]
+    },
+    "public.AttendanceStatus": {
+      "name": "AttendanceStatus",
+      "schema": "public",
+      "values": [
+        "PRESENTE",
+        "AUSENTE",
+        "RETARDO"
+      ]
+    },
+    "public.BajaConflictStatus": {
+      "name": "BajaConflictStatus",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "CONFIRMED_SAME_PERSON",
+        "CONFIRMED_DIFFERENT_PERSON",
+        "IGNORED"
+      ]
+    },
+    "public.DailyAssignmentStatus": {
+      "name": "DailyAssignmentStatus",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "ENDED"
+      ]
+    },
+    "public.EmployeeReconciliationStatus": {
+      "name": "EmployeeReconciliationStatus",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "CONFIRMED_SAME_PERSON",
+        "CONFIRMED_DIFFERENT_PERSON",
+        "IGNORED"
+      ]
+    },
+    "public.EmployeeSkillSource": {
+      "name": "EmployeeSkillSource",
+      "schema": "public",
+      "values": [
+        "IMPORTED",
+        "MANUAL"
+      ]
+    },
+    "public.FiveSClassification": {
+      "name": "FiveSClassification",
+      "schema": "public",
+      "values": [
+        "CUMPLE",
+        "CUMPLE_PARCIAL",
+        "NO_CUMPLE"
+      ]
+    },
+    "public.ImportBatchStatus": {
+      "name": "ImportBatchStatus",
+      "schema": "public",
+      "values": [
+        "RUNNING",
+        "COMPLETED",
+        "FAILED"
+      ]
+    },
+    "public.PendingMoveStatus": {
+      "name": "PendingMoveStatus",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ]
+    },
+    "public.SkillLevel": {
+      "name": "SkillLevel",
+      "schema": "public",
+      "values": [
+        "PUEDE_CUBRIR",
+        "INTERMEDIO",
+        "EXPERTO"
+      ]
+    },
+    "public.UnassignedReason": {
+      "name": "UnassignedReason",
+      "schema": "public",
+      "values": [
+        "BAJA",
+        "TURNO",
+        "FALTA"
+      ]
+    },
+    "public.UserPermissionEffect": {
+      "name": "UserPermissionEffect",
+      "schema": "public",
+      "values": [
+        "ALLOW",
+        "DENY"
+      ]
+    },
+    "public.UserRole": {
+      "name": "UserRole",
+      "schema": "public",
+      "values": [
+        "ADMINISTRADOR",
+        "SUPERVISOR",
+        "LIDER"
+      ]
+    },
+    "public.WorkstationCategory": {
+      "name": "WorkstationCategory",
+      "schema": "public",
+      "values": [
+        "LIDERAZGO",
+        "CALIDAD",
+        "PRODUCCION",
+        "TECNICO",
+        "SUMINISTRO",
+        "APOYO"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

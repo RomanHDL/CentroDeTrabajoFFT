@@ -61,6 +61,13 @@ export const employeeReconciliationStatus = pgEnum('EmployeeReconciliationStatus
   'CONFIRMED_DIFFERENT_PERSON',
   'IGNORED',
 ])
+// 2026-09-02 (OIDC corregido segun apps.mi2.com.mx/stack -- flujo "Solicitar acceso" en vez
+// del error muerto no_local_account, ver AccessRequest abajo).
+export const accessRequestStatus = pgEnum('AccessRequestStatus', [
+  'PENDING',
+  'APPROVED',
+  'DENIED',
+])
 export const employeeSkillSource = pgEnum('EmployeeSkillSource', ['IMPORTED', 'MANUAL'])
 export const importBatchStatus = pgEnum('ImportBatchStatus', ['RUNNING', 'COMPLETED', 'FAILED'])
 export const pendingMoveStatus = pgEnum('PendingMoveStatus', ['PENDING', 'APPROVED', 'REJECTED'])
@@ -99,6 +106,12 @@ export const user = pgTable(
     createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
     updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
     employeeId: text(),
+    // 2026-09-02 (OIDC corregido segun apps.mi2.com.mx/stack): identidad estable de
+    // Nextcloud es claims.sub, NUNCA preferred_username (que ni siquiera se manda). Match
+    // real del login SSO -- ver api/auth/oidc/callback.js. Nullable: los 4 usuarios reales
+    // ya existentes no tienen sub todavia (nunca entraron por SSO); se llena solo cuando
+    // una solicitud de acceso via SSO se aprueba (api/access-requests/[id]/decide.js).
+    oidcSub: text(),
   },
   (table) => [
     uniqueIndex('User_employeeId_key').using(
@@ -108,6 +121,10 @@ export const user = pgTable(
     uniqueIndex('User_employeeNumber_key').using(
       'btree',
       table.employeeNumber.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('User_oidcSub_key').using(
+      'btree',
+      table.oidcSub.asc().nullsLast().op('text_ops'),
     ),
     index('User_role_idx').using('btree', table.role.asc().nullsLast().op('enum_ops')),
     uniqueIndex('User_username_key').using(
@@ -121,6 +138,40 @@ export const user = pgTable(
     })
       .onUpdate('cascade')
       .onDelete('set null'),
+  ],
+)
+// Solicitud de acceso via SSO (2026-09-02, apps.mi2.com.mx/stack seccion 7c -- adaptado, no
+// el scaffold de GAC literal: aqui "aprobar" simplemente crea un User real con el rol que
+// el admin elija, en vez de un sistema de scopes paralelo -- ver api/access-requests/*.js).
+// Se crea cuando alguien entra por SSO (claims.sub resuelto, ID valido) pero ningun User
+// local tiene ese oidcSub todavia.
+export const accessRequest = pgTable(
+  'AccessRequest',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    oidcSub: text().notNull(),
+    email: text().notNull(),
+    name: text(),
+    note: text(),
+    status: accessRequestStatus().default('PENDING').notNull(),
+    decidedByUserId: text(),
+    decidedAt: timestamp({ precision: 3, mode: 'date' }),
+    requestedAt: timestamp({ precision: 3, mode: 'date' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index('AccessRequest_oidcSub_idx').using(
+      'btree',
+      table.oidcSub.asc().nullsLast().op('text_ops'),
+    ),
+    index('AccessRequest_status_idx').using(
+      'btree',
+      table.status.asc().nullsLast().op('enum_ops'),
+    ),
   ],
 )
 export const importedAttendanceReference = pgTable(
