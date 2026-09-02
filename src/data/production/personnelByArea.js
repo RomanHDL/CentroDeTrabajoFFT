@@ -188,6 +188,12 @@ export function getPeopleByArea() {
       map[a.areaId].push({
         id: employee.id,
         name: employee.name,
+        // photoUrl (2026-09-02): sin esto, cualquiera con una asignacion
+        // REAL de hoy (el caso mas comun/visible, ej. Asistencia "Presente
+        // hoy") perdia su foto real aunque `employee.photoUrl` si la
+        // tuviera -- este objeto se construye aparte del snapshot de abajo
+        // y por eso no la heredaba sola.
+        photoUrl: employee.photoUrl || null,
         areaZona: null,
         rawZona: null,
         asistencia: null,

@@ -1,26 +1,24 @@
 import dayjs from 'dayjs'
-import { useMemo } from 'react'
+import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   cardClass,
   cardHeaderClass,
   cardHeaderSubtitleClass,
   cardHeaderTitleClass,
-  cellTextClass,
-  cellTextSecondaryClass,
   metricChipClass,
   pageClass,
   pageSubtitleClass,
   pageTitleClass,
-  tableHeaderRowClass,
-  tableRowClass,
 } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
+import EmployeeAvatar from '../centro-trabajo/EmployeeAvatar'
 import { getAssignmentsForDate } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import {
   canonicalOperationalAreaId,
+  LINE_FAMILY_AREA_IDS,
   operationalGroupMembers,
   WORK_CENTERS,
 } from '../../data/production/catalog'
@@ -74,7 +72,7 @@ import { EmptyState } from '../../ui'
       actualizarse. `usePersonnelVersion()` se agrega como dependencia del
       useMemo de abajo por la misma razon: sin eso, un check-in real
       (propio o sincronizado desde otro dispositivo) nunca refresca esta
-      tabla hasta recargar la pagina.
+      pagina hasta recargar.
    2) Codigo HISTORICO de la columna ASISTENCIA de BASE (capturado
       2026-08-18) -- SOLO para quien todavia no tiene una asignacion real
       hoy. Se muestra siempre junto con su fecha de origen, nunca como si
@@ -92,7 +90,28 @@ import { EmptyState } from '../../ui'
    razonable, no una leyenda confirmada como las otras 3 -- para no
    inventar una certeza que el archivo no da. Quien no trae codigo
    historico (personal agregado despues, ej. ids "sem34-N") se muestra
-   como "Sin dato", tambien neutro. */
+   como "Sin dato", tambien neutro.
+
+   Rediseño tarjetas + drill-down (2026-09-02, a peticion explicita del
+   usuario -- "esperaba cards por area, y dentro de las cards de area
+   estuvieran los trabajadores... la card de lineas FFT, le doy click y
+   salen las 11 lineas, le doy click a una y ya veo quien esta ahi"):
+   reemplaza la tabla plana por 3 niveles de navegacion local (groups ->
+   lines -> people, useState simple, sin ruta nueva). CERO cambios a la
+   forma en que se obtienen/calculan las personas o su estado de
+   asistencia (mismas 2 fuentes de arriba, mismo HISTORIC_STATUS) -- la
+   UNICA diferencia real de datos es que las 11 CT LINEA reales
+   (LINE_FAMILY_AREA_IDS, el mismo set que ya usa AuditoriaPage.jsx para
+   el mismo proposito) se agrupan en una sola card de nivel 1
+   ("Lineas de produccion") en vez de aparecer sueltas: cada linea
+   individual sigue usando exactamente
+   getGroupPeople(operationalGroupMembers(w.id)) + withPresence, igual
+   que cualquier otra area. Las demas areas (Insumos, Accesorios,
+   Midea/High Value, Paletizado, Calidad, Conveyor General, Capacitacion,
+   Team Leader, Entrenador, Limpieza, Gerente, Supervisor) y "Sin area
+   asignada" van directo de su card de nivel 1 al listado de personas,
+   sin nivel intermedio -- el mismo comportamiento de siempre, solo que
+   como cards en vez de filas de tabla. */
 
 const HISTORIC_STATUS = {
   F: { i18nKey: 'statusFalta', tone: 'bad' },
@@ -101,63 +120,95 @@ const HISTORIC_STATUS = {
   A: { i18nKey: 'statusAsistioHistorico', tone: 'default' },
 }
 
-function AttendanceCells({ person, t }) {
+function attendanceStatusFor(person, t) {
   if (person.todayAssignment) {
-    return (
-      <>
-        <TableCell>
-          <span className={metricChipClass('ok')}>{t('statusPresentToday')}</span>
-        </TableCell>
-        <TableCell className={cellTextSecondaryClass}>
-          {person.todayAssignment.checkInAt
-            ? t('detailCheckedInAt', { time: person.todayAssignment.checkInAt })
-            : '—'}
-        </TableCell>
-      </>
-    )
+    return {
+      chip: t('statusPresentToday'),
+      tone: 'ok',
+      detail: person.todayAssignment.checkInAt
+        ? t('detailCheckedInAt', { time: person.todayAssignment.checkInAt })
+        : '—',
+    }
   }
 
   const historic = person.asistencia ? HISTORIC_STATUS[person.asistencia] : null
   if (historic) {
-    return (
-      <>
-        <TableCell>
-          <span className={metricChipClass(historic.tone)}>
-            {t(historic.i18nKey)} ({person.asistencia})
-          </span>
-        </TableCell>
-        <TableCell className={cellTextSecondaryClass}>
-          {t('detailHistoricDate', { date: dayjs(BASE_SNAPSHOT_DATE).format('DD/MM/YYYY') })}
-        </TableCell>
-      </>
-    )
+    return {
+      chip: `${t(historic.i18nKey)} (${person.asistencia})`,
+      tone: historic.tone,
+      detail: t('detailHistoricDate', { date: dayjs(BASE_SNAPSHOT_DATE).format('DD/MM/YYYY') }),
+    }
   }
 
+  return { chip: t('statusUnknown'), tone: 'default', detail: '—' }
+}
+
+/* Foto de empleado: reusa el EmployeeAvatar COMPARTIDO de Centro de
+   Trabajo (23 consumidores en la app) en vez de una copia local -- ahora
+   si tiene con que pintar una foto real, porque `person.photoUrl` ya
+   viene resuelto desde REAL_PERSONNEL_SNAPSHOT/personnelByArea.js (ver
+   comentario de `photoUrl` en realPersonnelSnapshot.js: extraida del
+   Excel 2026-09-02). EmployeeAvatar ya cae solo a iniciales cuando
+   `photoUrl` es null/undefined (personal "sem34-N", filas de BASE sin
+   foto, o cualquier empleado creado despues) -- no hace falta repetir
+   esa logica aqui. */
+function EmployeeCard({ person, t }) {
+  const status = attendanceStatusFor(person, t)
   return (
-    <>
-      <TableCell>
-        <span className={metricChipClass('default')}>{t('statusUnknown')}</span>
-      </TableCell>
-      <TableCell className={cellTextSecondaryClass}>—</TableCell>
-    </>
+    <div className={cn(cardClass, 'p-3')}>
+      <div className="flex items-start gap-2.5">
+        <EmployeeAvatar employee={person} size={44} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13.5px] font-extrabold">{person.name}</p>
+          <p className="mt-0.5 text-[11.5px] text-muted-foreground">{status.detail}</p>
+          <div className="mt-1.5">
+            <span className={metricChipClass(status.tone)}>{status.chip}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
-function AreaGroupRows({ group, t }) {
+/* Cards de nivel 1 (grupos de area) y nivel 2 (lineas dentro de "Lineas de
+   produccion") comparten el mismo diseño de tarjeta clicable -- mismo
+   lenguaje visual que AuditModuleCard (AuditoriaPage.jsx) y las cards de
+   "Areas de trabajo" del resto de Centro de Trabajo (cardClass, hover
+   sutil, chip de conteo). */
+function GroupCard({ name, count, onClick, hasDrillDown }) {
   return (
-    <>
-      <TableRow className="border-b border-border bg-black/[.025] dark:bg-white/[.035]">
-        <TableCell colSpan={3} className="py-2 text-[12px] font-extrabold">
-          {group.name} ({group.people.length})
-        </TableCell>
-      </TableRow>
-      {group.people.map((person, idx) => (
-        <TableRow key={person.id} className={tableRowClass(idx)}>
-          <TableCell className={cn(cellTextClass, 'font-bold')}>{person.name}</TableCell>
-          <AttendanceCells person={person} t={t} />
-        </TableRow>
-      ))}
-    </>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        cardClass,
+        'flex cursor-pointer select-none flex-col gap-3 p-5 text-left transition-transform duration-150 hover:-translate-y-0.5',
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-500/[0.12]">
+          <Users className="h-5 w-5 text-blue-500" />
+        </div>
+        {hasDrillDown && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
+      </div>
+      <div>
+        <p className="text-[15px] font-extrabold">{name}</p>
+        <p className="mt-0.5 text-[12px] font-semibold text-muted-foreground">{count}</p>
+      </div>
+    </button>
+  )
+}
+
+function BackButton({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 text-[12.5px] font-bold text-muted-foreground hover:text-foreground"
+    >
+      <ChevronLeft className="h-4 w-4" />
+      {label}
+    </button>
   )
 }
 
@@ -191,13 +242,42 @@ export default function AsistenciaPage() {
     const canonicalAreas = WORK_CENTERS.filter(
       (w) => w.active !== false && canonicalOperationalAreaId(w.id) === w.id,
     )
-    const areaGroups = canonicalAreas
+
+    // Las 11 CT LINEA reales (LINEA1..10 + PROYECTO/CT LINEA 0) se agrupan
+    // en una sola card de nivel 1 ("Lineas de produccion") -- mismo
+    // LINE_FAMILY_AREA_IDS que ya usa AuditoriaPage.jsx para el mismo fin.
+    // Cada linea individual sigue calculandose exactamente igual que
+    // cualquier otra area (getGroupPeople + operationalGroupMembers +
+    // withPresence), nunca una segunda fuente.
+    const lineWorkCenters = canonicalAreas.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id))
+    const lines = lineWorkCenters.map((w) => ({
+      id: w.id,
+      name: w.name,
+      people: withPresence(getGroupPeople(operationalGroupMembers(w.id))),
+    }))
+    const linesTotalPeople = lines.reduce((sum, l) => sum + l.people.length, 0)
+
+    const otherAreaGroups = canonicalAreas
+      .filter((w) => !LINE_FAMILY_AREA_IDS.has(w.id))
       .map((w) => ({
         id: w.id,
+        kind: 'people',
         name: w.name,
         people: withPresence(getGroupPeople(operationalGroupMembers(w.id))),
       }))
       .filter((g) => g.people.length > 0)
+
+    const areaGroups = []
+    if (linesTotalPeople > 0) {
+      areaGroups.push({
+        id: 'LINEAS',
+        kind: 'lines',
+        name: t('groupLines'),
+        lines,
+        people: lines.flatMap((l) => l.people),
+      })
+    }
+    areaGroups.push(...otherAreaGroups)
 
     // "Sin area asignada" (misma fuente que la card ya existente en Centro
     // de Trabajo, getPeopleWithoutArea) al final -- incluye tambien a quien
@@ -206,12 +286,50 @@ export default function AsistenciaPage() {
     // "atrapadas" en un area que ya no se muestra en ningun lado).
     const sinArea = withPresence(getPeopleWithoutArea())
     if (sinArea.length > 0) {
-      areaGroups.push({ id: 'SIN_AREA', name: t('areaSinAsignar'), people: sinArea })
+      areaGroups.push({ id: 'SIN_AREA', kind: 'people', name: t('areaSinAsignar'), people: sinArea })
     }
     return areaGroups
   }, [t, version])
 
-  const totalPeople = groups.reduce((sum, g) => sum + g.people.length, 0)
+  const totalPeople = groups.reduce(
+    (sum, g) => sum + (g.kind === 'lines' ? g.people.length : g.people.length),
+    0,
+  )
+
+  // Navegacion local (2026-09-02, sin router nuevo): groups -> lines (solo
+  // para "Lineas de produccion") -> people. `groupId`/`lineId` se
+  // resuelven contra `groups` en cada render, nunca se guarda una copia
+  // del objeto (asi siempre reflejan el useMemo mas reciente, ej. si un
+  // check-in cambia el conteo mientras el usuario esta adentro).
+  const [nav, setNav] = useState({ level: 'groups', groupId: null, lineId: null })
+
+  const selectedGroup = groups.find((g) => g.id === nav.groupId) || null
+  const selectedLine =
+    selectedGroup?.kind === 'lines'
+      ? selectedGroup.lines.find((l) => l.id === nav.lineId) || null
+      : null
+
+  function openGroup(group) {
+    if (group.kind === 'lines') {
+      setNav({ level: 'lines', groupId: group.id, lineId: null })
+    } else {
+      setNav({ level: 'people', groupId: group.id, lineId: null })
+    }
+  }
+
+  function openLine(line) {
+    setNav((prev) => ({ ...prev, level: 'people', lineId: line.id }))
+  }
+
+  function goToGroups() {
+    setNav({ level: 'groups', groupId: null, lineId: null })
+  }
+
+  function goToLines() {
+    setNav((prev) => ({ level: 'lines', groupId: prev.groupId, lineId: null }))
+  }
+
+  const peopleToShow = selectedLine ? selectedLine.people : selectedGroup?.people || []
 
   return (
     <div className={pageClass}>
@@ -225,31 +343,79 @@ export default function AsistenciaPage() {
       <div className={cardClass}>
         <div className={cardHeaderClass}>
           <div className="min-w-0 flex-1">
-            <p className={cardHeaderTitleClass}>{t('tableTitle')}</p>
-            <p className={cardHeaderSubtitleClass}>{t('tableSubtitle')}</p>
+            {nav.level === 'groups' && (
+              <>
+                <p className={cardHeaderTitleClass}>{t('tableTitle')}</p>
+                <p className={cardHeaderSubtitleClass}>{t('tableSubtitle')}</p>
+              </>
+            )}
+            {nav.level === 'lines' && selectedGroup && (
+              <>
+                <BackButton label={t('backToGroups')} onClick={goToGroups} />
+                <p className={cn(cardHeaderTitleClass, 'mt-1')}>{selectedGroup.name}</p>
+                <p className={cardHeaderSubtitleClass}>{t('linesSubtitle')}</p>
+              </>
+            )}
+            {nav.level === 'people' && selectedGroup && (
+              <>
+                <BackButton
+                  label={selectedLine ? t('backToLines') : t('backToGroups')}
+                  onClick={selectedLine ? goToLines : goToGroups}
+                />
+                <p className={cn(cardHeaderTitleClass, 'mt-1')}>
+                  {selectedLine ? selectedLine.name : selectedGroup.name}
+                </p>
+                <p className={cardHeaderSubtitleClass}>
+                  {t('peopleSubtitle', { count: peopleToShow.length })}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
-        {totalPeople === 0 ? (
-          <EmptyState title={t('emptyStateTitle')} description={t('emptyStateDescription')} />
-        ) : (
-          <div className="max-h-[75vh] overflow-auto">
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-card">
-                <TableRow className={tableHeaderRowClass}>
-                  <TableHead>{t('colEmployee')}</TableHead>
-                  <TableHead>{t('colStatus')}</TableHead>
-                  <TableHead>{t('colDetail')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div className="p-4">
+          {nav.level === 'groups' &&
+            (totalPeople === 0 ? (
+              <EmptyState title={t('emptyStateTitle')} description={t('emptyStateDescription')} />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
-                  <AreaGroupRows key={group.id} group={group} t={t} />
+                  <GroupCard
+                    key={group.id}
+                    name={group.name}
+                    count={t('peopleCount', { count: group.people.length })}
+                    hasDrillDown={group.kind === 'lines'}
+                    onClick={() => openGroup(group)}
+                  />
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              </div>
+            ))}
+
+          {nav.level === 'lines' && selectedGroup && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {selectedGroup.lines.map((line) => (
+                <GroupCard
+                  key={line.id}
+                  name={line.name}
+                  count={t('peopleCount', { count: line.people.length })}
+                  hasDrillDown={false}
+                  onClick={() => openLine(line)}
+                />
+              ))}
+            </div>
+          )}
+
+          {nav.level === 'people' &&
+            (peopleToShow.length === 0 ? (
+              <EmptyState title={t('emptyStateTitle')} description={t('emptyStateDescription')} />
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {peopleToShow.map((person) => (
+                  <EmployeeCard key={person.id} person={person} t={t} />
+                ))}
+              </div>
+            ))}
+        </div>
       </div>
     </div>
   )
