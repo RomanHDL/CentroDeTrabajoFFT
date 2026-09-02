@@ -39,6 +39,7 @@ import {
 } from '../../data/personnel/repository'
 import {
   canonicalOperationalAreaId,
+  LINE_FAMILY_AREA_IDS,
   WORK_CENTERS,
   workCenterById,
 } from '../../data/production/catalog'
@@ -83,6 +84,29 @@ const MODULE_I18N = {
 // Los 5 pilares reales de la metodologia 5S (estandar, no inventado por
 // este proyecto) -- S1..S5 en el orden pedido explicitamente.
 const FIVE_S_STEPS = ['s1', 's2', 's3', 's4', 's5']
+
+/* 2026-09-02 (a peticion explicita del usuario, "las auditorias son por
+   areas de trabajo GLOBAL... lineas de produccion, insumos, accesorios,
+   midea y paletizado"): antes el selector de "Centro de trabajo" listaba
+   TODO WORK_CENTERS (cada linea individual LINEA1..10/PROYECTO, mas
+   areas administrativas como Team Leader/Supervisor/Capacitacion) --
+   ahora son exactamente estos 5 grupos, los mismos que se ven como cards
+   en "Areas de trabajo". "Lineas de produccion" es especial: agrupa las
+   11 lineas reales (LINE_FAMILY_AREA_IDS) y pide elegir CUAL linea en un
+   segundo select antes de llegar a Puesto de trabajo -- las otras 4 ya
+   son una sola area real, sin ese paso extra. */
+const AUDIT_AREA_GROUPS = [
+  { key: 'LINEAS', labelKey: 'auditAreaLines' },
+  { key: 'INSUMOS', labelKey: 'auditAreaInsumos', areaId: 'INSUMOS' },
+  { key: 'ACCESORIOS', labelKey: 'auditAreaAccesorios', areaId: 'ACCESORIOS' },
+  { key: 'MIDEA', labelKey: 'auditAreaMidea', areaId: 'HIGH_VALUE' },
+  { key: 'PALETIZADO', labelKey: 'auditAreaPaletizado', areaId: 'PALETIZADO' },
+]
+
+function groupKeyForAreaId(areaId) {
+  if (LINE_FAMILY_AREA_IDS.has(areaId)) return 'LINEAS'
+  return AUDIT_AREA_GROUPS.find((g) => g.areaId === areaId)?.key || null
+}
 
 // El empleado que resuelve getLineWorkstationsWithOccupancy trae el id LOCAL
 // (localStorage: snapshot/EMPLOYEE_DIRECTORY o "emp-<ts>-<n>"), NUNCA el cuid
@@ -206,6 +230,12 @@ function FiveSDialog({ onClose }) {
   const { t } = useTranslation('auditoria')
   const [step, setStep] = useState(null)
   const [classifications, setClassifications] = useState({})
+  // selectedGroupKey/selectedLineId son SOLO de flujo de UI (ver
+  // AUDIT_AREA_GROUPS arriba) -- selectedAreaId sigue siendo la unica
+  // fuente real que consume getLineWorkstationsWithOccupancy, exactamente
+  // como antes.
+  const [selectedGroupKey, setSelectedGroupKey] = useState('')
+  const [selectedLineId, setSelectedLineId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [selectedStationName, setSelectedStationName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -272,8 +302,17 @@ function FiveSDialog({ onClose }) {
       : null
   const canStartAudit = Boolean(selectedArea && selectedStation && auditedEmployee && serverEmployeeRecord)
 
-  function handleAreaChange(areaId) {
-    setSelectedAreaId(areaId)
+  function handleGroupChange(groupKey) {
+    setSelectedGroupKey(groupKey)
+    setSelectedLineId('')
+    setSelectedStationName('')
+    const group = AUDIT_AREA_GROUPS.find((g) => g.key === groupKey)
+    setSelectedAreaId(group?.areaId || '') // vacio para 'LINEAS' -- falta elegir la linea real
+  }
+
+  function handleLineChange(lineId) {
+    setSelectedLineId(lineId)
+    setSelectedAreaId(lineId)
     setSelectedStationName('')
   }
 
@@ -286,6 +325,9 @@ function FiveSDialog({ onClose }) {
       return
     }
     setPersonSearchError('')
+    const groupKey = groupKeyForAreaId(assignment.areaId)
+    setSelectedGroupKey(groupKey || '')
+    setSelectedLineId(groupKey === 'LINEAS' ? assignment.areaId : '')
     setPersonSearch('')
     setSelectedAreaId(assignment.areaId)
     setSelectedStationName(assignment.stationId)
@@ -323,6 +365,8 @@ function FiveSDialog({ onClose }) {
   function handleClose() {
     setStep(null)
     setClassifications({})
+    setSelectedGroupKey('')
+    setSelectedLineId('')
     setSelectedAreaId('')
     setSelectedStationName('')
     setSubmitError('')
@@ -403,19 +447,37 @@ function FiveSDialog({ onClose }) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="fives-area">{t('workCenterLabel')}</Label>
-              <Select value={selectedAreaId} onValueChange={handleAreaChange}>
+              <Select value={selectedGroupKey} onValueChange={handleGroupChange}>
                 <SelectTrigger id="fives-area">
                   <SelectValue placeholder={t('workCenterPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORK_CENTERS.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {workCenterById(w.id)?.name || w.name}
+                  {AUDIT_AREA_GROUPS.map((g) => (
+                    <SelectItem key={g.key} value={g.key}>
+                      {t(g.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {selectedGroupKey === 'LINEAS' && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="fives-line">{t('lineLabel')}</Label>
+                <Select value={selectedLineId} onValueChange={handleLineChange}>
+                  <SelectTrigger id="fives-line">
+                    <SelectValue placeholder={t('linePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {workCenterById(w.id)?.name || w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {selectedAreaId && (
               <div className="flex flex-col gap-1.5">

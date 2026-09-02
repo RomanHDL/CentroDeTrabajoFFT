@@ -152,9 +152,18 @@ export function formatShiftSchedule(shift) {
    el calculo teorico: el usuario confirmo explicitamente (pregunta
    directa) que la captura real de piezas producidas por linea/turno se
    agrega despues, cuando definan de donde sale ese dato -- nunca se
-   inventa ni se estima aqui. */
+   inventa ni se estima aqui.
+
+   2026-09-02, segunda correccion (a peticion explicita del usuario,
+   reportando que Takt Time "desaparecia" en Tiempo Extra -- 17:11 a
+   22:00): Tiempo Extra se considera parte del turno de dia ("va junto
+   con el turno de dia los 1500", confirmado explicitamente) -- comparte
+   la MISMA meta de 1500 piezas que Matutino, y por lo tanto el mismo
+   Takt Time (20.8 s/pieza). No es un turno con meta propia distinta,
+   es una extension del de dia. */
 export const TAKT_TARGET_PCS_BY_SHIFT = {
   MATUTINO: 1500,
+  TIEMPO_EXTRA: 1500,
   NOCHE: 500,
 }
 const TAKT_NET_SHIFT_SECONDS = 8 * 3600 + 40 * 60 // 8 h 40 min netos, mismo valor para ambos turnos
