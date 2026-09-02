@@ -35,17 +35,22 @@ import {
   cardHeaderTitleClass,
   cellTextClass,
   cellTextSecondaryClass,
-  kpiCardClass,
   metricChipClass,
   statusChipClass,
   tableHeaderRowClass,
   tableRowClass,
 } from '@/lib/pageStyles'
-import { cn, hexToRgba } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { getBajaEmployees } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getRoleLabels } from '../../layout/roleLabels'
 import { EmptyState } from '../../ui'
+// Reutiliza la MISMA card KPI horizontal que ya usa "Personal" (2026-09-02, a peticion
+// explicita del usuario: "Bajas" debe adoptar el mismo lenguaje visual de Personal, sin
+// copiar su funcionalidad). "Ultima baja" usa el slot `children` (aditivo, ver el propio
+// comentario de DashboardKpiCard) porque su contenido real -- nombre + fecha -- no encaja
+// en el slot rigido de numero grande que usan las otras 2 cards.
+import DashboardKpiCard from '../dashboard/DashboardKpiCard'
 import EmployeeAvatar from './EmployeeAvatar'
 
 /* Personal ya no asignable (2026-08-24, a peticion explicita del usuario): getBajaEmployees()
@@ -204,49 +209,40 @@ export default function BajasTab() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 border-b border-border p-4 md:grid-cols-2 xl:grid-cols-3">
-        <BajaKpiCard
-          kpiAccent="blue"
-          color="#3B82F6"
-          icon={<Users className="h-5 w-5" />}
+      <div className="grid grid-cols-1 gap-4 border-b border-border p-4 md:grid-cols-2 xl:grid-cols-3">
+        <DashboardKpiCard
+          icon={<Users />}
+          accent="#3B82F6"
           title={t('bajasTab.kpiTotalTitle')}
           subtitle={t('bajasTab.kpiTotalSubtitle')}
           value={totalBajas}
         />
-        <BajaKpiCard
-          kpiAccent="cyan"
-          color="#06B6D4"
-          icon={<CalendarDays className="h-5 w-5" />}
+        <DashboardKpiCard
+          icon={<CalendarDays />}
+          accent="#06B6D4"
           title={t('bajasTab.kpiMonthTitle')}
           subtitle={t('bajasTab.kpiMonthSubtitle')}
           value={thisMonthCount}
         />
-        <div className={cn(kpiCardClass('red'), 'flex items-center gap-3 rounded-2xl p-4')}>
-          <div
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
-            style={{ backgroundColor: hexToRgba('#EF4444', 0.12), color: '#EF4444' }}
-          >
-            <History className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              {t('bajasTab.kpiLastTitle')}
-            </p>
-            <p className="text-xs text-muted-foreground">{t('bajasTab.kpiLastSubtitle')}</p>
-            {lastBaja ? (
-              <>
-                <p className="truncate text-[15px] font-extrabold text-red-700 dark:text-red-400">
-                  {lastBaja.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {dayjs(lastBaja.unassignedReasonSetAt).format('DD/MM/YYYY')}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('bajasTab.kpiLastEmpty')}</p>
-            )}
-          </div>
-        </div>
+        <DashboardKpiCard
+          icon={<History />}
+          accent="#EF4444"
+          title={t('bajasTab.kpiLastTitle')}
+          subtitle={t('bajasTab.kpiLastSubtitle')}
+        >
+          {lastBaja ? (
+            <>
+              <p className="truncate text-[15px] font-extrabold text-red-700 dark:text-red-400">
+                {lastBaja.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {dayjs(lastBaja.unassignedReasonSetAt).format('DD/MM/YYYY')}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('bajasTab.kpiLastEmpty')}</p>
+          )}
+        </DashboardKpiCard>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
@@ -456,28 +452,6 @@ export default function BajasTab() {
             </Button>
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function BajaKpiCard({ kpiAccent, color, icon, title, subtitle, value }) {
-  return (
-    <div className={cn(kpiCardClass(kpiAccent), 'flex items-center gap-3 rounded-2xl p-4')}>
-      <div
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
-        style={{ backgroundColor: hexToRgba(color, 0.12), color }}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          {title}
-        </p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
-        <p className="text-2xl font-extrabold" style={{ color }}>
-          {value}
-        </p>
       </div>
     </div>
   )

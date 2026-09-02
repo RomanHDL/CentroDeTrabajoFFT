@@ -26,16 +26,21 @@ import {
   cardHeaderClass,
   cardHeaderSubtitleClass,
   cardHeaderTitleClass,
-  kpiCardClass,
   metricChipClass,
 } from '@/lib/pageStyles'
-import { cn, hexToRgba } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { setEmployeeUnassignedReason } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getPeopleWithoutArea } from '../../data/production/personnelByArea'
 import { EmptyState } from '../../ui'
 import { showToast } from '../../ui/toast'
+// Reutiliza la MISMA card KPI horizontal que ya usa "Personal" (2026-09-02, a peticion
+// explicita del usuario: "Sin asignar" debe adoptar el mismo lenguaje visual de Personal --
+// mismo icono a la izquierda, titulo, subtitulo, numero grande, dato secundario, acento de
+// color -- sin copiar su funcionalidad). DashboardKpiCard ahora soporta onClick/active de
+// forma aditiva (ver su propio comentario) precisamente para este caso de reuso.
+import DashboardKpiCard from '../dashboard/DashboardKpiCard'
 import EmployeeAvatar from './EmployeeAvatar'
 
 /* Rediseño 2026-09-02 (a peticion explicita del usuario, mockup proporcionado) --
@@ -211,17 +216,25 @@ export default function PersonalSinAsignarTab() {
 
       {people.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-4 border-b border-border p-5 sm:grid-cols-2 xl:grid-cols-4">
-            {KPI_DEFS.map((def) => (
-              <SinAsignarKpiCard
-                key={def.key}
-                def={def}
-                count={counts[def.key]}
-                total={people.length}
-                active={motivoFilter === def.key}
-                onClick={() => setMotivoFilter((prev) => (prev === def.key ? 'TODOS' : def.key))}
-              />
-            ))}
+          <div className="grid grid-cols-1 gap-4 border-b border-border p-5 sm:grid-cols-2 md:grid-cols-4">
+            {KPI_DEFS.map((def) => {
+              const Icon = def.icon
+              const count = counts[def.key]
+              const pct = people.length > 0 ? ((count / people.length) * 100).toFixed(1) : '0.0'
+              return (
+                <DashboardKpiCard
+                  key={def.key}
+                  icon={<Icon />}
+                  accent={def.color}
+                  title={t(def.labelKey)}
+                  subtitle={t(def.subtitleKey)}
+                  value={count}
+                  unit={t('personalSinAsignarTab.kpiPercentOfTotal', { pct })}
+                  active={motivoFilter === def.key}
+                  onClick={() => setMotivoFilter((prev) => (prev === def.key ? 'TODOS' : def.key))}
+                />
+              )
+            })}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
@@ -344,54 +357,6 @@ export default function PersonalSinAsignarTab() {
         )}
       </div>
     </div>
-  )
-}
-
-// Rediseño 2026-09-02 (a peticion explicita del usuario, mockup proporcionado): las 4 KPI
-// pasan de compactas/horizontales a GRANDES -- mismo protagonismo visual que el mockup, con
-// porcentaje real del total (nunca hardcodeado, se calcula de `count`/`total` en cada render).
-function SinAsignarKpiCard({ def, count, total, active, onClick }) {
-  const { t } = useTranslation('centroTrabajo')
-  const Icon = def.icon
-  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        kpiCardClass(def.accent),
-        'flex flex-col gap-4 rounded-2xl p-5 text-left hover:translate-y-0',
-      )}
-      style={
-        active
-          ? { borderColor: def.color, borderWidth: 2, backgroundColor: hexToRgba(def.color, 0.06) }
-          : undefined
-      }
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
-          style={{ backgroundColor: hexToRgba(def.color, 0.12), color: def.color }}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-bold uppercase tracking-wide text-foreground">
-            {t(def.labelKey)}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">{t(def.subtitleKey)}</p>
-        </div>
-      </div>
-      <div>
-        <p className="text-[34px] font-extrabold leading-none" style={{ color: def.color }}>
-          {count}
-        </p>
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          {t('personalSinAsignarTab.kpiPercentOfTotal', { pct })}
-        </p>
-      </div>
-    </button>
   )
 }
 
