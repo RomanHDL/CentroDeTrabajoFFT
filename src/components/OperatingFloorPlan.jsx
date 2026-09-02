@@ -793,7 +793,7 @@ function ConveyorNode({ index, station, onOpen }) {
       )}
     >
       <p className="text-[9px] font-extrabold leading-none text-muted-foreground/60">{index}</p>
-      <EmployeeAvatar employee={occupant} size={20} dashed={!occupant} />
+      <EmployeeAvatar employee={occupant} size={20} />
       <p className="min-w-0 flex-1 truncate text-left text-[10px] font-bold leading-[1.15]">
         {occupant ? occupant.name : t('operatingFloorPlan.vacantLabel')}
       </p>

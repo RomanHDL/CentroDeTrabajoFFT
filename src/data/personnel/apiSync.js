@@ -202,17 +202,26 @@ export function syncSwapOrBump({ employeeIdA, employeeIdB, toAreaId, toStationId
    viendo un estado que nunca paso. Por eso esta funcion es `async` y ES el resultado -- quien la
    llama (repository.js/setEmployeeUnassignedReason) espera la respuesta real antes de actualizar
    el store local, y puede mostrar un error real si falla (en vez de revertir solo 15s despues). */
-export async function syncSetUnassignedReason({ employeeId, reason }) {
+// employeeNumber/name (2026-09-02, bug real: "Denilson"/"Mireya" -- gente que existe SOLO en
+// el snapshot estatico, sin fila activa en Employee todavia, asi que serverIdByLocalId nunca
+// tuvo su mapeo y esta funcion siempre tiraba el error de "no sincronizado", sin salida. Mismo
+// patron que syncCheckIn: si no hay serverId cacheado, se manda numero/nombre para que el
+// servidor resuelva o cree (set-unassigned-reason.js ya replica la logica de checkin.js) -- y
+// el id real que responda se cachea aqui mismo para que el resto de esta sesion ya no vuelva a
+// pasar por este camino para la misma persona.
+export async function syncSetUnassignedReason({ employeeId, employeeNumber, name, reason }) {
   const serverId = serverIdByLocalId.get(employeeId)
-  if (!serverId) {
-    throw new Error(
-      'Este empleado todavía no está sincronizado con el servidor. Espera unos segundos e inténtalo de nuevo.',
-    )
-  }
+  const placeholder = isPlaceholderNumber(employeeNumber)
   const data = await apiFetch('/api/personnel/set-unassigned-reason', {
     method: 'POST',
-    body: JSON.stringify({ employeeId: serverId, reason: reason || null }),
+    body: JSON.stringify({
+      employeeId: serverId || undefined,
+      employeeNumber: serverId || placeholder ? undefined : employeeNumber,
+      name: serverId ? undefined : name,
+      reason: reason || null,
+    }),
   })
+  if (data?.employee?.id) serverIdByLocalId.set(employeeId, data.employee.id)
   markRecentWrite(employeeId)
   return data
 }

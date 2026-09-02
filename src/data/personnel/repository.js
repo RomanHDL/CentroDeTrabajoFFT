@@ -150,9 +150,18 @@ export function getBajaEmployees() {
    store local; si falla, quien llama debe mostrar el error real (nunca queda un estado
    fantasma esperando 15s a que un poll lo corrija solo).
    reason: 'BAJA' | 'TURNO' | 'FALTA' | null (null limpia el motivo -- reactiva si la baja vino
-   de este mismo mecanismo, ver set-unassigned-reason.js). */
-export async function setEmployeeUnassignedReason(employeeId, reason) {
-  const data = await syncSetUnassignedReason({ employeeId, reason })
+   de este mismo mecanismo, ver set-unassigned-reason.js).
+   Recibe la persona completa (no solo el id) -- 2026-09-02: syncSetUnassignedReason necesita
+   employeeNumber/name como respaldo para el caso real de alguien que existe solo en el
+   snapshot estatico y todavia no tiene fila activa en Employee (ver comentario ahi). */
+export async function setEmployeeUnassignedReason(person, reason) {
+  const employeeId = person.id
+  const data = await syncSetUnassignedReason({
+    employeeId,
+    employeeNumber: person.employeeNumber,
+    name: person.name,
+    reason,
+  })
   const overrides = readEmployeeStatusOverrides()
   overrides[employeeId] = {
     active: data.employee.active,

@@ -14,18 +14,20 @@ function colorForName(name) {
   return palette[Math.abs(hash) % palette.length]
 }
 
-/* Avatar de empleado — foto si existe (employee.photoUrl),
-   si no iniciales sobre color estable, y si no hay ni
+/* Avatar de empleado — SIEMPRE iniciales sobre color estable (nunca foto), y si no hay
    nombre, icono generico. Nunca rompe la UI por falta de foto.
+
+   2026-09-02 (a peticion explicita del usuario, "quita las fotos del personal... deja
+   como antes las iniciales"): se quito el branch que mostraba employee.photoUrl como
+   <img> -- volvio a mostrarse iniciales-siempre, como era el comportamiento original.
 
    Fase 6c: convertido directo a Tailwind (no una copia paralela) --
    es un primitivo visual autocontenido con 23 consumidores en toda la
    app (incluyendo src/components/OperatingFloorPlan.jsx/WorkAreaMap.jsx,
    fuera de src/pages/centro-trabajo), asi que su conversion beneficia de
    una sola vez a archivos que todavia no tienen su turno de Fase 6. */
-export default function EmployeeAvatar({ employee, size = 56, dashed = false }) {
+export default function EmployeeAvatar({ employee, size = 56 }) {
   const name = employee?.name
-  const photoUrl = employee?.photoUrl
   const style = { width: size, height: size }
 
   if (!employee) {
@@ -36,17 +38,6 @@ export default function EmployeeAvatar({ employee, size = 56, dashed = false }) 
       >
         <User style={{ width: size * 0.5, height: size * 0.5 }} />
       </div>
-    )
-  }
-
-  if (photoUrl) {
-    return (
-      <img
-        src={photoUrl}
-        alt={name}
-        className="shrink-0 rounded-full object-cover"
-        style={{ ...style, border: dashed ? '2px dashed hsl(var(--border))' : 'none' }}
-      />
     )
   }
 

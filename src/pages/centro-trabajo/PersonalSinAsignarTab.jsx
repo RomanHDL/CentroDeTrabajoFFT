@@ -42,7 +42,7 @@ export default function PersonalSinAsignarTab() {
   async function handleSetReason(person, reason) {
     setSavingReasonId(person.id)
     try {
-      await setEmployeeUnassignedReason(person.id, reason)
+      await setEmployeeUnassignedReason(person, reason)
       showToast(
         reason
           ? t('personalDeHoyTab.reasonSetSuccessToast')
