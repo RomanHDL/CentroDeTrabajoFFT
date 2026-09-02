@@ -27,9 +27,9 @@
 // Ademas devuelve pendingMoves (PENDING de la fecha) y resolvedMoves (APPROVED/REJECTED resueltas
 // en los ultimos 3 minutos) -- src/data/personnel/apiSync.js los fusiona en cada poll de 7s para
 // que una solicitud de un LIDER y su resolucion lleguen a otros dispositivos sin recargar.
-import { eq, isNotNull, or } from 'drizzle-orm'
+import { eq, inArray, isNotNull, or } from 'drizzle-orm'
 import { requireAuth } from '../../server-lib/auth.js'
-import { db, employee as employeeTable } from '../../server-lib/db/client.js'
+import { db, employee as employeeTable, user as userTable } from '../../server-lib/db/client.js'
 import { parseDateOnly } from '../../server-lib/personnel.js'
 
 // Reordena el resultado de la relational query de Drizzle (nombres de relacion auto-generados,
@@ -124,6 +124,7 @@ export default requireAuth(async (req, res) => {
         active: employeeTable.active,
         unassignedReason: employeeTable.unassignedReason,
         unassignedReasonSetAt: employeeTable.unassignedReasonSetAt,
+        unassignedReasonSetByUserId: employeeTable.unassignedReasonSetByUserId,
       })
       .from(employeeTable)
       .where(or(eq(employeeTable.active, false), isNotNull(employeeTable.unassignedReason))),
@@ -159,6 +160,32 @@ export default requireAuth(async (req, res) => {
       })
       .then((rows) => rows.map(shapePendingMove)),
   ])
+
+  // "Registrado por" en Bajas (2026-09-02, a peticion explicita del usuario): la columna
+  // Employee.unassignedReasonSetByUserId ya existia (set-unassigned-reason.js la llena desde
+  // el 2026-09-02) pero nunca se exponia al frontend. En vez de un endpoint nuevo (que
+  // necesitaria su propio guard de permisos, arriesgando exponer /api/users a roles que hoy
+  // no lo tienen), se resuelve aqui mismo -- mismo requireAuth de siempre, ya usado por
+  // cualquiera que pueda ver Centro de Trabajo. Solo se consulta si hay al menos un id real
+  // que resolver (la gran mayoria de bajas historicas no tienen usuario real -- vinieron del
+  // snapshot, nunca de una accion en vivo).
+  const registeredByIds = [
+    ...new Set(statusOverrides.map((row) => row.unassignedReasonSetByUserId).filter(Boolean)),
+  ]
+  const registeredByUsers = registeredByIds.length
+    ? await db
+        .select({ id: userTable.id, name: userTable.name, role: userTable.role })
+        .from(userTable)
+        .where(inArray(userTable.id, registeredByIds))
+    : []
+  const registeredByMap = new Map(registeredByUsers.map((u) => [u.id, u]))
+  for (const row of statusOverrides) {
+    const registeredBy = row.unassignedReasonSetByUserId
+      ? registeredByMap.get(row.unassignedReasonSetByUserId)
+      : null
+    row.registeredByName = registeredBy?.name ?? null
+    row.registeredByRole = registeredBy?.role ?? null
+  }
 
   const activeByEmployee = new Map()
   activeAssignments.forEach((a) => activeByEmployee.set(a.employeeId, a))

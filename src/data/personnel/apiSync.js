@@ -566,6 +566,10 @@ async function pollOnce() {
       active: row.active,
       unassignedReason: row.unassignedReason,
       unassignedReasonSetAt: row.unassignedReasonSetAt,
+      // "Registrado por" en Bajas (2026-09-02) -- ya resuelto server-side en roster.js, aqui
+      // solo se transporta tal cual al store local.
+      registeredByName: row.registeredByName ?? null,
+      registeredByRole: row.registeredByRole ?? null,
     }
   })
   const prevStatusOverrides = readEmployeeStatusOverrides()

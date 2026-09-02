@@ -104,6 +104,11 @@ export function getAllEmployees() {
       eligible: o.active !== false,
       unassignedReason: o.unassignedReason ?? null,
       unassignedReasonSetAt: o.unassignedReasonSetAt ?? null,
+      // "Registrado por" en Bajas (2026-09-02, a peticion explicita del usuario) -- null para
+      // cualquier baja historica del snapshot (nunca hubo un usuario real detras de esa alta),
+      // real solo para quien se marco via el mecanismo en vivo -- ver roster.js/apiSync.js.
+      registeredByName: o.registeredByName ?? null,
+      registeredByRole: o.registeredByRole ?? null,
     }
   })
 }
