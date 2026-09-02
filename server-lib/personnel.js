@@ -11,13 +11,13 @@
 // original (ver git history) -- solo cambia el ORM.
 import { and, eq, ne, or, sql } from 'drizzle-orm'
 import {
+  attendance,
+  dailyAssignment,
   db,
   employee,
-  dailyAssignment,
   employeeMovement,
-  attendance,
-  workstation,
   workArea,
+  workstation,
 } from './db/client.js'
 export function todayDateOnly() {
   return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`)
@@ -220,5 +220,206 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
         .onConflictDoNothing({ target: [attendance.employeeId, attendance.date, attendance.shift] })
     }
     return { status: 'OK', assignment }
+  })
+}
+
+/**
+ * Intercambia (SWAP) o "bombea" (BUMP) a un empleado hacia una estacion ya ocupada --
+ * equivalente real de swapOrBumpStation (repository.js), pero ATOMICO en una sola transaccion
+ * (a diferencia del cliente, que antes disparaba 2 llamadas independientes a placeEmployee/move
+ * -- ver api/personnel/move.js).
+ *
+ * BUG REAL confirmado 2026-09-02 (reporte del usuario: "cambio posiciones y a los segundos se
+ * revierten, en TODO EL LAYOUT"): un swap real llama a moveEmployee/placeEmployee 2 veces
+ * (una por cada empleado), cada una en su PROPIA transaccion independiente. Cuando A intenta
+ * entrar a la estacion de B (y viceversa), placeEmployee cuenta la ocupacion ACTUAL de esa
+ * estacion -- que en ese instante SIGUE mostrando a B ahi (la transaccion de B, si es que ya
+ * corrio, es un request HTTP totalmente separado, sin ningun orden garantizado) -- asi que para
+ * cualquier estacion de capacidad 1 (Team Leader, Controles 1/2, etc. -- la inmensa mayoria del
+ * layout) placeEmployee SIEMPRE devuelve STATION_FULL para uno o ambos movimientos. El cliente
+ * (apiSync.js) atrapa ese error en un simple console.error silencioso (fire-and-forget) -- la UI
+ * ya habia mostrado el swap de forma optimista, y nadie se entera de que el servidor lo rechazo
+ * hasta que expira la ventana de proteccion de 15s (RECENT_WRITE_GRACE_MS) y el siguiente poll
+ * revierte al estado real (que nunca cambio). Confirmado en produccion consultando EmployeeMovement/
+ * DailyAssignment directo en la BD: 0 filas nuevas tras un swap "exitoso" en pantalla.
+ *
+ * La solucion real es esta funcion: TODO el intercambio corre en UNA transaccion, asi que nunca
+ * hay un instante donde el servidor vea a "los dos" ocupando la misma estacion a la vez -- se
+ * calcula el estado final (quien queda donde) y se escribe de una sola vez, igual que ya hace
+ * swapOrBumpStation en el cliente para su copia local.
+ *
+ * SWAP: si employeeIdA ya tiene una asignacion ACTIVE hoy, ambos (A y quien sea que ocupe
+ *   `workstationId`) intercambian estacion entre si -- 2 filas ENDED + 2 filas ACTIVE nuevas + 2
+ *   EmployeeMovement (type MOVE para ambos), todo en la misma transaccion.
+ * BUMP: si employeeIdA NO tiene asignacion hoy, el ocupante actual de `workstationId` se libera
+ *   por completo (mismo criterio real que /release.js: endReason RELEASED, SIN EmployeeMovement
+ *   porque ese modelo exige toWorkstationId NOT NULL) y employeeIdA entra ahi de cero (CHECK_IN
+ *   real, con Attendance si es su primera asignacion de hoy -- mismo criterio que placeEmployee).
+ */
+export async function swapOrBumpStation({ employeeIdA, workstationId, shift, actingUserId }) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT id FROM "Workstation" WHERE id = ${workstationId} FOR UPDATE`)
+
+    const [empA] = await tx
+      .select({ active: employee.active })
+      .from(employee)
+      .where(eq(employee.id, employeeIdA))
+      .limit(1)
+    if (!empA || !empA.active) return { status: 'INACTIVE_EMPLOYEE' }
+
+    const [assignmentB] = await tx
+      .select()
+      .from(dailyAssignment)
+      .where(
+        and(eq(dailyAssignment.workstationId, workstationId), eq(dailyAssignment.status, 'ACTIVE')),
+      )
+      .limit(1)
+    if (!assignmentB) return { status: 'STATION_NOT_OCCUPIED' }
+    if (assignmentB.employeeId === employeeIdA) return { status: 'ALREADY_AT_STATION' }
+
+    const today = todayDateOnly()
+    const [assignmentA] = await tx
+      .select()
+      .from(dailyAssignment)
+      .where(and(eq(dailyAssignment.employeeId, employeeIdA), eq(dailyAssignment.status, 'ACTIVE')))
+      .limit(1)
+
+    if (!assignmentA) {
+      // BUMP: B se libera del todo (mismo criterio real que /release.js), A entra de cero.
+      await tx
+        .update(dailyAssignment)
+        .set({
+          status: 'ENDED',
+          endedAt: new Date(),
+          endedByUserId: actingUserId,
+          endReason: 'RELEASED',
+          updatedAt: new Date(),
+        })
+        .where(eq(dailyAssignment.id, assignmentB.id))
+
+      const effectiveShift = shift || assignmentB.shift || 'GENERAL'
+      const [assignment] = await tx
+        .insert(dailyAssignment)
+        .values({
+          employeeId: employeeIdA,
+          date: today,
+          shift: effectiveShift,
+          workstationId,
+          status: 'ACTIVE',
+          assignedByUserId: actingUserId,
+          updatedAt: new Date(),
+        })
+        .returning()
+      await tx.insert(employeeMovement).values({
+        employeeId: employeeIdA,
+        date: today,
+        fromWorkstationId: null,
+        toWorkstationId: workstationId,
+        movedByUserId: actingUserId,
+      })
+      await tx
+        .update(employee)
+        .set({ baselineSuppressed: false, updatedAt: new Date() })
+        .where(and(eq(employee.id, employeeIdA), eq(employee.baselineSuppressed, true)))
+      const [existingAttendance] = await tx
+        .select()
+        .from(attendance)
+        .where(
+          and(
+            eq(attendance.employeeId, employeeIdA),
+            eq(attendance.date, today),
+            eq(attendance.shift, effectiveShift),
+          ),
+        )
+        .limit(1)
+      if (!existingAttendance) {
+        await tx
+          .insert(attendance)
+          .values({
+            employeeId: employeeIdA,
+            date: today,
+            shift: effectiveShift,
+            checkInAt: new Date(),
+            status: 'PRESENTE',
+            registeredByUserId: actingUserId,
+          })
+          .onConflictDoNothing({
+            target: [attendance.employeeId, attendance.date, attendance.shift],
+          })
+      }
+      return { status: 'OK', bumpedEmployeeId: assignmentB.employeeId, assignment }
+    }
+
+    // SWAP: ambos ya tenian asignacion hoy -- terminan sus 2 filas actuales e insertan 2 nuevas
+    // intercambiadas, todo en esta misma transaccion (nunca choca con el check de capacidad de
+    // placeEmployee, que evaluaria a cada uno POR SEPARADO contra una estacion que el otro
+    // "todavia" ocupa en ese instante).
+    await tx
+      .update(dailyAssignment)
+      .set({
+        status: 'ENDED',
+        endedAt: new Date(),
+        endedByUserId: actingUserId,
+        endReason: 'MOVED',
+        updatedAt: new Date(),
+      })
+      .where(or(eq(dailyAssignment.id, assignmentA.id), eq(dailyAssignment.id, assignmentB.id)))
+
+    const [newA] = await tx
+      .insert(dailyAssignment)
+      .values({
+        employeeId: employeeIdA,
+        date: today,
+        shift: assignmentA.shift,
+        workstationId: assignmentB.workstationId,
+        status: 'ACTIVE',
+        assignedByUserId: actingUserId,
+        updatedAt: new Date(),
+      })
+      .returning()
+    const [newB] = await tx
+      .insert(dailyAssignment)
+      .values({
+        employeeId: assignmentB.employeeId,
+        date: today,
+        shift: assignmentB.shift,
+        workstationId: assignmentA.workstationId,
+        status: 'ACTIVE',
+        assignedByUserId: actingUserId,
+        updatedAt: new Date(),
+      })
+      .returning()
+    await tx.insert(employeeMovement).values([
+      {
+        employeeId: employeeIdA,
+        date: today,
+        fromWorkstationId: assignmentA.workstationId,
+        toWorkstationId: assignmentB.workstationId,
+        movedByUserId: actingUserId,
+      },
+      {
+        employeeId: assignmentB.employeeId,
+        date: today,
+        fromWorkstationId: assignmentB.workstationId,
+        toWorkstationId: assignmentA.workstationId,
+        movedByUserId: actingUserId,
+      },
+    ])
+    await tx
+      .update(employee)
+      .set({ baselineSuppressed: false, updatedAt: new Date() })
+      .where(
+        and(
+          or(eq(employee.id, employeeIdA), eq(employee.id, assignmentB.employeeId)),
+          eq(employee.baselineSuppressed, true),
+        ),
+      )
+
+    return {
+      status: 'OK',
+      swappedEmployeeIds: [employeeIdA, assignmentB.employeeId],
+      assignmentA: newA,
+      assignmentB: newB,
+    }
   })
 }

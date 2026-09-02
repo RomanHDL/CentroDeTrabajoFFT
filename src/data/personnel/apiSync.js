@@ -162,6 +162,36 @@ export function syncMove({ employeeId, toAreaId, toStationId, shift }) {
   }).catch((e) => console.error('[personnel-sync] move', e))
 }
 
+/* Intercambio/bump real (2026-09-02, corrige bug real reportado por el usuario -- "cambio
+   posiciones y a los segundos se revierten, en TODO EL LAYOUT"): un swap real NUNCA debe
+   mandarse como 2 llamadas independientes a syncMove -- confirmado en produccion (0 filas
+   nuevas en EmployeeMovement/DailyAssignment tras un swap que la UI ya mostraba) que el
+   servidor rechaza con STATION_FULL a quien sea que su request de /move llegue primero,
+   porque en ese instante la estacion destino SIGUE mostrando ocupante (el otro request,
+   independiente, puede no haber corrido todavia). Un solo POST a /api/personnel/swap
+   (server-lib/personnel.js/swapOrBumpStation) resuelve el intercambio completo en UNA
+   transaccion -- ver el comentario grande ahi para el detalle completo. */
+export function syncSwapOrBump({ employeeIdA, employeeIdB, toAreaId, toStationId, shift }) {
+  markRecentWrite(employeeIdA)
+  markRecentWrite(employeeIdB)
+  const serverId = serverIdByLocalId.get(employeeIdA)
+  if (!serverId) {
+    console.warn(
+      '[personnel-sync] swap: sin serverId todavia, se omite (el siguiente poll lo resuelve)',
+    )
+    return
+  }
+  apiFetch('/api/personnel/swap', {
+    method: 'POST',
+    body: JSON.stringify({
+      employeeId: serverId,
+      workAreaId: toAreaId,
+      stationName: toStationId,
+      shift,
+    }),
+  }).catch((e) => console.error('[personnel-sync] swap', e))
+}
+
 export function syncRelease({ employeeId }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)

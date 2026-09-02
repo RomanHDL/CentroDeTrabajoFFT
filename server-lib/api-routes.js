@@ -27,6 +27,7 @@ import personnelRequestMoveHandler from '../api/personnel/request-move.js'
 import personnelRestoreBaselineHandler from '../api/personnel/restore-baseline.js'
 import personnelRosterHandler from '../api/personnel/roster.js'
 import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline.js'
+import personnelSwapHandler from '../api/personnel/swap.js'
 import rolePermissionByRoleHandler from '../api/role-permissions/[role].js'
 import rolePermissionsIndexHandler from '../api/role-permissions/index.js'
 import userDeactivateHandler from '../api/users/[id]/deactivate.js'
@@ -83,6 +84,7 @@ export function mountApiRoutes(app) {
   app.get('/api/personnel/roster', wrapAsync(personnelRosterHandler))
   app.post('/api/personnel/checkin', wrapAsync(personnelCheckinHandler))
   app.post('/api/personnel/move', wrapAsync(personnelMoveHandler))
+  app.post('/api/personnel/swap', wrapAsync(personnelSwapHandler))
   app.post('/api/personnel/release', wrapAsync(personnelReleaseHandler))
   app.post('/api/personnel/request-move', wrapAsync(personnelRequestMoveHandler))
   app.post('/api/personnel/approve-move', wrapAsync(personnelApproveMoveHandler))

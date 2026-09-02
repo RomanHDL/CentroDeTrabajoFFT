@@ -15,6 +15,7 @@ import {
   syncRequestMove,
   syncRestoreBaseline,
   syncSuppressBaseline,
+  syncSwapOrBump,
 } from './apiSync'
 import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
@@ -906,13 +907,16 @@ export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
     writeMovements(movements)
     ensureAttendance(employeeA, date, bumpedShift, movedAt)
     unsuppressBaselinePlacement(employeeA.id)
-    syncRelease({ employeeId: assignmentB.employeeId })
-    syncCheckIn({
-      employeeId: employeeA.id,
-      employeeNumber: employeeA.employeeNumber,
-      name: employeeA.name,
-      areaId: toAreaId,
-      stationId: toStationId,
+    // syncSwapOrBump (2026-09-02, corrige bug real -- ver comentario grande en apiSync.js):
+    // NUNCA mandar esto como syncRelease + syncCheckIn separados -- son 2 requests HTTP
+    // independientes sin orden garantizado, y placeEmployee (server-lib/personnel.js) puede
+    // rechazar el checkin de A con STATION_FULL si su request le gana la carrera al release de
+    // B. Un solo POST a /api/personnel/swap hace ambas cosas en una transaccion.
+    syncSwapOrBump({
+      employeeIdA: employeeA.id,
+      employeeIdB: assignmentB.employeeId,
+      toAreaId,
+      toStationId,
       shift: bumpedShift,
     })
     notify()
@@ -965,17 +969,18 @@ export function swapOrBumpStation({ employeeIdA, toAreaId, toStationId }) {
   writeMovements(movements)
   unsuppressBaselinePlacement(assignmentA.employeeId)
   unsuppressBaselinePlacement(assignmentB.employeeId)
-  syncMove({
-    employeeId: assignmentA.employeeId,
+  // syncSwapOrBump (2026-09-02, corrige bug real -- ver comentario grande en apiSync.js): 2
+  // syncMove independientes es EXACTAMENTE el bug reportado ("cambio posiciones y a los
+  // segundos se revierten, en TODO EL LAYOUT") -- cada uno es su propia transaccion server-side
+  // sin orden garantizado, asi que quien le gane la carrera al otro intenta entrar a una
+  // estacion que el servidor todavia ve ocupada (STATION_FULL, silencioso). Un solo POST a
+  // /api/personnel/swap hace el intercambio completo en una sola transaccion atomica.
+  syncSwapOrBump({
+    employeeIdA: assignmentA.employeeId,
+    employeeIdB: assignmentB.employeeId,
     toAreaId: assignmentB.areaId,
     toStationId: assignmentB.stationId,
     shift: assignmentA.shift,
-  })
-  syncMove({
-    employeeId: assignmentB.employeeId,
-    toAreaId: fromA.areaId,
-    toStationId: fromA.stationId,
-    shift: assignmentB.shift,
   })
   notify()
   return { status: 'OK', swappedEmployeeIds: [assignmentA.employeeId, assignmentB.employeeId] }
