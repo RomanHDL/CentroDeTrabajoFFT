@@ -63,6 +63,7 @@ const KPI_DEFS = [
     color: '#64748B',
     icon: CircleHelp,
     labelKey: 'personalSinAsignarTab.kpiSinRevisarLabel',
+    subtitleKey: 'personalSinAsignarTab.kpiSinRevisarSubtitle',
   },
   {
     key: 'FALTA',
@@ -70,6 +71,7 @@ const KPI_DEFS = [
     color: '#F59E0B',
     icon: CalendarX,
     labelKey: 'personalSinAsignarTab.kpiFaltaLabel',
+    subtitleKey: 'personalSinAsignarTab.kpiFaltaSubtitle',
   },
   {
     key: 'TURNO',
@@ -77,6 +79,7 @@ const KPI_DEFS = [
     color: '#3B82F6',
     icon: ArrowLeftRight,
     labelKey: 'personalSinAsignarTab.kpiTurnoLabel',
+    subtitleKey: 'personalSinAsignarTab.kpiTurnoSubtitle',
   },
   {
     key: 'BAJA',
@@ -84,6 +87,7 @@ const KPI_DEFS = [
     color: '#EF4444',
     icon: UserX,
     labelKey: 'personalSinAsignarTab.kpiBajaLabel',
+    subtitleKey: 'personalSinAsignarTab.kpiBajaSubtitle',
   },
 ]
 
@@ -207,12 +211,13 @@ export default function PersonalSinAsignarTab() {
 
       {people.length > 0 && (
         <>
-          <div className="grid grid-cols-2 gap-2.5 border-b border-border p-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 border-b border-border p-5 sm:grid-cols-2 xl:grid-cols-4">
             {KPI_DEFS.map((def) => (
               <SinAsignarKpiCard
                 key={def.key}
                 def={def}
                 count={counts[def.key]}
+                total={people.length}
                 active={motivoFilter === def.key}
                 onClick={() => setMotivoFilter((prev) => (prev === def.key ? 'TODOS' : def.key))}
               />
@@ -342,9 +347,13 @@ export default function PersonalSinAsignarTab() {
   )
 }
 
-function SinAsignarKpiCard({ def, count, active, onClick }) {
+// Rediseño 2026-09-02 (a peticion explicita del usuario, mockup proporcionado): las 4 KPI
+// pasan de compactas/horizontales a GRANDES -- mismo protagonismo visual que el mockup, con
+// porcentaje real del total (nunca hardcodeado, se calcula de `count`/`total` en cada render).
+function SinAsignarKpiCard({ def, count, total, active, onClick }) {
   const { t } = useTranslation('centroTrabajo')
   const Icon = def.icon
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
   return (
     <button
       type="button"
@@ -352,7 +361,7 @@ function SinAsignarKpiCard({ def, count, active, onClick }) {
       aria-pressed={active}
       className={cn(
         kpiCardClass(def.accent),
-        'flex items-center gap-2.5 rounded-2xl p-3 text-left hover:translate-y-0',
+        'flex flex-col gap-4 rounded-2xl p-5 text-left hover:translate-y-0',
       )}
       style={
         active
@@ -360,18 +369,26 @@ function SinAsignarKpiCard({ def, count, active, onClick }) {
           : undefined
       }
     >
-      <div
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
-        style={{ backgroundColor: hexToRgba(def.color, 0.12), color: def.color }}
-      >
-        <Icon className="h-[18px] w-[18px]" />
+      <div className="flex items-center gap-3">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+          style={{ backgroundColor: hexToRgba(def.color, 0.12), color: def.color }}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-bold uppercase tracking-wide text-foreground">
+            {t(def.labelKey)}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{t(def.subtitleKey)}</p>
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-[11.5px] font-semibold text-muted-foreground">
-          {t(def.labelKey)}
-        </p>
-        <p className="text-[20px] font-extrabold leading-none" style={{ color: def.color }}>
+      <div>
+        <p className="text-[34px] font-extrabold leading-none" style={{ color: def.color }}>
           {count}
+        </p>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {t('personalSinAsignarTab.kpiPercentOfTotal', { pct })}
         </p>
       </div>
     </button>
@@ -458,8 +475,9 @@ function PersonaSinAsignarItem({ person, saving, selected, selectable, onToggleS
               variant="outline"
               disabled={saving}
               onClick={() => onSetReason(person, 'BAJA')}
-              className="h-7 flex-1 min-w-[64px] border-red-200 text-[10.5px] font-bold text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="h-7 flex-1 min-w-[64px] gap-1 border-red-200 text-[10.5px] font-bold text-red-600 hover:bg-red-50 hover:text-red-700"
             >
+              <UserX className="h-3 w-3" />
               {t('personalSinAsignarTab.markBajaButton')}
             </Button>
             <Button
@@ -467,8 +485,9 @@ function PersonaSinAsignarItem({ person, saving, selected, selectable, onToggleS
               variant="outline"
               disabled={saving}
               onClick={() => onSetReason(person, 'TURNO')}
-              className="h-7 flex-1 min-w-[64px] border-blue-200 text-[10.5px] font-bold text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+              className="h-7 flex-1 min-w-[64px] gap-1 border-blue-200 text-[10.5px] font-bold text-blue-600 hover:bg-blue-50 hover:text-blue-700"
             >
+              <ArrowLeftRight className="h-3 w-3" />
               {t('personalSinAsignarTab.markTurnoButton')}
             </Button>
             <Button
@@ -476,8 +495,9 @@ function PersonaSinAsignarItem({ person, saving, selected, selectable, onToggleS
               variant="outline"
               disabled={saving}
               onClick={() => onSetReason(person, 'FALTA')}
-              className="h-7 flex-1 min-w-[64px] border-amber-200 text-[10.5px] font-bold text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+              className="h-7 flex-1 min-w-[64px] gap-1 border-amber-200 text-[10.5px] font-bold text-amber-600 hover:bg-amber-50 hover:text-amber-700"
             >
+              <CalendarX className="h-3 w-3" />
               {t('personalSinAsignarTab.markFaltaButton')}
             </Button>
           </div>
