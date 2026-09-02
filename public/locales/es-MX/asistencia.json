@@ -57,5 +57,9 @@
   "badgeAbsence": "Inasistencia",
   "coverageRatio": "{{present}} / {{total}} registrados",
   "coverageComplete": "Cobertura completa",
-  "coveragePartial": "Cobertura parcial"
+  "coveragePartial": "Cobertura parcial",
+  "miniPresentesLabel": "Presentes",
+  "miniPendientesLabel": "Pendientes",
+  "miniInasistenciasLabel": "Inasist.",
+  "miniSinMarcarLabel": "Sin marcar"
 }

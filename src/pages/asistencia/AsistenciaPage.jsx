@@ -2,12 +2,15 @@ import dayjs from 'dayjs'
 import {
   BadgeCheck,
   Boxes,
+  Brush,
   Building2,
   Calendar,
   CalendarX,
   ChartPie,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  CircleDashed,
   Clock,
   Crown,
   Dumbbell,
@@ -16,14 +19,13 @@ import {
   Gem,
   GraduationCap,
   HelpCircle,
-  PackageCheck,
-  Puzzle,
   Search,
-  Sparkles,
   Stamp,
   UserCog,
   Users,
+  Warehouse,
   Workflow,
+  Wrench,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -40,7 +42,7 @@ import {
   pageTitleClass,
   progressBarClass,
 } from '@/lib/pageStyles'
-import { cn } from '@/lib/utils'
+import { cn, hexToRgba } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { getAbsentEmployeeIds, getAssignmentsForDate } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
@@ -251,18 +253,18 @@ const ACTIVE_SELECTION_CLASS = 'border-blue-400 bg-blue-500/[0.06]'
    este aqui cae al icono/color generico de siempre (Users/azul). */
 const AREA_VISUALS = {
   LINEAS: { icon: Factory, bg: 'bg-blue-500/[0.12]', text: 'text-blue-500' },
-  PALETIZADO: { icon: PackageCheck, bg: 'bg-amber-500/[0.12]', text: 'text-amber-500' },
-  ACCESORIOS: { icon: Puzzle, bg: 'bg-purple-500/[0.12]', text: 'text-purple-500' },
-  CONVEYOR_PRINCIPAL: { icon: Workflow, bg: 'bg-cyan-500/[0.12]', text: 'text-cyan-500' },
+  PALETIZADO: { icon: Warehouse, bg: 'bg-teal-500/[0.12]', text: 'text-teal-500' },
+  ACCESORIOS: { icon: Wrench, bg: 'bg-purple-500/[0.12]', text: 'text-purple-500' },
+  CONVEYOR_PRINCIPAL: { icon: Workflow, bg: 'bg-sky-500/[0.12]', text: 'text-sky-500' },
   HIGH_VALUE: { icon: Gem, bg: 'bg-rose-500/[0.12]', text: 'text-rose-500' },
   CALIDAD: { icon: BadgeCheck, bg: 'bg-emerald-500/[0.12]', text: 'text-emerald-500' },
   SELLADO: { icon: Stamp, bg: 'bg-indigo-500/[0.12]', text: 'text-indigo-500' },
   INSUMOS: { icon: Boxes, bg: 'bg-orange-500/[0.12]', text: 'text-orange-500' },
   CAPACITACION: { icon: GraduationCap, bg: 'bg-violet-500/[0.12]', text: 'text-violet-500' },
-  TEAM_LEADER: { icon: UserCog, bg: 'bg-sky-500/[0.12]', text: 'text-sky-500' },
-  ENTRENADOR: { icon: Dumbbell, bg: 'bg-teal-500/[0.12]', text: 'text-teal-500' },
-  LIMPIEZA: { icon: Sparkles, bg: 'bg-lime-500/[0.12]', text: 'text-lime-500' },
-  GERENTE: { icon: Crown, bg: 'bg-yellow-500/[0.12]', text: 'text-yellow-500' },
+  TEAM_LEADER: { icon: UserCog, bg: 'bg-cyan-500/[0.12]', text: 'text-cyan-500' },
+  ENTRENADOR: { icon: Dumbbell, bg: 'bg-fuchsia-500/[0.12]', text: 'text-fuchsia-500' },
+  LIMPIEZA: { icon: Brush, bg: 'bg-emerald-600/[0.12]', text: 'text-emerald-600' },
+  GERENTE: { icon: Crown, bg: 'bg-amber-500/[0.12]', text: 'text-amber-500' },
   SUPERVISOR: { icon: Eye, bg: 'bg-fuchsia-500/[0.12]', text: 'text-fuchsia-500' },
   SIN_AREA: { icon: HelpCircle, bg: 'bg-slate-500/[0.12]', text: 'text-slate-500' },
 }
@@ -364,6 +366,100 @@ function AreaCard({ name, count, present, total, onClick, visual = DEFAULT_AREA_
         <span className="w-10 shrink-0 text-right text-[11px] font-bold text-muted-foreground">
           {pct}%
         </span>
+      </div>
+    </button>
+  )
+}
+
+/* Mismo color FUNCIONAL de siempre (coverageBarColor: verde >=80%, ambar <80%/>0%, gris si
+   total=0), en formato hex para poder pintar la pill superior con hexToRgba -- nunca un
+   tercer umbral nuevo solo para esta pill, para no romper el criterio ya documentado arriba
+   ("un solo umbral de color de cobertura en toda la pagina", decision explicita del rediseño
+   2026-09-01). */
+function coverageAccentColor(present, total) {
+  if (total === 0) return '#94A3B8'
+  return coveragePctInt(present, total) >= 80 ? '#10B981' : '#F59E0B'
+}
+
+/* Fila de 4 mini-indicadores (2026-09-02, a peticion explicita del usuario, mockup
+   proporcionado) -- SOLO en las cards de nivel 1 ("Personal por area"), nunca en las cards
+   de linea individual (mismo criterio ya aplicado al icono/color por area, ver AREA_VISUALS).
+   Presentes/Pendientes/Inasistencias son EXACTAMENTE los mismos 3 conjuntos reales que ya
+   usan las KPI/vistas planas de arriba (todayAssignment / !todayAssignment&&!absentIds /
+   absentIds.has), nunca una cuarta fuente de datos inventada. "Sin marcar" es el remanente
+   real (total - los otros 3) -- con el modelo de datos actual ese remanente SIEMPRE da 0,
+   porque "pendientes" ya se define como "todo lo que no es presente ni inasistencia" (los 3
+   conjuntos ya particionan el total exacto) -- el mismo caso que la KPI global de
+   Inasistencias, cuyo subtitulo dice literalmente "Sin forma de marcar aun" mientras el
+   valor sea 0. Se calcula como formula real (nunca un 0 fijo) para que, si el modelo de
+   datos alguna vez agrega un cuarto estado real, este numero lo refleje solo. */
+const MINI_INDICATOR_DEFS = [
+  { key: 'presentes', icon: CheckCircle2, color: '#10B981', labelKey: 'miniPresentesLabel' },
+  { key: 'pendientes', icon: Clock, color: '#F59E0B', labelKey: 'miniPendientesLabel' },
+  { key: 'inasistencias', icon: CalendarX, color: '#EF4444', labelKey: 'miniInasistenciasLabel' },
+  { key: 'sinMarcar', icon: CircleDashed, color: '#64748B', labelKey: 'miniSinMarcarLabel' },
+]
+
+function AreaCardDetailed({ name, stats, visual, onClick, t }) {
+  const pct = coveragePctInt(stats.presentes, stats.total)
+  const accent = coverageAccentColor(stats.presentes, stats.total)
+  const Icon = visual.icon
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        cardClass,
+        'flex min-h-[164px] cursor-pointer select-none flex-col gap-3 p-4 text-left transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-sm',
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-2xl', visual.bg)}>
+          <Icon className={cn('h-5 w-5', visual.text)} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-extrabold leading-tight">{name}</p>
+          <p className="mt-0.5 text-[12px] font-semibold text-muted-foreground">
+            {t('peopleCount', { count: stats.total })}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span
+            className="rounded-full px-2.5 py-1 text-[11px] font-extrabold"
+            style={{ backgroundColor: hexToRgba(accent, 0.14), color: accent }}
+          >
+            {pct}%
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </div>
+      </div>
+
+      <div className={progressBarClass}>
+        <div
+          className={cn('h-full rounded-full', coverageBarColor(stats.presentes, stats.total))}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <div className="grid grid-cols-4 gap-1.5">
+        {MINI_INDICATOR_DEFS.map((def) => {
+          const MiniIcon = def.icon
+          return (
+            <div
+              key={def.key}
+              className="flex flex-col items-center gap-0.5 rounded-lg py-1.5"
+              style={{ backgroundColor: hexToRgba(def.color, 0.08) }}
+            >
+              <div className="flex items-center gap-1" style={{ color: def.color }}>
+                <MiniIcon className="h-3 w-3 shrink-0" />
+                <span className="text-[13px] font-extrabold leading-none">{stats[def.key]}</span>
+              </div>
+              <span className="truncate text-[9px] font-semibold leading-tight text-muted-foreground">
+                {t(def.labelKey)}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </button>
   )
@@ -618,6 +714,24 @@ export default function AsistenciaPage() {
       }))
       .sort((a, b) => coveragePctInt(a.present, a.total) - coveragePctInt(b.present, b.total))
   }, [groups])
+
+  // Desglose de 4 estados por area (2026-09-02, mini-indicadores de las cards de nivel 1) --
+  // presentes/pendientes/inasistencias son EXACTAMENTE los mismos 3 filtros ya usados arriba
+  // para presentPeople/pendingPeople/absentPeople (nunca una fuente nueva), solo aplicados al
+  // subconjunto de personas de cada area en vez del universo completo. Ver comentario de
+  // AreaCardDetailed sobre por que "sinMarcar" es un remanente real y no un 0 fijo.
+  const areaStatsById = useMemo(() => {
+    const map = new Map()
+    for (const g of groups) {
+      const total = g.people.length
+      const presentes = g.people.filter((p) => p.todayAssignment).length
+      const inasistencias = g.people.filter((p) => absentIds.has(p.id)).length
+      const pendientes = g.people.filter((p) => !p.todayAssignment && !absentIds.has(p.id)).length
+      const sinMarcar = Math.max(0, total - presentes - pendientes - inasistencias)
+      map.set(g.id, { total, presentes, pendientes, inasistencias, sinMarcar })
+    }
+    return map
+  }, [groups, absentIds])
 
   // Navegacion local (2026-09-02, sin router nuevo): `mode` distingue la
   // jerarquia real de areas (browse, con level groups -> lines -> people)
@@ -974,14 +1088,13 @@ export default function AsistenciaPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
-                  <AreaCard
+                  <AreaCardDetailed
                     key={group.id}
                     name={group.name}
-                    count={t('peopleCount', { count: group.people.length })}
-                    present={group.people.filter((p) => p.todayAssignment).length}
-                    total={group.people.length}
+                    stats={areaStatsById.get(group.id)}
                     onClick={() => openGroup(group)}
                     visual={AREA_VISUALS[group.id] || DEFAULT_AREA_VISUAL}
+                    t={t}
                   />
                 ))}
               </div>
