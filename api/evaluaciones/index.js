@@ -8,49 +8,35 @@
 // que de verdad se clasifico.
 import { desc, eq } from 'drizzle-orm'
 import { requireAuth } from '../../server-lib/auth.js'
-import { auditEvaluation, db, employee } from '../../server-lib/db/client.js'
+import { auditEvaluation, db } from '../../server-lib/db/client.js'
 import { canUserAccessModule } from '../../server-lib/permissionService.js'
 
 const CLASSIFICATIONS = new Set(['CUMPLE', 'CUMPLE_PARCIAL', 'NO_CUMPLE'])
 const STEP_SCORE = { CUMPLE: 100, CUMPLE_PARCIAL: 50, NO_CUMPLE: 0 }
 const STEPS = ['s1', 's2', 's3', 's4', 's5']
 
+// 2026-09-02, segunda correccion (a peticion explicita del usuario -- "solo
+// es por area de trabajo, quita eso de puesto de trabajo"): la auditoria 5S
+// es por AREA, ya no por empleado/puesto especifico -- ver comentario junto
+// a auditEvaluation en server-lib/db/schema.js.
 async function handleGet(req, res) {
-  const { employeeId } = req.query || {}
+  const { areaId } = req.query || {}
   const rows = await db
-    .select({
-      id: auditEvaluation.id,
-      employeeId: auditEvaluation.employeeId,
-      employeeName: employee.fullName,
-      employeeNumber: employee.employeeNumber,
-      areaId: auditEvaluation.areaId,
-      stationName: auditEvaluation.stationName,
-      auditDate: auditEvaluation.auditDate,
-      s1: auditEvaluation.s1,
-      s2: auditEvaluation.s2,
-      s3: auditEvaluation.s3,
-      s4: auditEvaluation.s4,
-      s5: auditEvaluation.s5,
-      scorePct: auditEvaluation.scorePct,
-      createdAt: auditEvaluation.createdAt,
-    })
+    .select()
     .from(auditEvaluation)
-    .innerJoin(employee, eq(employee.id, auditEvaluation.employeeId))
-    .where(employeeId ? eq(auditEvaluation.employeeId, employeeId) : undefined)
+    .where(areaId ? eq(auditEvaluation.areaId, areaId) : undefined)
     .orderBy(desc(auditEvaluation.auditDate), desc(auditEvaluation.createdAt))
   return res.status(200).json({ evaluations: rows })
 }
 
 async function handlePost(req, res) {
-  const { employeeId, areaId, stationName, classifications } = req.body || {}
-  if (!employeeId || !areaId || !stationName) {
-    return res.status(400).json({ error: 'Faltan employeeId, areaId o stationName.' })
+  const { areaId, classifications } = req.body || {}
+  if (!areaId) {
+    return res.status(400).json({ error: 'Falta areaId.' })
   }
   if (!classifications || STEPS.some((s) => !CLASSIFICATIONS.has(classifications[s]))) {
     return res.status(400).json({ error: 'Las 5 clasificaciones (s1..s5) son requeridas.' })
   }
-  const [found] = await db.select().from(employee).where(eq(employee.id, employeeId)).limit(1)
-  if (!found) return res.status(404).json({ error: 'Empleado no encontrado.' })
 
   const scorePct = Math.round(
     STEPS.reduce((sum, s) => sum + STEP_SCORE[classifications[s]], 0) / STEPS.length,
@@ -59,9 +45,7 @@ async function handlePost(req, res) {
   const [created] = await db
     .insert(auditEvaluation)
     .values({
-      employeeId,
       areaId,
-      stationName,
       auditDate: new Date(),
       s1: classifications.s1,
       s2: classifications.s2,

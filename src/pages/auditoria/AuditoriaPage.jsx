@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -32,17 +32,8 @@ import {
 import { alertToneClass, cardClass, pageClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
-import {
-  getCurrentAssignment,
-  getLineWorkstationsWithOccupancy,
-  searchEmployees,
-} from '../../data/personnel/repository'
-import {
-  canonicalOperationalAreaId,
-  LINE_FAMILY_AREA_IDS,
-  WORK_CENTERS,
-  workCenterById,
-} from '../../data/production/catalog'
+import { getCurrentAssignment, searchEmployees } from '../../data/personnel/repository'
+import { LINE_FAMILY_AREA_IDS, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import EmployeeAvatar from '../centro-trabajo/EmployeeAvatar'
 
 /* ─────────────────────────────────────────────
@@ -107,17 +98,6 @@ function groupKeyForAreaId(areaId) {
   if (LINE_FAMILY_AREA_IDS.has(areaId)) return 'LINEAS'
   return AUDIT_AREA_GROUPS.find((g) => g.areaId === areaId)?.key || null
 }
-
-// El empleado que resuelve getLineWorkstationsWithOccupancy trae el id LOCAL
-// (localStorage: snapshot/EMPLOYEE_DIRECTORY o "emp-<ts>-<n>"), NUNCA el cuid
-// real de Postgres -- misma distincion documentada en
-// src/data/personnel/apiSync.js (serverIdByLocalId). AuditEvaluation.employeeId
-// (server-lib/db/schema.js) es FK contra el Employee real de la base, asi que
-// antes de guardar hay que traducir via /api/personnel/employees (mismo
-// criterio de match que apiSync.js: numero de empleado real, o nombre
-// completo para PROYECTO/PENDIENTE que muchas personas comparten). Sin esta
-// traduccion el POST fallaria siempre con "Empleado no encontrado".
-const PLACEHOLDER_EMPLOYEE_NUMBERS = new Set(['PROYECTO', 'PENDIENTE'])
 
 const CLASSIFICATIONS = [
   'classificationCompliant',
@@ -211,101 +191,54 @@ function ComingSoonDialog({ title, onClose }) {
   )
 }
 
-/* Flujo "5S Proceso" (2026-09-02, a peticion explicita del usuario --
-   "quiero que donde este auditando salga una pagina centro de trabajo,
-   puesto de trabajo que jale a la persona que ande auditando"): step=null
-   muestra la intro CON el selector de Centro de trabajo -> Puesto de
-   trabajo -> persona resuelta automaticamente (misma fuente de datos que
-   "Distribucion de estaciones" de Centro de Trabajo, ver
-   LineDetailDrawer.jsx: canonicalOperationalAreaId + getLineWorkstationsWithOccupancy,
-   nunca una fuente nueva). "Comenzar auditoria" solo se habilita con
-   area+puesto+persona resueltos. step=0..4 recorre S1..S5 en orden fijo,
-   igual que antes. Al terminar S5 (handleNext en el ultimo paso) ya SI se
-   persiste de verdad -- POST a /api/evaluaciones con el score calculado en
-   servidor -- antes era solo interfaz sin guardar nada (confirmado
-   explicitamente por el usuario en esa primera version). Si el POST falla
-   se queda en el mismo paso con el error visible, nunca se cierra ni se
-   resetea, para no perder la clasificacion ya hecha. */
+/* Flujo "5S Proceso" (2026-09-02, corregido el mismo dia -- "aqui te
+   comente que solo es por area de trabajo, selecciono un area y ya le
+   doy en comenzar auditoria, quita eso de puesto de trabajo"): la
+   auditoria 5S es por AREA, nunca por puesto/persona especifica -- tiene
+   sentido de negocio real (5S clasifica el orden/limpieza de un espacio
+   de trabajo, no el desempeño de un individuo). step=null muestra la
+   intro con el selector de Area de trabajo (los 5 grupos globales, ver
+   AUDIT_AREA_GROUPS) -> si es "Lineas de produccion", un segundo select
+   para elegir cual de las 11 lineas reales. "Comenzar auditoria" se
+   habilita solo con area resuelta. "Buscar persona" se queda como atajo
+   opcional (por si sabes el nombre de alguien de esa area pero no
+   recuerdas donde esta) -- SOLO resuelve el AREA/linea, ya no arrastra
+   ningun dato de esa persona al guardar. step=0..4 recorre S1..S5 en
+   orden fijo. Al terminar S5 se persiste -- POST a /api/evaluaciones
+   con el score calculado en servidor, solo areaId (sin employeeId ni
+   stationName, ver server-lib/db/schema.js). Si el POST falla se queda
+   en el mismo paso con el error visible, nunca se cierra ni se resetea,
+   para no perder la clasificacion ya hecha. */
 function FiveSDialog({ onClose }) {
   const { t } = useTranslation('auditoria')
   const [step, setStep] = useState(null)
   const [classifications, setClassifications] = useState({})
   // selectedGroupKey/selectedLineId son SOLO de flujo de UI (ver
   // AUDIT_AREA_GROUPS arriba) -- selectedAreaId sigue siendo la unica
-  // fuente real que consume getLineWorkstationsWithOccupancy, exactamente
-  // como antes.
+  // fuente real que se guarda.
   const [selectedGroupKey, setSelectedGroupKey] = useState('')
   const [selectedLineId, setSelectedLineId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
-  const [selectedStationName, setSelectedStationName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  // Buscar por numero de empleado o nombre (2026-09-02, a peticion explicita
-  // del usuario -- "los PROYECTO no cuentan con numero de empleado asi que
-  // debe buscarse tambien por nombre"): forma alternativa/mas rapida de
-  // llegar a la persona sin navegar Centro de trabajo -> Puesto a mano --
-  // reutiliza searchEmployees (mismo buscador de nombre/numero que ya usa
-  // EmployeeAssignSearchBar) y getCurrentAssignment para resolver en que
-  // area/puesto esta esa persona HOY, y rellena los mismos selects de
-  // abajo (nunca un segundo camino de datos). Si la persona no tiene
-  // asignacion activa hoy, no se puede auditar -- se avisa en vez de dejar
-  // avanzar con datos incompletos.
+  // Buscar por numero de empleado o nombre -- SOLO un atajo para llegar
+  // al area/linea correcta (reutiliza searchEmployees + getCurrentAssignment,
+  // mismo buscador de nombre/numero que ya usa EmployeeAssignSearchBar),
+  // nunca guarda a esa persona en la auditoria.
   const [personSearch, setPersonSearch] = useState('')
   const [personSearchError, setPersonSearchError] = useState('')
-  // Directorio real de Postgres (id/employeeNumber/fullName), para traducir
-  // el empleado LOCAL resuelto por estacion a su id real de servidor -- ver
-  // comentario junto a PLACEHOLDER_EMPLOYEE_NUMBERS arriba. Se carga una sola
-  // vez al abrir el dialogo (GET /api/personnel/employees, ya existente en
-  // Fase 1, solo requiere sesion -- no se inventa ningun endpoint nuevo).
-  const [serverEmployees, setServerEmployees] = useState(null)
-  const [serverEmployeesError, setServerEmployeesError] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/personnel/employees', { credentials: 'include' })
-      .then(async (res) => {
-        const data = await res.json().catch(() => null)
-        if (!res.ok) throw new Error((data && data.error) || t('employeeDirectoryErrorGeneric'))
-        return data
-      })
-      .then((data) => {
-        if (!cancelled) setServerEmployees(data.employees || [])
-      })
-      .catch((e) => {
-        if (!cancelled) setServerEmployeesError(e.message || t('employeeDirectoryErrorGeneric'))
-      })
-    return () => {
-      cancelled = true
-    }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: se carga solo una vez al montar (dialogo abierto), `t` es estable en la practica
-  }, [])
 
   const isIntro = step === null
   const isDone = step === 'done'
   const stepIndex = typeof step === 'number' ? step : 0
   const stepKey = FIVE_S_STEPS[stepIndex]
 
-  const canonicalAreaId = selectedAreaId ? canonicalOperationalAreaId(selectedAreaId) : null
-  const workstations = canonicalAreaId ? getLineWorkstationsWithOccupancy(canonicalAreaId) : []
   const selectedArea = selectedAreaId ? workCenterById(selectedAreaId) : null
-  const selectedStation = selectedStationName
-    ? workstations.find((w) => w.name === selectedStationName) || null
-    : null
-  const auditedEmployee = selectedStation?.occupants?.[0]?.employee || null
-  const serverEmployeeRecord =
-    auditedEmployee && serverEmployees
-      ? serverEmployees.find((se) =>
-          PLACEHOLDER_EMPLOYEE_NUMBERS.has(auditedEmployee.employeeNumber)
-            ? se.fullName === auditedEmployee.name
-            : se.employeeNumber === auditedEmployee.employeeNumber,
-        ) || null
-      : null
-  const canStartAudit = Boolean(selectedArea && selectedStation && auditedEmployee && serverEmployeeRecord)
+  const canStartAudit = Boolean(selectedArea)
 
   function handleGroupChange(groupKey) {
     setSelectedGroupKey(groupKey)
     setSelectedLineId('')
-    setSelectedStationName('')
     const group = AUDIT_AREA_GROUPS.find((g) => g.key === groupKey)
     setSelectedAreaId(group?.areaId || '') // vacio para 'LINEAS' -- falta elegir la linea real
   }
@@ -313,7 +246,6 @@ function FiveSDialog({ onClose }) {
   function handleLineChange(lineId) {
     setSelectedLineId(lineId)
     setSelectedAreaId(lineId)
-    setSelectedStationName('')
   }
 
   const personSearchResults = personSearch.trim() ? searchEmployees(personSearch, 8) : []
@@ -330,7 +262,6 @@ function FiveSDialog({ onClose }) {
     setSelectedLineId(groupKey === 'LINEAS' ? assignment.areaId : '')
     setPersonSearch('')
     setSelectedAreaId(assignment.areaId)
-    setSelectedStationName(assignment.stationId)
   }
 
   async function handleNext() {
@@ -346,9 +277,7 @@ function FiveSDialog({ onClose }) {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeId: serverEmployeeRecord.id,
           areaId: selectedArea.id,
-          stationName: selectedStation.name,
           classifications,
         }),
       })
@@ -368,7 +297,6 @@ function FiveSDialog({ onClose }) {
     setSelectedGroupKey('')
     setSelectedLineId('')
     setSelectedAreaId('')
-    setSelectedStationName('')
     setSubmitError('')
     setPersonSearch('')
     setPersonSearchError('')
@@ -478,68 +406,6 @@ function FiveSDialog({ onClose }) {
                 </Select>
               </div>
             )}
-
-            {selectedAreaId && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="fives-station">{t('workstationLabel')}</Label>
-                <Select value={selectedStationName} onValueChange={setSelectedStationName}>
-                  <SelectTrigger id="fives-station">
-                    <SelectValue placeholder={t('workstationPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workstations.map((w) => {
-                      const occupant = w.occupants?.[0]?.employee || null
-                      return (
-                        <SelectItem key={w.name} value={w.name}>
-                          {occupant
-                            ? t('workstationOptionOccupied', {
-                                name: w.name,
-                                employeeName: occupant.name,
-                              })
-                            : t('workstationOptionAvailable', { name: w.name })}
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
-                {workstations.length === 0 && (
-                  <p className="text-[12px] text-muted-foreground">{t('noWorkstationsMessage')}</p>
-                )}
-              </div>
-            )}
-
-            {selectedStationName &&
-              (auditedEmployee ? (
-                <>
-                  <div className="flex items-center gap-3 rounded-[20px] border border-dashed border-border bg-black/[.02] px-4 py-3 dark:bg-white/[.03]">
-                    <EmployeeAvatar employee={auditedEmployee} size={44} />
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-foreground">
-                        {t('auditedPersonLabel')}
-                      </p>
-                      <p className="text-[14px] font-extrabold">{auditedEmployee.name}</p>
-                      <p className="text-[12px] text-muted-foreground">
-                        {formatEmployeeNumber(auditedEmployee.employeeNumber)}
-                      </p>
-                    </div>
-                  </div>
-                  {serverEmployeesError ? (
-                    <Alert className={alertToneClass('error')}>{serverEmployeesError}</Alert>
-                  ) : serverEmployees === null ? (
-                    <p className="text-[12px] text-muted-foreground">
-                      {t('verifyingEmployeeMessage')}
-                    </p>
-                  ) : (
-                    !serverEmployeeRecord && (
-                      <Alert className={alertToneClass('warning')}>
-                        {t('employeeNotSyncedMessage')}
-                      </Alert>
-                    )
-                  )}
-                </>
-              ) : (
-                <Alert className={alertToneClass('warning')}>{t('noOccupantMessage')}</Alert>
-              ))}
 
             <Button onClick={() => setStep(0)} disabled={!canStartAudit} className="font-bold">
               {t('startAuditButton')}

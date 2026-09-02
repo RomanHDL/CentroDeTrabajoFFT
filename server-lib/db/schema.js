@@ -779,12 +779,18 @@ export const userModulePermission = pgTable(
 // Fase "Evaluaciones" (2026-09-02, a peticion explicita del usuario):
 // resultado real de una auditoria 5S ya completada -- antes el modulo
 // Auditoria era solo interfaz, sin guardar nada (decision explicita
-// original). areaId/stationName son snapshot de TEXTO (no FK a
-// Workstation): el picker de Auditoria puede apuntar a estaciones de
-// cualquier area del catalogo (WC LINEA sintetico o LINE_LIKE), y el
-// resultado debe seguir siendo historicamente correcto aunque esa
-// estacion cambie de nombre o se elimine despues -- mismo criterio que
-// ya usan EmployeeMovement/DailyAssignment para areaId/stationId reales.
+// original). areaId es snapshot de TEXTO (no FK a Workstation): el
+// picker de Auditoria apunta a cualquiera de los 5 grupos globales del
+// catalogo, y el resultado debe seguir siendo historicamente correcto
+// aunque esa area cambie de nombre despues.
+//
+// 2026-09-02, segunda correccion (a peticion explicita del usuario --
+// "solo es por area de trabajo... quita eso de puesto de trabajo"): la
+// auditoria 5S es por AREA, nunca por empleado/puesto especifico (tiene
+// sentido real: 5S clasifica el orden/limpieza de un espacio de
+// trabajo, no el desempeño de una persona) -- se quitan employeeId y
+// stationName por completo (la tabla estaba vacia, sin evaluaciones
+// reales guardadas todavia, migracion segura).
 export const fiveSClassification = pgEnum('FiveSClassification', [
   'CUMPLE',
   'CUMPLE_PARCIAL',
@@ -797,9 +803,7 @@ export const auditEvaluation = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => cuid()),
-    employeeId: text().notNull(),
     areaId: text().notNull(),
-    stationName: text().notNull(),
     auditDate: date({ mode: 'date' }).notNull(),
     s1: fiveSClassification().notNull(),
     s2: fiveSClassification().notNull(),
@@ -813,18 +817,11 @@ export const auditEvaluation = pgTable(
       .notNull(),
   },
   (table) => [
-    index('AuditEvaluation_employeeId_auditDate_idx').using(
+    index('AuditEvaluation_areaId_auditDate_idx').using(
       'btree',
-      table.employeeId.asc().nullsLast().op('text_ops'),
+      table.areaId.asc().nullsLast().op('text_ops'),
       table.auditDate.asc().nullsLast().op('date_ops'),
     ),
-    foreignKey({
-      columns: [table.employeeId],
-      foreignColumns: [employee.id],
-      name: 'AuditEvaluation_employeeId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('restrict'),
     foreignKey({
       columns: [table.createdByUserId],
       foreignColumns: [user.id],

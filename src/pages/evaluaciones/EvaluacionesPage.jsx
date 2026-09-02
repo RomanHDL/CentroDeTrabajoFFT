@@ -19,7 +19,6 @@ import {
   tableRowClass,
 } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
-import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
 import { workCenterById } from '../../data/production/catalog'
 import { EmptyState } from '../../ui'
 
@@ -29,7 +28,12 @@ import { EmptyState } from '../../ui'
    auditado"): SOLO LECTURA. Lista lo que FiveSDialog (AuditoriaPage.jsx)
    ya guardo via POST /api/evaluaciones en AuditEvaluation (ver
    server-lib/db/schema.js). Nunca formularios, edicion, borrado ni
-   exportacion aqui -- nada de eso se pidio. */
+   exportacion aqui -- nada de eso se pidio.
+
+   2026-09-02, segunda correccion (a peticion explicita del usuario --
+   "solo es por area de trabajo, quita eso de puesto de trabajo"): la
+   auditoria 5S es por AREA, ya no arrastra empleado/puesto -- se quitan
+   esas 2 columnas de la tabla. */
 
 const CLASSIFICATION_TONE = {
   CUMPLE: 'ok',
@@ -105,9 +109,7 @@ export default function EvaluacionesPage() {
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow className={tableHeaderRowClass}>
-                  <TableHead>{t('colEmployee')}</TableHead>
                   <TableHead>{t('colArea')}</TableHead>
-                  <TableHead>{t('colStation')}</TableHead>
                   <TableHead>{t('colDate')}</TableHead>
                   {STEPS.map((s) => (
                     <TableHead key={s} className="text-center">
@@ -121,15 +123,8 @@ export default function EvaluacionesPage() {
                 {evaluations.map((ev, idx) => (
                   <TableRow key={ev.id} className={tableRowClass(idx)}>
                     <TableCell className={cn(cellTextClass, 'font-bold')}>
-                      {ev.employeeName}
-                      <div className={cn(cellTextSecondaryClass, 'font-normal')}>
-                        {formatEmployeeNumber(ev.employeeNumber)}
-                      </div>
-                    </TableCell>
-                    <TableCell className={cellTextSecondaryClass}>
                       {workCenterById(ev.areaId)?.name || ev.areaId}
                     </TableCell>
-                    <TableCell className={cellTextSecondaryClass}>{ev.stationName}</TableCell>
                     <TableCell className={cellTextSecondaryClass}>
                       {dayjs(ev.auditDate).format('DD/MM/YYYY')}
                     </TableCell>
