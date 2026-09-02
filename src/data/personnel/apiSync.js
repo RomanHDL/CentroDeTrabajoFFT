@@ -528,17 +528,29 @@ async function pollOnce() {
   // "Personal sin asignar" con motivo (2026-09-02) -- statusOverrides SIEMPRE incluye gente
   // active:false (BAJA real), que por diseño NUNCA aparece en `roster` de arriba (esa query
   // filtra active:true a proposito -- ver roster.js) y por lo tanto nunca entra a
-  // serverToLocalId via el forEach de roster. Por eso aqui se resuelve el id local por
-  // employeeNumber directo (byNumber, igual que buildLocalIndex) en vez de reusar
-  // serverToLocalId. isPlaceholderNumber se descarta a proposito: emparejar por nombre aqui
-  // arriesgaria pisar el estado de la persona real activa que comparte nombre con un
-  // "fantasma" desactivado (mismo bug de colision ya documentado arriba en este archivo) --
-  // el flujo real de este feature siempre marca a alguien con numero real conocido, asi que
-  // esto no pierde ningun caso legitimo.
+  // serverToLocalId via el forEach de roster. Por eso aqui se resuelve el id local primero por
+  // row.id (serverId real de la fila, sin ambiguedad) contra serverIdByLocalId ya cacheado --
+  // ese cache YA tiene la entrada de quien acabamos de marcar en ESTE mismo dispositivo,
+  // porque syncSetUnassignedReason exige serverIdByLocalId resuelto antes de poder llamarse
+  // (ver arriba). Bug real corregido 2026-09-02: antes se resolvia SOLO por employeeNumber
+  // (byNumber) y se descartaba a proposito cualquier numero placeholder (PROYECTO/PENDIENTE)
+  // para no arriesgar una colision de nombre -- pero eso hacia que marcar BAJA/TURNO/FALTA a
+  // alguien SIN numero real (el caso mas comun en "Personal sin asignar": la mayoria ahi son
+  // "PROYECTO") se revirtiera solo unos segundos despues, en el siguiente poll, porque ese
+  // poll reconstruye nextStatusOverrides desde cero y REEMPLAZA el store local completo --
+  // la fila de esa persona nunca calificaba para el mapa nuevo y su override recien guardado
+  // se perdia. byNumber sigue de respaldo (para reconciliar en otro dispositivo/pestaña nueva
+  // que aun no tiene el serverId cacheado) SOLO cuando el numero es real.
+  const localIdByServerId = new Map()
+  serverIdByLocalId.forEach((sId, localId) => {
+    localIdByServerId.set(sId, localId)
+  })
   const nextStatusOverrides = {}
   serverStatusOverrides.forEach((row) => {
-    if (isPlaceholderNumber(row.employeeNumber)) return
-    const localId = byNumber.get(row.employeeNumber)
+    let localId = localIdByServerId.get(row.id)
+    if (!localId && !isPlaceholderNumber(row.employeeNumber)) {
+      localId = byNumber.get(row.employeeNumber)
+    }
     if (!localId) return
     serverIdByLocalId.set(localId, row.id)
     nextStatusOverrides[localId] = {
