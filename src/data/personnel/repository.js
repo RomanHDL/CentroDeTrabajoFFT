@@ -20,6 +20,7 @@ import { EMPLOYEE_DIRECTORY, isEmployeeEligible } from './directory'
 import { SEED_SKILLS } from './skills'
 import {
   notify,
+  readAbsentEmployeeIds,
   readAssignments,
   readAttendance,
   readBaselineSuppressed,
@@ -254,6 +255,15 @@ export function getAssignmentsForDate(date = todayISO()) {
 
 export function getAssignmentsForArea(areaId, date = todayISO()) {
   return getAssignmentsForDate(date).filter((a) => a.areaId === areaId)
+}
+
+/* Ids de empleados con Attendance.status='AUSENTE' HOY (ver
+   api/personnel/roster.js/absentEmployeeIds y apiSync.js/pollOnce) --
+   hoy siempre vacio porque ningun flujo real escribe 'AUSENTE' todavia,
+   pero es una consulta real, no un valor fijo (ver comentario del
+   endpoint para el detalle). */
+export function getAbsentEmployeeIds() {
+  return readAbsentEmployeeIds()
 }
 
 export function getAssignmentHistory(employeeId) {

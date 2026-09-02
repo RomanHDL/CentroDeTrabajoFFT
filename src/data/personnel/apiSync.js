@@ -17,22 +17,24 @@
    nombre completo para PROYECTO/PENDIENTE, mismo criterio que
    SHARED_PLACEHOLDER_NUMBERS en repository.js). ── */
 import dayjs from 'dayjs'
-import {
-  readAssignments,
-  writeAssignments,
-  readEmployees,
-  writeEmployees,
-  readMovements,
-  writeMovements,
-  readBaselineSuppressed,
-  writeBaselineSuppressed,
-  readPendingMoves,
-  writePendingMoves,
-  notify,
-} from './store'
-import { EMPLOYEE_DIRECTORY } from './directory'
 import { showToast } from '../../ui/toast'
 import { workCenterById } from '../production/catalog'
+import { EMPLOYEE_DIRECTORY } from './directory'
+import {
+  notify,
+  readAbsentEmployeeIds,
+  readAssignments,
+  readBaselineSuppressed,
+  readEmployees,
+  readMovements,
+  readPendingMoves,
+  writeAbsentEmployeeIds,
+  writeAssignments,
+  writeBaselineSuppressed,
+  writeEmployees,
+  writeMovements,
+  writePendingMoves,
+} from './store'
 
 /* Intervalo bajado de 7000 a 2000ms (2026-08-25, a peticion explicita del
    usuario: laptop <-> tablet deben verse actualizados "rapido, sin F5") --
@@ -252,8 +254,14 @@ function resolveWorkAreaLabel(workstation) {
 }
 
 async function pollOnce() {
-  const { roster, pendingMoves = [], resolvedMoves = [] } = await apiFetch('/api/personnel/roster')
+  const {
+    roster,
+    absentEmployeeIds: serverAbsentIds = [],
+    pendingMoves = [],
+    resolvedMoves = [],
+  } = await apiFetch('/api/personnel/roster')
   const { byNumber, byName } = buildLocalIndex()
+  const serverToLocalId = new Map()
 
   const dynamicEmployees = readEmployees()
   const newDynamicEmployees = []
@@ -282,6 +290,7 @@ async function pollOnce() {
       else byNumber.set(row.employeeNumber, localId)
     }
     serverIdByLocalId.set(localId, row.employeeId)
+    serverToLocalId.set(row.employeeId, localId)
 
     if (row.baselineSuppressed && !baselineSuppressed.has(localId)) {
       baselineSuppressed.add(localId)
@@ -379,7 +388,7 @@ async function pollOnce() {
     localIdByServerPendingId.set(serverId, localId),
   )
 
-  let pending = readPendingMoves()
+  const pending = readPendingMoves()
   let pendingChanged = false
 
   pendingMoves.forEach((row) => {
@@ -445,6 +454,20 @@ async function pollOnce() {
   })
 
   if (pendingChanged) writePendingMoves(pending)
+
+  // Inasistencia (ids locales, ver comentario en store.js) -- traducidos via
+  // serverToLocalId como el resto de este archivo; un id de servidor que
+  // este poll todavia no resolvio a un id local (recien llegado, un tick
+  // antes de que el roster.forEach de arriba lo registre) se descarta en
+  // ESTE poll y se recupera solo en el siguiente, nunca se inventa un id.
+  const absentIds = serverAbsentIds.map((id) => serverToLocalId.get(id)).filter(Boolean)
+  const prevAbsentIds = readAbsentEmployeeIds()
+  const absentChanged =
+    absentIds.length !== prevAbsentIds.length || absentIds.some((id) => !prevAbsentIds.includes(id))
+  if (absentChanged) {
+    writeAbsentEmployeeIds(absentIds)
+    changed = true
+  }
 
   if (changed || pendingChanged) {
     writeAssignments(assignments)

@@ -55,8 +55,14 @@ export default requireAuth(async (req, res) => {
   const date = parseDateOnly(req.query.date)
   if (!date) return res.status(400).json({ error: 'Fecha invalida, usa YYYY-MM-DD.' })
 
-  const [employees, activeAssignments, assignmentsForDate, pendingMoves, resolvedMoves] =
-    await Promise.all([
+  const [
+    employees,
+    activeAssignments,
+    assignmentsForDate,
+    absentAttendance,
+    pendingMoves,
+    resolvedMoves,
+  ] = await Promise.all([
       // active:true (2026-08-27, bug real): un empleado BAJA/inactivo (incluye los "fantasma"
       // desactivados por colision de nombre, ver personnel.js/apiSync.js) nunca deberia competir
       // por el mismo id local en el frontend (EMPLOYEE_DIRECTORY solo conoce un id por nombre
@@ -83,6 +89,23 @@ export default requireAuth(async (req, res) => {
       // Solo para touchedToday (NONE vs SNAPSHOT) -- este SI sigue scoped a la fecha pedida.
       db.query.dailyAssignment.findMany({
         where: (dailyAssignment, { eq }) => eq(dailyAssignment.date, date),
+        columns: { employeeId: true },
+      }),
+      // Inasistencia (2026-09-02, modulo Asistencia rediseñado -- a peticion
+      // explicita del usuario, "no confundas pendiente con inasistencia"):
+      // consulta REAL contra Attendance.status='AUSENTE'. Hoy este query
+      // siempre devuelve vacio -- ningun flujo del sistema escribe 'AUSENTE'
+      // todavia (el unico INSERT real, en placeEmployee/personnel.js, SIEMPRE
+      // pone 'PRESENTE' en el checkin). El enum AttendanceStatus ya trae
+      // 'AUSENTE'/'RETARDO' en el esquema (sin migracion nueva), simplemente
+      // no hay ningun flujo de negocio que los use hoy -- confirmado
+      // revisando cada INSERT hacia esta tabla antes de escribir este query.
+      // Se deja como consulta real (no un 0 fijo en el frontend) para que,
+      // el dia que exista una forma de marcar a alguien ausente, esta misma
+      // card empiece a reflejarlo sin ningun cambio adicional.
+      db.query.attendance.findMany({
+        where: (attendanceRow, { eq, and }) =>
+          and(eq(attendanceRow.date, date), eq(attendanceRow.status, 'AUSENTE')),
         columns: { employeeId: true },
       }),
       db.query.pendingMove
@@ -160,6 +183,7 @@ export default requireAuth(async (req, res) => {
   return res.status(200).json({
     date: date.toISOString().slice(0, 10),
     roster,
+    absentEmployeeIds: absentAttendance.map((a) => a.employeeId),
     pendingMoves,
     resolvedMoves,
   })

@@ -16,6 +16,7 @@ const KEYS = {
   skills: 'cp_skills_v1',
   pendingMoves: 'cp_pending_moves_v1',
   baselineSuppressed: 'cp_baseline_suppressed_v1',
+  absentEmployeeIds: 'cp_absent_employee_ids_v1',
 }
 
 function readList(key) {
@@ -76,6 +77,15 @@ export const writePendingMoves = (rows) => writeList(KEYS.pendingMoves, rows)
    hoy" se revertia solo al cambiar de dia. */
 export const readBaselineSuppressed = () => readList(KEYS.baselineSuppressed)
 export const writeBaselineSuppressed = (rows) => writeList(KEYS.baselineSuppressed, rows)
+
+/* Ids de empleados con Attendance.status='AUSENTE' HOY, tal como los
+   devuelve /api/personnel/roster (absentEmployeeIds) -- ver ese endpoint
+   para el porque este query hoy siempre da vacio (ningun flujo escribe
+   'AUSENTE' todavia). Se guarda aqui, sincronizado por apiSync.js igual
+   que el resto del roster, para que el modulo Asistencia (card
+   "Inasistencia") lo lea sin volver a pedirlo por su cuenta. */
+export const readAbsentEmployeeIds = () => readList(KEYS.absentEmployeeIds)
+export const writeAbsentEmployeeIds = (ids) => writeList(KEYS.absentEmployeeIds, ids)
 
 /* ── Suscripcion simple para que la UI se refresque cuando cambian
    datos de personal — sea por una escritura local (checkInEmployee,
