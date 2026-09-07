@@ -180,6 +180,25 @@ para poder desplegar en el servidor privado (Coolify). Ver
   a partir del caso real del propio administrador (Roman, cuenta 3647).
   Verificado en vivo de punta a punta con datos de prueba desechables, y
   usado de inmediato para vincular la cuenta real.
+- **Solicitudes de acceso SSO en la campana de notificaciones.** A
+  petición explícita del usuario ("si alguien quiere iniciar sesión me
+  va a aparecer ahí para aceptar o rechazar?"): antes SOLO vivían en
+  Usuarios > Solicitudes de acceso SSO, invisibles hasta entrar a esa
+  pantalla -- la campana (`NotificationBell.jsx`) solo avisaba
+  Movimientos de área. Ahora agrega una segunda sección con el mismo
+  aprobar/vincular/rechazar completo, en una fila apilada verticalmente
+  para el ancho angosto del popover (320px). La fila real
+  (`AccessRequestDecideRow.jsx`) se extrajo de `AccessRequestsCard.jsx`
+  para que ambos la compartan tal cual -- nunca dos copias de esa
+  lógica que se puedan desincronizar. Consulta cada 30s (`/api/access-
+  requests?status=PENDING`, sin sync en vivo como Movimientos de área,
+  que sí necesita esa latencia para el piso de producción -- un login
+  SSO nuevo es raro, no urgente). Visible solo para quien tenga acceso
+  efectivo al módulo Usuarios (mismo gate que ya exige el servidor en
+  `decide.js`, no solo el rol) -- a petición explícita del usuario,
+  "que esas notificaciones solo me lleguen a mí". Verificado en vivo con
+  una solicitud de prueba: aparece en la campana, se puede rechazar
+  desde ahí, y el contador se actualiza solo.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

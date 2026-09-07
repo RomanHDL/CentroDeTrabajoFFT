@@ -42,6 +42,7 @@ export const RELEASES = [
           'addedSorting',
           'addedDeleteUser',
           'addedLinkExistingAccount',
+          'addedAccessRequestsInBell',
         ],
       },
       {

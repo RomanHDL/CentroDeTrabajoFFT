@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { useAuth } from '../state/auth'
+import { useAuth, useEffectiveModules } from '../state/auth'
 import NotificationBell from './NotificationBell'
 import { getRoleLabels } from './roleLabels'
 
@@ -57,12 +57,20 @@ function initialsOf(name) {
    "Restablecer contraseña"), LogoutIcon -> LogOut, CheckIcon -> Check. */
 export default function HeaderUserActions({ mode, setMode }) {
   const { user, logout } = useAuth()
+  const { modules: effectiveModules } = useEffectiveModules()
   const navigate = useNavigate()
   const { i18n } = useTranslation()
   const { t } = useTranslation('layout')
 
   const roleLabel = getRoleLabels()[user?.role] || user?.role
   const canApproveMoves = user?.role === 'SUPERVISOR' || user?.role === 'ADMINISTRADOR'
+  // 2026-09-07 (a peticion explicita del usuario, "que me avise ahi tambien" -- viendo la
+  // campana de Movimientos pendientes, preguntando si las solicitudes de acceso SSO tambien
+  // le avisan ahi): antes SOLO vivian en Usuarios > Solicitudes de acceso SSO, invisibles
+  // hasta que alguien entrara a esa pantalla. Gate real: acceso efectivo a '/usuarios' (lo
+  // mismo que ya exige decide.js del lado del servidor), no solo el rol -- para no mostrarle
+  // a un SUPERVISOR sin ese permiso individual botones que igual le rechazaria el servidor.
+  const canManageAccessRequests = (effectiveModules || []).includes('/usuarios')
 
   async function handleLogout() {
     await logout()
@@ -71,7 +79,13 @@ export default function HeaderUserActions({ mode, setMode }) {
 
   return (
     <>
-      {canApproveMoves && <NotificationBell userId={user?.id} />}
+      {(canApproveMoves || canManageAccessRequests) && (
+        <NotificationBell
+          userId={user?.id}
+          canApproveMoves={canApproveMoves}
+          canManageAccessRequests={canManageAccessRequests}
+        />
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

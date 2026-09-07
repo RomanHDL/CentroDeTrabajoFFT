@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { Bell, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,18 @@ import {
 import { getPendingMoves } from '../data/personnel/repository'
 import { usePersonnelVersion } from '../data/personnel/usePersonnelVersion'
 import { workCenterById } from '../data/production/catalog'
+import AccessRequestDecideRow from '../pages/usuarios/AccessRequestDecideRow'
+import { apiRequest } from '../state/auth'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
+
+// 2026-09-07 (a peticion explicita del usuario, "que me avise ahi tambien" -- viendo la
+// campana de Movimientos pendientes, preguntando si las solicitudes de acceso SSO tambien le
+// avisan ahi): NO tienen un mecanismo de sync en vivo como getPendingMoves() (esa lee de
+// apiSync.js, ya sincronizado entre dispositivos cada 2s para el piso de produccion, algo que
+// SI necesita esa latencia). Un login SSO nuevo es un evento raro/no urgente -- 30s es
+// suficiente para que un admin se entere sin abrir Usuarios, sin flotar un poll agresivo por
+// algo que rara vez cambia.
+const ACCESS_REQUESTS_POLL_MS = 30000
 
 function areaName(id) {
   return workCenterById(id)?.name || id || '—'
@@ -92,8 +103,9 @@ function MoveRow({ move, userId, onResolved, compact }) {
    NotificationsIcon -> Bell, CloseIcon -> X. El boton de la campana usa un atributo `title`
    nativo en vez de un Tooltip Radix, para no anidarlo con el propio PopoverTrigger sobre el mismo
    elemento (mismo criterio que HeaderUserActions.jsx). */
-export default function NotificationBell({ userId }) {
+export default function NotificationBell({ userId, canApproveMoves = true, canManageAccessRequests = false }) {
   const { t } = useTranslation('layout')
+  const { t: tUsuarios } = useTranslation('usuarios')
   const version = usePersonnelVersion()
   const isTouch = useIsTouchDevice()
   const [open, setOpen] = useState(false)
@@ -102,7 +114,34 @@ export default function NotificationBell({ userId }) {
   const dismissedIds = useRef(new Set())
   const initialized = useRef(false)
 
-  const pendingMoves = getPendingMoves()
+  const [accessRequests, setAccessRequests] = useState([])
+  const [usersForLinking, setUsersForLinking] = useState([])
+
+  const pendingMoves = canApproveMoves ? getPendingMoves() : []
+
+  const loadAccessRequests = useCallback(async () => {
+    try {
+      const data = await apiRequest('/api/access-requests?status=PENDING')
+      setAccessRequests(data.requests)
+    } catch {
+      /* silencioso -- no es un flujo critico como personnel, no vale la pena un toast
+         cada 30s si el usuario esta sin internet un momento */
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!canManageAccessRequests) return
+    loadAccessRequests()
+    apiRequest('/api/users')
+      .then((data) => setUsersForLinking(data.users))
+      .catch(() => {})
+    const interval = setInterval(loadAccessRequests, ACCESS_REQUESTS_POLL_MS)
+    return () => clearInterval(interval)
+  }, [canManageAccessRequests, loadAccessRequests])
+
+  function handleAccessRequestDecided(request) {
+    setAccessRequests((prev) => prev.filter((r) => r.id !== request.id))
+  }
 
   // Se ejecuta a proposito solo cuando cambia `version` (nuevo evento de personnel), no en cada
   // render por el array/funciones nuevos que devuelve getPendingMoves() -- mismo criterio que ya
@@ -144,14 +183,14 @@ export default function NotificationBell({ userId }) {
         <PopoverTrigger asChild>
           <button
             type="button"
-            title={t('notificationBell.movimientosPendientesTitle')}
+            title={t('notificationBell.notificacionesTitle')}
             className="grid h-8 w-8 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-accent"
           >
             <span className="relative inline-flex">
               <Bell size={20} />
-              {pendingMoves.length > 0 && (
+              {pendingMoves.length + accessRequests.length > 0 && (
                 <Badge className="absolute -right-1.5 -top-1.5 h-[18px] min-w-[18px] items-center justify-center rounded-full border-transparent bg-[#EF4444] px-1 text-[10px] leading-none text-white">
-                  {pendingMoves.length}
+                  {pendingMoves.length + accessRequests.length}
                 </Badge>
               )}
             </span>
@@ -161,15 +200,52 @@ export default function NotificationBell({ userId }) {
           <p className="mb-2 text-sm font-extrabold">
             {t('notificationBell.aprobacionesPendientes')}
           </p>
-          {pendingMoves.length === 0 ? (
-            <p className="py-2 text-[13px] text-muted-foreground">
-              {t('notificationBell.noHaySolicitudesPendientes')}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2 divide-y divide-border">
-              {pendingMoves.map((m) => (
-                <MoveRow key={m.id} move={m} userId={userId} compact />
-              ))}
+
+          {canApproveMoves && (
+            <div className={cn(canManageAccessRequests && 'mb-4')}>
+              {canManageAccessRequests && (
+                <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.03em] text-muted-foreground">
+                  {t('notificationBell.movimientosSectionTitle')}
+                </p>
+              )}
+              {pendingMoves.length === 0 ? (
+                <p className="py-2 text-[13px] text-muted-foreground">
+                  {t('notificationBell.noHaySolicitudesPendientes')}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2 divide-y divide-border">
+                  {pendingMoves.map((m) => (
+                    <MoveRow key={m.id} move={m} userId={userId} compact />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {canManageAccessRequests && (
+            <div>
+              {canApproveMoves && (
+                <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.03em] text-muted-foreground">
+                  {tUsuarios('accessRequestsCard.title')}
+                </p>
+              )}
+              {accessRequests.length === 0 ? (
+                <p className="py-2 text-[13px] text-muted-foreground">
+                  {t('notificationBell.noHaySolicitudesPendientes')}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {accessRequests.map((r) => (
+                    <AccessRequestDecideRow
+                      key={r.id}
+                      request={r}
+                      users={usersForLinking}
+                      compact
+                      onDecided={() => handleAccessRequestDecided(r)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </PopoverContent>
