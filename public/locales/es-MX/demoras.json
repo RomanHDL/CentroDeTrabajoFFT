@@ -23,7 +23,6 @@
   "loading": "Cargando...",
   "colReason": "Causa",
   "colArea": "Área",
-  "colStation": "Estación",
   "colDuration": "Duración",
   "colShift": "Turno",
   "colCreatedBy": "Registrado por",
@@ -36,6 +35,9 @@
   "areaGroupAccesorios": "Accesorios",
   "areaGroupMidea": "Midea",
   "areaGroupPaletizado": "Paletizado",
+  "shift.MATUTINO": "Matutino",
+  "shift.TIEMPO_EXTRA": "Tiempo extra",
+  "shift.NOCHE": "Noche",
   "tag": {
     "sistema": "sistema",
     "mtto": "mtto"

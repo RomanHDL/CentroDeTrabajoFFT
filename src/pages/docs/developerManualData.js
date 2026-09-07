@@ -245,6 +245,11 @@ export const DATA_DICTIONARY = [
         'una de las 14 causas de src/data/demoras/catalog.js (DOWNTIME_REASONS)',
       ],
       ['durationMinutes', 'Int', ''],
+      [
+        'shift',
+        'String?',
+        'id de OFFICIAL_SHIFTS (MATUTINO/TIEMPO_EXTRA/NOCHE) desde 2026-09-07, autocalculado con getCurrentShift() -- registros previos a esa fecha guardan el literal legacy (Matutino/Vespertino/Nocturno)',
+      ],
       ['createdByUserId', 'String (FK User)', ''],
     ],
   },

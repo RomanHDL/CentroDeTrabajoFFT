@@ -129,6 +129,8 @@
     "changedDemorasRename": "The \"Delays\" module was renamed to \"Work delays\" in the menu and page title.",
     "changedDemorasRemoveStation": "Removed the \"Station\" field from the Log a delay form across all 5 areas -- no longer captured when logging.",
     "changedLineSelectOrder": "The \"Line\" selector (Delays, Hourly Production, Audits, Equipment Control) now lists WC LINEA 0 through 10 in ascending order, instead of LINEA 1..10 followed by LINEA 0 at the end.",
+    "changedDemorasAutoShift": "The Shift field in Delays no longer relies on a fixed value -- it's auto-computed with the same real-time shift detection already used by Hourly Production and Sorting (Day/Overtime/Night), though it can still be corrected manually when logging a delay outside its shift window.",
+    "changedDemorasRemoveHistoryStation": "Also removed the Station column from \"Recent records\" in Delays -- that data is no longer captured when logging.",
     "addedCalidadManual": "Real process manual (official Quality SOP) embedded in the \"Process Sheet\" for the Quality station across all WC LINEA.",
     "addedDemorasPlaneacion": "Two new menu modules -- Delays and Planning -- marked \"Under development\", navigation only for now.",
     "addedOrganigrama": "New Org Chart module (Overview) -- navigation only for now, marked \"Under development\".",

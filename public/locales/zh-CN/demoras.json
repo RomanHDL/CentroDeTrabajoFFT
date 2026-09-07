@@ -23,7 +23,6 @@
   "loading": "加载中...",
   "colReason": "原因",
   "colArea": "区域",
-  "colStation": "工位",
   "colDuration": "时长",
   "colShift": "班次",
   "colCreatedBy": "登记人",
@@ -36,6 +35,9 @@
   "areaGroupAccesorios": "配件",
   "areaGroupMidea": "美的",
   "areaGroupPaletizado": "码垛",
+  "shift.MATUTINO": "白班",
+  "shift.TIEMPO_EXTRA": "加班",
+  "shift.NOCHE": "夜班",
   "tag": {
     "sistema": "系统",
     "mtto": "维护"

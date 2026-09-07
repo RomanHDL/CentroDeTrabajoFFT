@@ -29,9 +29,9 @@ import {
   requiresFormalLog,
 } from '../../data/demoras/catalog'
 import {
-  CURRENT_SHIFT,
+  getCurrentShift,
   LINE_FAMILY_WORK_CENTERS,
-  SHIFT_OPTIONS,
+  OFFICIAL_SHIFTS,
   workCenterById,
 } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
@@ -55,14 +55,30 @@ const AREA_GROUPS = [
   { key: 'PALETIZADO', labelKey: 'areaGroupPaletizado', areaId: 'PALETIZADO' },
 ]
 
-const emptyForm = {
-  groupKey: '',
-  lineId: '',
-  areaId: '',
-  reasonKey: '',
-  durationMinutes: '',
-  shift: CURRENT_SHIFT,
-  notes: '',
+// 2026-09-07 (a peticion explicita del usuario, "el de turnos se ponga en automatico con el
+// registro de horarios que ya manejamos en automatico"): el turno ya NO se deja en el hardcode
+// CURRENT_SHIFT='Matutino' de siempre -- se calcula con getCurrentShift/OFFICIAL_SHIFTS, la misma
+// deteccion automatica por hora real que ya usan Hora por Hora y Sorting (Matutino 07:00-17:10,
+// Tiempo extra 17:11-22:00, Noche 22:01-07:00). Se guarda como shift.id (MATUTINO/TIEMPO_EXTRA/
+// NOCHE), no el literal en espanol -- ver shiftDisplayLabel() para mostrarlo traducido, con
+// fallback al literal legacy (Matutino/Vespertino/Nocturno) de los registros ya guardados antes
+// de este cambio, que no matchean ningun id de OFFICIAL_SHIFTS.
+function makeEmptyForm() {
+  return {
+    groupKey: '',
+    lineId: '',
+    areaId: '',
+    reasonKey: '',
+    durationMinutes: '',
+    shift: getCurrentShift().id,
+    notes: '',
+  }
+}
+
+function shiftDisplayLabel(t, raw) {
+  if (!raw) return '—'
+  const official = OFFICIAL_SHIFTS.find((s) => s.id === raw)
+  return official ? t(`shift.${official.id}`) : raw
 }
 
 export default function DemorasPage() {
@@ -73,7 +89,7 @@ export default function DemorasPage() {
   // el historial de "Registros recientes" -- ni siquiera se pide la lista al servidor para ese
   // rol. ADMINISTRADOR/SUPERVISOR sin cambios (ven ambos).
   const showHistory = user?.role !== 'LIDER'
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState(makeEmptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [records, setRecords] = useState([])
@@ -131,7 +147,7 @@ export default function DemorasPage() {
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || t('saveErrorGeneric'))
-      setForm(emptyForm)
+      setForm(makeEmptyForm())
       await loadRecords()
     } catch (err) {
       setSubmitError(err.message || t('saveErrorGeneric'))
@@ -245,9 +261,9 @@ export default function DemorasPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SHIFT_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
+                  {OFFICIAL_SHIFTS.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {t(`shift.${s.id}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -293,7 +309,6 @@ export default function DemorasPage() {
                     <tr className="border-b border-border">
                       <Th>{t('colReason')}</Th>
                       <Th>{t('colArea')}</Th>
-                      <Th>{t('colStation')}</Th>
                       <Th>{t('colDuration')}</Th>
                       <Th>{t('colShift')}</Th>
                       <Th>{t('colCreatedBy')}</Th>
@@ -314,9 +329,8 @@ export default function DemorasPage() {
                           </div>
                         </Td>
                         <Td>{workCenterById(r.areaId)?.name || r.areaId}</Td>
-                        <Td>{r.stationName || '—'}</Td>
                         <Td>{t('minutesValue', { count: r.durationMinutes })}</Td>
-                        <Td>{r.shift || '—'}</Td>
+                        <Td>{shiftDisplayLabel(t, r.shift)}</Td>
                         <Td>{r.createdByName || '—'}</Td>
                         <Td>{new Date(r.createdAt).toLocaleString()}</Td>
                       </tr>

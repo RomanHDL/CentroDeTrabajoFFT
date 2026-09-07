@@ -205,6 +205,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (nuevo export `LINE_FAMILY_WORK_CENTERS` en
   `src/data/production/catalog.js`, ya ordenado, para no repetir el mismo
   sort en cada pantalla).
+- **Demoras — Turno automático.** El campo Turno del formulario ya no
+  parte de un valor fijo (`CURRENT_SHIFT='Matutino'` de siempre) -- se
+  autocalcula con `getCurrentShift()`/`OFFICIAL_SHIFTS`, la misma
+  detección real por hora que ya usan Hora por Hora y Sorting (Matutino
+  07:00-17:10, Tiempo extra 17:11-22:00, Noche 22:01-07:00). Sigue siendo
+  un select editable por si se registra una demora fuera de su horario
+  real. Se guarda como `shift.id` (MATUTINO/TIEMPO_EXTRA/NOCHE); el
+  historial muestra tanto los registros nuevos como los antiguos
+  (literal legacy Matutino/Vespertino/Nocturno) con su nombre correcto.
+- **Demoras — se quita también la columna Estación del historial.** El
+  "Registros recientes" ya no muestra la columna Estación (el dato ya no
+  se captura desde el formulario, ver entrada anterior de este mismo
+  Changelog).
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),

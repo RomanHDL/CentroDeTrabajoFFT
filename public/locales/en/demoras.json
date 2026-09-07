@@ -23,7 +23,6 @@
   "loading": "Loading...",
   "colReason": "Cause",
   "colArea": "Area",
-  "colStation": "Station",
   "colDuration": "Duration",
   "colShift": "Shift",
   "colCreatedBy": "Logged by",
@@ -36,6 +35,9 @@
   "areaGroupAccesorios": "Accessories",
   "areaGroupMidea": "Midea",
   "areaGroupPaletizado": "Palletizing",
+  "shift.MATUTINO": "Day",
+  "shift.TIEMPO_EXTRA": "Overtime",
+  "shift.NOCHE": "Night",
   "tag": {
     "sistema": "system",
     "mtto": "maintenance"
