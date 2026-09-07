@@ -90,6 +90,18 @@ export function mountApiRoutes(app) {
   app.get('/api/auth/oidc/status', wrapAsync(oidcStatusHandler))
   app.get('/api/auth/oidc/pending', wrapAsync(oidcPendingHandler))
   app.post('/api/auth/oidc/request-access', wrapAsync(oidcRequestAccessHandler))
+  // 2026-09-07 (Amir/Coolify ops, credenciales OIDC ya inyectadas): el redirect_uri real
+  // registrado en Nextcloud -- y el valor real de OIDC_REDIRECT_URI en Coolify -- es
+  // "https://centro-de-trabajo.mi2.com.mx/auth/callback", SIN el prefijo /api/auth/oidc.
+  // openid-client deriva el redirect_uri que manda en el intercambio de token de la URL real
+  // de la request (ver authorizationCodeGrant, node_modules/openid-client/build/index.js:
+  // `redirectUri = stripParams(currentUrl)`), asi que el servidor tiene que responder
+  // exactamente en ese path externo, no solo en /api/auth/oidc/callback -- mismo handler,
+  // alias real de ruta (nunca una copia de la logica). /auth/login no lo llama Nextcloud
+  // (nada externo depende de el, LoginPage.jsx sigue enlazando a /api/auth/oidc/start), pero
+  // se deja el alias por la misma convencion que describio Amir.
+  app.get('/auth/login', wrapAsync(oidcStartHandler))
+  app.get('/auth/callback', wrapAsync(oidcCallbackHandler))
 
   app.get('/api/access-requests', wrapAsync(accessRequestsIndexHandler))
   app.post('/api/access-requests/:id/decide', withDynamicParams(accessRequestDecideHandler))

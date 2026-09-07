@@ -360,9 +360,31 @@ para poder desplegar en el servidor privado (Coolify). Ver
   a punta: usuario y demora de prueba creados, confirmado el 409 con
   mensaje claro, ambos registros de prueba limpiados por completo al
   terminar.
+- **SSO de Nextcloud — el callback real no coincidía con la ruta
+  registrada.** Amir (TI/Coolify ops) confirmó las 4 credenciales OIDC ya
+  inyectadas en Coolify, con `OIDC_REDIRECT_URI` =
+  `https://centro-de-trabajo.mi2.com.mx/auth/callback` (SIN el prefijo
+  `/api/auth/oidc` que usa el resto de este módulo desde que se
+  implementó, ver `server-lib/oidc.js`). `openid-client` deriva el
+  `redirect_uri` real que manda en el intercambio de token de la URL
+  exacta de la request (`authorizationCodeGrant` -> `stripParams(
+  currentUrl)`, no del valor de la variable de entorno) -- si Nextcloud
+  redirige el navegador a `/auth/callback` y el servidor solo escucha en
+  `/api/auth/oidc/callback`, el login nunca se completa. Se agregan 2
+  alias de ruta reales al mismo handler existente (nunca una copia de la
+  lógica) en `server-lib/api-routes.js` (Coolify/dev) y `vercel.json`
+  (Vercel): `GET /auth/callback` -> mismo `oidcCallbackHandler`, `GET
+  /auth/login` -> mismo `oidcStartHandler` (este último no lo llama
+  Nextcloud, solo por la misma convención que describió Amir).
+  Verificado localmente que ambas rutas nuevas llegan al handler real
+  (responden su propio JSON `{"error":"SSO no configurado"}` en vez del
+  404 de Express o el HTML de la SPA) -- falta la confirmación en vivo
+  de un login real contra Nextcloud, que solo Roman puede probar.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
-- SSO real de Nextcloud (OIDC), reemplaza el login propio.
+- Confirmar en vivo un login real de Nextcloud (OIDC) contra
+  `centro-de-trabajo.mi2.com.mx` -- código y rutas ya listos (ver arriba),
+  falta que alguien con cuenta real de Nextcloud lo intente.
 
 ## [1.0.0]
 
