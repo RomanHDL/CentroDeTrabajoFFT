@@ -41,6 +41,7 @@ export const RELEASES = [
           'addedHoraPorHora',
           'addedSorting',
           'addedDeleteUser',
+          'addedLinkExistingAccount',
         ],
       },
       {
@@ -80,6 +81,7 @@ export const RELEASES = [
           'fixedPgErrorUnwrap',
           'fixedOidcCallbackRoute',
           'fixedOidcCookiePath',
+          'fixedAccessRequestDecideId',
         ],
       },
       {

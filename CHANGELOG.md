@@ -166,6 +166,20 @@ para poder desplegar en el servidor privado (Coolify). Ver
   automático. Probado en vivo con un usuario descartable (creado y
   eliminado de punta a punta, confirmado con recarga completa que ya no
   existe en la base de datos).
+- **Vincular a cuenta existente (Solicitudes de acceso SSO).** Nueva
+  acción en `AccessRequestsCard.jsx`/`api/access-requests/[id]/decide.js`
+  (`action='link'`): cuando alguien con cuenta local de siempre (creada
+  antes de tener SSO configurado) inicia sesión por primera vez con
+  Nextcloud, cae en "Solicitar acceso" como si fuera nuevo porque su
+  cuenta nunca tuvo `oidcSub` -- "Aprobar" SIEMPRE creaba un `User`
+  nuevo, dejando una cuenta duplicada para la misma persona. Ahora se
+  puede elegir "Vincular a cuenta existente" y seleccionar de un
+  desplegable de usuarios reales: hace `UPDATE` de `oidcSub` sobre ESE
+  usuario en vez de insertar uno nuevo (rechaza con 409 si esa identidad
+  ya está vinculada a otra cuenta, vía `pgError()`). Encontrado y resuelto
+  a partir del caso real del propio administrador (Roman, cuenta 3647).
+  Verificado en vivo de punta a punta con datos de prueba desechables, y
+  usado de inmediato para vincular la cuenta real.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
@@ -378,8 +392,9 @@ para poder desplegar en el servidor privado (Coolify). Ver
   Nextcloud, solo por la misma convención que describió Amir).
   Verificado localmente que ambas rutas nuevas llegan al handler real
   (responden su propio JSON `{"error":"SSO no configurado"}` en vez del
-  404 de Express o el HTML de la SPA) -- falta la confirmación en vivo
-  de un login real contra Nextcloud, que solo Roman puede probar.
+  404 de Express o el HTML de la SPA). Confirmado en vivo (ver entradas
+  siguientes): esta parte funcionó, pero destapó 2 bugs mas en el mismo
+  flujo real.
 - **SSO de Nextcloud — segundo bug real, encontrado al probar el login
   en vivo tras el fix anterior ("oidcErrorGeneric").** Las cookies de
   tránsito PKCE (`oidc_txn`) y de identidad pendiente (`oidc_pending`,
@@ -393,14 +408,29 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (`buildTxnCookie`/`buildClearTxnCookie`/`buildPendingCookie`/
   `buildClearPendingCookie`) -- cubre cualquier ruta del mismo origen,
   `/api/auth/oidc/*` y `/auth/*` por igual, en vez de acotar a un solo
-  alias y dejar el otro roto. Verificado que el `Set-Cookie` real ya
-  trae `Path=/` (llamada directa y pura a los builders, sin red) --
-  sigue pendiente la confirmación en vivo de Roman.
+  alias y dejar el otro roto. **Confirmado en vivo: el login real con
+  Nextcloud ya funciona** -- Roman lo probó y llegó correctamente hasta
+  la identidad real (nombre/email), aunque cayó en "Solicitar acceso"
+  porque su cuenta local de siempre nunca tuvo `oidcSub` (ver las 2
+  entradas siguientes, encontradas resolviendo justo ese caso).
+- **SSO de Nextcloud — tercer bug real, encontrado al intentar vincular
+  la cuenta local de siempre de Roman a su identidad de Nextcloud.**
+  `api/access-requests/[id]/decide.js` era el ÚNICO endpoint dinámico de
+  toda la API que leía `const { id } = req.query` sin el fallback
+  `?? req.params?.id` que usa cualquier otro `api/**/[id].js` (ver el
+  comentario real en `server-lib/api-routes.js`) -- funcionaba en Vercel
+  (que inyecta el segmento dinámico en `req.query`) pero NUNCA en
+  Coolify/dev (Express real, sin ese comportamiento): Aprobar/Rechazar
+  solicitudes de acceso nunca había funcionado ahí, solo en Vercel.
+  Corregido a la misma convención del resto de la API. Encontrado y
+  verificado en vivo probando el nuevo `action='link'` (ver "Added"
+  arriba) con datos de prueba desechables (creados y limpiados por
+  completo al terminar).
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
-- Confirmar en vivo un login real de Nextcloud (OIDC) contra
-  `centro-de-trabajo.mi2.com.mx` -- código y rutas ya listos (ver arriba),
-  falta que alguien con cuenta real de Nextcloud lo intente.
+- Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
+  arriba: 3 bugs reales encontrados y corregidos en el camino -- ruta de
+  callback, Path de cookies, y extracción de id en decide.js).
 
 ## [1.0.0]
 

@@ -51,7 +51,7 @@
   },
   "accessRequestsCard": {
     "title": "SSO 访问申请",
-    "subtitle": "已通过 Nextcloud 登录但还没有本地账号的人员 —— 选择一个角色来创建账号，或拒绝申请。",
+    "subtitle": "已通过 Nextcloud 登录但还没有本地账号的人员 —— 可以创建带角色的新账号，绑定到已有账号（如果这个人在启用SSO之前就已经有权限），或拒绝申请。",
     "loadError": "无法加载申请列表。",
     "noteLabel": "原因",
     "requestedAtLabel": "申请时间",
@@ -60,7 +60,14 @@
     "denyButton": "拒绝",
     "approvedToast": "{{name}} 现在已有本地账号。",
     "deniedToast": "已拒绝 {{name}} 的申请。",
-    "decideError": "无法处理该申请。"
+    "decideError": "无法处理该申请。",
+    "modeLabel": "操作",
+    "modeNewAccount": "创建新账号",
+    "modeExistingAccount": "绑定到已有账号",
+    "existingUserLabel": "账号",
+    "existingUserPlaceholder": "选择一个用户",
+    "linkButton": "绑定",
+    "linkedToast": "{{name}} 现在可以用他们已有的账号通过Nextcloud登录了。"
   },
   "adminToolsCard": {
     "title": "管理工具",

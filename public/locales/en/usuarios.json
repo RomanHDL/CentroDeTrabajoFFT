@@ -51,7 +51,7 @@
   },
   "accessRequestsCard": {
     "title": "SSO access requests",
-    "subtitle": "People who signed in with Nextcloud but don't have a local account yet -- pick a role to create one, or deny.",
+    "subtitle": "People who signed in with Nextcloud but don't have a local account yet -- create a new account with a role, link it to an existing account (if they already had access before SSO), or deny.",
     "loadError": "Could not load the requests.",
     "noteLabel": "Reason",
     "requestedAtLabel": "Requested",
@@ -60,7 +60,14 @@
     "denyButton": "Deny",
     "approvedToast": "{{name}} now has a local account.",
     "deniedToast": "{{name}}'s request was denied.",
-    "decideError": "Could not process the request."
+    "decideError": "Could not process the request.",
+    "modeLabel": "Action",
+    "modeNewAccount": "Create new account",
+    "modeExistingAccount": "Link to existing account",
+    "existingUserLabel": "Account",
+    "existingUserPlaceholder": "Select a user",
+    "linkButton": "Link",
+    "linkedToast": "{{name}} can now log in with Nextcloud using their existing account."
   },
   "adminToolsCard": {
     "title": "Administrative tools",

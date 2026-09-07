@@ -308,7 +308,11 @@ export default function UsuariosPage() {
         </Table>
       </div>
 
-      <AccessRequestsCard onUserCreated={(user) => setUsers((prev) => [...prev, user])} />
+      <AccessRequestsCard
+        users={users}
+        onUserCreated={(user) => setUsers((prev) => [...prev, user])}
+        onUserLinked={(user) => setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)))}
+      />
 
       <PermissionsManagementCard
         ref={permissionsCardRef}

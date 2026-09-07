@@ -51,7 +51,7 @@
   },
   "accessRequestsCard": {
     "title": "Solicitudes de acceso SSO",
-    "subtitle": "Personas que iniciaron sesión con Nextcloud pero todavía no tienen cuenta local -- elige un rol para dar de alta, o rechaza.",
+    "subtitle": "Personas que iniciaron sesión con Nextcloud pero todavía no tienen cuenta local -- crea una cuenta nueva con un rol, vincúlala a una cuenta que ya existe (si la persona ya tenía acceso antes de SSO), o rechaza.",
     "loadError": "No se pudieron cargar las solicitudes.",
     "noteLabel": "Motivo",
     "requestedAtLabel": "Solicitado",
@@ -60,7 +60,14 @@
     "denyButton": "Rechazar",
     "approvedToast": "{{name}} ahora tiene cuenta local.",
     "deniedToast": "Solicitud de {{name}} rechazada.",
-    "decideError": "No se pudo procesar la solicitud."
+    "decideError": "No se pudo procesar la solicitud.",
+    "modeLabel": "Acción",
+    "modeNewAccount": "Crear cuenta nueva",
+    "modeExistingAccount": "Vincular a cuenta existente",
+    "existingUserLabel": "Cuenta",
+    "existingUserPlaceholder": "Selecciona un usuario",
+    "linkButton": "Vincular",
+    "linkedToast": "{{name}} ya puede iniciar sesión con Nextcloud usando su cuenta existente."
   },
   "adminToolsCard": {
     "title": "Herramientas administrativas",
