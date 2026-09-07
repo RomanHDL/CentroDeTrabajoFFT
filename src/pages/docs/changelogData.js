@@ -66,6 +66,7 @@ export const RELEASES = [
           'changedThemePersists',
           'changedEstacionesRemoveCalidadEntrenador',
           'changedLineasIncludeLinea0',
+          'changedEstacionesGerenteFftName',
         ],
       },
       {

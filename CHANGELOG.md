@@ -238,6 +238,14 @@ para poder desplegar en el servidor privado (Coolify). Ver
   El badge "Líneas 1 - 10" de la tarjeta FFT en Estaciones cambia a
   "Líneas 0 - 10" para que coincida. Verificado en vivo: ambas pestañas
   ahora muestran los mismos totales (43/92 personal, 46.7% cobertura).
+- **Estaciones — "WC Coordinador de Almacén" pasa a "WC GERENTE DE
+  FFT".** Renombre visual únicamente (`estacionesTab.areaGerenteName`
+  en centroTrabajo.json, id interno `GERENTE` sin cambios). El resto de
+  la app ya mostraba "WC GERENTE DE FFT" desde el 2026-09-01 (ver
+  `wcCoordinadorAlmacen` en catalog.json/nameKey de `GERENTE` en
+  catalog.js) -- solo el texto propio y curado de esta pestaña
+  (`buildAreaSlots()`, independiente del catálogo) se había quedado con
+  el nombre anterior.
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),

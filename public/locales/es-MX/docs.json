@@ -134,6 +134,7 @@
     "changedThemePersists": "El modo claro/oscuro ahora se recuerda entre sesiones (localStorage), igual que ChatGPT o Facebook -- al volver a entrar se respeta el último modo elegido, en vez de reiniciar siempre en claro.",
     "changedEstacionesRemoveCalidadEntrenador": "Se quitaron las tarjetas \"WC Calidad\" y \"WC Entrenador\" de la pestaña Estaciones de Centro de Trabajo -- ninguna de las dos vive en el plano físico (Áreas de trabajo), así que no debían aparecer ahí tampoco.",
     "changedLineasIncludeLinea0": "La pestaña Líneas de Centro de Trabajo ahora incluye WC LINEA 0 (antes solo mostraba LINEA 1 a la 10) -- son 11 líneas en total, igual que ya contaba la tarjeta FFT de Estaciones.",
+    "changedEstacionesGerenteFftName": "La tarjeta \"WC Coordinador de Almacén\" de Estaciones se renombra a \"WC GERENTE DE FFT\" -- el resto de la app (catálogo real, Áreas de trabajo) ya usaba ese nombre desde el 2026-09-01; solo el texto propio de esta pestaña se había quedado atrás.",
     "addedCalidadManual": "Manual de proceso real (SOP oficial de Calidad) embebido en \"Hoja de Proceso\" para el puesto de Calidad en todas las WC LINEA.",
     "addedDemorasPlaneacion": "Dos módulos nuevos en el menú -- Demoras y Planeación -- marcados \"En desarrollo\", solo navegación por ahora.",
     "addedOrganigrama": "Módulo nuevo Organigrama (Visión General) -- solo navegación por ahora, marcado \"En desarrollo\".",

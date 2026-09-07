@@ -134,6 +134,7 @@
     "changedThemePersists": "Light/dark mode is now remembered across sessions (localStorage), like ChatGPT or Facebook -- it comes back to whichever mode you last picked instead of always restarting in light.",
     "changedEstacionesRemoveCalidadEntrenador": "Removed the \"WC Quality\" and \"WC Trainer\" cards from the Stations tab in Work Center -- neither lives on the physical floor plan (Work Areas), so they shouldn't appear there either.",
     "changedLineasIncludeLinea0": "The Lines tab in Work Center now includes WC LINEA 0 (it used to only show LINEA 1 through 10) -- 11 lines total, matching what the FFT card in Stations already counted.",
+    "changedEstacionesGerenteFftName": "The \"WC Warehouse Coordinator\" card in Stations is renamed to \"WC FFT MANAGER\" -- the rest of the app (real catalog, Work Areas) already used that name since 2026-09-01; only this tab's own text had fallen behind.",
     "addedCalidadManual": "Real process manual (official Quality SOP) embedded in the \"Process Sheet\" for the Quality station across all WC LINEA.",
     "addedDemorasPlaneacion": "Two new menu modules -- Delays and Planning -- marked \"Under development\", navigation only for now.",
     "addedOrganigrama": "New Org Chart module (Overview) -- navigation only for now, marked \"Under development\".",
