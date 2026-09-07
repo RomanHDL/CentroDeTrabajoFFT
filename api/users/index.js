@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { asc } from 'drizzle-orm'
 import { db, user } from '../../server-lib/db/client.js'
+import { pgError } from '../../server-lib/db/pgError.js'
 import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
@@ -50,8 +51,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
       // Fase 3 (Prisma -> Drizzle): P2002 (Prisma) -> 23505 unique_violation (pg nativo).
       // `e.constraint` es el nombre real del indice unico (ej. "User_username_key");
       // se deriva la columna del mismo modo que antes devolvia e.meta.target[0].
-      if (e.code === '23505') {
-        const target = e.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor unico'
+      const pgErr = pgError(e)
+      if (pgErr.code === '23505') {
+        const target = pgErr.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor unico'
         return res.status(409).json({ error: `Ya existe un usuario con ese ${target}` })
       }
       throw e

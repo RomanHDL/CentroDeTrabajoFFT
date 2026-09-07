@@ -1,6 +1,7 @@
 // Equivalente real de checkInEmployee (repository.js).
 import { eq } from 'drizzle-orm'
 import { db, employee as employeeTable } from '../../server-lib/db/client.js'
+import { pgError } from '../../server-lib/db/pgError.js'
 import { requireAuth } from '../../server-lib/auth.js'
 import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
 
@@ -40,7 +41,7 @@ export default requireAuth(async (req, res) => {
         )[0]
       } catch (e) {
         // Fase 3 (Prisma -> Drizzle): P2002 (Prisma) -> 23505 unique_violation (pg nativo).
-        if (e.code === '23505') {
+        if (pgError(e).code === '23505') {
           return res
             .status(409)
             .json({ error: `El número de empleado ${number} ya está en uso por otra persona.` })

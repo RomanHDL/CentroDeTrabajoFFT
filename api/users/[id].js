@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, user } from '../../server-lib/db/client.js'
+import { pgError } from '../../server-lib/db/pgError.js'
 import { requireModuleAccess, publicUser } from '../../server-lib/auth.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
@@ -27,7 +28,7 @@ async function handleDelete(req, res, id) {
     // (auditorias/demoras/equipo/etc, onDelete:'restrict' a proposito en schema.js para nunca
     // perder ese historial) -- nunca se intenta un cascade automatico que borraria datos de
     // produccion reales sin que nadie lo haya pedido explicitamente.
-    if (e.code === '23503') {
+    if (pgError(e).code === '23503') {
       return res.status(409).json({
         error:
           'No se puede eliminar: este usuario tiene registros históricos asociados (auditorías, demoras, equipo, etc.). Desactívalo en su lugar.',
@@ -67,8 +68,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
     return res.status(200).json({ user: publicUser(updated) })
   } catch (e) {
     // P2002 (Prisma) -> 23505 unique_violation (pg nativo), mismo criterio que api/users/index.js.
-    if (e.code === '23505') {
-      const target = e.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor unico'
+    const pgErr = pgError(e)
+    if (pgErr.code === '23505') {
+      const target = pgErr.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor unico'
       return res.status(409).json({ error: `Ya existe un usuario con ese ${target}` })
     }
     throw e

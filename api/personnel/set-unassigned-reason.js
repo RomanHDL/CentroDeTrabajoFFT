@@ -22,6 +22,7 @@
 import { eq } from 'drizzle-orm'
 import { requireAuth } from '../../server-lib/auth.js'
 import { db, employee as employeeTable } from '../../server-lib/db/client.js'
+import { pgError } from '../../server-lib/db/pgError.js'
 
 const VALID_REASONS = new Set(['BAJA', 'TURNO', 'FALTA'])
 
@@ -59,7 +60,7 @@ export default requireAuth(async (req, res) => {
           .values({ employeeNumber: number, fullName: name.trim(), updatedAt: new Date() })
           .returning()
       } catch (e) {
-        if (e.code === '23505') {
+        if (pgError(e).code === '23505') {
           return res
             .status(409)
             .json({ error: `El número de empleado ${number} ya está en uso por otra persona.` })

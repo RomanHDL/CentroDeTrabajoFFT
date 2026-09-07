@@ -11,6 +11,7 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { publicUser, requireModuleAccess } from '../../../server-lib/auth.js'
 import { accessRequest, db, user as userTable } from '../../../server-lib/db/client.js'
+import { pgError } from '../../../server-lib/db/pgError.js'
 
 const VALID_ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER']
 
@@ -61,8 +62,9 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
       })
       .returning()
   } catch (e) {
-    if (e.code === '23505') {
-      const target = e.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor único'
+    const pgErr = pgError(e)
+    if (pgErr.code === '23505') {
+      const target = pgErr.constraint?.replace(/^User_/, '').replace(/_key$/, '') ?? 'valor único'
       return res.status(409).json({ error: `Ya existe un usuario con ese ${target}` })
     }
     throw e

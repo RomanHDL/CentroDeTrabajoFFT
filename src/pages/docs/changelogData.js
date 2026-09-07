@@ -77,6 +77,7 @@ export const RELEASES = [
           'fixedPlantTotalConsistency',
           'fixedHoraPorHoraDropdown',
           'fixedHoraPorHoraDateTimezone',
+          'fixedPgErrorUnwrap',
         ],
       },
       {

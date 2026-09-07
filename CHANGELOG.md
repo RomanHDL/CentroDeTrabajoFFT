@@ -339,6 +339,27 @@ para poder desplegar en el servidor privado (Coolify). Ver
   en la primera versión; ahora los KPIs sí cortan en la hora activa y
   "Resumen del turno"/Excel siguen mostrando el turno completo, como se
   pidió.
+- **Errores de Postgres nunca hacían match (500 genérico en vez del
+  mensaje claro).** Encontrado en vivo probando "Eliminar usuario": un
+  intento de borrar un usuario con registros históricos (auditorías,
+  demoras, equipo, etc.) daba un 500 genérico en vez del 409 con mensaje
+  claro que el propio código ya devolvía. Causa raíz: drizzle-orm 0.45
+  envuelve TODO error de query en su propia clase `DrizzleQueryError`
+  (`node_modules/drizzle-orm/pg-core/session.js`, `queryWithCache`) — el
+  error real de Postgres (con `.code`/`.constraint`, ej. `23503`
+  foreign_key_violation o `23505` unique_violation) queda en `.cause`,
+  nunca en el objeto atrapado directamente. Los `catch (e) { if (e.code
+  === '23505') ... }` que ya existían en varios endpoints nunca hacían
+  match por lo mismo — bug preexistente a esta sesión, recién
+  descubierto. Nuevo helper `pgError(e)` (`server-lib/db/pgError.js`,
+  devuelve `e.cause` si trae `.code`, si no el propio `e`) aplicado en
+  los 5 endpoints afectados: `api/users/index.js`, `api/users/[id].js`
+  (los dos casos, PATCH y el nuevo DELETE), `api/access-requests/[id]/
+  decide.js`, `api/personnel/checkin.js`,
+  `api/personnel/set-unassigned-reason.js`. Verificado en vivo de punta
+  a punta: usuario y demora de prueba creados, confirmado el 409 con
+  mensaje claro, ambos registros de prueba limpiados por completo al
+  terminar.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - SSO real de Nextcloud (OIDC), reemplaza el login propio.
