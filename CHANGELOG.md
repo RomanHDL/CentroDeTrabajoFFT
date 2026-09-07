@@ -426,6 +426,13 @@ para poder desplegar en el servidor privado (Coolify). Ver
   verificado en vivo probando el nuevo `action='link'` (ver "Added"
   arriba) con datos de prueba desechables (creados y limpiados por
   completo al terminar).
+- **Botón "Iniciar sesión con Nextcloud" descentrado.** `LoginPage.jsx`:
+  el `<Button asChild>` era hijo directo de un Fragment (`<>...</>`),
+  sin ningún contenedor que lo centrara -- quedaba pegado a la izquierda
+  de la tarjeta de login en vez de alineado con el resto. Se envuelve en
+  un `<div className="flex flex-col items-center gap-4">` con el botón
+  (y la alerta de error, si la hay) a `w-full`, mismo ancho que el resto
+  de la tarjeta. Verificado visualmente en vivo.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

@@ -82,6 +82,7 @@ export const RELEASES = [
           'fixedOidcCallbackRoute',
           'fixedOidcCookiePath',
           'fixedAccessRequestDecideId',
+          'fixedOidcButtonCentered',
         ],
       },
       {

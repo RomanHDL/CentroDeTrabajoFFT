@@ -153,12 +153,12 @@ export default function LoginPage() {
             api/auth/oidc/status.js) -- "asi es en Cubicaje", a peticion
             explicita del usuario. */}
         {oidcConfigured === true && (
-          <>
-            {error && <Alert variant="destructive" className="mb-4">{error}</Alert>}
-            <Button asChild size="lg" className="font-bold">
+          <div className="flex flex-col items-center gap-4">
+            {error && <Alert variant="destructive" className="w-full">{error}</Alert>}
+            <Button asChild size="lg" className="w-full font-bold">
               <a href="/api/auth/oidc/start">{t('oidcButton')}</a>
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>
