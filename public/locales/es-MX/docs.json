@@ -128,6 +128,7 @@
     "changedDemorasLiderView": "El rol LIDER ahora solo ve el formulario \"Registrar demora\" en Demoras, sin el historial de \"Registros recientes\".",
     "changedDemorasRename": "El módulo \"Demoras\" se renombró a \"Demoras de trabajo\" en el menú y en el título de la página.",
     "changedDemorasRemoveStation": "Se quitó el campo \"Estación\" del formulario de Registrar demora en las 5 áreas -- ya no se captura al registrar.",
+    "changedLineSelectOrder": "El selector de \"Línea\" (Demoras, Hora por Hora, Auditoría, Control de Equipo) ahora lista WC LINEA 0 a la 10 en orden ascendente, en vez de LINEA 1..10 seguido de LINEA 0 al final.",
     "addedCalidadManual": "Manual de proceso real (SOP oficial de Calidad) embebido en \"Hoja de Proceso\" para el puesto de Calidad en todas las WC LINEA.",
     "addedDemorasPlaneacion": "Dos módulos nuevos en el menú -- Demoras y Planeación -- marcados \"En desarrollo\", solo navegación por ahora.",
     "addedOrganigrama": "Módulo nuevo Organigrama (Visión General) -- solo navegación por ahora, marcado \"En desarrollo\".",

@@ -1132,6 +1132,18 @@ export const AREA_DETAIL_VARIANTS = {
 
 export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
+// 2026-09-07 (a peticion explicita del usuario, viendo el selector de Linea en vivo -- "ordenalo
+// del 0 al 10, del menor al mayor"): WORK_CENTERS trae PROYECTO/WC LINEA 0 al final del arreglo
+// (ver comentario en su definicion), asi que cualquier .filter() que lo recorra en orden hereda
+// ese 1..10,0. Este export ya viene ordenado 0..10 para que los selectores de "Linea" lo usen
+// directo en vez de repetir el mismo sort en cada pantalla.
+export const LINE_FAMILY_WORK_CENTERS = WORK_CENTERS.filter((w) =>
+  LINE_FAMILY_AREA_IDS.has(w.id),
+).sort((a, b) => {
+  const numOf = (w) => (w.id === 'PROYECTO' ? 0 : Number(w.id.replace('LINEA', '')))
+  return numOf(a) - numOf(b)
+})
+
 /* Grupos de area de Hora por Hora (2026-09-04, a peticion explicita del usuario -- "cada area
    tiene sus paros, no todas las areas son iguales... yo pongo el catalogo de cada area"): las
    WC LINEAS comparten UN catalogo de causas (LINEAS), mientras que Insumos/Accesorios/Midea/

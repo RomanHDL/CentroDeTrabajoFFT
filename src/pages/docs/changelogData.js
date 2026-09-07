@@ -60,6 +60,7 @@ export const RELEASES = [
           'changedDemorasLiderView',
           'changedDemorasRename',
           'changedDemorasRemoveStation',
+          'changedLineSelectOrder',
         ],
       },
       {

@@ -199,6 +199,12 @@ para poder desplegar en el servidor privado (Coolify). Ver
   elimina de la UI y del payload enviado al servidor (`stationName` sigue
   existiendo como columna opcional en la base de datos, para no perder los
   registros históricos que sí la tenían).
+- **Selector de Línea — orden ascendente 0 a 10.** El dropdown "Línea" que
+  comparten Demoras, Hora por Hora, Auditoría y Control de Equipo ahora
+  muestra WC LINEA 0, 1, 2... 10 en vez de 1..10 seguido de 0 al final
+  (nuevo export `LINE_FAMILY_WORK_CENTERS` en
+  `src/data/production/catalog.js`, ya ordenado, para no repetir el mismo
+  sort en cada pantalla).
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),

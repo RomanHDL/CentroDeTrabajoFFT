@@ -22,9 +22,8 @@ import {
 import { cn } from '@/lib/utils'
 import { computeTotalLoss } from '../../data/horaPorHora/dynamicLossMetrics.js'
 import {
-  LINE_FAMILY_AREA_IDS,
+  LINE_FAMILY_WORK_CENTERS,
   OFFICIAL_SHIFTS,
-  WORK_CENTERS,
   workCenterById,
 } from '../../data/production/catalog'
 import { computeCompliancePct, computeGap } from '../../data/shiftProduction/metrics.js'
@@ -248,7 +247,7 @@ export default function HourlyHistoryView({ onBack }) {
                   <SelectValue placeholder={t('fieldLinePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                  {LINE_FAMILY_WORK_CENTERS.map((w) => (
                     <SelectItem key={w.id} value={w.id}>
                       {workCenterById(w.id).name}
                     </SelectItem>

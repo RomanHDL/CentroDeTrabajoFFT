@@ -128,6 +128,7 @@
     "changedDemorasLiderView": "LIDER角色现在在延误模块中只能看到\"登记延误\"表单，不显示\"最近记录\"历史。",
     "changedDemorasRename": "\"延误\"模块在菜单和页面标题中更名为\"工作延误\"。",
     "changedDemorasRemoveStation": "在全部5个区域中移除了登记延误表单里的\"工位\"字段——登记时不再需要填写。",
+    "changedLineSelectOrder": "\"产线\"选择器（延误、每小时生产、审核、设备管理）现在按0到10的升序排列WC LINEA，而不是先显示LINEA 1..10再把LINEA 0放在最后。",
     "addedCalidadManual": "在所有产线的\"工序单\"中为质检工位嵌入真实工艺手册（官方质量SOP）。",
     "addedDemorasPlaneacion": "菜单中新增两个模块——延误和规划——标记为\"开发中\"，目前仅提供导航入口。",
     "addedOrganigrama": "新增组织架构图模块（总览）——目前仅提供导航入口，标记为\"开发中\"。",

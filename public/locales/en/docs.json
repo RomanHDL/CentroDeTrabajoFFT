@@ -128,6 +128,7 @@
     "changedDemorasLiderView": "The LIDER role now only sees the \"Log a delay\" form in Delays, without the \"Recent records\" history.",
     "changedDemorasRename": "The \"Delays\" module was renamed to \"Work delays\" in the menu and page title.",
     "changedDemorasRemoveStation": "Removed the \"Station\" field from the Log a delay form across all 5 areas -- no longer captured when logging.",
+    "changedLineSelectOrder": "The \"Line\" selector (Delays, Hourly Production, Audits, Equipment Control) now lists WC LINEA 0 through 10 in ascending order, instead of LINEA 1..10 followed by LINEA 0 at the end.",
     "addedCalidadManual": "Real process manual (official Quality SOP) embedded in the \"Process Sheet\" for the Quality station across all WC LINEA.",
     "addedDemorasPlaneacion": "Two new menu modules -- Delays and Planning -- marked \"Under development\", navigation only for now.",
     "addedOrganigrama": "New Org Chart module (Overview) -- navigation only for now, marked \"Under development\".",

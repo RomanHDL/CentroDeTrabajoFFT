@@ -24,7 +24,7 @@ import {
 import { cn } from '@/lib/utils'
 import { EQUIPMENT_STATUSES, EQUIPMENT_TYPES } from '../../data/controlEquipo/catalog'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { LINE_FAMILY_AREA_IDS, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
+import { LINE_FAMILY_WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import { EmptyState } from '../../ui'
 
 /* Modulo Control de Equipo (2026-09-04, a peticion explicita del usuario): registro real de
@@ -191,7 +191,7 @@ export default function ControlEquipoPage() {
                     <SelectValue placeholder={t('fieldLinePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                    {LINE_FAMILY_WORK_CENTERS.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id).name}
                       </SelectItem>

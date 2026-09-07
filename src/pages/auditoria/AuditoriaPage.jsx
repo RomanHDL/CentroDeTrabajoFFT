@@ -59,9 +59,8 @@ import { getLineWorkstationsWithOccupancy } from '../../data/personnel/repositor
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import {
   CURRENT_SHIFT,
-  LINE_FAMILY_AREA_IDS,
+  LINE_FAMILY_WORK_CENTERS,
   SHIFT_OPTIONS,
-  WORK_CENTERS,
   workCenterById,
 } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
@@ -476,7 +475,7 @@ function FiveSDialog({ onClose, onFinished }) {
                     <SelectValue placeholder={t('linePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                    {LINE_FAMILY_WORK_CENTERS.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id)?.name || w.name}
                       </SelectItem>
@@ -727,7 +726,7 @@ function EquipoDialog({ onClose, onFinished }) {
                     <SelectValue placeholder={t('linePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                    {LINE_FAMILY_WORK_CENTERS.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id)?.name || w.name}
                       </SelectItem>
@@ -1156,7 +1155,7 @@ function ProcesoDialog({ onClose, onFinished }) {
                     <SelectValue placeholder={t('linePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                    {LINE_FAMILY_WORK_CENTERS.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id)?.name || w.name}
                       </SelectItem>

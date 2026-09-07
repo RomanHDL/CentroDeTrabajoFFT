@@ -30,9 +30,8 @@ import {
 } from '../../data/demoras/catalog'
 import {
   CURRENT_SHIFT,
-  LINE_FAMILY_AREA_IDS,
+  LINE_FAMILY_WORK_CENTERS,
   SHIFT_OPTIONS,
-  WORK_CENTERS,
   workCenterById,
 } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
@@ -187,7 +186,7 @@ export default function DemorasPage() {
                     <SelectValue placeholder={t('fieldLinePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
+                    {LINE_FAMILY_WORK_CENTERS.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id).name}
                       </SelectItem>
