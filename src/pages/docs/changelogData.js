@@ -79,6 +79,7 @@ export const RELEASES = [
           'fixedHoraPorHoraDateTimezone',
           'fixedPgErrorUnwrap',
           'fixedOidcCallbackRoute',
+          'fixedOidcCookiePath',
         ],
       },
       {

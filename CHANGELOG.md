@@ -380,6 +380,22 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (responden su propio JSON `{"error":"SSO no configurado"}` en vez del
   404 de Express o el HTML de la SPA) -- falta la confirmación en vivo
   de un login real contra Nextcloud, que solo Roman puede probar.
+- **SSO de Nextcloud — segundo bug real, encontrado al probar el login
+  en vivo tras el fix anterior ("oidcErrorGeneric").** Las cookies de
+  tránsito PKCE (`oidc_txn`) y de identidad pendiente (`oidc_pending`,
+  `server-lib/oidc.js`) siempre tuvieron `Path=/api/auth/oidc` -- un
+  cookie con ese `Path` NUNCA viaja en una request a `/auth/callback`
+  (no es un subpath del cookie), así que `readTxnCookie(req)` devolvía
+  `null` justo después de agregar el alias externo real de la entrada
+  anterior, y el callback redirigía a `txn_expired` (mismo mensaje
+  genérico en pantalla que `exchange_failed`, `login.jsx` no distingue
+  entre las dos). Se corrige a `Path=/` en los 4 builders de cookie
+  (`buildTxnCookie`/`buildClearTxnCookie`/`buildPendingCookie`/
+  `buildClearPendingCookie`) -- cubre cualquier ruta del mismo origen,
+  `/api/auth/oidc/*` y `/auth/*` por igual, en vez de acotar a un solo
+  alias y dejar el otro roto. Verificado que el `Set-Cookie` real ya
+  trae `Path=/` (llamada directa y pura a los builders, sin red) --
+  sigue pendiente la confirmación en vivo de Roman.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Confirmar en vivo un login real de Nextcloud (OIDC) contra

@@ -65,6 +65,17 @@ async function getOidcConfig() {
 // (JWT de vida muy corta, mismo mecanismo que ya usa server-lib/auth.js
 // para la sesion) -- Vercel/Coolify son procesos sin estado entre request
 // de /start y de /callback, no hay sesion de servidor donde guardarlos.
+//
+// 2026-09-07 (bug real en vivo, "oidcErrorGeneric" tras "Iniciar sesion con Nextcloud"):
+// `path` SIEMPRE fue '/api/auth/oidc' -- funcionaba mientras /start y /callback vivian los
+// dos bajo ese mismo prefijo. Al agregar el alias externo real GET /auth/callback
+// (server-lib/api-routes.js, redirect_uri registrado en Nextcloud), el navegador dejo de
+// mandar esta cookie: un cookie con Path=X solo viaja en requests cuyo path sea X o un
+// subpath de X, y '/auth/callback' NO es subpath de '/api/auth/oidc' -- asi que
+// readTxnCookie(req) siempre devolvia null ahi, y el callback redirigia a 'txn_expired'
+// (login.jsx lo muestra como el mismo mensaje generico que 'exchange_failed'). Unico fix
+// real: Path=/ (cubre cualquier ruta del mismo origen, /api/auth/oidc/* y /auth/* por
+// igual) -- nunca acotar el path a un solo alias, manteniendo el otro roto.
 export function buildTxnCookie(payload) {
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: TXN_TTL_SECONDS })
   return stringifySetCookie({
@@ -73,7 +84,7 @@ export function buildTxnCookie(payload) {
     httpOnly: true,
     sameSite: 'lax',
     secure: isHttpsEnvironment(),
-    path: '/api/auth/oidc',
+    path: '/',
     maxAge: TXN_TTL_SECONDS,
   })
 }
@@ -85,7 +96,7 @@ export function buildClearTxnCookie() {
     httpOnly: true,
     sameSite: 'lax',
     secure: isHttpsEnvironment(),
-    path: '/api/auth/oidc',
+    path: '/',
     maxAge: 0,
   })
 }
@@ -102,7 +113,9 @@ export function readTxnCookie(req) {
 }
 
 // Identidad pendiente tras un callback sin match local -- ver PENDING_COOKIE_NAME arriba.
-// payload: { sub, email, name }.
+// payload: { sub, email, name }. Path=/ por la misma razon que buildTxnCookie de arriba --
+// se escribe desde el callback (cualquiera de sus 2 alias reales) y se lee desde
+// RequestAccessPage.jsx via /api/auth/oidc/pending, rutas que no comparten un prefijo comun.
 export function buildPendingCookie(payload) {
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: PENDING_TTL_SECONDS })
   return stringifySetCookie({
@@ -111,7 +124,7 @@ export function buildPendingCookie(payload) {
     httpOnly: true,
     sameSite: 'lax',
     secure: isHttpsEnvironment(),
-    path: '/api/auth/oidc',
+    path: '/',
     maxAge: PENDING_TTL_SECONDS,
   })
 }
@@ -123,7 +136,7 @@ export function buildClearPendingCookie() {
     httpOnly: true,
     sameSite: 'lax',
     secure: isHttpsEnvironment(),
-    path: '/api/auth/oidc',
+    path: '/',
     maxAge: 0,
   })
 }
