@@ -226,6 +226,18 @@ para poder desplegar en el servidor privado (Coolify). Ver
   de que cargue React, para evitar el parpadeo de un instante en claro.
   El idioma ya persistía desde antes (`i18n.js`, sección 10 del MI Stack
   Reference) -- no se tocó, solo se confirmó que sigue funcionando.
+- **Centro de Trabajo — Estaciones y Líneas ahora coinciden.** Se
+  quitaron las tarjetas "WC Calidad" y "WC Entrenador" de la pestaña
+  Estaciones (`EstacionesTab.jsx`) -- ninguna de las dos vive en el
+  plano físico (`layoutZones.js`/`OperatingFloorPlan`), así que no
+  debían aparecer ahí. La pestaña Líneas (`LineasTab.jsx`) ya no filtra
+  con el `hasLineStations()` de siempre (que excluía PROYECTO/WC LINEA
+  0) -- ahora usa `LINE_FAMILY_WORK_CENTERS` (catalog.js), la misma
+  fuente ya ordenada 0..10 que usan Demoras/Hora por Hora/Auditoría/
+  Control de Equipo para su selector de "Línea": son 11 líneas, no 10.
+  El badge "Líneas 1 - 10" de la tarjeta FFT en Estaciones cambia a
+  "Líneas 0 - 10" para que coincida. Verificado en vivo: ambas pestañas
+  ahora muestran los mismos totales (43/92 personal, 46.7% cobertura).
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),

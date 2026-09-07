@@ -132,6 +132,8 @@
     "changedDemorasAutoShift": "延误模块的班次字段不再依赖固定值——现在使用每小时生产和分拣模块已有的实时班次自动检测（白班/加班/夜班），如果登记的延误发生在班次时间之外，仍可手动修改。",
     "changedDemorasRemoveHistoryStation": "延误的\"最近记录\"中也移除了工位列——登记时不再采集该数据。",
     "changedThemePersists": "浅色/深色模式现在会跨会话记住（localStorage），和ChatGPT或Facebook一样——再次进入时会保持你上次选择的模式，而不是每次都重置为浅色。",
+    "changedEstacionesRemoveCalidadEntrenador": "工作中心的\"工位\"标签页移除了\"WC 质量\"和\"WC 培训师\"卡片——这两个都不在实体平面图（工作区域）中，所以在这里也不应该出现。",
+    "changedLineasIncludeLinea0": "工作中心的\"产线\"标签页现在包含WC LINEA 0（之前只显示1号线到10号线）——总共11条产线，和\"工位\"标签页里FFT卡片统计的数量一致。",
     "addedCalidadManual": "在所有产线的\"工序单\"中为质检工位嵌入真实工艺手册（官方质量SOP）。",
     "addedDemorasPlaneacion": "菜单中新增两个模块——延误和规划——标记为\"开发中\"，目前仅提供导航入口。",
     "addedOrganigrama": "新增组织架构图模块（总览）——目前仅提供导航入口，标记为\"开发中\"。",

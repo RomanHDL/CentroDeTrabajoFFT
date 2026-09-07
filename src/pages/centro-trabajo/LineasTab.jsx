@@ -25,7 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { hasLineStations, WORK_CENTERS } from '../../data/production/catalog'
+import { LINE_FAMILY_WORK_CENTERS } from '../../data/production/catalog'
 import { getAreaStaffing } from '../../data/production/personnelByArea'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 
@@ -33,11 +33,18 @@ import { useEmployeeDropTarget } from '../../ui/dnd'
    Rediseño 2026-08-24 (a petición explícita del usuario, mockup
    proporcionado) -- EXCLUSIVO de esta pestaña "Líneas". Cuadrícula
    uniforme (5 columnas en desktop grande) en vez del flex-wrap
-   anterior (que dejaba una fila irregular 7+3). Sigue siendo
-   ÚNICAMENTE Línea 1..10 (hasLineStations, igual que antes) -- Línea
-   de Proyecto/CT LINEA 0 y el resto de áreas (Paletizado, Accesorios,
-   Cajas, etc.) NUNCA aparecen aquí, viven en "Áreas de trabajo". No se
-   tocó ninguna fuente de datos: REAL/IDEAL sigue viniendo de
+   anterior (que dejaba una fila irregular 7+3).
+
+   2026-09-07 (a peticion explicita del usuario, "en lineas debe ser
+   desde WC LINEAS 0 a la 10 deben ser 11 en total no 10"): PROYECTO/
+   WC LINEA 0 SI aparece aqui ahora, como una linea mas -- se corrige
+   la decision anterior (2026-08-24) de dejarla fuera. Fuente unica:
+   LINE_FAMILY_WORK_CENTERS (catalog.js, ya ordenado 0..10), la misma
+   que usan Demoras/Hora por Hora/Auditoria/Control de Equipo para su
+   selector de "Linea" -- nunca un filtro propio de esta pantalla. El
+   resto de areas (Paletizado, Accesorios, Cajas, etc.) sigue sin
+   aparecer aqui, viven en "Áreas de trabajo". No se tocó ninguna
+   fuente de datos: REAL/IDEAL sigue viniendo de
    getAreaStaffing() (personnelByArea.js, ya excluye bajas y respeta
    asignación diaria real sobre snapshot), estaciones reales de
    getWorkstationsForLine() (workstations.js, distintas por línea --
@@ -108,7 +115,7 @@ export default function LineasTab({ onOpenLine }) {
   const [query, setQuery] = useState('')
   const [view, setView] = useState('grid')
 
-  const lineas = useMemo(() => WORK_CENTERS.filter((w) => hasLineStations(w.id)), [])
+  const lineas = LINE_FAMILY_WORK_CENTERS
 
   const rows = useMemo(
     () =>

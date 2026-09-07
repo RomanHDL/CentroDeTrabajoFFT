@@ -64,6 +64,8 @@ export const RELEASES = [
           'changedDemorasAutoShift',
           'changedDemorasRemoveHistoryStation',
           'changedThemePersists',
+          'changedEstacionesRemoveCalidadEntrenador',
+          'changedLineasIncludeLinea0',
         ],
       },
       {

@@ -2,7 +2,6 @@ import {
   ChevronDown,
   Cog,
   GraduationCap,
-  Headset,
   Info,
   LayoutGrid,
   List,
@@ -11,7 +10,6 @@ import {
   PieChart,
   PlusCircle,
   Search,
-  ShieldCheck,
   ShoppingCart,
   SprayCan,
   Tag,
@@ -61,11 +59,11 @@ import {
 
    AREA_SLOTS es una lista CURADA (igual patrón que
    SUPPORT_CARD_AREA_IDS/REFERENCE_ONLY_ZONES en floorPlanZones.js),
-   no un filtro automático de catalog.js -- el usuario pidió
-   exactamente estas 14 tarjetas, en este orden, ni una más ni una
-   menos (CONVEYOR/SELLADO/PROYECTO/CAJAS NO aparecen aquí a propósito,
-   viven en otras pestañas). "FFT" agrupa las 10 líneas reales (mismo
-   cálculo que OperatingFloorPlan.jsx); "INSUMOS_SUMINISTRO" fusiona
+   no un filtro automático de catalog.js (CONVEYOR/SELLADO/PROYECTO/
+   CAJAS NO aparecen aquí a propósito, viven en otras pestañas). "FFT"
+   agrupa las 11 líneas reales -- LINEA1..10 + PROYECTO/WC LINEA 0,
+   mismo cálculo que OperatingFloorPlan.jsx y que "Líneas" (ver
+   LINE_FAMILY_WORK_CENTERS en catalog.js, 2026-09-07). "INSUMOS_SUMINISTRO" fusiona
    INSUMOS+SUMINISTRO_MATERIAL en una sola tarjeta (mismo criterio que
    InsumosSuministroZone en OperatingFloorPlan.jsx) -- ninguna de las
    dos fusiones inventa un area de catalogo nueva, solo agrupan la
@@ -116,7 +114,15 @@ function badgeFor(real, ideal, t) {
    (no siempre coincide 1:1 con un WORK_CENTER real, ver compute()).
    Se construye dentro de EstacionesTab (no a nivel de módulo) porque
    sus textos visibles requieren t(), que solo funciona dentro de un
-   componente. */
+   componente.
+
+   2026-09-07 (a peticion explicita del usuario, "elimina calidad y
+   entrenador... ahi deben aparecer las mismas que en mi layout"): se
+   quitan las tarjetas CALIDAD y ENTRENADOR -- ninguna de las dos vive
+   en el plano fisico (OperatingFloorPlan/layoutZones.js), asi que no
+   deben aparecer en esta vista tampoco. Sus traducciones
+   (areaCalidadName/Subtitle, areaEntrenadorName/Subtitle) tambien se
+   quitaron de centroTrabajo.json en los 3 idiomas. */
 function buildAreaSlots(t) {
   return [
     {
@@ -156,13 +162,6 @@ function buildAreaSlots(t) {
       colorAreaId: 'ACCESORIOS',
     },
     {
-      id: 'CALIDAD',
-      name: t('estacionesTab.areaCalidadName'),
-      subtitle: t('estacionesTab.areaCalidadSubtitle'),
-      icon: <ShieldCheck size={22} />,
-      colorAreaId: 'CALIDAD',
-    },
-    {
       id: 'CAPACITACION',
       name: t('estacionesTab.areaCapacitacionName'),
       subtitle: t('estacionesTab.areaCapacitacionSubtitle'),
@@ -175,13 +174,6 @@ function buildAreaSlots(t) {
       subtitle: t('estacionesTab.areaTeamLeaderSubtitle'),
       icon: <UserCog size={22} />,
       colorAreaId: 'TEAM_LEADER',
-    },
-    {
-      id: 'ENTRENADOR',
-      name: t('estacionesTab.areaEntrenadorName'),
-      subtitle: t('estacionesTab.areaEntrenadorSubtitle'),
-      icon: <Headset size={22} />,
-      colorAreaId: 'ENTRENADOR',
     },
     {
       id: 'LIMPIEZA',
