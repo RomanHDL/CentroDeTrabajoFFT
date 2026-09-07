@@ -28,7 +28,6 @@ import {
   DOWNTIME_REASONS,
   requiresFormalLog,
 } from '../../data/demoras/catalog'
-import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import {
   CURRENT_SHIFT,
   LINE_FAMILY_AREA_IDS,
@@ -39,10 +38,11 @@ import {
 import { useAuth } from '../../state/auth'
 import { EmptyState } from '../../ui'
 
-/* Modulo Demoras (2026-09-04, a peticion explicita del usuario): registro real de tiempo
-   muerto por causa. Mismo patron de seleccion de area que Auditoria (AUDIT_AREA_GROUPS en
-   AuditoriaPage.jsx) -- 5 grupos, "Lineas de produccion" pide una linea especifica antes de
-   llegar a Estacion, los otros 4 ya son una sola area real.
+/* Modulo Demoras de trabajo (2026-09-04, a peticion explicita del usuario): registro real de
+   tiempo muerto por causa. Mismo patron de seleccion de area que Auditoria (AUDIT_AREA_GROUPS en
+   AuditoriaPage.jsx) -- 5 grupos, "Lineas de produccion" pide una linea especifica, los otros 4
+   ya son una sola area real. (2026-09-07: se quito el campo Estacion del formulario en las 5
+   areas, a peticion explicita del usuario -- ya no se captura al registrar.)
 
    ALCANCE (confirmado explicitamente con el usuario tras encontrar que la clasificacion real de
    TVs vive en SmartControl/BinManager, sistema externo de solo lectura desde este repo): esta
@@ -60,7 +60,6 @@ const emptyForm = {
   groupKey: '',
   lineId: '',
   areaId: '',
-  stationName: '',
   reasonKey: '',
   durationMinutes: '',
   shift: CURRENT_SHIFT,
@@ -96,24 +95,18 @@ export default function DemorasPage() {
     if (showHistory) loadRecords()
   }, [showHistory, loadRecords])
 
-  const selectedArea = form.areaId ? workCenterById(form.areaId) : null
-  const stationOptions = form.areaId
-    ? Array.from(new Map(getWorkstationsForLine(form.areaId).map((w) => [w.name, w])).values())
-    : []
-
   function handleGroupChange(groupKey) {
     const group = AREA_GROUPS.find((g) => g.key === groupKey)
     setForm((prev) => ({
       ...prev,
       groupKey,
       lineId: '',
-      stationName: '',
       areaId: group?.areaId || '',
     }))
   }
 
   function handleLineChange(lineId) {
-    setForm((prev) => ({ ...prev, lineId, stationName: '', areaId: lineId }))
+    setForm((prev) => ({ ...prev, lineId, areaId: lineId }))
   }
 
   const canSubmit =
@@ -131,7 +124,6 @@ export default function DemorasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           areaId: form.areaId,
-          stationName: form.stationName || null,
           reasonKey: form.reasonKey,
           durationMinutes: Number(form.durationMinutes),
           shift: form.shift || null,
@@ -198,27 +190,6 @@ export default function DemorasPage() {
                     {WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {workCenterById(w.id).name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {selectedArea && stationOptions.length > 0 && (
-              <div>
-                <Label className="mb-1.5 block text-xs">{t('fieldStation')}</Label>
-                <Select
-                  value={form.stationName}
-                  onValueChange={(v) => setForm((prev) => ({ ...prev, stationName: v }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('fieldStationPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stationOptions.map((s) => (
-                      <SelectItem key={s.name} value={s.name}>
-                        {s.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

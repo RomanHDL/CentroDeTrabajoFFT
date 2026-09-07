@@ -552,8 +552,8 @@ export const MODULE_REGISTRY = [
   // habilitacion manual desde "Gestion de permisos".
   {
     key: '/demoras',
-    name: 'Demoras',
-    description: 'Registro de demoras/tiempo muerto por causa, por área y estación',
+    name: 'Demoras de trabajo',
+    description: 'Registro de demoras/tiempo muerto por causa y por área',
     icon: 'Hourglass',
     active: true,
     permissionProtected: true,

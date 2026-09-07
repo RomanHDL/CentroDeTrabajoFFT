@@ -58,6 +58,8 @@ export const RELEASES = [
           'changedLogo',
           'changedCentroTrabajoLogo',
           'changedDemorasLiderView',
+          'changedDemorasRename',
+          'changedDemorasRemoveStation',
         ],
       },
       {

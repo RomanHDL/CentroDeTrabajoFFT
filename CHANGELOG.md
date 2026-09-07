@@ -190,6 +190,15 @@ para poder desplegar en el servidor privado (Coolify). Ver
 - **Demoras — vista por rol.** El rol LIDER ahora solo ve el formulario
   "Registrar demora", sin el historial de "Registros recientes" (ni se
   pide al servidor para ese rol). ADMINISTRADOR/SUPERVISOR sin cambios.
+- **Demoras renombrado a "Demoras de trabajo".** Cambia el nombre visible
+  en el menú lateral, el título de la página y el registro de módulos
+  (`shared/moduleRegistry.js`) — la ruta (`/demoras`) y todo lo demás no
+  cambian.
+- **Demoras — se quita el campo Estación.** El formulario de "Registrar
+  demora" ya no pide Estación en ninguna de las 5 áreas; el campo se
+  elimina de la UI y del payload enviado al servidor (`stationName` sigue
+  existiendo como columna opcional en la base de datos, para no perder los
+  registros históricos que sí la tenían).
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),
