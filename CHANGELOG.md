@@ -148,6 +148,24 @@ para poder desplegar en el servidor privado (Coolify). Ver
   producción), Sorting **no tiene selector de área/línea**: es una sola área
   fija, a petición explícita del usuario ("Sorting es un área") — sin
   filtro de área en el histórico ni columna de área en la tabla o el Excel.
+- **Eliminar usuario permanentemente (solo empleado 3647).** Nueva acción
+  "Eliminar" en Usuarios del sistema (`api/users/[id].js`, método DELETE,
+  ruta registrada en `server-lib/api-routes.js`): borra la fila real de
+  la tabla `User` en la base de datos, no una desactivación. Autorización
+  hardcodeada -- únicamente `req.user.employeeNumber === '3647'` puede
+  llamarlo, sin importar el rol de quien más sea ADMINISTRADOR después (a
+  petición explícita del usuario, "solo yo 3647 pueda eliminar usuarios").
+  No se puede eliminar la propia cuenta. En el cliente
+  (`UsuariosPage.jsx`) el botón solo aparece para ese mismo usuario, y el
+  diálogo de confirmación exige escribir el número de empleado (o
+  username) exacto antes de habilitar "Eliminar definitivamente" — la
+  autorización real vive en el servidor, ocultar el botón es solo UX.
+  Si el usuario tiene registros históricos con `onDelete:'restrict'`
+  (auditorías, demoras, equipo, etc.) el borrado se rechaza con un error
+  claro (409) en vez de perder ese historial o intentar un cascade
+  automático. Probado en vivo con un usuario descartable (creado y
+  eliminado de punta a punta, confirmado con recarga completa que ya no
+  existe en la base de datos).
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

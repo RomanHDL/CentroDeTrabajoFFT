@@ -22,9 +22,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { getRoleLabels } from '../../layout/roleLabels'
-import { apiRequest } from '../../state/auth'
+import { apiRequest, useAuth } from '../../state/auth'
 import { KpiCard } from '../../ui'
 import { showToast } from '../../ui/toast'
+
+// 2026-09-07 (a peticion explicita del usuario, "solo yo 3647 pueda eliminar usuarios"): mismo
+// numero hardcodeado que ya valida el servidor (api/users/[id].js) -- ocultar el boton aqui es
+// solo UX, la autorizacion real vive del lado del servidor, nunca solo en el cliente.
+const DELETE_USERS_EMPLOYEE_NUMBER = '3647'
 import AccessRequestsCard from './AccessRequestsCard'
 import AdminToolsCard from './AdminToolsCard'
 import CreateUserDialog from './CreateUserDialog'
@@ -33,6 +38,8 @@ import PermissionsManagementCard from './permissions/PermissionsManagementCard'
 
 export default function UsuariosPage() {
   const { t } = useTranslation('usuarios')
+  const { user: currentUser } = useAuth()
+  const canDeleteUsers = currentUser?.employeeNumber === DELETE_USERS_EMPLOYEE_NUMBER
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -44,6 +51,9 @@ export default function UsuariosPage() {
   const [manualPassword, setManualPassword] = useState('')
   const [resetSaving, setResetSaving] = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const [focusUserId, setFocusUserId] = useState(null)
   const permissionsCardRef = useRef(null)
 
@@ -95,6 +105,28 @@ export default function UsuariosPage() {
     setConfirmDeactivate(null)
     const data = await apiRequest(`/api/users/${user.id}/deactivate`, { method: 'POST' })
     setUsers((prev) => prev.map((u) => (u.id === user.id ? data.user : u)))
+  }
+
+  function closeDeleteConfirm() {
+    setConfirmDelete(null)
+    setDeleteConfirmText('')
+  }
+
+  async function handleDelete() {
+    const user = confirmDelete
+    const expected = user?.employeeNumber || user?.username
+    if (!user || !expected || deleteConfirmText.trim() !== expected) return
+    setDeleting(true)
+    try {
+      await apiRequest(`/api/users/${user.id}`, { method: 'DELETE' })
+      setUsers((prev) => prev.filter((u) => u.id !== user.id))
+      showToast(t('usuariosPage.deleteSuccess'), 'success')
+      closeDeleteConfirm()
+    } catch (err) {
+      showToast(err.message || t('usuariosPage.deleteError'), 'error')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   function closeResetChoice() {
@@ -257,6 +289,15 @@ export default function UsuariosPage() {
                         <DropdownMenuItem onClick={() => setResetChoiceUser(u)}>
                           {t('usuariosPage.resetPasswordMenuItem')}
                         </DropdownMenuItem>
+                        {canDeleteUsers && (
+                          <DropdownMenuItem
+                            disabled={u.id === currentUser?.id}
+                            onClick={() => setConfirmDelete(u)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            {t('usuariosPage.deleteAction')}
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -314,6 +355,53 @@ export default function UsuariosPage() {
             </Button>
             <Button variant="destructive" onClick={handleDeactivate}>
               {t('usuariosPage.deactivateAction')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!confirmDelete} onOpenChange={(next) => !next && closeDeleteConfirm()}>
+        <DialogContent className="max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>{t('usuariosPage.deleteDialogTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-2 text-sm">
+            <Alert variant="destructive" className="mb-4">
+              {t('usuariosPage.deleteWarning')}
+            </Alert>
+            <p className="mb-4">
+              {t('usuariosPage.deleteConfirmPrefix')} <b>{confirmDelete?.name}</b>.
+            </p>
+            <p className="mb-2 text-xs font-bold text-muted-foreground">
+              {t('usuariosPage.deleteConfirmTypeHint')}{' '}
+              <span className="font-mono">
+                {confirmDelete?.employeeNumber || confirmDelete?.username}
+              </span>
+            </p>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={t('usuariosPage.deleteConfirmPlaceholder')}
+            />
+          </div>
+          <div className="flex justify-end gap-2 px-6 pb-6 pt-2">
+            <Button variant="ghost" onClick={closeDeleteConfirm}>
+              {t('usuariosPage.cancelButton')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                deleting ||
+                deleteConfirmText.trim() !==
+                  (confirmDelete?.employeeNumber || confirmDelete?.username)
+              }
+              onClick={handleDelete}
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t('usuariosPage.deleteButton')
+              )}
             </Button>
           </div>
         </DialogContent>

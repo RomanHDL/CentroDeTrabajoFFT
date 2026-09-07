@@ -97,6 +97,7 @@ export function mountApiRoutes(app) {
   app.get('/api/users', wrapAsync(usersIndexHandler))
   app.post('/api/users', wrapAsync(usersIndexHandler))
   app.patch('/api/users/:id', withDynamicParams(userByIdHandler))
+  app.delete('/api/users/:id', withDynamicParams(userByIdHandler))
   app.post('/api/users/:id/deactivate', withDynamicParams(userDeactivateHandler))
   app.post('/api/users/:id/reset-password', withDynamicParams(userResetPasswordHandler))
   app.get('/api/users/:id/permissions', withDynamicParams(userPermissionsIndexHandler))

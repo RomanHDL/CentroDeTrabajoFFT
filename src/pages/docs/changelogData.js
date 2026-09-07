@@ -40,6 +40,7 @@ export const RELEASES = [
           'addedPlantIssuesWidget',
           'addedHoraPorHora',
           'addedSorting',
+          'addedDeleteUser',
         ],
       },
       {

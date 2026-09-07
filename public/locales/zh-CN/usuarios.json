@@ -38,7 +38,16 @@
     "savePasswordButton": "保存密码",
     "temporaryPasswordDialogTitle": "临时密码已生成",
     "temporaryPasswordWarning": "此密码仅显示一次，请将其安全地交给 {{name}}。",
-    "doneButton": "完成"
+    "doneButton": "完成",
+    "deleteAction": "删除",
+    "deleteDialogTitle": "永久删除用户",
+    "deleteWarning": "此操作无法撤销：账户将从数据库中彻底删除，而不仅仅是停用。",
+    "deleteConfirmPrefix": "你即将删除",
+    "deleteConfirmTypeHint": "请输入其员工编号以确认：",
+    "deleteConfirmPlaceholder": "员工编号",
+    "deleteButton": "永久删除",
+    "deleteSuccess": "用户已从数据库中删除",
+    "deleteError": "无法删除该用户"
   },
   "accessRequestsCard": {
     "title": "SSO 访问申请",

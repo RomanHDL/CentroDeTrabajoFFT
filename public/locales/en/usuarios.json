@@ -38,7 +38,16 @@
     "savePasswordButton": "Save password",
     "temporaryPasswordDialogTitle": "Temporary password generated",
     "temporaryPasswordWarning": "This password is shown only once. Deliver it to {{name}} securely.",
-    "doneButton": "Done"
+    "doneButton": "Done",
+    "deleteAction": "Delete",
+    "deleteDialogTitle": "Permanently delete user",
+    "deleteWarning": "This action CANNOT be undone: the account is fully removed from the database, not just deactivated.",
+    "deleteConfirmPrefix": "You are about to delete",
+    "deleteConfirmTypeHint": "To confirm, type their employee number:",
+    "deleteConfirmPlaceholder": "Employee number",
+    "deleteButton": "Delete permanently",
+    "deleteSuccess": "User deleted from the database",
+    "deleteError": "Could not delete the user"
   },
   "accessRequestsCard": {
     "title": "SSO access requests",

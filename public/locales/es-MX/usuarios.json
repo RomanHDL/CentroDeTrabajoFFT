@@ -38,7 +38,16 @@
     "savePasswordButton": "Guardar contraseña",
     "temporaryPasswordDialogTitle": "Contraseña temporal generada",
     "temporaryPasswordWarning": "Esta contraseña solo se muestra una vez. Entrégasela a {{name}} de forma segura.",
-    "doneButton": "Listo"
+    "doneButton": "Listo",
+    "deleteAction": "Eliminar",
+    "deleteDialogTitle": "Eliminar usuario permanentemente",
+    "deleteWarning": "Esta acción NO se puede deshacer: la cuenta se borra por completo de la base de datos, no solo se desactiva.",
+    "deleteConfirmPrefix": "Vas a eliminar a",
+    "deleteConfirmTypeHint": "Para confirmar, escribe su número de empleado:",
+    "deleteConfirmPlaceholder": "Número de empleado",
+    "deleteButton": "Eliminar definitivamente",
+    "deleteSuccess": "Usuario eliminado de la base de datos",
+    "deleteError": "No se pudo eliminar el usuario"
   },
   "accessRequestsCard": {
     "title": "Solicitudes de acceso SSO",
