@@ -31,8 +31,18 @@ import { DndAssignProvider } from './state/dndAssign'
 import { RoleModeProvider } from './state/roleMode'
 import ToastHost from './ui/ToastHost'
 
+const THEME_STORAGE_KEY = 'fft_theme'
+
+function getStoredMode() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
 export default function App() {
-  const [mode, setMode] = useState('light')
+  const [mode, setMode] = useState(getStoredMode)
   // Solo para los 2 modulos "En desarrollo" (Demoras/Planeacion, 2026-09-04,
   // a peticion explicita del usuario) -- mismo patron ya usado para KPI's/
   // Asistencia/Auditoria cuando se agregaron: SOLO navegacion, sin contenido
@@ -43,8 +53,15 @@ export default function App() {
   // ya no convive con el ThemeProvider de MUI (removido, ver CHANGELOG),
   // solo controla la clase `dark` que usan las clases Tailwind `dark:` en
   // toda la app.
+  // 2026-09-07 (a peticion explicita del usuario, "que se guarde el modo... como chat gpt,
+  // facebook... que cuando pongo un modo se queda ya por defecto"): persiste en localStorage
+  // (mismo patron que ya usa fft_language en i18n.js) -- se restaura solo al volver a entrar,
+  // sin depender del tema del sistema operativo/navegador.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', mode === 'dark')
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, mode)
+    } catch {}
   }, [mode])
 
   return (

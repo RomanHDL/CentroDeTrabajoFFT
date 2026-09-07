@@ -63,6 +63,7 @@ export const RELEASES = [
           'changedLineSelectOrder',
           'changedDemorasAutoShift',
           'changedDemorasRemoveHistoryStation',
+          'changedThemePersists',
         ],
       },
       {

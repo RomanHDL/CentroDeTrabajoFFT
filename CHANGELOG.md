@@ -218,6 +218,14 @@ para poder desplegar en el servidor privado (Coolify). Ver
   "Registros recientes" ya no muestra la columna Estación (el dato ya no
   se captura desde el formulario, ver entrada anterior de este mismo
   Changelog).
+- **Modo claro/oscuro persiste entre sesiones.** Antes `App.jsx` siempre
+  arrancaba en `mode='light'` sin importar lo último elegido. Ahora se
+  guarda en `localStorage` (`fft_theme`, mismo patrón que `fft_language`
+  en `i18n.js`) y se restaura solo al volver a entrar -- igual que ChatGPT
+  o Facebook. Un script inline en `index.html` aplica la clase `dark` ANTES
+  de que cargue React, para evitar el parpadeo de un instante en claro.
+  El idioma ya persistía desde antes (`i18n.js`, sección 10 del MI Stack
+  Reference) -- no se tocó, solo se confirmó que sigue funcionando.
 - **Logo real por tema (light/dark).** `BrandLogo.jsx` usa dos assets
   oficiales reales por variante (`centro-control-full.png`/
   `-full-dark.png`, `centro-control-icon.png`/`-icon-dark.png`),

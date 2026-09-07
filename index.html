@@ -6,6 +6,19 @@
     <link rel="icon" type="image/png" href="/branding/centro-control-icon.png" />
     <link rel="apple-touch-icon" href="/branding/centro-control-icon.png" />
     <title>Centro de Control</title>
+    <script>
+      // Aplica el modo oscuro guardado ANTES de que cargue React (2026-09-07, a peticion
+      // explicita del usuario, "que se guarde el modo... como chat gpt, facebook" -- que persista
+      // entre sesiones): evita el parpadeo de un instante en claro antes de que App.jsx (unica
+      // fuente real del modo, ver su comentario "Fase 6") vuelva a aplicar la misma clase.
+      ;(function () {
+        try {
+          if (localStorage.getItem('fft_theme') === 'dark') {
+            document.documentElement.classList.add('dark')
+          }
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
