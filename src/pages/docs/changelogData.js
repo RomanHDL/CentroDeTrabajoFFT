@@ -70,6 +70,8 @@ export const RELEASES = [
           'changedEstacionesRemoveCalidadEntrenador',
           'changedLineasIncludeLinea0',
           'changedEstacionesGerenteFftName',
+          'changedLoginBothMethods',
+          'changedVercelRedirect',
         ],
       },
       {

@@ -20,13 +20,13 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // Fase 5 (OIDC), 2026-09-02 (a peticion explicita del usuario, "asi es en
-  // Cubicaje"): Nextcloud REEMPLAZA el login local, no conviven -- pero
-  // solo una vez que el servidor de verdad tiene las 4 credenciales reales
-  // (api/auth/oidc/status.js). Mientras Amir no las mande, oidcConfigured
-  // sigue en false y el login local sigue siendo el unico camino -- evita
-  // dejar a todos (incluido el admin) sin forma de entrar mientras se
-  // espera esa credencial externa. null = todavia no se sabe (loading).
+  // 2026-09-07 (a peticion explicita del usuario, revirtiendo la decision anterior de
+  // 2026-09-02 "Nextcloud reemplaza el login local, asi es en Cubicaje"): con gente real de
+  // planta que nunca tendra cuenta de Nextcloud, los dos metodos deben convivir SIEMPRE que
+  // OIDC este configurado, no ser excluyentes -- numero de empleado/contraseña para
+  // produccion, boton de Nextcloud (debajo, con divisor) para oficina/sistemas/supervisores.
+  // El formulario local ya no espera esta respuesta para pintarse (null = todavia no se sabe
+  // si mostrar TAMBIEN el boton de Nextcloud, pero el login local es usable de inmediato).
   const [oidcConfigured, setOidcConfigured] = useState(null)
   useEffect(() => {
     let cancelled = false
@@ -109,53 +109,50 @@ export default function LoginPage() {
           <p className="text-center text-[13px] text-muted-foreground">{t('tagline')}</p>
         </div>
 
-        {oidcConfigured === null && (
-          <div className="flex justify-center py-6">
-            <Loader2 size={22} className="animate-spin text-muted-foreground" />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="login-identifier">{t('identifierLabel')}</Label>
+            <Input
+              id="login-identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoFocus
+              disabled={submitting}
+              autoComplete="username"
+            />
           </div>
-        )}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="login-password">{t('passwordLabel')}</Label>
+            <Input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
+              autoComplete="current-password"
+            />
+          </div>
 
-        {oidcConfigured === false && (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="login-identifier">{t('identifierLabel')}</Label>
-              <Input
-                id="login-identifier"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                autoFocus
-                disabled={submitting}
-                autoComplete="username"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="login-password">{t('passwordLabel')}</Label>
-              <Input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={submitting}
-                autoComplete="current-password"
-              />
-            </div>
+          {error && <Alert variant="destructive">{error}</Alert>}
 
-            {error && <Alert variant="destructive">{error}</Alert>}
+          <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
+            {submitting ? <Loader2 size={22} className="animate-spin" /> : t('submit')}
+          </Button>
+        </form>
 
-            <Button type="submit" size="lg" disabled={submitting} className="mt-2 font-bold">
-              {submitting ? <Loader2 size={22} className="animate-spin" /> : t('submit')}
-            </Button>
-          </form>
-        )}
-
-        {/* Fase 5 (OIDC), 2026-09-02: reemplaza el login local por completo
-            en cuanto el servidor confirma las 4 credenciales reales (ver
-            api/auth/oidc/status.js) -- "asi es en Cubicaje", a peticion
-            explicita del usuario. */}
+        {/* 2026-09-07: conviven con el login local de arriba (ver comentario grande arriba) --
+            solo se agrega si el servidor confirma las 4 credenciales reales de Nextcloud (ver
+            api/auth/oidc/status.js); mientras no lleguen, o mientras se está confirmando
+            (oidcConfigured null), esta seccion simplemente no aparece, sin bloquear el
+            formulario local de arriba. */}
         {oidcConfigured === true && (
-          <div className="flex flex-col items-center gap-4">
-            {error && <Alert variant="destructive" className="w-full">{error}</Alert>}
-            <Button asChild size="lg" className="w-full font-bold">
+          <div className="mt-5 flex flex-col items-center gap-4">
+            <div className="flex w-full items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">{t('oidcDivider')}</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <Button asChild size="lg" variant="outline" className="w-full font-bold">
               <a href="/api/auth/oidc/start">{t('oidcButton')}</a>
             </Button>
           </div>

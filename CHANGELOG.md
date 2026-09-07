@@ -325,6 +325,29 @@ para poder desplegar en el servidor privado (Coolify). Ver
   caja ajustada solo a la imagen — el logo está diseñado para fondo
   blanco, esta franja lo trata como marca propia en vez de forzarle un
   fondo oscuro que no es el suyo.
+- **Login local y Nextcloud ahora conviven, en vez de que uno reemplace
+  al otro.** Revierte la decisión anterior del 2026-09-02 ("Nextcloud
+  reemplaza el login local, así es en Cubicaje") -- a petición explícita
+  del usuario, viendo el caso real de agregar gente de planta que nunca
+  tendrá cuenta de Nextcloud. `LoginPage.jsx`: el formulario de número de
+  empleado/contraseña se pinta siempre de inmediato (ya no espera la
+  respuesta de `/api/auth/oidc/status`); si el servidor confirma las 4
+  credenciales reales, se agrega debajo un divisor ("o") + el botón
+  "Iniciar sesión con Nextcloud". Número de empleado = producción,
+  Nextcloud = oficina/sistemas/supervisores. Verificado visualmente en
+  vivo en ambos modos (solo local, y local + Nextcloud).
+- **Vercel redirige todo su tráfico a Coolify.** Con los dos métodos de
+  login conviviendo en la misma página (ver entrada anterior), ya no
+  hace falta que nadie use el deploy de Vercel directo -- Coolify cubre
+  100% de los casos (planta y oficina). `vercel.json`: nuevo `redirects`
+  que manda cualquier ruta al dominio real
+  (`https://centro-de-trabajo.mi2.com.mx/$1`), `permanent: false` (307,
+  reversible fácil si algún día hace falta usar Vercel de respaldo).
+  Motivo real: las sesiones de login son por dominio aunque ambos
+  deploys compartan la misma base de datos -- sin este redirect, alguien
+  podía terminar logueado en Vercel sin sesión en Coolify (o viceversa),
+  justo la confusión que el usuario quería evitar al agregar gente
+  nueva.
 
 ### Fixed
 - **Modo oscuro.** `body` nunca definía un `color` base (solo

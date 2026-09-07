@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://centro-de-trabajo.mi2.com.mx/$1",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/auth/callback", "destination": "/api/auth/oidc/callback" },
     { "source": "/auth/login", "destination": "/api/auth/oidc/start" },
