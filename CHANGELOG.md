@@ -706,6 +706,14 @@ para poder desplegar en el servidor privado (Coolify). Ver
     izquierdo, y en la fila de abajo KITS/DMR-DML pasan a la izquierda con RCY/Entrada/FRM a la
     derecha (mismo cambio de lugar que pidió el usuario, "cambia estos 3 [+ entrada] adonde
     están los otros 6, y los otros 6 adonde están esos 3").
+  - **Nuevo "Conveyor de Sorting" (`SORT_CONVEYOR`), a petición explícita del usuario** ("no veo
+    el conveyor aquí... debe ser el conveyor del mismo grosor que el de FFT"): confirmado vía
+    pregunta directa que debe ser un área REAL con su propia gente asignable, mismo criterio que
+    "WC Conveyor General" (CONVEYOR_PRINCIPAL, FFT) -- 2 posiciones reales (WorkArea +
+    2 Workstation, `scripts/seed-sorting-conveyor-2026-09-08.mjs`), franja delgada
+    (`border-t-[3px]`, mismo "grosor" visual que la de FFT) posicionada arriba de "Línea de
+    Sorting", dentro de la misma columna que ya se estira para quedar nivelada con
+    PNP/DMA-DMT del otro lado.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

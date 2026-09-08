@@ -137,9 +137,10 @@
   },
   "sortingFloorPlan": {
     "title": "Sorting 平面图",
-    "subtitle": "RCY 和 FRM 及其入口、Sorting 产线，以及 KITS / Patines / DMR-DML / PNP / Sorting 经理 / DMA-DMT",
+    "subtitle": "RCY 和 FRM 及其入口、传送带和Sorting 产线，以及 KITS / Patines / DMR-DML / PNP / Sorting 经理 / DMA-DMT",
     "entranceLabel": "入口",
     "lineName": "Sorting 产线",
+    "conveyorName": "Sorting 传送带",
     "vacantLabel": "空缺",
     "peopleSuffix": "人",
     "palletLabel": "托盘"

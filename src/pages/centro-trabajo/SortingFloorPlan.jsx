@@ -170,19 +170,57 @@ function VLineStation({ station, index }) {
   )
 }
 
+// "Conveyor de Sorting" (2026-09-08, quinta ronda -- a peticion explicita del usuario, "no veo
+// el conveyor aqui... debe ser el conveyor del mismo grosor que el de FFT"): franja delgada
+// (border-t-[3px], padding chico) en vez de una caja grande como las demas areas -- mismo
+// "grosor" visual que "WC Conveyor General" (ConveyorGeneralBar, OperatingFloorPlan.jsx), pero
+// con el estilo simple ya establecido en este archivo (border por color de estado) en vez de
+// las clases de tono/EmployeeAvatar de esa vista, que es exclusiva del plano canvas de FFT.
+function SortingConveyorBar({ stations, staffing, color, onSelectArea }) {
+  const { t } = useTranslation('centroTrabajo')
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectArea('SORT_CONVEYOR')}
+      className="flex flex-col gap-1.5 rounded-2xl border border-t-[3px] p-2.5 text-left transition-colors hover:bg-accent"
+      style={{ borderColor: color }}
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs font-extrabold tracking-[0.4px]">
+          {t('sortingFloorPlan.conveyorName')}
+        </p>
+        <p className="text-xs font-bold" style={{ color }}>
+          {staffing.real} / {staffing.ideal}
+        </p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-3">
+        {stations.map((s, idx) => (
+          <p key={s.id} className="text-[11px] font-semibold text-muted-foreground">
+            {idx + 1}. {s.occupants[0]?.employee?.name || t('sortingFloorPlan.vacantLabel')}
+          </p>
+        ))}
+      </div>
+    </button>
+  )
+}
+
 export default function SortingFloorPlan({ onSelectArea }) {
   const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
   const [, setConfigVersion] = useState(0)
 
-  // Los 7 puestos reales de SORT_LINEA viven en la BD (scripts/seed-sorting-work-areas-
-  // 2026-09-08.mjs), pero getWorkstationsForLine() solo los usa si ya estan en cache
-  // (lineStationConfig.js) -- mismo patron exacto que LineDetailDrawer.jsx al abrir una WC
-  // LINEA. Sin este fetch, cae en el generador JS generico (1 solo puesto "catch-all") porque
-  // SORT_LINEA no es parte de LINE_FAMILY_AREA_IDS ni tiene CUSTOM_STATION_PLANS.
+  // Los puestos reales de SORT_LINEA (7) y SORT_CONVEYOR (2) viven en la BD (scripts/seed-
+  // sorting-work-areas-2026-09-08.mjs, scripts/seed-sorting-conveyor-2026-09-08.mjs), pero
+  // getWorkstationsForLine() solo los usa si ya estan en cache (lineStationConfig.js) -- mismo
+  // patron exacto que LineDetailDrawer.jsx al abrir una WC LINEA. Sin este fetch, cada uno cae
+  // en el generador JS generico (1 solo puesto "catch-all") porque ninguno es parte de
+  // LINE_FAMILY_AREA_IDS ni tiene CUSTOM_STATION_PLANS.
   useEffect(() => {
     let cancelled = false
-    fetchLineStationConfig('SORT_LINEA').then(() => {
+    Promise.all([
+      fetchLineStationConfig('SORT_LINEA'),
+      fetchLineStationConfig('SORT_CONVEYOR'),
+    ]).then(() => {
       if (!cancelled) setConfigVersion((v) => v + 1)
     })
     return () => {
@@ -193,6 +231,9 @@ export default function SortingFloorPlan({ onSelectArea }) {
   const lineaStaffing = getAreaStaffing('SORT_LINEA')
   const lineaColor = statusColor(lineaStaffing)
   const stations = getLineWorkstationsWithOccupancy('SORT_LINEA')
+  const conveyorStations = getLineWorkstationsWithOccupancy('SORT_CONVEYOR')
+  const conveyorStaffing = getAreaStaffing('SORT_CONVEYOR')
+  const conveyorColor = statusColor(conveyorStaffing)
 
   return (
     <div className={cn(cardClass, 'p-8')}>
@@ -236,25 +277,33 @@ export default function SortingFloorPlan({ onSelectArea }) {
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => onSelectArea('SORT_LINEA')}
-            className="flex flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
-            style={{ borderColor: lineaColor }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
-              <p className="text-base font-bold" style={{ color: lineaColor }}>
-                {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
-              </p>
-            </div>
+          <div className="flex h-full flex-col gap-3">
+            <SortingConveyorBar
+              stations={conveyorStations}
+              staffing={conveyorStaffing}
+              color={conveyorColor}
+              onSelectArea={onSelectArea}
+            />
+            <button
+              type="button"
+              onClick={() => onSelectArea('SORT_LINEA')}
+              className="flex flex-1 flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
+              style={{ borderColor: lineaColor }}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
+                <p className="text-base font-bold" style={{ color: lineaColor }}>
+                  {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
+                </p>
+              </div>
 
-            <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
-              {stations.map((s, idx) => (
-                <VLineStation key={s.id} station={s} index={idx} />
-              ))}
-            </div>
-          </button>
+              <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
+                {stations.map((s, idx) => (
+                  <VLineStation key={s.id} station={s} index={idx} />
+                ))}
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Fila inferior: KITS/DMR-DML a la izquierda, RCY/Entrada/FRM a la derecha (espejo de

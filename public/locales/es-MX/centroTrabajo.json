@@ -137,9 +137,10 @@
   },
   "sortingFloorPlan": {
     "title": "Layout de Sorting",
-    "subtitle": "RCY y FRM con su entrada, la línea de Sorting, y KITS / Patines / DMR-DML / PNP / Gerente de Sorting / DMA-DMT",
+    "subtitle": "RCY y FRM con su entrada, el conveyor y la línea de Sorting, y KITS / Patines / DMR-DML / PNP / Gerente de Sorting / DMA-DMT",
     "entranceLabel": "Entrada",
     "lineName": "Línea de Sorting",
+    "conveyorName": "Conveyor de Sorting",
     "vacantLabel": "Vacante",
     "peopleSuffix": "persona(s)",
     "palletLabel": "Pallet"

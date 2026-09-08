@@ -11,6 +11,7 @@
    que reasigna el binding vivo WORK_CENTERS a este array cuando el usuario activa Sorting.
 
    `idealHeadcount: null` en las areas simples (RCY/FRM/KITS/PNP/DMR-DML/DMA-DMT/Patines) es
+   -- SORT_CONVEYOR SI tiene ideal real (2, mismo criterio que CONVEYOR_PRINCIPAL de FFT) --
    intencional (nunca inventar un ideal que el usuario no dio -- mismo criterio que INSUMOS/
    CALIDAD en catalog.js, "Sin plantilla definida"). SORT_LINEA si tiene un ideal real: 7 lineas
    en V, 4 personas c/u (2 en cada extremo) = 28 -- corregido 2026-09-08 tras una segunda
@@ -26,6 +27,24 @@
    scripts/seed-sorting-patines-gerente-2026-09-08.mjs para el sembrado real en la BD. */
 
 export const SORTING_WORK_CENTERS = [
+  {
+    id: 'SORT_CONVEYOR',
+    name: 'Conveyor de Sorting',
+    kind: 'area',
+    type: 'WORK_AREA',
+    isProduction: true,
+    dailyTarget: null,
+    // 2026-09-08 (quinta ronda, a peticion explicita del usuario -- "no veo el conveyor aqui...
+    // debe ser el conveyor del mismo grosor que el de FFT"): area real independiente, 2
+    // posiciones reales -- mismo criterio que CONVEYOR_PRINCIPAL/"WC Conveyor General" en
+    // catalog.js (FFT), confirmado explicitamente por el usuario via pregunta directa: debe ser
+    // un area real con su propia gente, no solo decorativo. A diferencia de CONVEYOR_PRINCIPAL
+    // (cuyos 2 puestos reales viven prestados dentro de Paletizado por historia acumulada, ver
+    // AREA_STATION_SOURCE_OVERRIDE en catalog.js), SORT_CONVEYOR es independiente desde el
+    // principio -- sin ese enredo historico que replicar. Ver scripts/seed-sorting-conveyor-
+    // 2026-09-08.mjs para las 2 Workstation reales (capacity 1 c/u).
+    idealHeadcount: 2,
+  },
   {
     id: 'SORT_LINEA',
     name: 'Línea de Sorting',
