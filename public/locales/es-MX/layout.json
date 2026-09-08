@@ -1,6 +1,9 @@
 {
   "appLayout": {},
   "headerUserActions": {
+    "areaGroupTitle": "Área activa: Centro de Trabajo, Dashboard, Registro de personal y Asistencia muestran esta área",
+    "areaGroupFft": "FFT",
+    "areaGroupSorting": "Sorting",
     "idiomaTitle": "Idioma / Language / 语言",
     "modoOscuro": "Modo oscuro",
     "modoClaro": "Modo claro",

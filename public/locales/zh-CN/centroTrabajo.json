@@ -132,7 +132,8 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "起点：来自 LAYOUT FFT.xlsx（BASE 表）的真实快照 — {{baseSnapshotDate}}。拖动或分配某人会更新其今日位置，但不会修改该快照。工号待补充：BASE 表暂未包含该列。",
-    "detailTitle": "区域详情"
+    "detailTitle": "区域详情",
+    "sortingLayoutPending": "Sorting的可视化平面图还没有搭建。请使用上方的\"线体\"、\"工位\"和\"人员\"标签页查看和分配真实人员——下方的汇总已经反映了它的区域。"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "生产",
@@ -516,6 +517,8 @@
     "supportAreaFooterNote": "{{areaName}}为支持区域，人员分配由授权负责人直接管理。"
   },
   "estacionesTab": {
+    "sortingPendingTitle": "Sorting 视图待完善",
+    "sortingPendingDescription": "这个管理层视图目前仅支持FFT。请使用\"工作区域\"或\"人员\"查看Sorting的真实汇总。",
     "title": "工作中心工位",
     "tooltipInfo": "目录中所有区域，按管理层查阅需要分组显示。传送带（Conveyor）及物理平面图请在“工作区域”中管理。",
     "subtitle": "所有已登记的运营区域和工位",

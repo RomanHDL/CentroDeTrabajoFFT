@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth, useEffectiveModules } from '../state/auth'
+import AreaGroupToggle from './AreaGroupToggle'
 import NotificationBell from './NotificationBell'
 import { getRoleLabels } from './roleLabels'
 
@@ -79,6 +80,8 @@ export default function HeaderUserActions({ mode, setMode }) {
 
   return (
     <>
+      <AreaGroupToggle />
+
       {(canApproveMoves || canManageAccessRequests) && (
         <NotificationBell
           userId={user?.id}

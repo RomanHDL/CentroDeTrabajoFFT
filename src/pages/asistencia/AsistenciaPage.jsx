@@ -58,6 +58,7 @@ import {
   getGroupPeople,
   getPeopleWithoutArea,
 } from '../../data/production/personnelByArea'
+import { useAreaGroup } from '../../data/production/useAreaGroup'
 import { EmptyState } from '../../ui'
 import EmployeeAvatar from '../centro-trabajo/EmployeeAvatar'
 
@@ -573,6 +574,7 @@ function CoverageRow({ name, present, total, t }) {
 
 export default function AsistenciaPage() {
   const { t } = useTranslation('asistencia')
+  const areaGroup = useAreaGroup()
   // Re-renderiza en cuanto un check-in/movimiento real cambia el store local
   // (mismo hook que usa el resto de Centro de Trabajo) -- version se pasa
   // como dependencia del useMemo de abajo; sin eso, marcar presente a
@@ -860,7 +862,9 @@ export default function AsistenciaPage() {
       <div className={cn(cardClass, 'mb-4')}>
         <div className="border-b border-border bg-black/[.015] px-5 py-3.5 dark:bg-white/[.02]">
           <p className={pageTitleClass}>{t('pageTitle')}</p>
-          <p className={pageSubtitleClass}>{t('pageSubtitle')}</p>
+          <p className={pageSubtitleClass}>
+            {t(areaGroup === 'SORTING' ? 'pageSubtitleSorting' : 'pageSubtitle')}
+          </p>
         </div>
       </div>
 

@@ -42,6 +42,12 @@
 // Solo las funciones/getters que exponen texto para MOSTRAR (nunca para
 // comparar/guardar) resuelven vía i18n.t() en el momento de la llamada.
 import i18n from '../../i18n.js'
+import { getActiveAreaGroup, subscribeAreaGroup } from './areaGroup.js'
+import {
+  SORTING_LINE_FAMILY_AREA_IDS,
+  SORTING_LINE_FAMILY_WORK_CENTERS,
+  SORTING_WORK_CENTERS,
+} from './catalogSorting.js'
 
 export const SHIFT_OPTIONS = ['Matutino', 'Vespertino', 'Nocturno']
 
@@ -447,7 +453,7 @@ function sumStationPlan(plan) {
 // EMPAQUE_COUNT_BY_LINE.LINEA1 sube de 1 a 2 y su repeatOrder cambia para
 // que el unico puesto repetido del plan base sea "Montaje 2" (igual que
 // PROYECTO), ver workstations.js.
-export const WORK_CENTERS = [
+const FFT_WORK_CENTERS = [
   {
     id: 'LINEA1',
     name: 'WC LINEA 1',
@@ -844,6 +850,26 @@ export const WORK_CENTERS = [
   },
 ]
 
+// Binding vivo (2026-09-08, ver applyActiveAreaGroup() al final del archivo y
+// src/data/production/areaGroup.js) -- reasignable al activar Sorting. `let` en vez de `const`
+// a proposito: los ~30 archivos que ya hacen `import { WORK_CENTERS } from '.../catalog'` NO
+// se tocan -- un export de ES module es un binding vivo, no una copia, asi que siguen leyendo
+// el valor vigente en cada render/calculo sin cambiar una sola linea de su propio codigo.
+export let WORK_CENTERS = FFT_WORK_CENTERS
+
+// Copia PERMANENTE, nunca reasignada por applyActiveAreaGroup() -- para los 2 archivos
+// (layoutZones.js/floorPlanZones.js) cuyo propio `export const FFT_LINE_IDS = Array.from(...)`
+// necesita ser SIEMPRE FFT sin importar el grupo activo al momento en que ESE modulo se cargo
+// (bug real encontrado en vivo, 2026-09-08: si Sorting quedaba persistido en localStorage al
+// recargar la pagina, esos dos derivados capturaban el Set vacio de Sorting una sola vez y se
+// quedaban asi aunque el usuario luego volviera a FFT sin recargar). NUNCA usar esta constante
+// para logica que SI debe reaccionar al toggle -- para eso sigue siendo LINE_FAMILY_AREA_IDS
+// (el binding vivo, de arriba).
+export const FFT_LINE_FAMILY_AREA_IDS = new Set([
+  ...FFT_WORK_CENTERS.filter((w) => w.kind === 'linea').map((w) => w.id),
+  'PROYECTO',
+])
+
 /* `active` (2026-08-26, a peticion explicita del usuario -- "eliminar WC
    Soporte del esquema activo, preservando historial") -- un WORK_CENTER
    sin el campo `active` (la inmensa mayoria) se considera activo por
@@ -856,9 +882,9 @@ export function isWorkCenterActive(id) {
   return workCenterById(id)?.active !== false
 }
 
-export const LINES_ONLY = WORK_CENTERS.filter((w) => w.kind === 'linea')
-export const PRODUCTION_CENTERS = WORK_CENTERS.filter((w) => w.isProduction && w.active !== false)
-export const SUPPORT_CENTERS = WORK_CENTERS.filter((w) => !w.isProduction && w.active !== false)
+export let LINES_ONLY = WORK_CENTERS.filter((w) => w.kind === 'linea')
+export let PRODUCTION_CENTERS = WORK_CENTERS.filter((w) => w.isProduction && w.active !== false)
+export let SUPPORT_CENTERS = WORK_CENTERS.filter((w) => !w.isProduction && w.active !== false)
 
 /* Unica fuente de verdad de "esta area usa el template de
    estaciones de linea" — antes esto se asumia implicitamente para
@@ -1130,14 +1156,14 @@ export const AREA_DETAIL_VARIANTS = {
   SUPPORT: 'SUPPORT',
 }
 
-export const LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
+export let LINE_FAMILY_AREA_IDS = new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
 
 // 2026-09-07 (a peticion explicita del usuario, viendo el selector de Linea en vivo -- "ordenalo
 // del 0 al 10, del menor al mayor"): WORK_CENTERS trae PROYECTO/WC LINEA 0 al final del arreglo
 // (ver comentario en su definicion), asi que cualquier .filter() que lo recorra en orden hereda
 // ese 1..10,0. Este export ya viene ordenado 0..10 para que los selectores de "Linea" lo usen
 // directo en vez de repetir el mismo sort en cada pantalla.
-export const LINE_FAMILY_WORK_CENTERS = WORK_CENTERS.filter((w) =>
+export let LINE_FAMILY_WORK_CENTERS = WORK_CENTERS.filter((w) =>
   LINE_FAMILY_AREA_IDS.has(w.id),
 ).sort((a, b) => {
   const numOf = (w) => (w.id === 'PROYECTO' ? 0 : Number(w.id.replace('LINEA', '')))
@@ -1421,3 +1447,34 @@ export const FFT_INDICATORS = [
     hasSource: false,
   },
 ]
+
+/* Conmutador FFT/Sorting (2026-09-08, a peticion explicita del usuario -- ver
+   src/data/production/areaGroup.js para el detalle completo del porque). Reasigna los 6
+   bindings vivos de arriba (WORK_CENTERS/LINES_ONLY/PRODUCTION_CENTERS/SUPPORT_CENTERS/
+   LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS) cuando cambia el grupo activo -- son los
+   UNICOS derivados de WORK_CENTERS que de verdad deben reflejar el catalogo activo (Dashboard/
+   Asistencia/Registro de personal/Centro de Trabajo agrupan sobre estos). El resto de
+   derivados de este archivo (OPERATIONAL_DETAIL_AREA_IDS, AREA_DETAIL_GROUPS,
+   WORK_CENTER_NAVIGATION_ORDER, LINE_LIKE_AREA_IDS, SUPPORT_DETAIL_AREA_IDS, SPECIAL_AREA_IDS,
+   etc.) son `const` clasificaciones puntuales de ids reales de FFT (mockups/rediseños
+   especificos que el usuario pidio uno por uno) -- se calculan UNA sola vez al cargar el
+   modulo (con WORK_CENTERS todavia en su valor inicial FFT) y quedan congelados ahi a
+   proposito: es exactamente el comportamiento deseado, ninguna area de Sorting debe caer en
+   esas clasificaciones especiales de FFT -- simplemente no hace match con ningun id de
+   Sorting y AreaDetail.jsx usa su rama defensiva (LINE, ver getAreaDetailVariant), que ya
+   maneja bien cualquier area sin logica especial propia. */
+function applyActiveAreaGroup() {
+  const isSorting = getActiveAreaGroup() === 'SORTING'
+  WORK_CENTERS = isSorting ? SORTING_WORK_CENTERS : FFT_WORK_CENTERS
+  LINES_ONLY = WORK_CENTERS.filter((w) => w.kind === 'linea')
+  PRODUCTION_CENTERS = WORK_CENTERS.filter((w) => w.isProduction && w.active !== false)
+  SUPPORT_CENTERS = WORK_CENTERS.filter((w) => !w.isProduction && w.active !== false)
+  LINE_FAMILY_AREA_IDS = isSorting
+    ? SORTING_LINE_FAMILY_AREA_IDS
+    : new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
+  LINE_FAMILY_WORK_CENTERS = isSorting
+    ? SORTING_LINE_FAMILY_WORK_CENTERS
+    : WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id))
+}
+applyActiveAreaGroup()
+subscribeAreaGroup(applyActiveAreaGroup)

@@ -45,6 +45,8 @@ import {
   getGroupAreaStaffing,
   getPeopleByArea,
 } from '../../data/production/personnelByArea'
+import { useAreaGroup } from '../../data/production/useAreaGroup'
+import { EmptyState } from '../../ui'
 
 /* ─────────────────────────────────────────────
    Rediseño 2026-08-25 (a petición explícita del usuario, mockup
@@ -235,6 +237,7 @@ function normalize(text) {
 export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
   const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
+  const areaGroup = useAreaGroup()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [view, setView] = useState('tarjetas')
@@ -279,6 +282,26 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
       return
     }
     onOpenLine?.(row.slot.id)
+  }
+
+  // 2026-09-08 (toggle FFT/Sorting): AREA_SLOTS (buildAreaSlots arriba) es una lista CURADA a
+  // mano de ids literales de FFT (FFT/HIGH_VALUE/PALETIZADO/etc.) -- nunca penso para otro
+  // catalogo, quebraba con un TypeError real (coverage null) al calcular sobre las areas de
+  // Sorting. En vez de adaptar esta vista curada (mockup especifico de FFT) se muestra un
+  // mensaje simple; el resumen real de Sorting ya vive en "Áreas de trabajo"
+  // (WorkAreaBottomSummary, generico) y en "Personal". Este return va DESPUES de todos los
+  // hooks de arriba (nunca antes) -- un return condicional entre hooks rompe las reglas de
+  // React (orden de hooks debe ser identico en cada render).
+  if (areaGroup === 'SORTING') {
+    return (
+      <div className="p-6">
+        <EmptyState
+          compact
+          title={t('estacionesTab.sortingPendingTitle')}
+          description={t('estacionesTab.sortingPendingDescription')}
+        />
+      </div>
+    )
   }
 
   return (

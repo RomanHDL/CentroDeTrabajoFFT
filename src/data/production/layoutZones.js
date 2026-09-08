@@ -30,9 +30,13 @@
    ───────────────────────────────────────────── */
 
 import i18n from '../../i18n'
-import { LINE_FAMILY_AREA_IDS, WORK_CENTERS } from './catalog'
+import { getActiveAreaGroup } from './areaGroup'
+import { FFT_LINE_FAMILY_AREA_IDS, WORK_CENTERS } from './catalog'
 
-export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
+// FFT_LINE_FAMILY_AREA_IDS (no el binding vivo LINE_FAMILY_AREA_IDS) a proposito -- este
+// export SIEMPRE debe ser FFT, nunca vaciarse si Sorting quedo persistido al recargar la
+// pagina. Ver el comentario grande junto a FFT_LINE_FAMILY_AREA_IDS en catalog.js.
+export const FFT_LINE_IDS = Array.from(FFT_LINE_FAMILY_AREA_IDS)
 
 /* Definiciones puras (id/areaIds, nunca cambian) -- separadas del label
    traducido para que IDS_IN_PHYSICAL_ZONES (calculo estatico de solo ids,
@@ -54,6 +58,14 @@ const PHYSICAL_ZONE_DEFS = {
 }
 
 export function getPhysicalZones() {
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario): estas zonas fisicas
+  // (cajas grandes: Conveyor General, Lineas FFT, Midea, Paletizado, Accesorios) son un plano
+  // dibujado a mano especifico de FFT -- Sorting no tiene (todavia) un plano fisico propio, asi
+  // que sus areas se muestran todas como "areas auxiliares" (ver getAuxiliaryAreas() mas abajo,
+  // que ya las incluye automaticamente porque ninguna esta en PHYSICAL_ZONE_DEFS). Sin este if,
+  // las cajas de FFT seguirian dibujandose (vacias/con datos viejos) encima del catalogo de
+  // Sorting.
+  if (getActiveAreaGroup() === 'SORTING') return {}
   return {
     FFT: { ...PHYSICAL_ZONE_DEFS.FFT, label: i18n.t('dataLayer:layoutZones.fft') },
     HIGHVALUE: {

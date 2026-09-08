@@ -10,6 +10,7 @@ import {
   todayISO,
 } from '../personnel/repository'
 import { getWorkstationsForLine } from '../personnel/workstations'
+import { getActiveAreaGroup } from './areaGroup'
 import {
   AREA_STATION_SOURCE_OVERRIDE,
   canonicalOperationalAreaId,
@@ -603,19 +604,28 @@ function countByStationSourceOverride({ sourceAreaId, roles }) {
 
 export function getAllAreaSummaries() {
   const byArea = getPeopleByArea()
+  // 2026-09-08 (toggle FFT/Sorting): la card sintetica "FFT" (suma de las 11 lineas reales)
+  // solo tiene sentido viendo el catalogo de FFT -- Sorting no tiene familia de lineas (ver
+  // SORTING_LINE_FAMILY_AREA_IDS en catalogSorting.js, vacio a proposito), asi que se omite en
+  // vez de mostrar una card fantasma "FFT: 0/0" mezclada con las areas reales de Sorting.
+  const isFft = getActiveAreaGroup() === 'FFT'
   const fftCount = FFT_LINE_IDS.reduce((sum, id) => sum + (byArea[id]?.length || 0), 0)
   const fftIdeal = FFT_LINE_IDS.reduce(
     (sum, id) => sum + (workCenterById(id)?.idealHeadcount || 0),
     0,
   )
   const entries = [
-    {
-      id: 'FFT',
-      name: 'FFT',
-      count: fftCount,
-      ideal: fftIdeal,
-      group: colorGroupForArea('LINEA1'),
-    },
+    ...(isFft
+      ? [
+          {
+            id: 'FFT',
+            name: 'FFT',
+            count: fftCount,
+            ideal: fftIdeal,
+            group: colorGroupForArea('LINEA1'),
+          },
+        ]
+      : []),
     ...WORK_CENTERS.filter(
       (w) =>
         w.kind === 'area' &&

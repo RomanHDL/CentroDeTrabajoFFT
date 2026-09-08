@@ -2,6 +2,7 @@ import { Menu as MenuIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { setCurrentUserId } from '../data/personnel/apiSync'
+import { useAreaGroup } from '../data/production/useAreaGroup'
 import { useAuth } from '../state/auth'
 import { useIsTouchDevice } from '../ui/useIsTouchDevice'
 import HeaderUserActions from './HeaderUserActions'
@@ -13,6 +14,16 @@ const HOTSPOT_WIDTH = 14
 export default function AppLayout({ mode, setMode }) {
   const { user } = useAuth()
   const location = useLocation()
+  // 2026-09-08 (a peticion explicita del usuario, toggle FFT/Sorting): las paginas hijas
+  // (Dashboard/Centro de Trabajo/Registro de personal/Asistencia) leen WORK_CENTERS y sus
+  // derivados de catalog.js via useMemo/consts calculados en su propio render inicial -- un
+  // cambio de grupo reasigna esos bindings (ver applyActiveAreaGroup en catalog.js) pero NO
+  // por si solo dispara un re-render de nadie, React no sabe que "algo cambio" a menos que se
+  // lea un state/prop. `key={areaGroup}` en el <Outlet> de mas abajo fuerza a React a
+  // desmontar y volver a montar la pagina activa desde cero cuando cambia el grupo -- mismo
+  // efecto que si el usuario recargara la pagina, sin tener que agregar useAreaGroup() a cada
+  // componente que use el catalogo.
+  const areaGroup = useAreaGroup()
   // Solo controla si la ruta construye su PROPIO header (ver el bloque
   // `!hasOwnHeader &&` mas abajo) -- Centro de Trabajo es la unica pagina
   // que arma su propio logo+titulo+acciones+tabs (CentroTrabajoPage.jsx),
@@ -146,6 +157,7 @@ export default function AppLayout({ mode, setMode }) {
             propio header cuando la barra superior global esta oculta arriba
             -- el resto de paginas no llama useOutletContext, no les afecta. */}
         <Outlet
+          key={areaGroup}
           context={{
             mode,
             setMode,

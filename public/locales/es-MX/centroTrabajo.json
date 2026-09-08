@@ -132,7 +132,8 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {{baseSnapshotDate}}. Arrastrar o asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot. Números de empleado pendientes: BASE no trae esa columna todavía.",
-    "detailTitle": "Detalle del área"
+    "detailTitle": "Detalle del área",
+    "sortingLayoutPending": "El plano visual de Sorting todavía no está armado. Usa las pestañas Líneas, Estaciones y Personal (arriba) para ver y asignar personal real -- el resumen de abajo ya refleja sus áreas."
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Producción",
@@ -516,6 +517,8 @@
     "supportAreaFooterNote": "{{areaName}} es un área de soporte. La asignación de personal se gestiona directamente por los responsables autorizados."
   },
   "estacionesTab": {
+    "sortingPendingTitle": "Vista pendiente para Sorting",
+    "sortingPendingDescription": "Esta vista ejecutiva todavía es exclusiva de FFT. Usa Áreas de trabajo o Personal para ver el resumen real de Sorting.",
     "title": "Estaciones del centro de trabajo",
     "tooltipInfo": "Todas las áreas del catálogo, agrupadas para consulta ejecutiva. El Conveyor y el plano físico se administran en Áreas de trabajo.",
     "subtitle": "Todas las áreas y estaciones operativas registradas",

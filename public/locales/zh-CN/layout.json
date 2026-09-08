@@ -1,6 +1,9 @@
 {
   "appLayout": {},
   "headerUserActions": {
+    "areaGroupTitle": "当前区域：Centro de Trabajo、Dashboard、Registro de personal 和 Asistencia 都会显示这个区域",
+    "areaGroupFft": "FFT",
+    "areaGroupSorting": "Sorting",
     "idiomaTitle": "Idioma / Language / 语言",
     "modoOscuro": "深色模式",
     "modoClaro": "浅色模式",

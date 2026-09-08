@@ -244,6 +244,39 @@ para poder desplegar en el servidor privado (Coolify). Ver
   idiomas, mismo criterio que los nombres de Workstation/WorkArea.
   Probado de punta a punta contra la base real (create/list/deactivate/
   delete vía script desechable, limpiado por completo al terminar).
+- **Toggle global FFT / Sorting.** A petición explícita del usuario
+  ("todo lo que hay en mi layout de fft... el dashboard, registro de
+  personal y el modulo de asistencias ahorita es de FFT... si le doy
+  click a sorting todo esos modulos ponga lo de sorting"): nuevo botón
+  FFT/Sorting en el header compartido (`AreaGroupToggle.jsx`, dentro de
+  `HeaderUserActions.jsx` -- visible en Dashboard, Centro de Trabajo,
+  Registro de personal y Asistencia). `src/data/production/
+  catalogSorting.js` (nuevo) define las 7 áreas reales de Sorting (RCY,
+  FRM, KITS, PNP, DMR/DML, DMA/DMT y "Línea de Sorting" -- 7 puestos
+  dobles, capacidad 2 c/u, del layout que el usuario dibujó a mano) con
+  el mismo *shape* que `WORK_CENTERS` de `catalog.js` (FFT), que NO se
+  toca en su contenido. `src/data/production/areaGroup.js` (nuevo,
+  mismo patrón pub/sub que `personnel/store.js`) guarda el grupo activo
+  en localStorage; `catalog.js` reasigna `WORK_CENTERS` y sus derivados
+  (`LINES_ONLY`, `LINE_FAMILY_AREA_IDS`, etc. -- ahora `let`, no
+  `const`) cuando cambia el grupo -- como un export de ES module es un
+  binding vivo, los ~30 archivos que ya importaban `WORK_CENTERS` siguen
+  funcionando sin tocarse. `key={areaGroup}` en el `<Outlet>` de
+  `AppLayout.jsx` fuerza a remontar la página activa al cambiar de
+  grupo (un cambio de binding no dispara re-render por sí solo).
+  `scripts/seed-sorting-work-areas-2026-09-08.mjs` sembró las 7
+  `WorkArea`/`Workstation` reales en la base de datos (mismo patrón que
+  `add-real-work-areas-for-hidden-personnel.mjs`) -- arranca vacío, sin
+  snapshot de personal (a diferencia de FFT/LAYOUT FFT.xlsx). Alcance
+  real confirmado en vivo: Dashboard, Asistencia, Registro de personal
+  y la vista "Áreas de trabajo" de Centro de Trabajo siguen el toggle
+  correctamente; las pestañas "Líneas" y "Estaciones" (mockups
+  curados a mano, exclusivos de FFT) muestran un aviso de "vista
+  pendiente" en vez de datos incorrectos o un crash real que se
+  encontró y corrigió durante la prueba (`EstacionesTab.jsx`, división
+  con `idealHeadcount: null`). "Personal"/"Sin asignar"/"Bajas" siguen
+  siendo vistas globales de personal (no cambian con el toggle, es
+  comportamiento correcto: no son vistas "por área").
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

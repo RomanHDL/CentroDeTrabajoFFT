@@ -6,6 +6,7 @@ import { cardClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import OperatingFloorPlan from '../../components/OperatingFloorPlan'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { useAreaGroup } from '../../data/production/useAreaGroup'
 import { describeZoneSelection, getPhysicalZones } from '../../data/production/layoutZones'
 import { BASE_SNAPSHOT_DATE } from '../../data/production/personnelByArea'
 import AreaDetailPanel from './AreaDetailPanel'
@@ -43,6 +44,7 @@ import WorkAreaBottomSummary from './WorkAreaBottomSummary'
 export default function AreasLayoutView({ onOpenLine }) {
   const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
+  const areaGroup = useAreaGroup()
   const [selection, setSelection] = useState(null)
 
   function handleSelectArea(id) {
@@ -69,10 +71,22 @@ export default function AreasLayoutView({ onOpenLine }) {
 
       {/* Sin cardHeader propio (2026-08-25): OperatingFloorPlan ya trae su
           propio titulo "Área operando" + leyenda arriba, tener los dos
-          duplicaria el encabezado. */}
-      <div className={cn(cardClass, 'mb-4')}>
-        <OperatingFloorPlan />
-      </div>
+          duplicaria el encabezado.
+
+          2026-09-08 (toggle FFT/Sorting): OperatingFloorPlan es un plano fisico dibujado a
+          mano de la planta de FFT (1279 lineas, columnas/cajas especificas de esa planta real)
+          -- no tiene sentido para Sorting, que todavia no tiene un plano fisico propio. En
+          Sorting se omite y el resumen real (WorkAreaBottomSummary, mas abajo) sigue
+          mostrando sus areas/personal reales -- ya es generico, no depende de este plano. */}
+      {areaGroup === 'SORTING' ? (
+        <div className={cn(cardClass, 'mb-4 p-6 text-center text-sm text-muted-foreground')}>
+          {t('areasLayoutView.sortingLayoutPending')}
+        </div>
+      ) : (
+        <div className={cn(cardClass, 'mb-4')}>
+          <OperatingFloorPlan />
+        </div>
+      )}
 
       {/* Ventana flotante con el detalle — mismo patron en desktop/tablet
           (panel lateral derecho) y movil (panel inferior), para que

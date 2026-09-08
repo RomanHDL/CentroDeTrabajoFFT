@@ -1,6 +1,7 @@
 {
   "pageTitle": "Asistencia",
   "pageSubtitle": "Personal de FFT agrupado por área de trabajo, con su asistencia de hoy",
+  "pageSubtitleSorting": "Personal de Sorting agrupado por área de trabajo, con su asistencia de hoy",
   "tableTitle": "Personal por área",
   "tableSubtitle": "Toca un área para ver quién está asignado ahí hoy",
   "colEmployee": "Empleado",

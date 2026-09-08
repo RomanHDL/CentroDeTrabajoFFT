@@ -132,7 +132,8 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "Starting point: real snapshot from LAYOUT FFT.xlsx (BASE sheet) — {{baseSnapshotDate}}. Dragging or assigning someone updates their location for today without modifying that snapshot. Employee numbers pending: BASE doesn't include that column yet.",
-    "detailTitle": "Area Detail"
+    "detailTitle": "Area Detail",
+    "sortingLayoutPending": "The Sorting visual floor plan isn't set up yet. Use the Líneas, Estaciones, and Personal tabs above to view and assign real personnel -- the summary below already reflects its areas."
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Production",
@@ -516,6 +517,8 @@
     "supportAreaFooterNote": "{{areaName}} is a support area. Personnel assignment is managed directly by authorized personnel."
   },
   "estacionesTab": {
+    "sortingPendingTitle": "View pending for Sorting",
+    "sortingPendingDescription": "This executive view is still FFT-only. Use Áreas de trabajo or Personal to see Sorting's real summary.",
     "title": "Work Center Stations",
     "tooltipInfo": "All catalog areas, grouped for executive review. The conveyor and physical layout are managed in Work Areas.",
     "subtitle": "All registered operational areas and stations",

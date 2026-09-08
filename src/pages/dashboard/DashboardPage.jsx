@@ -10,6 +10,7 @@ import {
 } from '@/lib/pageStyles'
 import { useDashboardMetrics } from '../../data/dashboard/useDashboardMetrics'
 import { getCurrentShift } from '../../data/production/catalog'
+import { useAreaGroup } from '../../data/production/useAreaGroup'
 import AreaStatusDonutCard from './charts/AreaStatusDonutCard'
 import CoverageDonutCard from './charts/CoverageDonutCard'
 import MissingVsIdealComboCard from './charts/MissingVsIdealComboCard'
@@ -59,6 +60,7 @@ export default function DashboardPage() {
   const metrics = useDashboardMetrics()
   const today = dayjs()
   const currentShift = getCurrentShift()
+  const areaGroup = useAreaGroup()
 
   return (
     <div className={pageClass}>
@@ -162,14 +164,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Fila 4 -- Hallazgos del día | Indicadores FFT */}
+      {/* Fila 4 -- Hallazgos del día | Indicadores FFT (2026-09-08: FftIndicatorsCard es
+          exclusiva de FFT -- son indicadores de ese proceso especifico, no aplican a Sorting;
+          ver useAreaGroup()/areaGroup.js) */}
       <div className="mb-3 grid grid-cols-1 gap-4 md:grid-cols-12">
-        <div className="md:col-span-7">
+        <div className={areaGroup === 'SORTING' ? 'md:col-span-12' : 'md:col-span-7'}>
           <FindingsCard findings={metrics.findings} />
         </div>
-        <div className="md:col-span-5">
-          <FftIndicatorsCard />
-        </div>
+        {areaGroup !== 'SORTING' && (
+          <div className="md:col-span-5">
+            <FftIndicatorsCard />
+          </div>
+        )}
       </div>
 
       {/* Resumen rápido del centro de trabajo -- franja compacta final */}

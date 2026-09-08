@@ -1,4 +1,4 @@
-import { LINE_FAMILY_AREA_IDS } from './catalog'
+import { FFT_LINE_FAMILY_AREA_IDS } from './catalog'
 
 /* ─────────────────────────────────────────────
    Plano 2D "Área operando" (rediseño 2026-08-24 a partir del mockup
@@ -74,7 +74,10 @@ import { LINE_FAMILY_AREA_IDS } from './catalog'
    tambien pasa a incluirlas -- no se toco ese archivo, solo refleja la
    nueva fuente compartida. */
 
-export const FFT_LINE_IDS = Array.from(LINE_FAMILY_AREA_IDS)
+// FFT_LINE_FAMILY_AREA_IDS (no el binding vivo LINE_FAMILY_AREA_IDS) a proposito -- este
+// export SIEMPRE debe ser FFT, nunca vaciarse si Sorting quedo persistido al recargar la
+// pagina. Ver el comentario grande junto a FFT_LINE_FAMILY_AREA_IDS en catalog.js.
+export const FFT_LINE_IDS = Array.from(FFT_LINE_FAMILY_AREA_IDS)
 
 /* Cards pequeñas de apoyo, fila inferior del mismo plano -- mismo
    sistema visual que las zonas grandes, solo más compactas (no
