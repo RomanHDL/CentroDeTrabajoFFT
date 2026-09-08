@@ -131,11 +131,11 @@ export default function StationAssignDialog({ open, onClose, areaId, station, on
     setSubmitting(false)
   }
 
-  function handleMove() {
+  async function handleMove() {
     if (submitting) return
     setSubmitting(true)
     setError('')
-    const res = moveEmployee({
+    const res = await moveEmployee({
       employeeId: selected.id,
       toAreaId: areaId,
       toStationId: station.name,

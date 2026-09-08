@@ -11,5 +11,6 @@
   "stationNotOccupied": "The station is no longer occupied.",
   "alreadyAtStation": "Already at that station.",
   "noLocationAssignedToday": "The employee does not have a location assigned today.",
-  "requestNoLongerExists": "That request no longer exists."
+  "requestNoLongerExists": "That request no longer exists.",
+  "moveSyncFailed": "The move could not be confirmed with the server. Please try again."
 }

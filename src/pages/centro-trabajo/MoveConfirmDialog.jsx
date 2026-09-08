@@ -56,7 +56,7 @@ export default function MoveConfirmDialog({
   // RegisterPersonnelForm.jsx): la solicitud queda pendiente hasta que un SUPERVISOR/
   // ADMINISTRADOR la aprueba. Drag&drop y el formulario de registro comparten esta misma regla
   // para no dejar un segundo camino que la evada.
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (submitting) return
     setSubmitting(true)
     setError('')
@@ -80,7 +80,7 @@ export default function MoveConfirmDialog({
       return
     }
 
-    const res = moveEmployee({
+    const res = await moveEmployee({
       employeeId: employee.id,
       toAreaId,
       toStationId,

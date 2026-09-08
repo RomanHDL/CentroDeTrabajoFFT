@@ -770,12 +770,16 @@ export function reconcileLineAssignments(
       movedBy: null,
       type: 'MOVE',
     })
+    // syncMove ahora es async y puede rechazar (2026-09-08, ver comentario grande en
+    // apiSync.js) -- aqui SI sigue siendo fire-and-forget a proposito (este es un auto-relleno
+    // best-effort en bloque, no una accion explicita del usuario con dialogo de confirmacion),
+    // pero hay que atrapar el rechazo para no dejar una promesa sin manejar.
     syncMove({
       employeeId: existing.employeeId,
       toAreaId: areaId,
       toStationId: station.name,
       shift: existing.shift,
-    })
+    }).catch((e) => console.error('[personnel-sync] move (reconcile)', e))
     fixedCount += 1
     changed = true
   })
@@ -849,8 +853,18 @@ export function reconcileLineAssignments(
  * Actualiza su DailyAssignment de hoy (una sola ubicacion
  * vigente a la vez) y agrega un EmployeeMovement (type MOVE)
  * sin tocar el movimiento anterior.
+ *
+ * DELIBERADAMENTE async desde 2026-09-08 (corrige bug real reportado por el usuario: "muevo a
+ * alguien y ya lo movi y volvio a donde estaba"). Antes escribia el store local PRIMERO y
+ * mandaba syncMove() en segundo plano sin esperar respuesta -- si el servidor rechazaba el
+ * movimiento (estacion llena de verdad, empleado dado de baja mientras tanto, puesto renombrado
+ * bajo sus pies, o simple falla de red en una tablet de piso) el usuario veia el cambio al
+ * instante y, ~15s despues, el poll normal de apiSync.js lo revertia solo, sin ningun error
+ * visible -- exactamente la misma clase de bug ya corregida para el swap (2026-09-02) y para
+ * setEmployeeUnassignedReason (mismo patron: esperar la confirmacion real ANTES de tocar el
+ * store local, en vez de optimismo silencioso).
  */
-export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
+export async function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
   if (!toAreaId) return { status: 'ERROR', message: i18n.t('repository:selectDestinationAreaLine') }
   if (!toStationId)
     return { status: 'ERROR', message: i18n.t('repository:selectDestinationStation') }
@@ -877,6 +891,14 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
     }
   }
 
+  const resolvedShift = shift || current.shift
+
+  try {
+    await syncMove({ employeeId, toAreaId, toStationId, shift: resolvedShift })
+  } catch (e) {
+    return { status: 'ERROR', message: e.message || i18n.t('repository:moveSyncFailed') }
+  }
+
   const movedAt = nowTime()
 
   const movements = readMovements()
@@ -890,7 +912,7 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
     toAreaId,
     toStationId,
     movedAt,
-    shift: shift || current.shift,
+    shift: resolvedShift,
     movedBy: null,
     type: 'MOVE',
   })
@@ -900,14 +922,13 @@ export function moveEmployee({ employeeId, toAreaId, toStationId, shift }) {
     ...current,
     areaId: toAreaId,
     stationId: toStationId,
-    shift: shift || current.shift,
+    shift: resolvedShift,
     updatedAt: nowISO(),
   }
   assignments[idx] = updated
   writeAssignments(assignments)
   unsuppressBaselinePlacement(employeeId)
 
-  syncMove({ employeeId, toAreaId, toStationId, shift: updated.shift })
   notify()
   return { status: 'OK', assignment: updated, movedAt }
 }
@@ -1237,13 +1258,13 @@ export function requestMove({
  * destino ya se llenó mientras esperaba aprobación), la solicitud
  * se queda pendiente para que el supervisor decida de nuevo.
  */
-export function approveMove(pendingMoveId, approvedByUserId) {
+export async function approveMove(pendingMoveId, approvedByUserId) {
   const pending = readPendingMoves()
   const idx = pending.findIndex((p) => p.id === pendingMoveId)
   if (idx === -1) return { status: 'ERROR', message: i18n.t('repository:requestNoLongerExists') }
 
   const request = pending[idx]
-  const result = moveEmployee({
+  const result = await moveEmployee({
     employeeId: request.employeeId,
     toAreaId: request.toAreaId,
     toStationId: request.toStationId,

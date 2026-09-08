@@ -220,7 +220,7 @@ export default function RegisterPersonnelForm({
     setSubmitting(false)
   }
 
-  const handleMove = () => {
+  const handleMove = async () => {
     if (submitting || !conflict) return
     setSubmitting(true)
 
@@ -248,7 +248,7 @@ export default function RegisterPersonnelForm({
       return
     }
 
-    const res = moveEmployee({
+    const res = await moveEmployee({
       employeeId: conflict.employee.id,
       toAreaId: areaId,
       toStationId: form.stationId,

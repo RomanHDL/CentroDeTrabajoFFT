@@ -88,6 +88,7 @@ export const RELEASES = [
           'fixedOidcCookiePath',
           'fixedAccessRequestDecideId',
           'fixedOidcButtonCentered',
+          'fixedMoveEmployeeReverts',
         ],
       },
       {

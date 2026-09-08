@@ -11,5 +11,6 @@
   "stationNotOccupied": "该工位已不再被占用。",
   "alreadyAtStation": "已经在该工位。",
   "noLocationAssignedToday": "该员工今日没有分配的位置。",
-  "requestNoLongerExists": "该请求已不存在。"
+  "requestNoLongerExists": "该请求已不存在。",
+  "moveSyncFailed": "无法与服务器确认此次调动，请重试。"
 }

@@ -156,16 +156,23 @@ export function syncCheckIn({
     .catch((e) => console.error('[personnel-sync] checkin', e))
 }
 
-export function syncMove({ employeeId, toAreaId, toStationId, shift }) {
-  markRecentWrite(employeeId)
+/* DELIBERADAMENTE async/esperado desde 2026-09-08 -- ya NO es fire-and-forget (corrige bug real
+   reportado por el usuario: "muevo a alguien y a los segundos vuelve a donde estaba"). Antes,
+   moveEmployee() escribia el store local primero y mandaba esto en segundo plano; si el servidor
+   rechazaba el movimiento (estacion llena de verdad, empleado dado de baja mientras tanto, puesto
+   renombrado, o de plano sin red) el unico rastro era un console.error/warn -- el usuario veia el
+   cambio al instante y, 15s despues, el poll normal lo revertia solo (ver RECENT_WRITE_GRACE_MS
+   arriba), sin ningun mensaje. Ahora quien llama (repository.js/moveEmployee) espera esta promesa
+   ANTES de tocar el store local, igual que ya hacia syncSetUnassignedReason -- si falla, se
+   propaga el error real para mostrarlo de inmediato, en vez de un estado fantasma. */
+export async function syncMove({ employeeId, toAreaId, toStationId, shift }) {
   const serverId = serverIdByLocalId.get(employeeId)
   if (!serverId) {
-    console.warn(
-      '[personnel-sync] move: sin serverId todavia, se omite (el siguiente poll lo resuelve)',
+    throw new Error(
+      '[personnel-sync] move: sin serverId todavia (aun no se sincroniza con el servidor), intenta de nuevo en unos segundos',
     )
-    return
   }
-  apiFetch('/api/personnel/move', {
+  const data = await apiFetch('/api/personnel/move', {
     method: 'POST',
     body: JSON.stringify({
       employeeId: serverId,
@@ -173,7 +180,9 @@ export function syncMove({ employeeId, toAreaId, toStationId, shift }) {
       stationName: toStationId,
       shift,
     }),
-  }).catch((e) => console.error('[personnel-sync] move', e))
+  })
+  markRecentWrite(employeeId)
+  return data
 }
 
 /* Intercambio/bump real (2026-09-02, corrige bug real reportado por el usuario -- "cambio

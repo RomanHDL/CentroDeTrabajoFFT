@@ -509,6 +509,23 @@ para poder desplegar en el servidor privado (Coolify). Ver
   un `<div className="flex flex-col items-center gap-4">` con el botón
   (y la alerta de error, si la hay) a `w-full`, mismo ancho que el resto
   de la tarjeta. Verificado visualmente en vivo.
+- **Mover personal se revertía solo a los ~15s.** `moveEmployee`
+  (`src/data/personnel/repository.js`) escribía el store local de
+  inmediato y mandaba `syncMove` al servidor en segundo plano
+  (fire-and-forget, solo `console.error` si fallaba); si el POST real
+  fallaba u omitía (estación llena de verdad, empleado dado de baja
+  mientras tanto, puesto renombrado, o red intermitente en una
+  tablet), el siguiente sondeo de `apiSync.js` (cada 2s, tras la
+  ventana de gracia de 15s) restauraba la posición real del servidor
+  sin ningún error visible -- exactamente el mismo tipo de bug ya
+  corregido para el intercambio/swap (2026-09-02). `syncMove` ahora es
+  `async` y `moveEmployee` espera la confirmación real del servidor
+  ANTES de tocar el store local (mismo patrón que
+  `setEmployeeUnassignedReason`): si el servidor rechaza el
+  movimiento, el error real se muestra de inmediato en el diálogo, en
+  vez de un estado optimista que se revierte solo. El auto-relleno en
+  bloque (`reconcileLineAssignments`) sigue siendo fire-and-forget a
+  propósito (no es una acción explícita del usuario).
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

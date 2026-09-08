@@ -4,8 +4,8 @@ import { showToast } from '../../ui/toast'
 /* Envoltorios compartidos de aprobar/rechazar con su toast -- usados tanto por el card de
    "Movimientos pendientes" (PersonalDeHoyTab.jsx) como por la campana del header (AppLayout.jsx,
    2026-08-25) para no duplicar el mismo par de mensajes en dos lugares. */
-export function approvePendingMoveWithToast(id, userId) {
-  const res = approveMove(id, userId)
+export async function approvePendingMoveWithToast(id, userId) {
+  const res = await approveMove(id, userId)
   if (res.status === 'OK') showToast('Movimiento aprobado.', 'success')
   else showToast(res.message || 'No se pudo aprobar el movimiento.', 'error')
   return res
