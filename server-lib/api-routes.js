@@ -9,18 +9,20 @@ import accessRequestDecideHandler from '../api/access-requests/[id]/decide.js'
 import accessRequestsIndexHandler from '../api/access-requests/index.js'
 import changePasswordHandler from '../api/auth/change-password.js'
 import loginHandler from '../api/auth/login.js'
-import requestAccessHandler from '../api/auth/request-access.js'
 import logoutHandler from '../api/auth/logout.js'
 import oidcCallbackHandler from '../api/auth/oidc/callback.js'
 import oidcPendingHandler from '../api/auth/oidc/pending.js'
 import oidcRequestAccessHandler from '../api/auth/oidc/request-access.js'
 import oidcStartHandler from '../api/auth/oidc/start.js'
 import oidcStatusHandler from '../api/auth/oidc/status.js'
+import requestAccessHandler from '../api/auth/request-access.js'
 import sessionHandler from '../api/auth/session.js'
 import controlEquipoIndexHandler from '../api/control-equipo/index.js'
 import dashboardPlantIssuesHandler from '../api/dashboard/plant-issues.js'
 import dashboardTrendsHandler from '../api/dashboard/trends.js'
 import demorasIndexHandler from '../api/demoras/index.js'
+import demorasReasonByIdHandler from '../api/demoras/reasons/[id].js'
+import demorasReasonsIndexHandler from '../api/demoras/reasons/index.js'
 import equipmentAuditsIndexHandler from '../api/equipment-audits/index.js'
 import evaluacionByIdHandler from '../api/evaluaciones/[id].js'
 import evaluacionesEvolutionHandler from '../api/evaluaciones/evolution.js'
@@ -152,6 +154,9 @@ export function mountApiRoutes(app) {
 
   app.get('/api/demoras', wrapAsync(demorasIndexHandler))
   app.post('/api/demoras', wrapAsync(demorasIndexHandler))
+  app.get('/api/demoras/reasons', wrapAsync(demorasReasonsIndexHandler))
+  app.post('/api/demoras/reasons', wrapAsync(demorasReasonsIndexHandler))
+  app.patch('/api/demoras/reasons/:id', withDynamicParams(demorasReasonByIdHandler))
 
   app.get('/api/control-equipo', wrapAsync(controlEquipoIndexHandler))
   app.post('/api/control-equipo', wrapAsync(controlEquipoIndexHandler))

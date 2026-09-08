@@ -1102,6 +1102,41 @@ export const downtimeRecord = pgTable(
   ],
 )
 
+// Causas de demora agregadas en vivo por un ADMINISTRADOR (2026-09-08, a peticion explicita del
+// usuario -- "solo yo pueda agregar mas demoras" para no depender de un cambio de codigo cada
+// vez). Mismo patron ya usado para HourlyProductionDowntimeCause (arriba, hora-por-hora): tabla
+// plana con code/name/active/sortOrder, sin tracking de creador. Las 15 causas originales
+// (src/data/demoras/catalog.js, DOWNTIME_REASONS) NO se tocan -- siguen siendo texto estatico
+// traducido en public/locales/*/demoras.json, sin fila aqui. Esta tabla es SOLO el complemento
+// dinamico: cualquier causa que un ADMINISTRADOR agregue despues vive aqui, con su `name` ya en
+// texto real (nunca una clave de traduccion) porque nadie va a traducirla a mano en los 3 idiomas
+// cada vez -- se muestra igual en es-MX/en/zh-CN, mismo criterio que los nombres reales de
+// Workstation/WorkArea. `code` se deriva del name (slug) y DowntimeRecord.reasonKey (texto libre,
+// sin FK) puede apuntar a cualquiera de las dos fuentes indistintamente -- ver
+// server-lib/demoraReasons.js. Desactivar (active:false) es soft-delete: nunca borra el
+// historial ya guardado con ese reasonKey.
+export const downtimeReason = pgTable(
+  'DowntimeReason',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    name: text().notNull(),
+    code: text().notNull(),
+    active: boolean().default(true).notNull(),
+    sortOrder: integer().default(0).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => [
+    uniqueIndex('DowntimeReason_code_key').using(
+      'btree',
+      table.code.asc().nullsLast().op('text_ops'),
+    ),
+  ],
+)
+
 // Modulo Control de Equipo (2026-09-04, a peticion explicita del usuario -- catalogo real de
 // equipo fisico, ver src/data/controlEquipo/catalog.js EQUIPMENT_TYPES/EQUIPMENT_STATUSES).
 // 1 fila por observacion/evento de estado de un equipo real -- mismo patron "registro

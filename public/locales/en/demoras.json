@@ -38,6 +38,17 @@
   "shift.MATUTINO": "Day",
   "shift.TIEMPO_EXTRA": "Overtime",
   "shift.NOCHE": "Night",
+  "causesAdminMenuItem": "Configure causes",
+  "causesAdminTitle": "Delay causes",
+  "causesAdminSubtitle": "Add, rename, reorder, or deactivate causes -- these are added on top of the 15 base causes, without replacing them.",
+  "causesAdminNewLabel": "New cause",
+  "causesAdminNewPlaceholder": "E.g. Rework",
+  "causesAdminCreateButton": "Add cause",
+  "causesAdminDeactivate": "Deactivate",
+  "causesAdminActivate": "Activate",
+  "causesAdminEmpty": "No causes added yet. Add the first one above.",
+  "causeCreated": "Cause created successfully.",
+  "generating": "Saving...",
   "tag": {
     "sistema": "system",
     "mtto": "maintenance"

@@ -225,6 +225,25 @@ para poder desplegar en el servidor privado (Coolify). Ver
   login real con el número/contraseña nuevos, redirigido correctamente a
   cambiar contraseña; ambos registros de prueba limpiados por completo
   al terminar.
+- **Catálogo de causas de demora administrable por ADMINISTRADOR.** A
+  petición explícita del usuario ("solo yo pueda agregar mas demoras...
+  para no estar diciendo así como ahorita que agregues"): nueva tabla
+  `DowntimeReason` (migración `drizzle/0015_downtime_reason.sql`, mismo
+  patrón ya usado para `HourlyProductionDowntimeCause` en Hora por Hora)
+  como complemento dinámico de las 15 causas estáticas de
+  `src/data/demoras/catalog.js`, que NO se tocan. Nueva pantalla
+  "Configurar causas" (botón visible solo para ADMINISTRADOR en
+  `/demoras`, `DemorasCausesAdmin.jsx`): agregar, renombrar, reordenar
+  (flechas) y desactivar (soft-delete, nunca borra el histórico ya
+  guardado con ese `reasonKey`) -- mismo componente/UX que
+  `HourlyCausesAdmin.jsx`, sin agrupación por área (un solo catálogo
+  global). `GET/POST /api/demoras/reasons` + `PATCH /api/demoras/
+  reasons/:id`, creación restringida a ADMINISTRADOR en el servidor
+  (nunca solo en el frontend). Las causas nuevas se guardan como texto
+  real (nunca una clave de traducción) -- se muestran igual en los 3
+  idiomas, mismo criterio que los nombres de Workstation/WorkArea.
+  Probado de punta a punta contra la base real (create/list/deactivate/
+  delete vía script desechable, limpiado por completo al terminar).
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

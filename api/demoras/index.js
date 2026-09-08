@@ -10,9 +10,21 @@
 // como gate de sistema.
 import { and, desc, eq } from 'drizzle-orm'
 import { requireAuth } from '../../server-lib/auth.js'
-import { db, downtimeRecord, user } from '../../server-lib/db/client.js'
+import { db, downtimeReason, downtimeRecord, user } from '../../server-lib/db/client.js'
 import { canUserAccessModule } from '../../server-lib/permissionService.js'
 import { DOWNTIME_REASON_KEYS } from '../../src/data/demoras/catalog.js'
+
+// reasonKey valido = una de las 15 causas estaticas (catalog.js) O una causa dinamica ACTIVA
+// agregada despues por un ADMINISTRADOR (ver api/demoras/reasons/*.js, 2026-09-08).
+async function isValidReasonKey(reasonKey) {
+  if (DOWNTIME_REASON_KEYS.has(reasonKey)) return true
+  const [row] = await db
+    .select({ id: downtimeReason.id })
+    .from(downtimeReason)
+    .where(and(eq(downtimeReason.code, reasonKey), eq(downtimeReason.active, true)))
+    .limit(1)
+  return Boolean(row)
+}
 
 async function handleGet(req, res) {
   const { areaId, reasonKey } = req.query || {}
@@ -44,7 +56,7 @@ async function handlePost(req, res) {
   if (!areaId || typeof areaId !== 'string') {
     return res.status(400).json({ error: 'Falta areaId.' })
   }
-  if (!reasonKey || !DOWNTIME_REASON_KEYS.has(reasonKey)) {
+  if (!reasonKey || !(await isValidReasonKey(reasonKey))) {
     return res.status(400).json({ error: 'Causa de demora invalida.' })
   }
   const duration = Number(durationMinutes)

@@ -270,7 +270,7 @@ export const DATA_DICTIONARY = [
       [
         'reasonKey',
         'String',
-        'una de las 14 causas de src/data/demoras/catalog.js (DOWNTIME_REASONS)',
+        'una de las 15 causas estáticas de src/data/demoras/catalog.js (DOWNTIME_REASONS) O el `code` de una fila activa en DowntimeReason (2026-09-08) -- texto libre, sin FK real a ninguna de las dos tablas',
       ],
       ['durationMinutes', 'Int', ''],
       [
@@ -279,6 +279,14 @@ export const DATA_DICTIONARY = [
         'id de OFFICIAL_SHIFTS (MATUTINO/TIEMPO_EXTRA/NOCHE) desde 2026-09-07, autocalculado con getCurrentShift() -- registros previos a esa fecha guardan el literal legacy (Matutino/Vespertino/Nocturno)',
       ],
       ['createdByUserId', 'String (FK User)', ''],
+    ],
+  },
+  {
+    model: 'DowntimeReason',
+    purposeKey: 'developerManualData.dataDictionary_DowntimeReason_purpose',
+    fields: [
+      ['name / code', 'String / String', 'code es el slug de name, único; nunca clave de traducción -- se muestra igual en es-MX/en/zh-CN'],
+      ['active / sortOrder', 'Boolean / Int', 'soft-delete + orden manual, igual que HourlyProductionDowntimeCause'],
     ],
   },
   {
@@ -430,6 +438,7 @@ export const API_MAP = [
   ['/api/dashboard/plant-issues', 'developerManualData.apiMap_dashboardPlantIssues'],
   ['/api/modules', 'developerManualData.apiMap_modules'],
   ['/api/demoras', 'developerManualData.apiMap_demoras'],
+  ['/api/demoras/reasons', 'developerManualData.apiMap_demorasReasons'],
   ['/api/control-equipo', 'developerManualData.apiMap_controlEquipo'],
   ['/api/equipment-audits', 'developerManualData.apiMap_equipmentAudits'],
   ['/api/hora-por-hora/*', 'developerManualData.apiMap_horaPorHora'],

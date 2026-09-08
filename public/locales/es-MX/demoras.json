@@ -38,6 +38,17 @@
   "shift.MATUTINO": "Matutino",
   "shift.TIEMPO_EXTRA": "Tiempo extra",
   "shift.NOCHE": "Noche",
+  "causesAdminMenuItem": "Configurar causas",
+  "causesAdminTitle": "Causas de demora",
+  "causesAdminSubtitle": "Agrega, renombra, reordena o desactiva causas -- se suman a las 15 causas base, sin reemplazarlas.",
+  "causesAdminNewLabel": "Nueva causa",
+  "causesAdminNewPlaceholder": "Ej. Retrabajo",
+  "causesAdminCreateButton": "Agregar causa",
+  "causesAdminDeactivate": "Desactivar",
+  "causesAdminActivate": "Activar",
+  "causesAdminEmpty": "Todavía no hay causas agregadas. Agrega la primera arriba.",
+  "causeCreated": "Causa creada correctamente.",
+  "generating": "Guardando...",
   "tag": {
     "sistema": "sistema",
     "mtto": "mtto"

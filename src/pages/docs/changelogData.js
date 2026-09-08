@@ -44,6 +44,7 @@ export const RELEASES = [
           'addedLinkExistingAccount',
           'addedAccessRequestsInBell',
           'addedLocalAccessRequest',
+          'addedDemorasCausesAdmin',
         ],
       },
       {

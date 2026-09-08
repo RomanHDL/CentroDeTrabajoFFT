@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
@@ -36,6 +37,7 @@ import {
 } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
 import { EmptyState } from '../../ui'
+import DemorasCausesAdmin from './DemorasCausesAdmin'
 
 /* Modulo Demoras de trabajo (2026-09-04, a peticion explicita del usuario): registro real de
    tiempo muerto por causa. Mismo patron de seleccion de area que Auditoria (AUDIT_AREA_GROUPS en
@@ -81,19 +83,31 @@ function shiftDisplayLabel(t, raw) {
   return official ? t(`shift.${official.id}`) : raw
 }
 
+// Resuelve el label a mostrar para un reasonKey, sea una de las 15 causas estaticas (traducidas
+// via reasons.KEY) o una causa dinamica agregada por un ADMINISTRADOR (2026-09-08) -- estas
+// ultimas se guardan ya en texto real, nunca como clave de traduccion (ver DemorasCausesAdmin.jsx
+// y api/demoras/reasons/*.js), asi que se muestran tal cual, igual en los 3 idiomas.
+function reasonLabel(t, key, dynamicReasonsByCode) {
+  if (DOWNTIME_REASONS.some((r) => r.key === key)) return t(`reasons.${key}`)
+  return dynamicReasonsByCode.get(key)?.name || key
+}
+
 export default function DemorasPage() {
   const { t } = useTranslation('demoras')
   const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMINISTRADOR'
   // 2026-09-04 (a peticion explicita del usuario, viendo la pantalla en vivo -- "a los de rol de
   // lider solo les debe de salir ese cuadro y ya"): LIDER solo ve el formulario de registro, sin
   // el historial de "Registros recientes" -- ni siquiera se pide la lista al servidor para ese
   // rol. ADMINISTRADOR/SUPERVISOR sin cambios (ven ambos).
   const showHistory = user?.role !== 'LIDER'
+  const [showCausesAdmin, setShowCausesAdmin] = useState(false)
   const [form, setForm] = useState(makeEmptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [records, setRecords] = useState([])
   const [loadingRecords, setLoadingRecords] = useState(true)
+  const [dynamicReasons, setDynamicReasons] = useState([])
 
   const loadRecords = useCallback(async () => {
     setLoadingRecords(true)
@@ -106,9 +120,24 @@ export default function DemorasPage() {
     }
   }, [])
 
+  // includeInactive=1 (2026-09-08): el Select de captura filtra .active localmente mas abajo,
+  // pero el historial necesita poder resolver el nombre real de una causa YA desactivada (el
+  // reasonKey de un registro viejo no desaparece solo porque el admin la desactivo despues).
+  const loadDynamicReasons = useCallback(async () => {
+    const res = await fetch('/api/demoras/reasons?includeInactive=1', { credentials: 'include' })
+    const data = await res.json().catch(() => null)
+    setDynamicReasons(data?.reasons || [])
+  }, [])
+
   useEffect(() => {
     if (showHistory) loadRecords()
   }, [showHistory, loadRecords])
+
+  useEffect(() => {
+    loadDynamicReasons()
+  }, [loadDynamicReasons])
+
+  const dynamicReasonsByCode = new Map(dynamicReasons.map((r) => [r.code, r]))
 
   function handleGroupChange(groupKey) {
     const group = AREA_GROUPS.find((g) => g.key === groupKey)
@@ -159,12 +188,31 @@ export default function DemorasPage() {
   const durationValue = Number(form.durationMinutes)
   const showsRequiresLogHint = durationValue > 0
 
+  if (showCausesAdmin) {
+    return (
+      <DemorasCausesAdmin
+        onBack={() => {
+          setShowCausesAdmin(false)
+          loadDynamicReasons()
+        }}
+      />
+    )
+  }
+
   return (
     <div className={pageClass}>
       <div className={cn(cardClass, 'mb-4')}>
-        <div className="border-b border-border bg-black/[.015] px-5 py-3.5 dark:bg-white/[.02]">
-          <p className={pageTitleClass}>{t('pageTitle')}</p>
-          <p className={pageSubtitleClass}>{t('pageSubtitle')}</p>
+        <div className="flex items-start justify-between gap-3 border-b border-border bg-black/[.015] px-5 py-3.5 dark:bg-white/[.02]">
+          <div>
+            <p className={pageTitleClass}>{t('pageTitle')}</p>
+            <p className={pageSubtitleClass}>{t('pageSubtitle')}</p>
+          </div>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setShowCausesAdmin(true)}>
+              <Settings className="mr-1.5 h-4 w-4" />
+              {t('causesAdminMenuItem')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -228,6 +276,13 @@ export default function DemorasPage() {
                       {r.tag ? ` (${t(`tag.${r.tag}`)})` : ''}
                     </SelectItem>
                   ))}
+                  {dynamicReasons
+                    .filter((r) => r.active)
+                    .map((r) => (
+                      <SelectItem key={r.code} value={r.code}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -320,7 +375,9 @@ export default function DemorasPage() {
                       <tr key={r.id} className="border-b border-border/60">
                         <Td>
                           <div className="flex items-center gap-1.5">
-                            <span className={cellTextClass}>{t(`reasons.${r.reasonKey}`)}</span>
+                            <span className={cellTextClass}>
+                              {reasonLabel(t, r.reasonKey, dynamicReasonsByCode)}
+                            </span>
                             {requiresFormalLog(r.durationMinutes) && (
                               <span className="rounded bg-red-500/[0.12] px-1.5 py-0.5 text-[10px] font-bold text-red-600">
                                 {t('badgeRequiresLog')}
