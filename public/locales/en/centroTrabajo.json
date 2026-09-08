@@ -242,6 +242,7 @@
   },
   "lineasTab": {
     "title": "FFT Production Lines ({{count}})",
+    "titleSorting": "Sorting Lines ({{count}})",
     "tooltipInfo": "Only Line 1 through Line 10 — Boxes, Accessories, Palletizing, Project Line, and other areas live under 'Work Areas'.",
     "searchPlaceholder": "Search line...",
     "gridViewLabel": "Grid View",

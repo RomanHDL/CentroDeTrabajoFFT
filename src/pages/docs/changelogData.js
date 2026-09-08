@@ -95,6 +95,7 @@ export const RELEASES = [
           'fixedMoveEmployeeReverts',
           'fixedSelectOpensUpward',
           'fixedAreaGroupFollowup',
+          'fixedAreaGroupFollowup2',
         ],
       },
       {

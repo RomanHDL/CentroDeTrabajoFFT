@@ -27,6 +27,7 @@ import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import { LINE_FAMILY_WORK_CENTERS } from '../../data/production/catalog'
 import { getAreaStaffing } from '../../data/production/personnelByArea'
+import { useAreaGroup } from '../../data/production/useAreaGroup'
 import { useEmployeeDropTarget } from '../../ui/dnd'
 
 /* ─────────────────────────────────────────────
@@ -112,6 +113,7 @@ function matchesQuery(linea, rawQuery) {
 export default function LineasTab({ onOpenLine }) {
   const { t } = useTranslation('centroTrabajo')
   usePersonnelVersion()
+  const areaGroup = useAreaGroup()
   const [query, setQuery] = useState('')
   const [view, setView] = useState('grid')
 
@@ -158,7 +160,9 @@ export default function LineasTab({ onOpenLine }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
           <p className="text-[15px] font-extrabold">
-            {t('lineasTab.title', { count: lineas.length })}
+            {areaGroup === 'SORTING'
+              ? t('lineasTab.titleSorting', { count: lineas.length })
+              : t('lineasTab.title', { count: lineas.length })}
           </p>
           <Tooltip>
             <TooltipTrigger asChild>

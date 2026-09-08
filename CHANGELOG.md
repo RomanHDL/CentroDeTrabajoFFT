@@ -632,6 +632,30 @@ para poder desplegar en el servidor privado (Coolify). Ver
   - Registro de personal (con estos 3 arreglos) queda compartido tal cual entre FFT y Sorting,
     sin duplicar el componente -- exactamente lo que pidió el usuario ("sera solo uno para FFT
     y Sorting").
+- **Toggle FFT/Sorting -- segunda ronda tras probarlo en vivo (FFT y Sorting SÍ deben ser
+  independientes en personal diario).** El usuario aclaró que la decisión anterior ("Sin
+  asignar"/"Directorio" globales a propósito) era incorrecta: FFT y Sorting no deben compartir
+  personal en ninguna vista operativa del día, aunque la IDENTIDAD del empleado siga siendo
+  única y compartida (nunca duplicados, ver arriba).
+  - **Nuevo `getEmployeeAreaGroup()`/`employeeBelongsToActiveGroup()`** (`personnelByArea.js`):
+    deriva a qué grupo "pertenece" un empleado por su asignación real más reciente (hoy, o si no
+    la última histórica vía `getAssignmentHistory`) -- sin ninguna asignación real jamás se
+    asume FFT, único origen de personal hasta que alguien reciba su primera asignación real en
+    un área Sorting (ids `SORT_*`). `getAvailablePersonnelToday()` ahora filtra por esto, así que
+    "Sin asignar" y cualquier candidato de arrastrar-y-soltar dejan de mezclar áreas.
+  - **"Directorio completo" de Personal** (`directoryAll`, `PersonalDeHoyTab.jsx`) y sus alertas
+    de "Personal sin asignar"/"Empleados sin estación" ahora también se filtran por el grupo
+    activo -- antes mostraban TODO el personal sin importar el toggle. Verificado en vivo:
+    Sorting muestra 0/0 en las 4 tarjetas y "Todo el personal está asignado" en "Sin asignar";
+    FFT no perdió ningún dato (99 personas, 26 sin asignar, igual que antes).
+  - **Pestaña "Líneas" decía "FFT" en modo Sorting.** Nueva clave `lineasTab.titleSorting`
+    ("Líneas Sorting ({{count}})"), elegida según `useAreaGroup()` en vez del texto fijo.
+  - **`SortingFloorPlan.jsx` más grande**, a petición explícita del usuario ("el layout esta
+    super bien solo haz mas grande que se parezca mas a la imagen que te pase") -- mismo
+    contenido/estructura, solo tipografía/paddings/alto mínimo de cada caja aumentados.
+  - Pendiente sin resolver (mencionado, no silenciado): Movimientos del día/Actividad reciente
+    (Personal y Dashboard) siguen sin filtrar por grupo; texto del panel de detalle de área
+    ("Sin personal en el Excel...") sigue con sabor FFT/Excel aunque se abra desde Sorting.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

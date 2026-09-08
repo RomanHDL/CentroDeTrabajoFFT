@@ -43,18 +43,18 @@ function SimpleAreaBox({ area, onSelectArea, className }) {
       type="button"
       onClick={() => onSelectArea(area.id)}
       className={cn(
-        'flex flex-col items-start justify-between rounded-2xl border-2 p-4 text-left transition-colors hover:bg-accent',
+        'flex min-h-[104px] flex-col items-start justify-between rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent',
         className,
       )}
       style={{ borderColor: color }}
     >
-      <p className="text-[15px] font-extrabold">{area.name}</p>
+      <p className="text-lg font-extrabold">{area.name}</p>
       {staffing.ideal == null ? (
-        <p className="mt-1 text-[12px] text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           {staffing.real} {t('sortingFloorPlan.peopleSuffix')}
         </p>
       ) : (
-        <p className="mt-1 text-[13px] font-bold" style={{ color }}>
+        <p className="mt-1 text-base font-bold" style={{ color }}>
           {staffing.real} / {staffing.ideal}
         </p>
       )}
@@ -87,15 +87,15 @@ export default function SortingFloorPlan({ onSelectArea }) {
   const stations = getLineWorkstationsWithOccupancy('SORT_LINEA')
 
   return (
-    <div className={cn(cardClass, 'p-5')}>
-      <p className="mb-1 text-[15px] font-extrabold">{t('sortingFloorPlan.title')}</p>
-      <p className="mb-4 text-[12.5px] text-muted-foreground">{t('sortingFloorPlan.subtitle')}</p>
+    <div className={cn(cardClass, 'p-8')}>
+      <p className="mb-1 text-xl font-extrabold">{t('sortingFloorPlan.title')}</p>
+      <p className="mb-6 text-sm text-muted-foreground">{t('sortingFloorPlan.subtitle')}</p>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-3">
             <SimpleAreaBox area={SIMPLE_AREAS[0]} onSelectArea={onSelectArea} />
-            <div className="flex items-center justify-center rounded-xl border border-dashed border-border px-2 text-[10px] font-bold uppercase text-muted-foreground">
+            <div className="flex min-w-[64px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-xs font-bold uppercase text-muted-foreground">
               {t('sortingFloorPlan.entranceLabel')}
             </div>
             <SimpleAreaBox area={SIMPLE_AREAS[1]} onSelectArea={onSelectArea} />
@@ -104,21 +104,21 @@ export default function SortingFloorPlan({ onSelectArea }) {
           <button
             type="button"
             onClick={() => onSelectArea('SORT_LINEA')}
-            className="rounded-2xl border-2 p-4 text-left transition-colors hover:bg-accent"
+            className="rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
             style={{ borderColor: lineaColor }}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-[15px] font-extrabold">{t('sortingFloorPlan.lineName')}</p>
-              <p className="text-[13px] font-bold" style={{ color: lineaColor }}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
+              <p className="text-base font-bold" style={{ color: lineaColor }}>
                 {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
               </p>
             </div>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
               {stations.map((s, idx) => (
                 <div
                   key={s.id}
                   className={cn(
-                    'rounded-lg border p-1.5 text-center text-[10.5px]',
+                    'flex min-h-[92px] flex-col items-center justify-center gap-1 rounded-xl border p-3 text-center text-sm',
                     s.occupants.length > 0
                       ? 'border-emerald-500/40 bg-emerald-500/[0.08]'
                       : 'border-border bg-black/[.02] dark:bg-white/[.03]',
@@ -127,7 +127,7 @@ export default function SortingFloorPlan({ onSelectArea }) {
                   <p className="font-bold text-muted-foreground">{idx + 1}</p>
                   {s.occupants.length > 0 ? (
                     s.occupants.map((o) => (
-                      <p key={o.employeeId} className="truncate font-semibold">
+                      <p key={o.employeeId} className="w-full truncate font-semibold">
                         {o.employee?.name || '—'}
                       </p>
                     ))
@@ -140,9 +140,14 @@ export default function SortingFloorPlan({ onSelectArea }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {SIDE_AREAS.map((area) => (
-            <SimpleAreaBox key={area.id} area={area} onSelectArea={onSelectArea} />
+            <SimpleAreaBox
+              key={area.id}
+              area={area}
+              onSelectArea={onSelectArea}
+              className="h-full"
+            />
           ))}
         </div>
       </div>

@@ -2,6 +2,7 @@ import i18n from '../../i18n'
 import {
   getAllEmployees,
   getAssignableEmployees,
+  getAssignmentHistory,
   getAssignmentsForArea,
   getAssignmentsForDate,
   getBaselineSuppressed,
@@ -384,13 +385,40 @@ export function getEffectiveAreaForEmployee(employeeId) {
    o fue liberada hoy). Calculado, nunca listado a mano. Si el
    resultado es 0 es correcto: significa que todo el personal
    elegible ya esta ubicado en alguna area hoy. */
+function isSortingAreaId(areaId) {
+  return typeof areaId === 'string' && areaId.startsWith('SORT_')
+}
+
+/* Grupo (FFT/Sorting) "dueño" de un empleado para efectos de disponibilidad/directorio diario --
+   NUNCA la identidad (esa sigue unica y compartida entre ambas areas, ver
+   findOrCreateNoNumberEmployee en repository.js). Se deriva de su asignacion real mas reciente
+   (hoy si tiene, si no la ultima historica) -- sin ninguna asignacion real jamas se asume FFT,
+   porque ese es el unico origen de personal hasta que alguien reciba su primera asignacion real
+   en un area Sorting (ids SORT_*, ver catalogSorting.js). 2026-09-08, a peticion explicita del
+   usuario tras probarlo en vivo: "area FFT y Sorting son independientes no deben compartir
+   personal" -- antes de esto, "Personal"/"Sin asignar" mostraban el mismo personal sin importar
+   el grupo activo porque ninguna de las dos vistas miraba a que area pertenecia cada quien. */
+export function getEmployeeAreaGroup(employeeId) {
+  const current = getAssignmentsForDate().find((a) => a.employeeId === employeeId)
+  if (current) return isSortingAreaId(current.areaId) ? 'SORTING' : 'FFT'
+  const last = getAssignmentHistory(employeeId)[0]
+  if (last) return isSortingAreaId(last.areaId) ? 'SORTING' : 'FFT'
+  return 'FFT'
+}
+
+export function employeeBelongsToActiveGroup(employeeId) {
+  return getEmployeeAreaGroup(employeeId) === getActiveAreaGroup()
+}
+
 export function getAvailablePersonnelToday() {
   const placedIds = new Set(
     Object.values(getPeopleByArea())
       .flat()
       .map((p) => p.id),
   )
-  return getAssignableEmployees().filter((e) => !placedIds.has(e.id))
+  return getAssignableEmployees().filter(
+    (e) => !placedIds.has(e.id) && employeeBelongsToActiveGroup(e.id),
+  )
 }
 
 /* Indicador honesto de "Area operando" del layout — true si hay al

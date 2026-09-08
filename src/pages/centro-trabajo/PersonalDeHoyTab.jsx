@@ -83,6 +83,7 @@ import {
 import { exportPersonalExcel } from '../../data/production/excelExport'
 import {
   AUTO_ACTIVE_AREAS,
+  employeeBelongsToActiveGroup,
   getEffectiveAreaForEmployee,
   getEffectiveTodayRoster,
   getPeopleWithoutArea,
@@ -294,8 +295,15 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
   const presentToday = roster.length
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const movesToday = useMemo(() => getMovesCountForDate(todayISO()), [version])
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "area FFT y Sorting son
+  // independientes no deben compartir personal"): igual que `roster` arriba, se filtra por el
+  // grupo activo del empleado (employeeBelongsToActiveGroup, personnelByArea.js) para que
+  // "Alertas"/"Sin asignación" nunca mezclen personal de la otra area.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const unassigned = useMemo(() => getUnassignedPresentToday(), [version])
+  const unassigned = useMemo(
+    () => getUnassignedPresentToday().filter((u) => employeeBelongsToActiveGroup(u.employeeId)),
+    [version],
+  )
   const rosterSinEstacion = useMemo(() => roster.filter((r) => !r.stationId), [roster])
   const rosterSnapshot = useMemo(() => roster.filter((r) => r.source === 'SNAPSHOT'), [roster])
 
@@ -307,12 +315,23 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
   const unassignedCount = useMemo(() => getPeopleWithoutArea().length, [version])
 
   // Directorio completo -- TODO el personal activo (elegible, sin
-  // bajas), no solo quien tiene ubicacion hoy. Las 2 KPI de arriba
-  // ("Con numero de empleado"/"Personal por proyecto") son
-  // exactamente estos mismos dos conteos, para que nunca se
-  // desincronicen con las tabs de abajo.
+  // bajas) QUE PERTENECE al grupo activo (FFT/Sorting), no solo quien
+  // tiene ubicacion hoy. Las 2 KPI de arriba ("Con numero de
+  // empleado"/"Personal por proyecto") son exactamente estos mismos
+  // dos conteos, para que nunca se desincronicen con las tabs de abajo.
+  // 2026-09-08 (a peticion explicita del usuario, "no debe de ir el personal de fft" viendo
+  // Sorting): se agrega el filtro employeeBelongsToActiveGroup -- antes este directorio
+  // mostraba TODO el personal sin importar el grupo activo, porque la identidad del empleado es
+  // unica/compartida (findOrCreateNoNumberEmployee, repository.js) y este listado nunca miraba a
+  // que area pertenecia cada quien.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const directoryAll = useMemo(() => getAllEmployees().filter(isEmployeeEligible), [version])
+  const directoryAll = useMemo(
+    () =>
+      getAllEmployees()
+        .filter(isEmployeeEligible)
+        .filter((e) => employeeBelongsToActiveGroup(e.id)),
+    [version],
+  )
   const directoryWithNumber = useMemo(
     () =>
       directoryAll
