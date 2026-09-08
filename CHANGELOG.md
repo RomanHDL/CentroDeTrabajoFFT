@@ -551,6 +551,16 @@ para poder desplegar en el servidor privado (Coolify). Ver
   vez de un estado optimista que se revierte solo. El auto-relleno en
   bloque (`reconcileLineAssignments`) sigue siendo fire-and-forget a
   propósito (no es una acción explícita del usuario).
+- **Desplegables (`Select`) se abrían hacia arriba en pantallas chicas.**
+  Reportado con capturas reales de un escáner/celular en "Registrar
+  demora" (Área, Causa de la demora): Radix, con `avoidCollisions`
+  activo (su default), voltea el contenido del `Select` arriba del
+  trigger cuando detecta poco espacio debajo -- en esas pantallas
+  recortadas, el desplegable de causas terminaba tapando la opción que
+  el usuario quería tocar, imposible darle click. `src/components/ui/
+  select.jsx` (componente compartido por TODA la app, no solo Demoras)
+  ahora fija `side="bottom"` + `avoidCollisions={false}` por defecto --
+  siempre abre hacia abajo, igual que la referencia que dio el usuario.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

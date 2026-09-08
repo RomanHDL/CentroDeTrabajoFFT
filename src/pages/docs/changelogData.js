@@ -91,6 +91,7 @@ export const RELEASES = [
           'fixedAccessRequestDecideId',
           'fixedOidcButtonCentered',
           'fixedMoveEmployeeReverts',
+          'fixedSelectOpensUpward',
         ],
       },
       {

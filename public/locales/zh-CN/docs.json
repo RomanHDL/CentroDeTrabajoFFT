@@ -122,6 +122,7 @@
     "fixedAccessRequestDecideId": "测试\"绑定到已有账号\"时发现的一个已存在的bug：api/access-requests/[id]/decide.js是整个API中唯一一个用`const { id } = req.query`读取申请id、而没有像其他任何api/**/[id].js那样加上`?? req.params?.id`兜底的动态接口——在Vercel上能用（Vercel会把动态路由段注入到req.query里），但在Coolify/开发环境（真正的Express）上从来没生效过，也就是说批准/拒绝访问申请在那里其实一直没真正work过。已修复为与API其余部分一致的写法。",
     "fixedOidcButtonCentered": "\"使用Nextcloud登录\"按钮之前紧贴登录卡片的左边，而不是居中——那个`<Button asChild>`是Fragment的直接子元素，没有任何容器让它居中。现在把它包在`flex flex-col items-center`里，按钮设为`w-full`，宽度与卡片其余部分一致。",
     "fixedMoveEmployeeReverts": "把人从一个工位/产线移动后，大约15秒会自己恢复原位：`moveEmployee`会立即写入本地存储，并在后台把同步请求发给服务器（发送后不管结果）；如果那次写入失败或被跳过（工位确实已满、该员工同时被标记离职、工位被改名，或网络不稳定），下一次轮询就会把服务器上的真实位置还原回去，且没有任何可见的错误提示。现在`moveEmployee`会先等待服务器的真实确认，再更新本地存储——如果服务器拒绝了这次移动，会立刻显示错误。",
+    "fixedSelectOpensUpward": "下拉选择框（`Select`）在小屏幕上会向上打开（用户在\"登记延误\"页面用扫描枪/手机截图反馈了这个问题）：Radix在检测到下方空间不足时会把内容翻转到触发器上方，挡住了用户想点的选项。`src/components/ui/select.jsx`（全应用共用的组件）现在固定为`side=\"bottom\"` + `avoidCollisions={false}`——始终向下打开。",
     "v100Description": "开始技术栈迁移之前的生产状态。完整的现场人员管理功能：按工位的每日分配、需审批的调动（LIDER → SUPERVISOR/ADMINISTRADOR）、考勤、从 Excel 导入的人员目录（含离职/重复冲突的复核队列）、按角色及按用户的权限设置，以及二维现场运营平面图。部署在 Vercel 上，并与 GitHub 自动集成（desarrollo-personal 分支 → 预览环境，main 分支 → 生产环境）。",
     "addedPersonnelSync": "SmartControl 与员工目录之间的自动人员同步：生产环境每 30 分钟自动反映入职和离职情况，无需手动录入。",
     "addedProcessManuals": "在每条产线的工序单中嵌入真实的工艺手册（含图片，取自官方手册），覆盖电测、电视清洁、包装和贴标工位。",

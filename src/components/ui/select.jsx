@@ -22,7 +22,21 @@ function SelectTrigger({ className, children, ...props }) {
   )
 }
 
-function SelectContent({ className, children, ...props }) {
+// side/avoidCollisions fijos a "siempre abajo" (2026-09-08, a peticion explicita del usuario --
+// screenshot real de un escaner/celular donde el desplegable se abria HACIA ARRIBA, tapando la
+// propia causa que queria tocar y sin dejarle dar click): Radix, por defecto, voltea el
+// desplegable arriba del trigger cuando detecta poco espacio debajo (avoidCollisions=true) --
+// justo lo que pasaba en pantallas chicas/viewports recortados de esos dispositivos. Se fija
+// side="bottom" + avoidCollisions={false} para TODOS los Select de la app (nunca solo Demoras):
+// siempre abre hacia abajo, igual que la referencia que mostro el usuario. Un caller puntual
+// puede seguir sobreescribiendo pasando su propio `side`/`avoidCollisions`.
+function SelectContent({
+  className,
+  children,
+  side = 'bottom',
+  avoidCollisions = false,
+  ...props
+}) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -31,6 +45,8 @@ function SelectContent({ className, children, ...props }) {
           className,
         )}
         position="popper"
+        side={side}
+        avoidCollisions={avoidCollisions}
         {...props}
       >
         <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
