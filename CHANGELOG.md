@@ -692,6 +692,13 @@ para poder desplegar en el servidor privado (Coolify). Ver
     fila compartida arriba) y una figura de "V (abre arriba) → tramo vertical → V invertida
     parada (abre abajo)" en vez de un solo chevron simple, con 2 personas mostradas a cada lado.
     Iterado 2 veces en vivo hasta que el usuario confirmó que se parecía al pizarrón.
+  - **Reestructuración completa del layout, a petición explícita del usuario ("quiero que el
+    layout de FFT y Sorting se vea como en la empresa real... que hagan match"), con foto de
+    referencia:** el "conveyor" (Línea de Sorting) termina hasta PNP, así que PNP y DMA/DMT
+    ahora comparten fila con la Línea de Sorting y crecen para quedar nivelados con ella (CSS
+    Grid `items-stretch`, sin alturas fijas a mano); Patines/Gerente de Sorting quedan como una
+    franja angosta bajo PNP; RCY/Entrada/FRM/KITS/DMR-DML bajan a una segunda fila de tamaño
+    normal. Verificado en vivo contra la foto que mandó el usuario.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

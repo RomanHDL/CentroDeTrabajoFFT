@@ -19,9 +19,16 @@ import { getAreaStaffing } from '../../data/production/personnelByArea'
    clickeable hacia el mismo detalle (`onSelectArea`, igual patron que WorkAreaBottomSummary).
 
    2026-09-08 (segunda ronda, viendo el layout en vivo): se agregan las 2 areas que faltaban
-   ("Patines" en medio de KITS/PNP, "Gerente de Sorting" -- cuadro chico, area de apoyo -- en
-   medio de DMR-DML/DMA-DMT) y se corrige la capacidad real de SORT_LINEA de 2 a 4 personas por
-   estacion (ver catalogSorting.js y scripts/update-sort-linea-capacity-2026-09-08.mjs). */
+   ("Patines", "Gerente de Sorting" -- cuadro chico, area de apoyo) y se corrige la capacidad
+   real de SORT_LINEA de 2 a 4 personas por estacion (ver catalogSorting.js y
+   scripts/update-sort-linea-capacity-2026-09-08.mjs).
+
+   2026-09-08 (cuarta ronda, a peticion explicita del usuario -- "quiero que el layout de fft y
+   sorting se vea como en la empresa real... que hagan match", foto de referencia): el "conveyor"
+   (Línea de Sorting) termina hasta PNP, asi que PNP y DMA/DMT ahora comparten fila con la Línea
+   de Sorting y crecen (grid `items-stretch`, sin alturas fijas) para quedar nivelados con ella;
+   Patines/Gerente de Sorting se quedan como una franja angosta bajo PNP; RCY/Entrada/FRM/KITS/
+   DMR-DML bajan a una segunda fila de tamaño normal. */
 
 const SIMPLE_AREAS = [
   { id: 'SORT_RCY', name: 'RCY' },
@@ -192,20 +199,18 @@ export default function SortingFloorPlan({ onSelectArea }) {
       <p className="mb-1 text-xl font-extrabold">{t('sortingFloorPlan.title')}</p>
       <p className="mb-6 text-sm text-muted-foreground">{t('sortingFloorPlan.subtitle')}</p>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_460px]">
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-3">
-            <SimpleAreaBox area={SIMPLE_AREAS[0]} onSelectArea={onSelectArea} />
-            <div className="flex min-w-[64px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-xs font-bold uppercase text-muted-foreground">
-              {t('sortingFloorPlan.entranceLabel')}
-            </div>
-            <SimpleAreaBox area={SIMPLE_AREAS[1]} onSelectArea={onSelectArea} />
-          </div>
-
+      <div className="flex flex-col gap-6">
+        {/* Fila superior: el "conveyor" (Línea de Sorting) termina hasta PNP -- a peticion
+            explicita del usuario, foto de referencia: PNP y DMA/DMT crecen para quedar
+            nivelados con el conveyor, igual que en la planta real. `items-stretch` (grid
+            default) hace que ambas columnas compartan la misma altura -- la mini-cuadricula de
+            la derecha (PNP/Patines+Gerente/DMA-DMT) se estira para igualar la altura de la
+            Línea de Sorting, sin alturas fijas a mano. */}
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_460px]">
           <button
             type="button"
             onClick={() => onSelectArea('SORT_LINEA')}
-            className="rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
+            className="flex flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
             style={{ borderColor: lineaColor }}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -215,46 +220,46 @@ export default function SortingFloorPlan({ onSelectArea }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
+            <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
               {stations.map((s, idx) => (
                 <VLineStation key={s.id} station={s} index={idx} />
               ))}
             </div>
           </button>
+
+          <div
+            className="grid grid-cols-2 grid-rows-2 gap-3"
+            style={{ gridTemplateAreas: '"pnp dmadmt" "mid dmadmt"' }}
+          >
+            <SimpleAreaBox
+              area={PNP}
+              onSelectArea={onSelectArea}
+              className="h-full"
+              style={{ gridArea: 'pnp' }}
+            />
+            <div className="flex gap-2" style={{ gridArea: 'mid' }}>
+              <SimpleAreaBox area={PATINES} onSelectArea={onSelectArea} className="flex-1" />
+              <SimpleAreaBox area={GERENTE} onSelectArea={onSelectArea} className="w-20 shrink-0" />
+            </div>
+            <SimpleAreaBox
+              area={DMA_DMT}
+              onSelectArea={onSelectArea}
+              className="h-full"
+              style={{ gridArea: 'dmadmt' }}
+            />
+          </div>
         </div>
 
-        <div
-          className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-3"
-          style={{ gridTemplateAreas: '"kits dmrdml" "mid dmadmt" "pnp dmadmt"' }}
-        >
-          <SimpleAreaBox
-            area={KITS}
-            onSelectArea={onSelectArea}
-            className="h-full"
-            style={{ gridArea: 'kits' }}
-          />
-          <SimpleAreaBox
-            area={DMR_DML}
-            onSelectArea={onSelectArea}
-            className="h-full"
-            style={{ gridArea: 'dmrdml' }}
-          />
-          <div className="flex gap-2" style={{ gridArea: 'mid' }}>
-            <SimpleAreaBox area={PATINES} onSelectArea={onSelectArea} className="flex-1" />
-            <SimpleAreaBox area={GERENTE} onSelectArea={onSelectArea} className="w-20 shrink-0" />
+        {/* Fila inferior: RCY/Entrada/FRM/KITS/DMR-DML, tamaño normal -- mismo orden del
+            pizarron original. */}
+        <div className="grid grid-cols-[1fr_auto_1fr_1fr_1fr] items-stretch gap-3">
+          <SimpleAreaBox area={SIMPLE_AREAS[0]} onSelectArea={onSelectArea} />
+          <div className="flex min-w-[64px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-xs font-bold uppercase text-muted-foreground">
+            {t('sortingFloorPlan.entranceLabel')}
           </div>
-          <SimpleAreaBox
-            area={PNP}
-            onSelectArea={onSelectArea}
-            className="h-full"
-            style={{ gridArea: 'pnp' }}
-          />
-          <SimpleAreaBox
-            area={DMA_DMT}
-            onSelectArea={onSelectArea}
-            className="h-full"
-            style={{ gridArea: 'dmadmt' }}
-          />
+          <SimpleAreaBox area={SIMPLE_AREAS[1]} onSelectArea={onSelectArea} />
+          <SimpleAreaBox area={KITS} onSelectArea={onSelectArea} />
+          <SimpleAreaBox area={DMR_DML} onSelectArea={onSelectArea} />
         </div>
       </div>
     </div>
