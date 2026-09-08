@@ -94,6 +94,7 @@ export const RELEASES = [
           'fixedOidcButtonCentered',
           'fixedMoveEmployeeReverts',
           'fixedSelectOpensUpward',
+          'fixedAreaGroupFollowup',
         ],
       },
       {

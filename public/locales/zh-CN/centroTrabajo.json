@@ -57,6 +57,7 @@
   "employeeSearchField": {
     "defaultLabel": "工号或姓名",
     "searchPlaceholder": "3647 或 Roman",
+    "exactNumberPlaceholder": "员工编号",
     "noResults": "无结果",
     "admissionDate": "入职：{{date}}"
   },
@@ -132,8 +133,15 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "起点：来自 LAYOUT FFT.xlsx（BASE 表）的真实快照 — {{baseSnapshotDate}}。拖动或分配某人会更新其今日位置，但不会修改该快照。工号待补充：BASE 表暂未包含该列。",
-    "detailTitle": "区域详情",
-    "sortingLayoutPending": "Sorting的可视化平面图还没有搭建。请使用上方的\"线体\"、\"工位\"和\"人员\"标签页查看和分配真实人员——下方的汇总已经反映了它的区域。"
+    "detailTitle": "区域详情"
+  },
+  "sortingFloorPlan": {
+    "title": "Sorting 平面图",
+    "subtitle": "RCY 和 FRM 及其入口、双人工位产线，以及 KITS / PNP / DMR-DML / DMA-DMT",
+    "entranceLabel": "入口",
+    "lineName": "Sorting 产线",
+    "vacantLabel": "空缺",
+    "peopleSuffix": "人"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "生产",

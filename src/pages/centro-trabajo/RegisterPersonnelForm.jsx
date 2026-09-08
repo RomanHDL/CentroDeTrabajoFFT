@@ -17,7 +17,7 @@ import { alertToneClass, metricChipClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 import {
   checkInEmployee,
-  createEmployee,
+  findOrCreateNoNumberEmployee,
   getCurrentAssignment,
   getPendingMoves,
   getStationOccupancy,
@@ -189,7 +189,7 @@ export default function RegisterPersonnelForm({
     if (form.noNumber) {
       let employee
       try {
-        employee = createEmployee({ employeeNumber: 'PROYECTO', name: form.name })
+        employee = findOrCreateNoNumberEmployee(form.name)
       } catch (e) {
         setError(e.message)
         setSubmitting(false)
@@ -437,7 +437,12 @@ export default function RegisterPersonnelForm({
       {error && <Alert className={alertToneClass('error')}>{error}</Alert>}
 
       {!form.noNumber && (
-        <EmployeeSearchField autoFocus value={form.employee} onChange={handleSearch} />
+        <EmployeeSearchField
+          autoFocus
+          value={form.employee}
+          onChange={handleSearch}
+          restrictToExactMatch={isLider}
+        />
       )}
 
       <div className="flex items-center gap-2">

@@ -10,6 +10,7 @@ import { useAreaGroup } from '../../data/production/useAreaGroup'
 import { describeZoneSelection, getPhysicalZones } from '../../data/production/layoutZones'
 import { BASE_SNAPSHOT_DATE } from '../../data/production/personnelByArea'
 import AreaDetailPanel from './AreaDetailPanel'
+import SortingFloorPlan from './SortingFloorPlan'
 import WorkAreaBottomSummary from './WorkAreaBottomSummary'
 
 /* ─────────────────────────────────────────────
@@ -73,15 +74,15 @@ export default function AreasLayoutView({ onOpenLine }) {
           propio titulo "Área operando" + leyenda arriba, tener los dos
           duplicaria el encabezado.
 
-          2026-09-08 (toggle FFT/Sorting): OperatingFloorPlan es un plano fisico dibujado a
-          mano de la planta de FFT (1279 lineas, columnas/cajas especificas de esa planta real)
-          -- no tiene sentido para Sorting, que todavia no tiene un plano fisico propio. En
-          Sorting se omite y el resumen real (WorkAreaBottomSummary, mas abajo) sigue
-          mostrando sus areas/personal reales -- ya es generico, no depende de este plano. */}
+          2026-09-08 (toggle FFT/Sorting, layout real a peticion explicita del usuario --
+          pizarron a mano): OperatingFloorPlan es el plano fisico especifico de FFT (1279
+          lineas de canvas pan/zoom, geometria exacta de esa planta) -- Sorting usa su propio
+          layout mas simple, SortingFloorPlan.jsx, con las 7 areas reales del pizarron (RCY/FRM
+          + entrada, Linea de Sorting de 7 puestos dobles, KITS/PNP/DMR-DML/DMA-DMT). Mismo
+          mecanismo de click->detalle (handleSelectArea/AreaDetailPanel) que el resto de esta
+          pantalla. */}
       {areaGroup === 'SORTING' ? (
-        <div className={cn(cardClass, 'mb-4 p-6 text-center text-sm text-muted-foreground')}>
-          {t('areasLayoutView.sortingLayoutPending')}
-        </div>
+        <SortingFloorPlan onSelectArea={handleSelectArea} />
       ) : (
         <div className={cn(cardClass, 'mb-4')}>
           <OperatingFloorPlan />

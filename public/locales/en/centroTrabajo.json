@@ -57,6 +57,7 @@
   "employeeSearchField": {
     "defaultLabel": "Employee number or name",
     "searchPlaceholder": "3647 or Roman",
+    "exactNumberPlaceholder": "Employee number",
     "noResults": "No results",
     "admissionDate": "Hired: {{date}}"
   },
@@ -132,8 +133,15 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "Starting point: real snapshot from LAYOUT FFT.xlsx (BASE sheet) — {{baseSnapshotDate}}. Dragging or assigning someone updates their location for today without modifying that snapshot. Employee numbers pending: BASE doesn't include that column yet.",
-    "detailTitle": "Area Detail",
-    "sortingLayoutPending": "The Sorting visual floor plan isn't set up yet. Use the Líneas, Estaciones, and Personal tabs above to view and assign real personnel -- the summary below already reflects its areas."
+    "detailTitle": "Area Detail"
+  },
+  "sortingFloorPlan": {
+    "title": "Sorting layout",
+    "subtitle": "RCY and FRM with their entrance, the double-station line, and KITS / PNP / DMR-DML / DMA-DMT",
+    "entranceLabel": "Entrance",
+    "lineName": "Sorting Line",
+    "vacantLabel": "Vacant",
+    "peopleSuffix": "people"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Production",

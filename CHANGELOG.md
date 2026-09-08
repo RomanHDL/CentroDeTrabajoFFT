@@ -603,6 +603,35 @@ para poder desplegar en el servidor privado (Coolify). Ver
   select.jsx` (componente compartido por TODA la app, no solo Demoras)
   ahora fija `side="bottom"` + `avoidCollisions={false}` por defecto --
   siempre abre hacia abajo, igual que la referencia que dio el usuario.
+- **Toggle FFT/Sorting -- seguimiento real tras probarlo en vivo.** A petición explícita del
+  usuario, viendo el toggle recién agregado:
+  - **Layout visual real de Sorting.** `SortingFloorPlan.jsx` (nuevo) reemplaza el aviso de
+    "plano pendiente" -- RCY y FRM con su entrada, "Línea de Sorting" con sus 7 puestos dobles
+    reales (capacity 2 c/u, mismo mecanismo de `fetchLineStationConfig` que ya usa
+    `LineDetailDrawer.jsx` para traer la config real de la BD en vez del generador JS
+    genérico), y KITS/PNP/DMR-DML/DMA-DMT -- tal cual el pizarrón que dio el usuario. Mismo
+    click→detalle que el resto de "Áreas de trabajo".
+  - **"Personal" (`PersonalDeHoyTab.jsx`) mezclaba gente de FFT viendo Sorting.**
+    `getEffectiveTodayRoster()` trae TODO el personal asignado hoy sin importar el área; ahora
+    se filtra por los ids del catálogo activo (`WORK_CENTERS`, binding vivo) antes de calcular
+    "Personal presente hoy"/"Directorio rápido"/etc. "Sin asignar"/"Bajas" siguen siendo vistas
+    globales de personal a propósito (alguien sin área no "pertenece" a ninguna de las dos).
+    Movimientos/Actividad reciente (Personal y Dashboard) siguen sin filtrar -- pendiente.
+  - **LIDER podía ver el nombre de cualquier persona al escribir en Registro de personal.**
+    `EmployeeSearchField.jsx` gana `restrictToExactMatch` (activo solo para LIDER en
+    `RegisterPersonnelForm.jsx`): nunca abre el desplegable de sugerencias -- cada tecleo
+    resuelve en silencio si el texto ya es un número de empleado exacto, o lo deja como texto
+    libre (mismo camino de "número nuevo, pide nombre" que ya existía). SUPERVISOR/
+    ADMINISTRADOR sin cambios.
+  - **Duplicados reales al registrar personal sin número de empleado.** Antes, cada check-in
+    con el checkbox "No tiene número" creaba un `Employee` NUEVO siempre, aunque ya existiera
+    exactamente la misma persona de un registro anterior. `findOrCreateNoNumberEmployee()`
+    (repository.js) busca primero por nombre completo exacto entre los que ya comparten
+    número placeholder (PROYECTO/PENDIENTE) y reusa ese mismo empleado si existe -- el check-in
+    de siempre decide solo si es una simple asistencia o un cambio real de área.
+  - Registro de personal (con estos 3 arreglos) queda compartido tal cual entre FFT y Sorting,
+    sin duplicar el componente -- exactamente lo que pidió el usuario ("sera solo uno para FFT
+    y Sorting").
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

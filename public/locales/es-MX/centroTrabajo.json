@@ -57,6 +57,7 @@
   "employeeSearchField": {
     "defaultLabel": "Número o nombre de empleado",
     "searchPlaceholder": "3647 o Román",
+    "exactNumberPlaceholder": "Número de empleado",
     "noResults": "Sin resultados",
     "admissionDate": "Ingreso: {{date}}"
   },
@@ -132,8 +133,15 @@
   },
   "areasLayoutView": {
     "snapshotInfo": "Punto de partida: snapshot real desde LAYOUT FFT.xlsx (hoja BASE) — {{baseSnapshotDate}}. Arrastrar o asignar a alguien actualiza su ubicación de hoy sin modificar ese snapshot. Números de empleado pendientes: BASE no trae esa columna todavía.",
-    "detailTitle": "Detalle del área",
-    "sortingLayoutPending": "El plano visual de Sorting todavía no está armado. Usa las pestañas Líneas, Estaciones y Personal (arriba) para ver y asignar personal real -- el resumen de abajo ya refleja sus áreas."
+    "detailTitle": "Detalle del área"
+  },
+  "sortingFloorPlan": {
+    "title": "Layout de Sorting",
+    "subtitle": "RCY y FRM con su entrada, la línea de puestos dobles, y KITS / PNP / DMR-DML / DMA-DMT",
+    "entranceLabel": "Entrada",
+    "lineName": "Línea de Sorting",
+    "vacantLabel": "Vacante",
+    "peopleSuffix": "persona(s)"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Producción",

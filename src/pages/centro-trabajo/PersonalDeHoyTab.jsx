@@ -276,8 +276,21 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
     rejectPendingMoveWithToast(id, user?.id)
   }
 
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "no debe de ir el
+  // personal de fft" viendo esta pestaña en Sorting): getEffectiveTodayRoster() trae TODO el
+  // personal real asignado hoy, sin importar el area -- se filtra aqui por los ids del catalogo
+  // activo (WORK_CENTERS, binding vivo) para que "Personal"/"Directorio rapido" nunca mezclen
+  // personal de la otra area. Cascada correcta: presentToday/quickDirectoryGroups/
+  // rosterSinEstacion/rosterSnapshot/estadoGeneral ya se derivan de `roster`, un solo punto de
+  // filtro. Sin asignar (unassigned, mas abajo) sigue siendo global a proposito: alguien sin
+  // area asignada no "pertenece" a ninguna de las dos.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const roster = useMemo(() => getEffectiveTodayRoster(), [version])
+  const activeAreaIds = useMemo(() => new Set(WORK_CENTERS.map((w) => w.id)), [version])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
+  const roster = useMemo(
+    () => getEffectiveTodayRoster().filter((r) => activeAreaIds.has(r.areaId)),
+    [version, activeAreaIds],
+  )
   const presentToday = roster.length
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const movesToday = useMemo(() => getMovesCountForDate(todayISO()), [version])

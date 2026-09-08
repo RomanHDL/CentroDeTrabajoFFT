@@ -201,6 +201,25 @@ function isEmployeeNumberTaken(number, excludeEmployeeId = null) {
   return getAllEmployees().some((e) => e.employeeNumber === number && e.id !== excludeEmployeeId)
 }
 
+/* 2026-09-08 (a peticion explicita del usuario -- "que no se repita en la db... no quiero
+   duplicados"): antes, cada vez que alguien sin numero de empleado se registraba (checkbox "No
+   tiene numero"), RegisterPersonnelForm.jsx llamaba createEmployee() directo, sin buscar
+   primero -- creaba un empleado NUEVO cada vez, aunque ya existiera exactamente la misma
+   persona (mismo nombre completo) de un registro anterior. Ahora se busca primero por nombre
+   EXACTO (trim + case-insensitive) entre los ya existentes con numero placeholder compartido
+   (PROYECTO/PENDIENTE) -- si existe, se reusa ese mismo empleado (el check-in normal ya decide
+   solo/atencion/conflicto segun donde estaba), si no, se crea uno nuevo como siempre. */
+export function findOrCreateNoNumberEmployee(name) {
+  const trimmed = name.trim()
+  const normalized = trimmed.toLowerCase()
+  const existing = getAllEmployees().find(
+    (e) =>
+      SHARED_PLACEHOLDER_NUMBERS.has(e.employeeNumber) && e.name.trim().toLowerCase() === normalized,
+  )
+  if (existing) return existing
+  return createEmployee({ employeeNumber: 'PROYECTO', name: trimmed })
+}
+
 export function createEmployee({ employeeNumber, name }) {
   const number = String(employeeNumber).trim()
   if (isEmployeeNumberTaken(number)) {
