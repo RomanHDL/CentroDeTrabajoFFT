@@ -562,6 +562,7 @@
     "areaSupervisorSubtitle": "监督",
     "areaSortConveyorSubtitle": "传送带",
     "areaSortLineaSubtitle": "生产线",
+    "areaSortLineasName": "Sorting 产线",
     "areaSortWorkAreaSubtitle": "Sorting 区域",
     "areaSortPatinesSubtitle": "设备，无人员",
     "fftLinesNote": "{{count}} 条在用产线",

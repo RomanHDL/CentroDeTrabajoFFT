@@ -65,16 +65,46 @@ const AREA_GROUPS = [
 // NOCHE), no el literal en espanol -- ver shiftDisplayLabel() para mostrarlo traducido, con
 // fallback al literal legacy (Matutino/Vespertino/Nocturno) de los registros ya guardados antes
 // de este cambio, que no matchean ningun id de OFFICIAL_SHIFTS.
-function makeEmptyForm() {
+//
+// 2026-09-08 (a peticion explicita del usuario -- "que si ponen una linea que ya se guarde en
+// automatico todo el turno... ya solo llenaria los minutos y la causa"): `persisted` (Area/Linea
+// ya elegidos, ver readPersistedLineSelection abajo) se usa para sembrar el formulario en vez de
+// arrancar siempre vacio -- solo para esos 3 campos, reasonKey/durationMinutes/notes SIEMPRE
+// arrancan vacios (cada demora real necesita su propia duracion y causa, eso nunca se recuerda).
+function makeEmptyForm(persisted) {
   return {
-    groupKey: '',
-    lineId: '',
-    areaId: '',
+    groupKey: persisted?.groupKey || '',
+    lineId: persisted?.lineId || '',
+    areaId: persisted?.areaId || '',
     reasonKey: '',
     durationMinutes: '',
     shift: getCurrentShift().id,
     notes: '',
   }
+}
+
+// Memoria de "Area/Linea" por usuario + turno (2026-09-08, a peticion explicita del usuario):
+// nunca en el servidor -- es una comodidad de captura, no un dato de negocio (mismo criterio ya
+// usado en este proyecto para tema/idioma en localStorage, ver App.jsx/i18n.js). Se guarda por
+// userId (nunca se hereda la seleccion de otra persona en un dispositivo compartido) + shift.id
+// (expira solo -- al cruzar a un turno nuevo, no hay seleccion guardada para ese turno todavia).
+const LINE_MEMORY_PREFIX = 'demoras:lastLine'
+
+function readPersistedLineSelection(userId, shiftId) {
+  if (!userId || !shiftId) return null
+  try {
+    const raw = localStorage.getItem(`${LINE_MEMORY_PREFIX}:${userId}:${shiftId}`)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function writePersistedLineSelection(userId, shiftId, selection) {
+  if (!userId || !shiftId) return
+  try {
+    localStorage.setItem(`${LINE_MEMORY_PREFIX}:${userId}:${shiftId}`, JSON.stringify(selection))
+  } catch {}
 }
 
 function shiftDisplayLabel(t, raw) {
@@ -102,7 +132,9 @@ export default function DemorasPage() {
   // rol. ADMINISTRADOR/SUPERVISOR sin cambios (ven ambos).
   const showHistory = user?.role !== 'LIDER'
   const [showCausesAdmin, setShowCausesAdmin] = useState(false)
-  const [form, setForm] = useState(makeEmptyForm)
+  const [form, setForm] = useState(() =>
+    makeEmptyForm(readPersistedLineSelection(user?.id, getCurrentShift().id)),
+  )
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [records, setRecords] = useState([])
@@ -141,16 +173,27 @@ export default function DemorasPage() {
 
   function handleGroupChange(groupKey) {
     const group = AREA_GROUPS.find((g) => g.key === groupKey)
-    setForm((prev) => ({
-      ...prev,
-      groupKey,
-      lineId: '',
-      areaId: group?.areaId || '',
-    }))
+    setForm((prev) => {
+      const next = { ...prev, groupKey, lineId: '', areaId: group?.areaId || '' }
+      writePersistedLineSelection(user?.id, next.shift, {
+        groupKey: next.groupKey,
+        lineId: next.lineId,
+        areaId: next.areaId,
+      })
+      return next
+    })
   }
 
   function handleLineChange(lineId) {
-    setForm((prev) => ({ ...prev, lineId, areaId: lineId }))
+    setForm((prev) => {
+      const next = { ...prev, lineId, areaId: lineId }
+      writePersistedLineSelection(user?.id, next.shift, {
+        groupKey: next.groupKey,
+        lineId: next.lineId,
+        areaId: next.areaId,
+      })
+      return next
+    })
   }
 
   const canSubmit =
@@ -176,7 +219,17 @@ export default function DemorasPage() {
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || t('saveErrorGeneric'))
-      setForm(makeEmptyForm())
+      // 2026-09-08 (a peticion explicita del usuario): Area/Linea NUNCA se limpian aqui si el
+      // turno sigue siendo el mismo -- solo se limpian causa/duracion/notas, para que la
+      // siguiente demora del mismo turno solo pida esos 2 campos. Si el turno YA cambio (cruce
+      // real de horario mientras se llenaba el formulario), se resiembra desde la memoria de ese
+      // turno nuevo (normalmente vacia) en vez de arrastrar la linea del turno anterior.
+      const currentShiftId = getCurrentShift().id
+      if (currentShiftId === form.shift) {
+        setForm((prev) => ({ ...prev, reasonKey: '', durationMinutes: '', notes: '' }))
+      } else {
+        setForm(makeEmptyForm(readPersistedLineSelection(user?.id, currentShiftId)))
+      }
       await loadRecords()
     } catch (err) {
       setSubmitError(err.message || t('saveErrorGeneric'))

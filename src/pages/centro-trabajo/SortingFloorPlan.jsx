@@ -34,6 +34,17 @@ const SIMPLE_AREAS = [
   { id: 'SORT_RCY', name: 'RCY' },
   { id: 'SORT_FRM', name: 'FRM' },
 ]
+// 2026-09-08 (septima ronda): SORT_LINEA1..7, 7 areas de catalogo reales e independientes (ver
+// catalogSorting.js) -- ya NO son puestos dentro de una sola area compartida.
+const SORTING_LINE_IDS = [
+  'SORT_LINEA1',
+  'SORT_LINEA2',
+  'SORT_LINEA3',
+  'SORT_LINEA4',
+  'SORT_LINEA5',
+  'SORT_LINEA6',
+  'SORT_LINEA7',
+]
 // 2026-09-08 (tercera ronda -- a peticion explicita del usuario, foto real del pizarron para
 // esta seccion especifica): KITS/DMR-DML arriba y PNP/DMA-DMT abajo son las 4 areas grandes de
 // siempre; Patines (mediano) y Gerente de Sorting (chico) van juntos en una franja angosta entre
@@ -101,7 +112,14 @@ function SimpleAreaBox({ area, onSelectArea, className, style }) {
 // Una "V" real: 1 persona en cada uno de los 4 puntos (2 arriba, en las puntas de la V; 2 abajo,
 // en las puntas de la V invertida) -- a peticion explicita del usuario ("cada punto de extremo a
 // extremo lleva una persona"). occupants ya viene ordenado por checkInAt (repository.js).
-function VLineStation({ station, index }) {
+//
+// 2026-09-08 (septima ronda, a peticion explicita del usuario -- "ahi te falta poner que las
+// lineas sean por separado, son 7 lineas independientes, no solo una"): cada V es ahora su
+// PROPIA area de catalogo real (SORT_LINEA1..7, ver catalogSorting.js) -- antes las 7 eran solo
+// puestos dentro de una unica area "SORT_LINEA" compartida. El boton ya no vive en el
+// contenedor exterior (que ahora es un simple agrupador visual): cada VLineStation es su propio
+// <button> clickeable hacia su propia area real.
+function VLineStation({ areaId, station, index, color, onSelectArea }) {
   const { t } = useTranslation('centroTrabajo')
   const [topLeft, topRight, bottomLeft, bottomRight] = station.occupants
   const hasPeople = station.occupants.length > 0
@@ -112,13 +130,14 @@ function VLineStation({ station, index }) {
       <p className="text-muted-foreground/70">{t('sortingFloorPlan.vacantLabel')}</p>
     )
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onSelectArea(areaId)}
       className={cn(
-        'flex flex-col items-center gap-1 rounded-xl border p-2.5 text-center text-[12px]',
-        hasPeople
-          ? 'border-emerald-500/40 bg-emerald-500/[0.08]'
-          : 'border-border bg-black/[.02] dark:bg-white/[.03]',
+        'flex flex-col items-center gap-1 rounded-xl border-2 p-2.5 text-center text-[12px] transition-colors hover:bg-accent',
+        hasPeople ? 'bg-emerald-500/[0.08]' : 'bg-black/[.02] dark:bg-white/[.03]',
       )}
+      style={{ borderColor: color }}
     >
       {/* Puntas de la V (arriba, abre hacia arriba) -- 1 persona por punta. */}
       <div className="grid w-full grid-cols-2 gap-1">
@@ -170,7 +189,7 @@ function VLineStation({ station, index }) {
       >
         <Package className="h-3.5 w-3.5" />
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -213,18 +232,17 @@ export default function SortingFloorPlan({ onSelectArea }) {
   usePersonnelVersion()
   const [, setConfigVersion] = useState(0)
 
-  // Los puestos reales de SORT_LINEA (7) y SORT_CONVEYOR (2) viven en la BD (scripts/seed-
-  // sorting-work-areas-2026-09-08.mjs, scripts/seed-sorting-conveyor-2026-09-08.mjs), pero
+  // Los puestos reales de SORT_LINEA1..7 (1 c/u) y SORT_CONVEYOR (2) viven en la BD (scripts/
+  // split-sort-linea-2026-09-08.mjs, scripts/seed-sorting-conveyor-2026-09-08.mjs), pero
   // getWorkstationsForLine() solo los usa si ya estan en cache (lineStationConfig.js) -- mismo
   // patron exacto que LineDetailDrawer.jsx al abrir una WC LINEA. Sin este fetch, cada uno cae
-  // en el generador JS generico (1 solo puesto "catch-all") porque ninguno es parte de
-  // LINE_FAMILY_AREA_IDS ni tiene CUSTOM_STATION_PLANS.
+  // en el generador JS generico (1 solo puesto "catch-all") porque ninguno tiene
+  // CUSTOM_STATION_PLANS propio.
   useEffect(() => {
     let cancelled = false
-    Promise.all([
-      fetchLineStationConfig('SORT_LINEA'),
-      fetchLineStationConfig('SORT_CONVEYOR'),
-    ]).then(() => {
+    Promise.all(
+      [...SORTING_LINE_IDS, 'SORT_CONVEYOR'].map((id) => fetchLineStationConfig(id)),
+    ).then(() => {
       if (!cancelled) setConfigVersion((v) => v + 1)
     })
     return () => {
@@ -232,9 +250,21 @@ export default function SortingFloorPlan({ onSelectArea }) {
     }
   }, [])
 
-  const lineaStaffing = getAreaStaffing('SORT_LINEA')
-  const lineaColor = statusColor(lineaStaffing)
-  const stations = getLineWorkstationsWithOccupancy('SORT_LINEA')
+  // 2026-09-08 (septima ronda): 7 areas reales independientes en vez de 1 sola con 7 puestos
+  // adentro -- ver comentario de catalogSorting.js/VLineStation. El header sigue mostrando un
+  // total agregado (suma de las 7) para no perder la vista rapida de "cuanta gente en total".
+  const lineaRows = SORTING_LINE_IDS.map((id) => ({
+    id,
+    staffing: getAreaStaffing(id),
+    station: getLineWorkstationsWithOccupancy(id)[0] || { id, occupants: [] },
+  }))
+  const lineaTotalReal = lineaRows.reduce((sum, r) => sum + r.staffing.real, 0)
+  const lineaTotalIdeal = lineaRows.reduce((sum, r) => sum + (r.staffing.ideal || 0), 0)
+  const lineaGroupColor = statusColor({
+    ideal: lineaTotalIdeal,
+    real: lineaTotalReal,
+    status: lineaTotalIdeal > 0 && lineaTotalReal >= lineaTotalIdeal ? 'COMPLETA' : 'OTRO',
+  })
   const conveyorStations = getLineWorkstationsWithOccupancy('SORT_CONVEYOR')
   const conveyorStaffing = getAreaStaffing('SORT_CONVEYOR')
   const conveyorColor = statusColor(conveyorStaffing)
@@ -288,25 +318,30 @@ export default function SortingFloorPlan({ onSelectArea }) {
               color={conveyorColor}
               onSelectArea={onSelectArea}
             />
-            <button
-              type="button"
-              onClick={() => onSelectArea('SORT_LINEA')}
-              className="flex flex-1 flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
-              style={{ borderColor: lineaColor }}
+            <div
+              className="flex flex-1 flex-col rounded-3xl border-2 p-6"
+              style={{ borderColor: lineaGroupColor }}
             >
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
-                <p className="text-base font-bold" style={{ color: lineaColor }}>
-                  {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
+                <p className="text-base font-bold" style={{ color: lineaGroupColor }}>
+                  {lineaTotalReal} / {lineaTotalIdeal}
                 </p>
               </div>
 
               <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
-                {stations.map((s, idx) => (
-                  <VLineStation key={s.id} station={s} index={idx} />
+                {lineaRows.map((row, idx) => (
+                  <VLineStation
+                    key={row.id}
+                    areaId={row.id}
+                    station={row.station}
+                    index={idx}
+                    color={statusColor(row.staffing)}
+                    onSelectArea={onSelectArea}
+                  />
                 ))}
               </div>
-            </button>
+            </div>
           </div>
         </div>
 

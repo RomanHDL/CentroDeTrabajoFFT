@@ -43,6 +43,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getBajaEmployees } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { employeeBelongsToActiveGroup } from '../../data/production/personnelByArea'
 import { getRoleLabels } from '../../layout/roleLabels'
 import { EmptyState } from '../../ui'
 // Reutiliza la MISMA card KPI horizontal que ya usa "Personal" (2026-09-02, a peticion
@@ -128,8 +129,16 @@ export default function BajasTab() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "esos son bajas de FFT,
+  // en Sorting aun no hay bajas, no se por que hay gente de FFT en Sorting"): se filtra por el
+  // grupo real al que pertenecia cada persona (employeeBelongsToActiveGroup, personnelByArea.js
+  // -- misma logica ya usada en Personal/Movimientos: ultima asignacion real, o FFT por default
+  // si nunca tuvo ninguna) para que una baja de FFT nunca aparezca viendo Sorting y viceversa.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const baja = useMemo(() => getBajaEmployees(), [version])
+  const baja = useMemo(
+    () => getBajaEmployees().filter((e) => employeeBelongsToActiveGroup(e.id)),
+    [version],
+  )
 
   const areaOptions = useMemo(() => {
     const set = new Set()

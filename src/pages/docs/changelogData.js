@@ -46,6 +46,7 @@ export const RELEASES = [
           'addedLocalAccessRequest',
           'addedDemorasCausesAdmin',
           'addedAreaGroupToggle',
+          'addedDemorasLineMemory',
         ],
       },
       {
@@ -97,6 +98,7 @@ export const RELEASES = [
           'fixedAreaGroupFollowup',
           'fixedAreaGroupFollowup2',
           'fixedAreaGroupFollowup3',
+          'fixedAreaGroupFollowup4',
         ],
       },
       {

@@ -24,7 +24,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
-import { getLineWorkstationsWithOccupancy } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import { LINE_FAMILY_WORK_CENTERS } from '../../data/production/catalog'
@@ -120,20 +119,22 @@ export default function LineasTab({ onOpenLine }) {
   const [view, setView] = useState('grid')
   const [configVersion, setConfigVersion] = useState(0)
 
-  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "ahi en lineas hay 7 ok
-  // cada linea debe de llevar 4 personas"): SORT_LINEA es UNA sola area con 7 puestos reales
-  // adentro (a diferencia de LINEA1..10 de FFT, que son 10 areas de catalogo separadas) -- para
-  // que esta pestaña muestre las 7 como si fueran 7 "lineas" independientes, se leen sus
-  // estaciones reales directo (getLineWorkstationsWithOccupancy, mismo dato que ya usa
-  // SortingFloorPlan.jsx) en vez de LINE_FAMILY_WORK_CENTERS (vacio para Sorting a proposito,
-  // ver SORTING_LINE_FAMILY_WORK_CENTERS en catalogSorting.js). Requiere el mismo fetch de
-  // config real de la BD que SortingFloorPlan.jsx, o cae en el generador generico de 1 puesto.
+  // 2026-09-08 (septima ronda, a peticion explicita del usuario -- "ahi te falta poner que las
+  // lineas sean por separado, son 7 lineas independientes, no solo una"): SORT_LINEA1..7 ahora
+  // son 7 AREAS DE CATALOGO reales y separadas (ver catalogSorting.js), igual que LINEA1..10 de
+  // FFT -- ya NO hace falta ningun manejo especial aqui, LINE_FAMILY_WORK_CENTERS (el binding
+  // vivo) las trae solas cuando el usuario activa Sorting, y getAreaStaffing()/
+  // getWorkstationsForLine() funcionan igual para cualquiera de las dos. Se mantiene el fetch de
+  // config real de la BD (mismo patron que SortingFloorPlan.jsx) para que
+  // getWorkstationsForLine() no caiga en el generador generico.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: se re-ejecuta cuando cambia areaGroup (LINE_FAMILY_WORK_CENTERS es un binding vivo que cambia de contenido, no de referencia detectable)
   useEffect(() => {
-    if (areaGroup !== 'SORTING') return
     let cancelled = false
-    fetchLineStationConfig('SORT_LINEA').then(() => {
-      if (!cancelled) setConfigVersion((v) => v + 1)
-    })
+    Promise.all(LINE_FAMILY_WORK_CENTERS.map((linea) => fetchLineStationConfig(linea.id))).then(
+      () => {
+        if (!cancelled) setConfigVersion((v) => v + 1)
+      },
+    )
     return () => {
       cancelled = true
     }
@@ -142,46 +143,29 @@ export default function LineasTab({ onOpenLine }) {
   const lineas = LINE_FAMILY_WORK_CENTERS
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: configVersion fuerza recalcular tras el fetch real de estaciones, aunque no se lea en el callback
-  const rows = useMemo(() => {
-    if (areaGroup === 'SORTING') {
-      return getLineWorkstationsWithOccupancy('SORT_LINEA').map((station, idx) => {
-        const real = station.occupants.length
-        const ideal = station.capacity
+  const rows = useMemo(
+    () =>
+      lineas.map((linea) => {
+        const staffing = getAreaStaffing(linea.id)
+        const ideal = staffing.ideal || 0
+        const real = staffing.real || 0
         const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
         const missing = Math.max(ideal - real, 0)
+        const stationsCount = getWorkstationsForLine(linea.id).length
         return {
-          linea: { id: 'SORT_LINEA', name: t('lineasTab.sortingLineName', { index: idx + 1 }) },
-          stationKey: `SORT_LINEA-${station.id}`,
-          staffing: { real, ideal },
+          linea,
+          stationKey: linea.id,
+          staffing,
           real,
           ideal,
           pct,
           missing,
           complete: real >= ideal && ideal > 0,
-          stationsCount: 1,
+          stationsCount,
         }
-      })
-    }
-    return lineas.map((linea) => {
-      const staffing = getAreaStaffing(linea.id)
-      const ideal = staffing.ideal || 0
-      const real = staffing.real || 0
-      const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
-      const missing = Math.max(ideal - real, 0)
-      const stationsCount = getWorkstationsForLine(linea.id).length
-      return {
-        linea,
-        stationKey: linea.id,
-        staffing,
-        real,
-        ideal,
-        pct,
-        missing,
-        complete: real >= ideal && ideal > 0,
-        stationsCount,
-      }
-    })
-  }, [lineas, areaGroup, t, configVersion])
+      }),
+    [lineas, configVersion],
+  )
 
   const filteredRows = useMemo(
     () => rows.filter((r) => matchesQuery(r.linea, query)),

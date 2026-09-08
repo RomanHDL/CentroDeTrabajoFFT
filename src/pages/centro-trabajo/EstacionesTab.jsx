@@ -38,6 +38,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn, hexToRgba } from '@/lib/utils'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { operationalGroupMembers, workCenterById } from '../../data/production/catalog'
+import { SORTING_LINE_FAMILY_AREA_IDS } from '../../data/production/catalogSorting'
 import { FFT_LINE_IDS, REFERENCE_ONLY_ZONES } from '../../data/production/floorPlanZones'
 import { colorForArea } from '../../data/production/layoutZones'
 import {
@@ -202,12 +203,14 @@ function buildAreaSlots(t) {
 
 /* 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "actualiza los otros
    apartados de mi modulo de centro de trabajo"): version Sorting de buildAreaSlots -- catalogo
-   propio (catalogSorting.js), sin fusiones/agrupaciones especiales (a diferencia de FFT/
-   INSUMOS_SUMINISTRO arriba, ningun id de Sorting necesita ese manejo), asi que computeRow()
-   los resuelve todos por su rama generica (getAreaStaffing(slot.id)) sin cambios. `name` se lee
-   directo del catalogo activo (workCenterById) para no duplicar los nombres a mano; `subtitle`
-   reutiliza las mismas claves compartidas que ya existen (areaGerenteSubtitle/
-   areaSupervisorSubtitle) donde el concepto es identico al de FFT. */
+   propio (catalogSorting.js). `name` se lee directo del catalogo activo (workCenterById) para no
+   duplicar los nombres a mano; `subtitle` reutiliza las mismas claves compartidas que ya existen
+   (areaGerenteSubtitle/areaSupervisorSubtitle) donde el concepto es identico al de FFT.
+
+   2026-09-08 (septima ronda, a peticion explicita del usuario -- "son 7 lineas independientes,
+   no solo una"): SORT_LINEA1..7 son 7 areas de catalogo reales y separadas -- 'SORT_LINEAS' es
+   un slot SINTETICO que las agrupa en 1 sola tarjeta (mismo patron EXACTO que el slot 'FFT' de
+   arriba, que agrupa las 11 lineas reales de FFT) -- click lleva a "Lineas", igual que 'FFT'. */
 function buildSortingAreaSlots(t) {
   const nameOf = (id) => workCenterById(id)?.name || id
   return [
@@ -219,11 +222,11 @@ function buildSortingAreaSlots(t) {
       colorAreaId: 'SORT_CONVEYOR',
     },
     {
-      id: 'SORT_LINEA',
-      name: nameOf('SORT_LINEA'),
+      id: 'SORT_LINEAS',
+      name: t('estacionesTab.areaSortLineasName'),
       subtitle: t('estacionesTab.areaSortLineaSubtitle'),
       icon: <Package2 size={22} />,
-      colorAreaId: 'SORT_LINEA',
+      colorAreaId: 'SORT_LINEA1',
     },
     {
       id: 'SORT_RCY',
@@ -309,6 +312,17 @@ function computeRow(slot, t) {
       extraNote: t('estacionesTab.fftLinesNote', { count: FFT_LINE_IDS.length }),
     }
   }
+  if (slot.id === 'SORT_LINEAS') {
+    const ids = [...SORTING_LINE_FAMILY_AREA_IDS]
+    const real = ids.reduce((s, id) => s + (getPeopleByArea()[id]?.length || 0), 0)
+    const ideal = ids.reduce((s, id) => s + (getAreaStaffing(id).ideal || 0), 0)
+    return {
+      slot,
+      real,
+      ideal,
+      extraNote: t('estacionesTab.fftLinesNote', { count: ids.length }),
+    }
+  }
   if (slot.id === 'INSUMOS_SUMINISTRO') {
     // 2026-08-26: group-aware (PNP/POC/PEN + Box Prep + Insumos + Suministro
     // de material fusionados, catalog.js/AREA_DETAIL_GROUPS.INSUMOS) --
@@ -370,7 +384,7 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
   }, [rows, placeholderSlots])
 
   function handleOpenRow(row) {
-    if (row.slot.id === 'FFT') {
+    if (row.slot.id === 'FFT' || row.slot.id === 'SORT_LINEAS') {
       onGoToLineas?.()
       return
     }

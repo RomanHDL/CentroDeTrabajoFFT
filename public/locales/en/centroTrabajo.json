@@ -562,6 +562,7 @@
     "areaSupervisorSubtitle": "Supervision",
     "areaSortConveyorSubtitle": "Conveyor",
     "areaSortLineaSubtitle": "Production line",
+    "areaSortLineasName": "Sorting Lines",
     "areaSortWorkAreaSubtitle": "Sorting area",
     "areaSortPatinesSubtitle": "Equipment, no personnel",
     "fftLinesNote": "{{count}} active lines",

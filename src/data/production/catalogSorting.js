@@ -13,18 +13,16 @@
    `idealHeadcount: null` en las areas simples (RCY/FRM/KITS/PNP/DMR-DML/DMA-DMT/Patines) es
    -- SORT_CONVEYOR SI tiene ideal real (2, mismo criterio que CONVEYOR_PRINCIPAL de FFT) --
    intencional (nunca inventar un ideal que el usuario no dio -- mismo criterio que INSUMOS/
-   CALIDAD en catalog.js, "Sin plantilla definida"). SORT_LINEA si tiene un ideal real: 7 lineas
-   en V, 4 personas c/u (2 en cada extremo) = 28 -- corregido 2026-09-08 tras una segunda
-   aclaracion del usuario viendo el pizarron con mas detalle (antes se habia interpretado como
-   parejas de 2, 14 en total; ver scripts/update-sort-linea-capacity-2026-09-08.mjs). SORT_GERENTE
-   (Gerente de Sorting) es un area de apoyo, mismo criterio que GERENTE en catalog.js (FFT):
-   idealHeadcount:1, isProduction:false. Todas kind:'area' (nunca 'linea') a proposito --
-   SORT_LINEA es una sola linea, no una familia de 0-10 como WC LINEA, asi que no necesita el
-   manejo especial de LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS (ese mecanismo es exclusivo
-   de la familia LINEA1-10 + PROYECTO de FFT). Las estaciones reales (capacity, nombre de cada
-   puesto) se configuran despues en vivo desde "Configurar puestos" (LineDetailDrawer.jsx),
-   mismo mecanismo ya usado por WC LINEA -- ver scripts/seed-sorting-work-areas-2026-09-08.mjs y
-   scripts/seed-sorting-patines-gerente-2026-09-08.mjs para el sembrado real en la BD.
+   CALIDAD en catalog.js, "Sin plantilla definida"). SORT_LINEA1..7 (septima ronda, ver comentario
+   en su propia definicion mas abajo) SI tienen ideal real: cada una es una V con 4 personas
+   (2 por extremo) -- 7 lineas independientes, kind:'linea', SI usan
+   LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS (a diferencia de la version anterior de un solo
+   SORT_LINEA con 7 puestos adentro). SORT_GERENTE (Gerente de Sorting) es un area de apoyo,
+   mismo criterio que GERENTE en catalog.js (FFT): idealHeadcount:1, isProduction:false. Las
+   estaciones reales (capacity, nombre de cada puesto) se configuran despues en vivo desde
+   "Configurar puestos" (LineDetailDrawer.jsx), mismo mecanismo ya usado por WC LINEA -- ver
+   scripts/seed-sorting-work-areas-2026-09-08.mjs, scripts/seed-sorting-patines-gerente-
+   2026-09-08.mjs y scripts/split-sort-linea-2026-09-08.mjs para el sembrado real en la BD.
    SORT_SUPERVISOR (2026-09-08, sexta ronda) reemplaza el marcador decorativo "Entrada" -- ahi
    es donde el supervisor tiene su computadora, mismo criterio que SUPERVISOR en catalog.js
    (FFT). SORT_PATINES (`equipment: true` en SortingFloorPlan.jsx) nunca tiene personal
@@ -49,18 +47,80 @@ export const SORTING_WORK_CENTERS = [
     // 2026-09-08.mjs para las 2 Workstation reales (capacity 1 c/u).
     idealHeadcount: 2,
   },
+  // 2026-09-08 (septima ronda, a peticion explicita del usuario -- "ahi te falta poner que las
+  // lineas sean por separado, son 7 lineas independientes, no solo una"): SORT_LINEA1..7
+  // reemplazan la unica area "SORT_LINEA" con 7 puestos adentro -- ahora son 7 AREAS DE CATALOGO
+  // reales y separadas, exactamente como LINEA1..10 de FFT (cada una con su propia asignacion,
+  // su propio "Registrar personal", su propio detalle) en vez de un pool compartido de 28
+  // lugares. Cada una es una V con 2 personas en un extremo y 2 en el otro = 4 (confirmado por
+  // el usuario viendo el pizarron con mas detalle). kind:'linea' (a diferencia de antes) para
+  // que participen del mismo mecanismo LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS que ya usan
+  // Lineas/Asistencia/Registro de personal para WC LINEA de FFT -- ver
+  // SORTING_LINE_FAMILY_AREA_IDS/SORTING_LINE_FAMILY_WORK_CENTERS mas abajo. Cada una tiene
+  // exactamente 1 Workstation real capacity:4 en la BD (ver scripts/split-sort-linea-2026-09-08.mjs,
+  // que reemplaza el sembrado anterior de 1 area con 7 puestos).
   {
-    id: 'SORT_LINEA',
-    name: 'Línea de Sorting',
-    kind: 'area',
+    id: 'SORT_LINEA1',
+    name: 'Línea de Sorting 1',
+    kind: 'linea',
     type: 'PRODUCTION_LINE',
     isProduction: true,
     dailyTarget: null,
-    // 2026-09-08 (correccion, a peticion explicita del usuario tras ver el pizarron con mas
-    // detalle): cada una de las 7 lineas es una V con 2 personas en un extremo y otras 2 en el
-    // otro -- 4 por linea, no 2 (7 x 4 = 28, antes 14). Capacidad real de las 7 Workstation ya
-    // actualizada en la BD (ver scripts/update-sort-linea-capacity-2026-09-08.mjs).
-    idealHeadcount: 28,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA2',
+    name: 'Línea de Sorting 2',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA3',
+    name: 'Línea de Sorting 3',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA4',
+    name: 'Línea de Sorting 4',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA5',
+    name: 'Línea de Sorting 5',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA6',
+    name: 'Línea de Sorting 6',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
+  },
+  {
+    id: 'SORT_LINEA7',
+    name: 'Línea de Sorting 7',
+    kind: 'linea',
+    type: 'PRODUCTION_LINE',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: 4,
   },
   {
     id: 'SORT_RCY',
@@ -148,5 +208,9 @@ export const SORTING_WORK_CENTERS = [
   },
 ]
 
-export const SORTING_LINE_FAMILY_AREA_IDS = new Set()
-export const SORTING_LINE_FAMILY_WORK_CENTERS = []
+export const SORTING_LINE_FAMILY_AREA_IDS = new Set(
+  SORTING_WORK_CENTERS.filter((w) => w.kind === 'linea').map((w) => w.id),
+)
+export const SORTING_LINE_FAMILY_WORK_CENTERS = SORTING_WORK_CENTERS.filter(
+  (w) => w.kind === 'linea',
+)

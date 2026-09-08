@@ -746,6 +746,33 @@ para poder desplegar en el servidor privado (Coolify). Ver
     esté ahí arriba es abajo"): las 4 personas ahora se muestran una por cada punta real del
     dibujo (2 arriba, en la V; 2 abajo, en la V invertida) en vez de 2 columnas de 2 nombres; el
     ícono del pallet se mueve al final de la tarjeta (antes arriba de todo).
+  - **Octava ronda: las 7 líneas de Sorting pasan a ser 7 áreas de catálogo REALMENTE
+    independientes, a petición explícita del usuario** ("ahí te falta poner que las líneas sean
+    por separado, son 7 líneas independientes, no solo una"): antes eran 1 sola área
+    (`SORT_LINEA`) con 7 puestos adentro -- un click en cualquiera de las 7 abría el mismo
+    detalle compartido de 28 personas. Ahora son `SORT_LINEA1`..`SORT_LINEA7`, 7 áreas de
+    catálogo reales (`kind:'linea'`, igual que `LINEA1`..`LINEA10` de FFT), cada una con su
+    propia Workstation real (capacity 4) en la BD (`scripts/split-sort-linea-2026-09-08.mjs`,
+    migró los datos existentes sin perder nada real -- Sorting seguía en 0 asignaciones).
+    `LineasTab.jsx` vuelve a su mecanismo genérico de siempre (`LINE_FAMILY_WORK_CENTERS`), sin
+    ningún caso especial para Sorting; `EstacionesTab.jsx` las agrupa en una sola tarjeta
+    sintética "Líneas de Sorting" (mismo patrón que la tarjeta "FFT" ya usaba para sus 11
+    líneas).
+  - **"Bajas" ahora se filtra por el grupo de área activo, a petición explícita del usuario**
+    ("esos son bajas de FFT, en Sorting aún no hay bajas, no sé por qué hay gente de FFT en
+    Sorting"): se agrega el mismo filtro `employeeBelongsToActiveGroup()` ya usado en
+    Personal/Movimientos -- una baja de alguien que trabajó en FFT nunca aparece viendo Sorting,
+    y viceversa.
+  - **Demoras de trabajo: la línea elegida ahora se recuerda todo el turno, a petición explícita
+    del usuario** ("que si ponen una línea que ya se guarde en automático todo el turno... ya
+    solo llenaría los minutos y la causa"): Área/Línea se guardan en `localStorage` por
+    usuario+turno (expira solo al cruzar a un turno nuevo) -- después de registrar una demora,
+    Causa/Duración/Nota se limpian pero Área/Línea NO, así la siguiente demora del mismo turno
+    solo pide esos 2 campos. Investigado el reporte de "a mí no me sale el escoger la línea":
+    no es un bug de rol -- el campo Línea siempre aparece igual para cualquier rol en cuanto se
+    elige "Líneas de producción" en el campo Área (verificado en vivo con una cuenta
+    ADMINISTRADOR de prueba); si no aparecía era porque ese primer paso no se había hecho
+    todavía.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
