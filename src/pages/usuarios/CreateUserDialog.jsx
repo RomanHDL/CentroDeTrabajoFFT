@@ -38,7 +38,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
       setError(t('createUserDialog.nameRequiredError'))
       return
     }
-    if (form.password.length < 8) {
+    if (form.password.length < 6) {
       setError(t('createUserDialog.passwordMinLengthError'))
       return
     }

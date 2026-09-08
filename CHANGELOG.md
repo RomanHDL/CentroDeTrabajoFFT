@@ -407,6 +407,15 @@ para poder desplegar en el servidor privado (Coolify). Ver
   el catálogo pasa de 14 a 15 opciones. `reasonKey` en `DowntimeRecord`
   es texto libre (sin enum en la base de datos), así que no requiere
   migración.
+- **Longitud mínima de contraseña: de 8 a 6 caracteres.** A petición
+  explícita del usuario ("mas rapido"). Cambiado en las 4 validaciones
+  reales del servidor (`api/auth/change-password.js`, `api/users/
+  index.js`, `api/users/[id]/reset-password.js`, `api/access-requests/
+  [id]/decide.js` para el alta local) y en su espejo del frontend
+  (`ChangePasswordPage.jsx`, `CreateUserDialog.jsx`, `UsuariosPage.jsx`,
+  `AccessRequestDecideRow.jsx`), más los 2 scripts de consola
+  (`create-initial-admin.mjs`, `reset-user-password.mjs`) y todos los
+  textos/hints de los 3 idiomas que mencionaban el mínimo anterior.
 
 ### Fixed
 - **Modo oscuro.** `body` nunca definía un `color` base (solo

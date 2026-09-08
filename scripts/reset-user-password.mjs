@@ -66,9 +66,9 @@ async function main() {
     `\nUsuario localizado: "${existingUser.name}" (rol ${existingUser.role}, activo=${existingUser.active}). Se le va a restablecer SOLO la contraseña.\n`,
   )
 
-  const password = await askHidden('Nueva contraseña temporal (minimo 8 caracteres): ')
-  if (!password || password.length < 8) {
-    console.error('\nError: la contraseña debe tener al menos 8 caracteres.')
+  const password = await askHidden('Nueva contraseña temporal (minimo 6 caracteres): ')
+  if (!password || password.length < 6) {
+    console.error('\nError: la contraseña debe tener al menos 6 caracteres.')
     process.exit(1)
   }
   const confirm = await askHidden('Confirma la nueva contraseña: ')

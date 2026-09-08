@@ -24,10 +24,10 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: 'Rol invalido' })
     }
-    if (password.length < 8) {
+    if (password.length < 6) {
       return res
         .status(400)
-        .json({ error: 'La contraseña temporal debe tener al menos 8 caracteres' })
+        .json({ error: 'La contraseña temporal debe tener al menos 6 caracteres' })
     }
 
     const passwordHash = await bcrypt.hash(password, 12)

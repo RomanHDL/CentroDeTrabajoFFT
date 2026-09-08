@@ -142,7 +142,7 @@ export default function UsuariosPage() {
   }
 
   async function handleResetManual(user) {
-    if (manualPassword.length < 8) {
+    if (manualPassword.length < 6) {
       showToast(t('usuariosPage.passwordTooShort'), 'error')
       return
     }
@@ -438,7 +438,7 @@ export default function UsuariosPage() {
               onChange={(e) => setManualPassword(e.target.value)}
             />
             <p className="mt-1 h-4 text-xs text-destructive">
-              {manualPassword && manualPassword.length < 8
+              {manualPassword && manualPassword.length < 6
                 ? t('usuariosPage.minPasswordLengthHint')
                 : ' '}
             </p>
@@ -448,7 +448,7 @@ export default function UsuariosPage() {
               {t('usuariosPage.cancelButton')}
             </Button>
             <Button
-              disabled={resetSaving || manualPassword.length < 8}
+              disabled={resetSaving || manualPassword.length < 6}
               onClick={() => handleResetManual(resetChoiceUser)}
             >
               {resetSaving ? (

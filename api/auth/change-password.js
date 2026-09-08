@@ -7,8 +7,8 @@ export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { currentPassword, newPassword } = req.body || {}
-  if (!newPassword || newPassword.length < 8) {
-    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' })
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' })
   }
 
   // Si viene de una contraseña temporal (mustChangePassword), no exigimos la actual

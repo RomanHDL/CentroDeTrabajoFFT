@@ -40,7 +40,7 @@ export default function ChangePasswordPage() {
     if (submitting) return
     setError('')
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 6) {
       setError(t('errorPasswordTooShort'))
       return
     }

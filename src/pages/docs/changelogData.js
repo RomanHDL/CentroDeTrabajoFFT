@@ -76,6 +76,7 @@ export const RELEASES = [
           'changedVercelRedirect',
           'changedLoginNextcloudPrimary',
           'changedDemorasAddCalidad',
+          'changedMinPasswordLength',
         ],
       },
       {

@@ -62,9 +62,9 @@ async function main() {
     process.exit(1)
   }
 
-  const password = await askHidden('Contraseña temporal (minimo 8 caracteres): ')
-  if (!password || password.length < 8) {
-    console.error('\nError: la contraseña debe tener al menos 8 caracteres.')
+  const password = await askHidden('Contraseña temporal (minimo 6 caracteres): ')
+  if (!password || password.length < 6) {
+    console.error('\nError: la contraseña debe tener al menos 6 caracteres.')
     process.exit(1)
   }
   const confirm = await askHidden('Confirma la contraseña: ')

@@ -1,6 +1,6 @@
 {
   "usuariosPage": {
-    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
     "passwordUpdated": "Contraseña actualizada",
     "passwordUpdateError": "No se pudo actualizar la contraseña",
     "pageTitle": "Usuarios del sistema",
@@ -34,7 +34,7 @@
     "resetPasswordDescription": "Genera una contraseña temporal aleatoria, o define tú mismo la contraseña nueva.",
     "generateRandomButton": "Generar aleatoria",
     "manualPasswordLabel": "O define la contraseña manualmente",
-    "minPasswordLengthHint": "Mínimo 8 caracteres",
+    "minPasswordLengthHint": "Mínimo 6 caracteres",
     "savePasswordButton": "Guardar contraseña",
     "temporaryPasswordDialogTitle": "Contraseña temporal generada",
     "temporaryPasswordWarning": "Esta contraseña solo se muestra una vez. Entrégasela a {{name}} de forma segura.",
@@ -71,7 +71,7 @@
     "nameLabel": "Nombre",
     "namePlaceholder": "Nombre completo",
     "passwordLabel": "Contraseña temporal",
-    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
     "employeeNumberLabel": "Empleado #{{number}}",
     "employeeNumberShort": "#{{number}}"
   },
@@ -104,13 +104,13 @@
   "createUserDialog": {
     "missingIdentifierError": "Indica al menos número de empleado o username.",
     "nameRequiredError": "El nombre es requerido.",
-    "passwordMinLengthError": "La contraseña temporal debe tener al menos 8 caracteres.",
+    "passwordMinLengthError": "La contraseña temporal debe tener al menos 6 caracteres.",
     "title": "Agregar usuario",
     "employeeNumberLabel": "Número de empleado",
     "nameLabel": "Nombre completo",
     "roleLabel": "Rol",
     "passwordLabel": "Contraseña temporal",
-    "passwordHint": "Mínimo 8 caracteres. El usuario deberá cambiarla en su primer inicio de sesión.",
+    "passwordHint": "Mínimo 6 caracteres. El usuario deberá cambiarla en su primer inicio de sesión.",
     "cancelButton": "Cancelar",
     "submitButton": "Crear usuario"
   },

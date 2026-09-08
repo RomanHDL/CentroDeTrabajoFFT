@@ -81,7 +81,7 @@ export default function AccessRequestDecideRow({ request, users, onDecided, comp
     }
   }
 
-  const approveDisabled = deciding || !name.trim() || (isLocal && password.length < 8)
+  const approveDisabled = deciding || !name.trim() || (isLocal && password.length < 6)
 
   return (
     <div

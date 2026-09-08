@@ -6,7 +6,7 @@ import { requireModuleAccess } from '../../../server-lib/auth.js'
 
 // POST body opcional { password?: string }. Sin password: comportamiento de
 // siempre (genera una aleatoria, forza mustChangePassword). Con password
-// (min 8 caracteres): el admin la define el mismo -- se guarda tal cual la
+// (min 6 caracteres): el admin la define el mismo -- se guarda tal cual la
 // escribio, mustChangePassword=false porque fue una decision deliberada, no
 // un valor desechable.
 export default requireModuleAccess('/usuarios', async (req, res) => {
@@ -15,8 +15,8 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   const { password } = req.body || {}
 
   if (password !== undefined && password !== null) {
-    if (typeof password !== 'string' || password.length < 8) {
-      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
     }
     const passwordHash = await bcrypt.hash(password, 12)
     // Fase 3 (Prisma -> Drizzle): P2025 -> 0 filas de `.returning()`, se checa a mano.

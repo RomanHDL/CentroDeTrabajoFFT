@@ -1,6 +1,6 @@
 {
   "usuariosPage": {
-    "passwordTooShort": "Password must be at least 8 characters long",
+    "passwordTooShort": "Password must be at least 6 characters long",
     "passwordUpdated": "Password updated",
     "passwordUpdateError": "Could not update the password",
     "pageTitle": "System users",
@@ -34,7 +34,7 @@
     "resetPasswordDescription": "Generate a random temporary password, or set the new password yourself.",
     "generateRandomButton": "Generate random",
     "manualPasswordLabel": "Or set the password manually",
-    "minPasswordLengthHint": "Minimum 8 characters",
+    "minPasswordLengthHint": "Minimum 6 characters",
     "savePasswordButton": "Save password",
     "temporaryPasswordDialogTitle": "Temporary password generated",
     "temporaryPasswordWarning": "This password is shown only once. Deliver it to {{name}} securely.",
@@ -71,7 +71,7 @@
     "nameLabel": "Name",
     "namePlaceholder": "Full name",
     "passwordLabel": "Temporary password",
-    "passwordPlaceholder": "8 characters minimum",
+    "passwordPlaceholder": "6 characters minimum",
     "employeeNumberLabel": "Employee #{{number}}",
     "employeeNumberShort": "#{{number}}"
   },
@@ -104,13 +104,13 @@
   "createUserDialog": {
     "missingIdentifierError": "Provide at least an employee number or a username.",
     "nameRequiredError": "Name is required.",
-    "passwordMinLengthError": "The temporary password must be at least 8 characters long.",
+    "passwordMinLengthError": "The temporary password must be at least 6 characters long.",
     "title": "Add user",
     "employeeNumberLabel": "Employee number",
     "nameLabel": "Full name",
     "roleLabel": "Role",
     "passwordLabel": "Temporary password",
-    "passwordHint": "Minimum 8 characters. The user will need to change it on their first sign-in.",
+    "passwordHint": "Minimum 6 characters. The user will need to change it on their first sign-in.",
     "cancelButton": "Cancel",
     "submitButton": "Create user"
   },

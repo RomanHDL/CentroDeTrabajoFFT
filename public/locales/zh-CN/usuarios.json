@@ -1,6 +1,6 @@
 {
   "usuariosPage": {
-    "passwordTooShort": "密码长度必须至少为8位",
+    "passwordTooShort": "密码长度必须至少为6位",
     "passwordUpdated": "密码已更新",
     "passwordUpdateError": "无法更新密码",
     "pageTitle": "系统用户",
@@ -34,7 +34,7 @@
     "resetPasswordDescription": "生成一个随机临时密码，或自行设置新密码。",
     "generateRandomButton": "生成随机密码",
     "manualPasswordLabel": "或手动设置密码",
-    "minPasswordLengthHint": "最少8位字符",
+    "minPasswordLengthHint": "最少6位字符",
     "savePasswordButton": "保存密码",
     "temporaryPasswordDialogTitle": "临时密码已生成",
     "temporaryPasswordWarning": "此密码仅显示一次，请将其安全地交给 {{name}}。",
@@ -71,7 +71,7 @@
     "nameLabel": "姓名",
     "namePlaceholder": "全名",
     "passwordLabel": "临时密码",
-    "passwordPlaceholder": "至少8个字符",
+    "passwordPlaceholder": "至少6个字符",
     "employeeNumberLabel": "员工 #{{number}}",
     "employeeNumberShort": "#{{number}}"
   },
@@ -104,13 +104,13 @@
   "createUserDialog": {
     "missingIdentifierError": "请至少填写员工编号或用户名。",
     "nameRequiredError": "姓名为必填项。",
-    "passwordMinLengthError": "临时密码长度必须至少为8位。",
+    "passwordMinLengthError": "临时密码长度必须至少为6位。",
     "title": "添加用户",
     "employeeNumberLabel": "员工编号",
     "nameLabel": "姓名",
     "roleLabel": "角色",
     "passwordLabel": "临时密码",
-    "passwordHint": "最少8位字符。用户首次登录时须修改密码。",
+    "passwordHint": "最少6位字符。用户首次登录时须修改密码。",
     "cancelButton": "取消",
     "submitButton": "创建用户"
   },
