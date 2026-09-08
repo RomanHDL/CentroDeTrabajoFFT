@@ -45,8 +45,14 @@ const KITS = { id: 'SORT_KITS', name: 'KITS' }
 const DMR_DML = { id: 'SORT_DMR_DML', name: 'DMR / DML' }
 const PNP = { id: 'SORT_PNP', name: 'PNP' }
 const DMA_DMT = { id: 'SORT_DMA_DMT', name: 'DMA / DMT' }
-const PATINES = { id: 'SORT_PATINES', name: 'Patines', size: 'medium' }
-const GERENTE = { id: 'SORT_GERENTE', name: 'Gerente de Sorting', size: 'small' }
+// 2026-09-08 (sexta ronda, a peticion explicita del usuario -- "mueve la card de lugar donde
+// esta patines cambialo por gerente de sorting y en ese va patines"): Gerente de Sorting pasa a
+// la ranura ancha (`size:'medium'`), Patines a la chica (`size:'small'`) -- justo al reves que
+// antes. `equipment: true` en Patines: "ahi no va personal, solo los patines del area" -- ver
+// SimpleAreaBox, nunca muestra conteo de personal para un area marcada asi.
+const PATINES = { id: 'SORT_PATINES', name: 'Patines', size: 'small', equipment: true }
+const GERENTE = { id: 'SORT_GERENTE', name: 'Gerente de Sorting', size: 'medium' }
+const SUPERVISOR = { id: 'SORT_SUPERVISOR', name: 'Supervisor', size: 'small' }
 
 function statusColor(staffing) {
   if (staffing.ideal == null) return '#94A3B8'
@@ -77,7 +83,9 @@ function SimpleAreaBox({ area, onSelectArea, className, style }) {
       style={{ borderColor: color, ...style }}
     >
       <p className={sizeClasses.title}>{area.name}</p>
-      {staffing.ideal == null ? (
+      {area.equipment ? (
+        <p className="mt-1 text-sm text-muted-foreground">{t('sortingFloorPlan.equipmentLabel')}</p>
+      ) : staffing.ideal == null ? (
         <p className="mt-1 text-sm text-muted-foreground">
           {staffing.real} {t('sortingFloorPlan.peopleSuffix')}
         </p>
@@ -266,8 +274,8 @@ export default function SortingFloorPlan({ onSelectArea }) {
               style={{ gridArea: 'pnp' }}
             />
             <div className="flex gap-2" style={{ gridArea: 'mid' }}>
-              <SimpleAreaBox area={PATINES} onSelectArea={onSelectArea} className="flex-1" />
-              <SimpleAreaBox area={GERENTE} onSelectArea={onSelectArea} className="w-20 shrink-0" />
+              <SimpleAreaBox area={GERENTE} onSelectArea={onSelectArea} className="flex-1" />
+              <SimpleAreaBox area={PATINES} onSelectArea={onSelectArea} className="w-20 shrink-0" />
             </div>
             <SimpleAreaBox
               area={DMA_DMT}
@@ -308,13 +316,11 @@ export default function SortingFloorPlan({ onSelectArea }) {
 
         {/* Fila inferior: KITS/DMR-DML a la izquierda, RCY/Entrada/FRM a la derecha (espejo de
             la fila de arriba). */}
-        <div className="grid grid-cols-[1fr_1fr_1fr_auto_1fr] items-stretch gap-3">
+        <div className="grid grid-cols-5 items-stretch gap-3">
           <SimpleAreaBox area={KITS} onSelectArea={onSelectArea} />
           <SimpleAreaBox area={DMR_DML} onSelectArea={onSelectArea} />
           <SimpleAreaBox area={SIMPLE_AREAS[0]} onSelectArea={onSelectArea} />
-          <div className="flex min-w-[64px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-xs font-bold uppercase text-muted-foreground">
-            {t('sortingFloorPlan.entranceLabel')}
-          </div>
+          <SimpleAreaBox area={SUPERVISOR} onSelectArea={onSelectArea} />
           <SimpleAreaBox area={SIMPLE_AREAS[1]} onSelectArea={onSelectArea} />
         </div>
       </div>

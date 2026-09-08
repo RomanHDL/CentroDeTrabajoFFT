@@ -37,7 +37,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn, hexToRgba } from '@/lib/utils'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { operationalGroupMembers } from '../../data/production/catalog'
+import { operationalGroupMembers, workCenterById } from '../../data/production/catalog'
 import { FFT_LINE_IDS, REFERENCE_ONLY_ZONES } from '../../data/production/floorPlanZones'
 import { colorForArea } from '../../data/production/layoutZones'
 import {
@@ -46,7 +46,6 @@ import {
   getPeopleByArea,
 } from '../../data/production/personnelByArea'
 import { useAreaGroup } from '../../data/production/useAreaGroup'
-import { EmptyState } from '../../ui'
 
 /* ─────────────────────────────────────────────
    Rediseño 2026-08-25 (a petición explícita del usuario, mockup
@@ -201,6 +200,97 @@ function buildAreaSlots(t) {
   ]
 }
 
+/* 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "actualiza los otros
+   apartados de mi modulo de centro de trabajo"): version Sorting de buildAreaSlots -- catalogo
+   propio (catalogSorting.js), sin fusiones/agrupaciones especiales (a diferencia de FFT/
+   INSUMOS_SUMINISTRO arriba, ningun id de Sorting necesita ese manejo), asi que computeRow()
+   los resuelve todos por su rama generica (getAreaStaffing(slot.id)) sin cambios. `name` se lee
+   directo del catalogo activo (workCenterById) para no duplicar los nombres a mano; `subtitle`
+   reutiliza las mismas claves compartidas que ya existen (areaGerenteSubtitle/
+   areaSupervisorSubtitle) donde el concepto es identico al de FFT. */
+function buildSortingAreaSlots(t) {
+  const nameOf = (id) => workCenterById(id)?.name || id
+  return [
+    {
+      id: 'SORT_CONVEYOR',
+      name: nameOf('SORT_CONVEYOR'),
+      subtitle: t('estacionesTab.areaSortConveyorSubtitle'),
+      icon: <Cog size={22} />,
+      colorAreaId: 'SORT_CONVEYOR',
+    },
+    {
+      id: 'SORT_LINEA',
+      name: nameOf('SORT_LINEA'),
+      subtitle: t('estacionesTab.areaSortLineaSubtitle'),
+      icon: <Package2 size={22} />,
+      colorAreaId: 'SORT_LINEA',
+    },
+    {
+      id: 'SORT_RCY',
+      name: nameOf('SORT_RCY'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'SORT_RCY',
+    },
+    {
+      id: 'SORT_FRM',
+      name: nameOf('SORT_FRM'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'SORT_FRM',
+    },
+    {
+      id: 'SORT_KITS',
+      name: nameOf('SORT_KITS'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <ShoppingCart size={22} />,
+      colorAreaId: 'SORT_KITS',
+    },
+    {
+      id: 'SORT_PNP',
+      name: nameOf('SORT_PNP'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'SORT_PNP',
+    },
+    {
+      id: 'SORT_DMR_DML',
+      name: nameOf('SORT_DMR_DML'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'SORT_DMR_DML',
+    },
+    {
+      id: 'SORT_DMA_DMT',
+      name: nameOf('SORT_DMA_DMT'),
+      subtitle: t('estacionesTab.areaSortWorkAreaSubtitle'),
+      icon: <Tag size={22} />,
+      colorAreaId: 'SORT_DMA_DMT',
+    },
+    {
+      id: 'SORT_PATINES',
+      name: nameOf('SORT_PATINES'),
+      subtitle: t('estacionesTab.areaSortPatinesSubtitle'),
+      icon: <Package2 size={22} />,
+      colorAreaId: 'SORT_PATINES',
+    },
+    {
+      id: 'SORT_GERENTE',
+      name: nameOf('SORT_GERENTE'),
+      subtitle: t('estacionesTab.areaGerenteSubtitle'),
+      icon: <User size={22} />,
+      colorAreaId: 'SORT_GERENTE',
+    },
+    {
+      id: 'SORT_SUPERVISOR',
+      name: nameOf('SORT_SUPERVISOR'),
+      subtitle: t('estacionesTab.areaSupervisorSubtitle'),
+      icon: <UserCheck size={22} />,
+      colorAreaId: 'SORT_SUPERVISOR',
+    },
+  ]
+}
+
 /* Placeholders sin área de catálogo mapeada (igual criterio que
    REFERENCE_ONLY_ZONES en floorPlanZones.js) -- nunca se les inventa
    un id de área ni se les fuerza un mapeo incierto; "Asignar personal"
@@ -242,7 +332,14 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
   const [query, setQuery] = useState('')
   const [view, setView] = useState('tarjetas')
 
-  const areaSlots = useMemo(() => buildAreaSlots(t), [t])
+  const areaSlots = useMemo(
+    () => (areaGroup === 'SORTING' ? buildSortingAreaSlots(t) : buildAreaSlots(t)),
+    [t, areaGroup],
+  )
+  // Sorting no tiene el concepto de "placeholder sin area de catalogo" (REFERENCE_ONLY_ZONES es
+  // exclusivo del snapshot historico de FFT, Chofer/Produccion sin WORK_CENTER propio) -- lista
+  // vacia en ese modo.
+  const placeholderSlots = areaGroup === 'SORTING' ? [] : PLACEHOLDER_SLOTS
 
   const rows = useMemo(() => areaSlots.map((slot) => computeRow(slot, t)), [areaSlots, t])
 
@@ -252,10 +349,10 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
   )
   const filteredPlaceholders = useMemo(
     () =>
-      PLACEHOLDER_SLOTS.filter(
+      placeholderSlots.filter(
         (p) => !query.trim() || normalize(p.label).includes(normalize(query)),
       ),
-    [query],
+    [query, placeholderSlots],
   )
 
   const totals = useMemo(() => {
@@ -268,9 +365,9 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
       totalIdeal,
       faltante,
       coverage,
-      count: rows.length + PLACEHOLDER_SLOTS.length,
+      count: rows.length + placeholderSlots.length,
     }
-  }, [rows])
+  }, [rows, placeholderSlots])
 
   function handleOpenRow(row) {
     if (row.slot.id === 'FFT') {
@@ -282,26 +379,6 @@ export default function EstacionesTab({ onOpenLine, onGoToLineas }) {
       return
     }
     onOpenLine?.(row.slot.id)
-  }
-
-  // 2026-09-08 (toggle FFT/Sorting): AREA_SLOTS (buildAreaSlots arriba) es una lista CURADA a
-  // mano de ids literales de FFT (FFT/HIGH_VALUE/PALETIZADO/etc.) -- nunca penso para otro
-  // catalogo, quebraba con un TypeError real (coverage null) al calcular sobre las areas de
-  // Sorting. En vez de adaptar esta vista curada (mockup especifico de FFT) se muestra un
-  // mensaje simple; el resumen real de Sorting ya vive en "Áreas de trabajo"
-  // (WorkAreaBottomSummary, generico) y en "Personal". Este return va DESPUES de todos los
-  // hooks de arriba (nunca antes) -- un return condicional entre hooks rompe las reglas de
-  // React (orden de hooks debe ser identico en cada render).
-  if (areaGroup === 'SORTING') {
-    return (
-      <div className="p-6">
-        <EmptyState
-          compact
-          title={t('estacionesTab.sortingPendingTitle')}
-          description={t('estacionesTab.sortingPendingDescription')}
-        />
-      </div>
-    )
   }
 
   return (

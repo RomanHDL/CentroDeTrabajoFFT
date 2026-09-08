@@ -137,13 +137,13 @@
   },
   "sortingFloorPlan": {
     "title": "Layout de Sorting",
-    "subtitle": "RCY y FRM con su entrada, el conveyor y la línea de Sorting, y KITS / Patines / DMR-DML / PNP / Gerente de Sorting / DMA-DMT",
-    "entranceLabel": "Entrada",
+    "subtitle": "RCY, Supervisor y FRM, el conveyor y la línea de Sorting, y KITS / Patines / DMR-DML / PNP / Gerente de Sorting / DMA-DMT",
     "lineName": "Línea de Sorting",
     "conveyorName": "Conveyor de Sorting",
     "vacantLabel": "Vacante",
     "peopleSuffix": "persona(s)",
-    "palletLabel": "Pallet"
+    "palletLabel": "Pallet",
+    "equipmentLabel": "Patines del área"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Producción",
@@ -559,6 +559,10 @@
     "areaGerenteSubtitle": "Gerencia",
     "areaSupervisorName": "WC Supervisor",
     "areaSupervisorSubtitle": "Supervisión",
+    "areaSortConveyorSubtitle": "Conveyor",
+    "areaSortLineaSubtitle": "Línea de producción",
+    "areaSortWorkAreaSubtitle": "Área de Sorting",
+    "areaSortPatinesSubtitle": "Equipo, sin personal",
     "fftLinesNote": "{{count}} líneas activas",
     "statusCompleteLabel": "Completa (100% o más)",
     "statusPartialLabel": "Parcial (1-99%)",

@@ -714,6 +714,21 @@ para poder desplegar en el servidor privado (Coolify). Ver
     (`border-t-[3px]`, mismo "grosor" visual que la de FFT) posicionada arriba de "Línea de
     Sorting", dentro de la misma columna que ya se estira para quedar nivelada con
     PNP/DMA-DMT del otro lado.
+  - **Nuevo "Supervisor" (`SORT_SUPERVISOR`), a petición explícita del usuario** ("donde dice
+    entrada es un lugar donde va el supervisor y tiene ahí una compu"): reemplaza el marcador
+    decorativo "Entrada" -- área real de apoyo, mismo criterio que "WC Supervisor" en catalog.js
+    (FFT), `scripts/seed-sorting-supervisor-2026-09-08.mjs`.
+  - **"Patines" ya no muestra conteo de personal, a petición explícita del usuario** ("ahí no va
+    personal, solo los patines del área"): nueva bandera `equipment: true` en
+    `SortingFloorPlan.jsx` -- la tarjeta muestra "Patines del área" en vez de "N persona(s)".
+    Además cambia de tamaño/posición con Gerente de Sorting (Patines pasa a la ranura chica,
+    Gerente de Sorting a la ancha).
+  - **Pestaña "Estaciones" ya no muestra el mensaje "pendiente" en modo Sorting** (a petición
+    explícita del usuario, "actualiza los otros apartados de mi módulo de centro de trabajo"):
+    nueva `buildSortingAreaSlots()` (mismo componente `AreaCard`/vista de lista que FFT, catálogo
+    propio de Sorting) -- las 11 áreas reales (Conveyor, Línea, RCY, FRM, KITS, PNP, DMR/DML,
+    DMA/DMT, Patines, Gerente de Sorting, Supervisor) aparecen con su real/ideal y estado, igual
+    que en FFT.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

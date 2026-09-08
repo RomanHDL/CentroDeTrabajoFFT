@@ -24,7 +24,11 @@
    de la familia LINEA1-10 + PROYECTO de FFT). Las estaciones reales (capacity, nombre de cada
    puesto) se configuran despues en vivo desde "Configurar puestos" (LineDetailDrawer.jsx),
    mismo mecanismo ya usado por WC LINEA -- ver scripts/seed-sorting-work-areas-2026-09-08.mjs y
-   scripts/seed-sorting-patines-gerente-2026-09-08.mjs para el sembrado real en la BD. */
+   scripts/seed-sorting-patines-gerente-2026-09-08.mjs para el sembrado real en la BD.
+   SORT_SUPERVISOR (2026-09-08, sexta ronda) reemplaza el marcador decorativo "Entrada" -- ahi
+   es donde el supervisor tiene su computadora, mismo criterio que SUPERVISOR en catalog.js
+   (FFT). SORT_PATINES (`equipment: true` en SortingFloorPlan.jsx) nunca tiene personal
+   asignado -- son los patines/carritos fisicos del area, no un puesto de trabajo. */
 
 export const SORTING_WORK_CENTERS = [
   {
@@ -128,6 +132,18 @@ export const SORTING_WORK_CENTERS = [
     type: 'SUPPORT_AREA',
     isProduction: false,
     dailyTarget: null,
+    idealHeadcount: 1,
+  },
+  {
+    id: 'SORT_SUPERVISOR',
+    name: 'Supervisor',
+    kind: 'area',
+    type: 'SUPPORT_AREA',
+    isProduction: false,
+    dailyTarget: null,
+    // 2026-09-08 (sexta ronda, a peticion explicita del usuario -- "donde dice entrada es un
+    // lugar donde va el supervisor y tiene ahi una compu"): reemplaza el marcador decorativo
+    // "Entrada" -- area real de apoyo, mismo criterio que SUPERVISOR en catalog.js (FFT).
     idealHeadcount: 1,
   },
 ]

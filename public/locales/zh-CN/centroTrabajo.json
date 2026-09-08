@@ -137,13 +137,13 @@
   },
   "sortingFloorPlan": {
     "title": "Sorting 平面图",
-    "subtitle": "RCY 和 FRM 及其入口、传送带和Sorting 产线，以及 KITS / Patines / DMR-DML / PNP / Sorting 经理 / DMA-DMT",
-    "entranceLabel": "入口",
+    "subtitle": "RCY、Supervisor 和 FRM、传送带和Sorting 产线，以及 KITS / Patines / DMR-DML / PNP / Sorting 经理 / DMA-DMT",
     "lineName": "Sorting 产线",
     "conveyorName": "Sorting 传送带",
     "vacantLabel": "空缺",
     "peopleSuffix": "人",
-    "palletLabel": "托盘"
+    "palletLabel": "托盘",
+    "equipmentLabel": "区域的手推车"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "生产",
@@ -559,6 +559,10 @@
     "areaGerenteSubtitle": "管理层",
     "areaSupervisorName": "WC 主管",
     "areaSupervisorSubtitle": "监督",
+    "areaSortConveyorSubtitle": "传送带",
+    "areaSortLineaSubtitle": "生产线",
+    "areaSortWorkAreaSubtitle": "Sorting 区域",
+    "areaSortPatinesSubtitle": "设备，无人员",
     "fftLinesNote": "{{count}} 条在用产线",
     "statusCompleteLabel": "满编（100% 或以上）",
     "statusPartialLabel": "部分（1-99%）",
