@@ -699,6 +699,13 @@ para poder desplegar en el servidor privado (Coolify). Ver
     Grid `items-stretch`, sin alturas fijas a mano); Patines/Gerente de Sorting quedan como una
     franja angosta bajo PNP; RCY/Entrada/FRM/KITS/DMR-DML bajan a una segunda fila de tamaño
     normal. Verificado en vivo contra la foto que mandó el usuario.
+  - **Espejo horizontal del layout, a petición explícita del usuario** ("donde está el
+    conveyor... que el conveyor siga por donde está el conveyor de paletizado"): el conveyor de
+    FFT (WC Paletizado) está del lado derecho en el plano de FFT -- Línea de Sorting se mueve al
+    lado derecho para calzar con eso, el cluster PNP/Patines/Gerente de Sorting/DMA-DMT pasa al
+    izquierdo, y en la fila de abajo KITS/DMR-DML pasan a la izquierda con RCY/Entrada/FRM a la
+    derecha (mismo cambio de lugar que pidió el usuario, "cambia estos 3 [+ entrada] adonde
+    están los otros 6, y los otros 6 adonde están esos 3").
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

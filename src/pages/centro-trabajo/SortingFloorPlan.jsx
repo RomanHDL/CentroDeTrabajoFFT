@@ -200,33 +200,20 @@ export default function SortingFloorPlan({ onSelectArea }) {
       <p className="mb-6 text-sm text-muted-foreground">{t('sortingFloorPlan.subtitle')}</p>
 
       <div className="flex flex-col gap-6">
-        {/* Fila superior: el "conveyor" (Línea de Sorting) termina hasta PNP -- a peticion
-            explicita del usuario, foto de referencia: PNP y DMA/DMT crecen para quedar
-            nivelados con el conveyor, igual que en la planta real. `items-stretch` (grid
-            default) hace que ambas columnas compartan la misma altura -- la mini-cuadricula de
-            la derecha (PNP/Patines+Gerente/DMA-DMT) se estira para igualar la altura de la
-            Línea de Sorting, sin alturas fijas a mano. */}
-        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_460px]">
-          <button
-            type="button"
-            onClick={() => onSelectArea('SORT_LINEA')}
-            className="flex flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
-            style={{ borderColor: lineaColor }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
-              <p className="text-base font-bold" style={{ color: lineaColor }}>
-                {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
-              </p>
-            </div>
+        {/* Fila superior: el "conveyor" (Línea de Sorting) termina hasta PNP -- PNP y DMA/DMT
+            crecen para quedar nivelados con el conveyor. `items-stretch` (grid default) hace
+            que ambas columnas compartan la misma altura, sin alturas fijas a mano.
 
-            <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
-              {stations.map((s, idx) => (
-                <VLineStation key={s.id} station={s} index={idx} />
-              ))}
-            </div>
-          </button>
-
+            2026-09-08 (quinta ronda, a peticion explicita del usuario -- "donde esta el
+            conveyor... que el conveyor siga por donde esta el conveyor de paletizado"): el
+            conveyor de FFT (WC Paletizado) esta del lado DERECHO en el plano de FFT
+            (OperatingFloorPlan.jsx) -- Línea de Sorting se mueve al lado derecho para calzar con
+            eso, y el cluster PNP/Patines/Gerente/DMA-DMT pasa al izquierdo (antes al reves).
+            Mismo cambio en la fila de abajo: KITS/DMR-DML ahora a la izquierda,
+            RCY/Entrada/FRM a la derecha -- un espejo horizontal completo del layout anterior,
+            exactamente lo que pidio el usuario ("cambia estos 3 [+ entrada] adonde estan los
+            otros 6, y los otros 6 adonde estan esos 3"). */}
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[460px_1fr]">
           <div
             className="grid grid-cols-2 grid-rows-2 gap-3"
             style={{ gridTemplateAreas: '"pnp dmadmt" "mid dmadmt"' }}
@@ -248,18 +235,38 @@ export default function SortingFloorPlan({ onSelectArea }) {
               style={{ gridArea: 'dmadmt' }}
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectArea('SORT_LINEA')}
+            className="flex flex-col rounded-3xl border-2 p-6 text-left transition-colors hover:bg-accent"
+            style={{ borderColor: lineaColor }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-lg font-extrabold">{t('sortingFloorPlan.lineName')}</p>
+              <p className="text-base font-bold" style={{ color: lineaColor }}>
+                {lineaStaffing.real} / {lineaStaffing.ideal ?? '—'}
+              </p>
+            </div>
+
+            <div className="grid flex-1 grid-cols-4 gap-3 sm:grid-cols-7">
+              {stations.map((s, idx) => (
+                <VLineStation key={s.id} station={s} index={idx} />
+              ))}
+            </div>
+          </button>
         </div>
 
-        {/* Fila inferior: RCY/Entrada/FRM/KITS/DMR-DML, tamaño normal -- mismo orden del
-            pizarron original. */}
-        <div className="grid grid-cols-[1fr_auto_1fr_1fr_1fr] items-stretch gap-3">
+        {/* Fila inferior: KITS/DMR-DML a la izquierda, RCY/Entrada/FRM a la derecha (espejo de
+            la fila de arriba). */}
+        <div className="grid grid-cols-[1fr_1fr_1fr_auto_1fr] items-stretch gap-3">
+          <SimpleAreaBox area={KITS} onSelectArea={onSelectArea} />
+          <SimpleAreaBox area={DMR_DML} onSelectArea={onSelectArea} />
           <SimpleAreaBox area={SIMPLE_AREAS[0]} onSelectArea={onSelectArea} />
           <div className="flex min-w-[64px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-xs font-bold uppercase text-muted-foreground">
             {t('sortingFloorPlan.entranceLabel')}
           </div>
           <SimpleAreaBox area={SIMPLE_AREAS[1]} onSelectArea={onSelectArea} />
-          <SimpleAreaBox area={KITS} onSelectArea={onSelectArea} />
-          <SimpleAreaBox area={DMR_DML} onSelectArea={onSelectArea} />
         </div>
       </div>
     </div>
