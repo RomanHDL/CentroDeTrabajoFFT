@@ -6,6 +6,7 @@ import {
 } from '../personnel/repository'
 import { LINES_ONLY, OFFICIAL_SHIFTS, workCenterById } from '../production/catalog'
 import {
+  areaIdBelongsToActiveGroup,
   classifyAreaStatus,
   getAllAreaSummaries,
   getAreaHeadcount,
@@ -246,7 +247,10 @@ export function getShiftDistribution(realTotal) {
    el nombre generico "movimientos hoy" -- aqui se desglosan los 3 tipos
    reales por separado, tal como se pidio explicitamente. */
 export function getDailyMovementsBreakdown(date) {
-  const moves = getMovementsForDate(date)
+  // 2026-09-08 (a peticion explicita del usuario, "en el area de sorting no debe salir datos de
+  // FFT y en FFT no debe salir datos de sorting"): se filtra por el area de destino de cada
+  // movimiento (areaIdBelongsToActiveGroup, personnelByArea.js) antes de desglosar por tipo.
+  const moves = getMovementsForDate(date).filter((m) => areaIdBelongsToActiveGroup(m.toAreaId))
   const asignaciones = moves.filter((m) => m.type === 'CHECK_IN').length
   const removidos = moves.filter((m) => m.type === 'RELEASE').length
   const movimientos = moves.filter((m) => m.type === 'MOVE').length
@@ -279,7 +283,7 @@ function getActivityLabels() {
    cual (hora real) en vez de fabricar un "hace X minutos" que
    implicaria una precision que el dato no tiene. */
 export function getRecentActivity(limit = 30) {
-  const moves = getMovementsForDate()
+  const moves = getMovementsForDate().filter((m) => areaIdBelongsToActiveGroup(m.toAreaId))
   return [...moves]
     .sort((a, b) => (a.movedAt < b.movedAt ? 1 : a.movedAt > b.movedAt ? -1 : 0))
     .slice(0, limit)

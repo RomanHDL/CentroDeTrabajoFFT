@@ -629,7 +629,13 @@ export default function AsistenciaPage() {
         name: w.name,
         people: withPresence(getGroupPeople(operationalGroupMembers(w.id))),
       }))
-      .filter((g) => g.people.length > 0)
+      // 2026-09-08 (a peticion explicita del usuario -- "pon las areas que estan en el layout de
+      // sorting"): Sorting arranca sin snapshot, asi que TODAS sus areas están en 0 el mismo dia
+      // -- ocultarlas cuando estan vacias (como ya hacia esto para FFT) las hubiera dejado
+      // invisibles por completo. En Sorting se muestran todas las áreas del catálogo activo
+      // aunque tengan 0 personas; en FFT el comportamiento no cambia (se sigue ocultando un area
+      // vacia, ya validado en produccion).
+      .filter((g) => areaGroup === 'SORTING' || g.people.length > 0)
 
     const areaGroups = []
     if (linesTotalPeople > 0) {
@@ -658,7 +664,7 @@ export default function AsistenciaPage() {
       })
     }
     return areaGroups
-  }, [t, version])
+  }, [t, version, areaGroup])
 
   // Universo "efectivo" de HOY, aplanado UNA sola vez sin duplicar a nadie
   // (LINEAS ya trae la suma de sus 11 lineas, nunca se vuelve a contar
@@ -1099,7 +1105,10 @@ export default function AsistenciaPage() {
         <div className="p-4">
           {nav.mode === 'browse' &&
             nav.level === 'groups' &&
-            (totalPeople === 0 ? (
+            // 2026-09-08 (a peticion explicita del usuario -- "pon las areas que estan en el
+            // layout de sorting"): en Sorting se muestran las tarjetas de área aunque
+            // totalPeople sea 0 (arranca sin snapshot) -- en FFT el comportamiento no cambia.
+            (totalPeople === 0 && areaGroup !== 'SORTING' ? (
               <EmptyState title={t('emptyStateTitle')} description={t('emptyStateDescription')} />
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

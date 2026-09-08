@@ -385,8 +385,16 @@ export function getEffectiveAreaForEmployee(employeeId) {
    o fue liberada hoy). Calculado, nunca listado a mano. Si el
    resultado es 0 es correcto: significa que todo el personal
    elegible ya esta ubicado en alguna area hoy. */
-function isSortingAreaId(areaId) {
+export function isSortingAreaId(areaId) {
   return typeof areaId === 'string' && areaId.startsWith('SORT_')
+}
+
+/* Mismo criterio que employeeBelongsToActiveGroup, pero para un areaId directo (movimientos,
+   toAreaCode de la API, etc.) -- ver su comentario, misma prioridad del usuario (2026-09-08,
+   segunda ronda: "en el area de sorting no debe salir datos de FFT y en FFT no debe salir datos
+   de sorting"). */
+export function areaIdBelongsToActiveGroup(areaId) {
+  return isSortingAreaId(areaId) === (getActiveAreaGroup() === 'SORTING')
 }
 
 /* Grupo (FFT/Sorting) "dueño" de un empleado para efectos de disponibilidad/directorio diario --

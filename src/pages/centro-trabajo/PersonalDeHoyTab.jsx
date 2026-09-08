@@ -66,8 +66,8 @@ import {
   getAllEmployees,
   getCurrentAssignment,
   getLateEmployeeIds,
+  getMovementsForDate,
   getMovementsForEmployee,
-  getMovesCountForDate,
   getPendingMoves,
   getUnassignedPresentToday,
   searchEmployees,
@@ -83,6 +83,7 @@ import {
 import { exportPersonalExcel } from '../../data/production/excelExport'
 import {
   AUTO_ACTIVE_AREAS,
+  areaIdBelongsToActiveGroup,
   employeeBelongsToActiveGroup,
   getEffectiveAreaForEmployee,
   getEffectiveTodayRoster,
@@ -293,8 +294,19 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
     [version, activeAreaIds],
   )
   const presentToday = roster.length
+  // 2026-09-08 (segunda ronda, a peticion explicita del usuario -- "movimientos hoy debe estar
+  // en 0 en el area de sorting no hay movimientos... son independientes"): getMovesCountForDate
+  // contaba TODOS los movimientos del dia sin importar el area; ahora se filtra por toAreaId
+  // (areaIdBelongsToActiveGroup, personnelByArea.js) para que Sorting nunca cuente movimientos
+  // de FFT y viceversa.
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
-  const movesToday = useMemo(() => getMovesCountForDate(todayISO()), [version])
+  const movesToday = useMemo(
+    () =>
+      getMovementsForDate(todayISO()).filter(
+        (m) => m.type === 'MOVE' && areaIdBelongsToActiveGroup(m.toAreaId),
+      ).length,
+    [version],
+  )
   // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "area FFT y Sorting son
   // independientes no deben compartir personal"): igual que `roster` arriba, se filtra por el
   // grupo activo del empleado (employeeBelongsToActiveGroup, personnelByArea.js) para que
@@ -968,7 +980,12 @@ function MovimientosDelDiaCard() {
         return r.json()
       })
       .then((data) => {
-        if (!cancelled) setState({ loading: false, error: null, items: data.movements })
+        if (cancelled) return
+        // 2026-09-08 (segunda ronda, "en el area de sorting no debe salir datos de FFT y en FFT
+        // no debe salir datos de sorting"): esta tabla es de TODA la planta -- se filtra aqui por
+        // toAreaCode del propio movimiento (areaIdBelongsToActiveGroup), nunca por el empleado.
+        const items = data.movements.filter((m) => areaIdBelongsToActiveGroup(m.toAreaCode))
+        setState({ loading: false, error: null, items })
       })
       .catch((e) => {
         if (!cancelled) setState({ loading: false, error: e.message, items: [] })
@@ -1511,22 +1528,33 @@ function AlertsCard({
 function MovementsCompactCard({ onVerTodos }) {
   const { t } = useTranslation('centroTrabajo')
   const version = usePersonnelVersion()
-  const [state, setState] = useState({ loading: true, error: null, items: [] })
+  const [state, setState] = useState({ loading: true, error: null, items: [], total: 0 })
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza re-fetch aunque no se lea en el callback (mismo patron en todo este folder)
   useEffect(() => {
     let cancelled = false
     setState((s) => ({ ...s, loading: true, error: null }))
-    fetch('/api/personnel/movements-today?limit=5', { credentials: 'include' })
+    // 2026-09-08 (segunda ronda, misma prioridad que MovimientosDelDiaCard arriba): sin `limit`
+    // (el endpoint pone 200 por defecto) para poder filtrar por area ANTES de recortar a 5 --
+    // pedir solo 5 al servidor y filtrar despues habria mostrado "0 movimientos" en Sorting
+    // incluso si Sorting tuviera actividad real mas alla de los primeros 5 de toda la planta.
+    fetch('/api/personnel/movements-today', { credentials: 'include' })
       .then((r) => {
         if (!r.ok) throw new Error(`movements-today -> ${r.status}`)
         return r.json()
       })
       .then((data) => {
-        if (!cancelled) setState({ loading: false, error: null, items: data.movements })
+        if (cancelled) return
+        const filtered = data.movements.filter((m) => areaIdBelongsToActiveGroup(m.toAreaCode))
+        setState({
+          loading: false,
+          error: null,
+          items: filtered.slice(0, 5),
+          total: filtered.length,
+        })
       })
       .catch((e) => {
-        if (!cancelled) setState({ loading: false, error: e.message, items: [] })
+        if (!cancelled) setState({ loading: false, error: e.message, items: [], total: 0 })
       })
     return () => {
       cancelled = true
@@ -1543,7 +1571,7 @@ function MovementsCompactCard({ onVerTodos }) {
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onVerTodos} className="shrink-0 font-bold">
-          {t('personalDeHoyTab.verTodosMovimientosButton', { count: state.items.length })}
+          {t('personalDeHoyTab.verTodosMovimientosButton', { count: state.total })}
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

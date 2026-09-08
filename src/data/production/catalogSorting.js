@@ -10,16 +10,20 @@
    Centro de Trabajo) funcione igual sin cambios -- ver applyActiveAreaGroup() en catalog.js,
    que reasigna el binding vivo WORK_CENTERS a este array cuando el usuario activa Sorting.
 
-   `idealHeadcount: null` en las 6 areas simples es intencional (nunca inventar un ideal que el
-   usuario no dio -- mismo criterio que INSUMOS/CALIDAD en catalog.js, "Sin plantilla
-   definida"). SORT_LINEA si tiene un ideal real: 7 puestos x 2 personas c/u = 14, dado
-   explicitamente por el usuario. Todas kind:'area' (nunca 'linea') a proposito -- SORT_LINEA
-   es una sola linea, no una familia de 0-10 como WC LINEA, asi que no necesita el manejo
-   especial de LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS (ese mecanismo es exclusivo de la
-   familia LINEA1-10 + PROYECTO de FFT). Las estaciones reales (capacity, nombre de cada
+   `idealHeadcount: null` en las areas simples (RCY/FRM/KITS/PNP/DMR-DML/DMA-DMT/Patines) es
+   intencional (nunca inventar un ideal que el usuario no dio -- mismo criterio que INSUMOS/
+   CALIDAD en catalog.js, "Sin plantilla definida"). SORT_LINEA si tiene un ideal real: 7 lineas
+   en V, 4 personas c/u (2 en cada extremo) = 28 -- corregido 2026-09-08 tras una segunda
+   aclaracion del usuario viendo el pizarron con mas detalle (antes se habia interpretado como
+   parejas de 2, 14 en total; ver scripts/update-sort-linea-capacity-2026-09-08.mjs). SORT_GERENTE
+   (Gerente de Sorting) es un area de apoyo, mismo criterio que GERENTE en catalog.js (FFT):
+   idealHeadcount:1, isProduction:false. Todas kind:'area' (nunca 'linea') a proposito --
+   SORT_LINEA es una sola linea, no una familia de 0-10 como WC LINEA, asi que no necesita el
+   manejo especial de LINE_FAMILY_AREA_IDS/LINE_FAMILY_WORK_CENTERS (ese mecanismo es exclusivo
+   de la familia LINEA1-10 + PROYECTO de FFT). Las estaciones reales (capacity, nombre de cada
    puesto) se configuran despues en vivo desde "Configurar puestos" (LineDetailDrawer.jsx),
-   mismo mecanismo ya usado por WC LINEA -- ver scripts/seed-sorting-work-areas-2026-09-08.mjs
-   para el sembrado inicial en la base de datos real. */
+   mismo mecanismo ya usado por WC LINEA -- ver scripts/seed-sorting-work-areas-2026-09-08.mjs y
+   scripts/seed-sorting-patines-gerente-2026-09-08.mjs para el sembrado real en la BD. */
 
 export const SORTING_WORK_CENTERS = [
   {
@@ -29,7 +33,11 @@ export const SORTING_WORK_CENTERS = [
     type: 'PRODUCTION_LINE',
     isProduction: true,
     dailyTarget: null,
-    idealHeadcount: 14,
+    // 2026-09-08 (correccion, a peticion explicita del usuario tras ver el pizarron con mas
+    // detalle): cada una de las 7 lineas es una V con 2 personas en un extremo y otras 2 en el
+    // otro -- 4 por linea, no 2 (7 x 4 = 28, antes 14). Capacidad real de las 7 Workstation ya
+    // actualizada en la BD (ver scripts/update-sort-linea-capacity-2026-09-08.mjs).
+    idealHeadcount: 28,
   },
   {
     id: 'SORT_RCY',
@@ -84,6 +92,24 @@ export const SORTING_WORK_CENTERS = [
     isProduction: true,
     dailyTarget: null,
     idealHeadcount: null,
+  },
+  {
+    id: 'SORT_PATINES',
+    name: 'Patines',
+    kind: 'area',
+    type: 'WORK_AREA',
+    isProduction: true,
+    dailyTarget: null,
+    idealHeadcount: null,
+  },
+  {
+    id: 'SORT_GERENTE',
+    name: 'Gerente de Sorting',
+    kind: 'area',
+    type: 'SUPPORT_AREA',
+    isProduction: false,
+    dailyTarget: null,
+    idealHeadcount: 1,
   },
 ]
 

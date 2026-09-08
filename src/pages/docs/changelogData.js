@@ -96,6 +96,7 @@ export const RELEASES = [
           'fixedSelectOpensUpward',
           'fixedAreaGroupFollowup',
           'fixedAreaGroupFollowup2',
+          'fixedAreaGroupFollowup3',
         ],
       },
       {

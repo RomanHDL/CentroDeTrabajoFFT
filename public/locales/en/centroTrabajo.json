@@ -137,11 +137,12 @@
   },
   "sortingFloorPlan": {
     "title": "Sorting layout",
-    "subtitle": "RCY and FRM with their entrance, the double-station line, and KITS / PNP / DMR-DML / DMA-DMT",
+    "subtitle": "RCY and FRM with their entrance, the Sorting line, and KITS / Patines / DMR-DML / PNP / Sorting Manager / DMA-DMT",
     "entranceLabel": "Entrance",
     "lineName": "Sorting Line",
     "vacantLabel": "Vacant",
-    "peopleSuffix": "people"
+    "peopleSuffix": "people",
+    "palletLabel": "Pallet"
   },
   "unassignedPersonnelCard": {
     "zonaProduccion": "Production",

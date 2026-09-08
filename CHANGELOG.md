@@ -656,6 +656,42 @@ para poder desplegar en el servidor privado (Coolify). Ver
   - Pendiente sin resolver (mencionado, no silenciado): Movimientos del día/Actividad reciente
     (Personal y Dashboard) siguen sin filtrar por grupo; texto del panel de detalle de área
     ("Sin personal en el Excel...") sigue con sabor FFT/Excel aunque se abra desde Sorting.
+- **Toggle FFT/Sorting -- tercera ronda: independencia total de datos entre áreas, Asistencia,
+  y 2 áreas nuevas en el layout.**
+  - **Movimientos hoy/Actividad reciente ya NO se mezclan entre FFT y Sorting** (prioridad
+    explícita del usuario: "en el area de sorting no debe salir datos de FFT y en FFT no debe
+    salir datos de sorting"). Nuevo `areaIdBelongsToActiveGroup()` (personnelByArea.js) filtra
+    por el área DESTINO de cada movimiento real (`toAreaId`/`toAreaCode`, nunca por el empleado):
+    el KPI "Movimientos hoy" y las tablas "Movimientos del día"/"Movimientos recientes" de
+    Centro de Trabajo, y "Movimientos del día"/"Actividades recientes" del Dashboard
+    (`getDailyMovementsBreakdown`/`getRecentActivity`, dashboardMetrics.js), ahora respetan el
+    grupo activo. Verificado en vivo: Sorting muestra 0, FFT mantiene sus 77 reales.
+  - **Asistencia ya muestra las áreas de Sorting aunque tengan 0 personas.** Antes se ocultaba
+    cualquier área sin gente (`g.people.length > 0`) y además todo el bloque de tarjetas se
+    reemplazaba por un estado vacío genérico si `totalPeople === 0` -- como Sorting arranca sin
+    snapshot, las 9 áreas reales (RCY, FRM, Línea de Sorting, KITS, Patines, DMR/DML, PNP,
+    Gerente de Sorting, DMA/DMT) nunca aparecían. En modo Sorting ambas condiciones ahora
+    respetan el catálogo activo completo; FFT no cambia su comportamiento ya validado.
+  - **2 áreas nuevas en el layout de Sorting, a petición explícita del usuario viendo el layout
+    en vivo:** "Patines" (mediano) y "Gerente de Sorting" (área de apoyo, cuadro chico) --
+    `catalogSorting.js` + `scripts/seed-sorting-patines-gerente-2026-09-08.mjs` (WorkArea/
+    Workstation reales, mismo patrón que las 7 áreas originales). Posición final ajustada dos
+    veces en vivo hasta calzar con una foto real del pizarrón que el usuario mandó para esta
+    sección: KITS y DMR/DML arriba (grandes, como siempre), PNP abajo a la izquierda (grande),
+    DMA/DMT abajo a la derecha (grande, más alto -- ocupa el hueco de la franja central) y
+    Patines+Gerente de Sorting comparten una franja angosta entre KITS/PNP, del lado izquierdo
+    -- armado con `grid-template-areas` (`SortingFloorPlan.jsx`) en vez de una cuadrícula
+    uniforme, porque el dibujo real no era un grid parejo de 3x2.
+  - **Corrección real de capacidad de "Línea de Sorting": 4 personas por línea, no 2.** El
+    usuario aclaró viendo el pizarrón con más detalle que cada una de las 7 líneas es una "V"
+    con 2 personas en un extremo y 2 en el otro (28 en total, antes 14) --
+    `scripts/update-sort-linea-capacity-2026-09-08.mjs` actualiza las 7 Workstation reales de
+    capacity 2 a 4; `idealHeadcount` en `catalogSorting.js` pasa de 14 a 28.
+  - **Rediseño visual de "Línea de Sorting"** (a petición explícita del usuario, imagen de
+    referencia): cada puesto ahora muestra su propio pallet (ícono, uno por línea, ya no una
+    fila compartida arriba) y una figura de "V (abre arriba) → tramo vertical → V invertida
+    parada (abre abajo)" en vez de un solo chevron simple, con 2 personas mostradas a cada lado.
+    Iterado 2 veces en vivo hasta que el usuario confirmó que se parecía al pizarrón.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
