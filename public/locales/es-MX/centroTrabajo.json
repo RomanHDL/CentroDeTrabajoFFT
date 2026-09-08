@@ -245,6 +245,7 @@
   "lineasTab": {
     "title": "Líneas de producción FFT ({{count}})",
     "titleSorting": "Líneas Sorting ({{count}})",
+    "sortingLineName": "Línea de Sorting {{index}}",
     "tooltipInfo": "Solo Línea 1 a Línea 10 — Cajas, Accesorios, Paletizado, Línea de Proyecto y demás áreas viven en 'Áreas de trabajo'.",
     "searchPlaceholder": "Buscar línea...",
     "gridViewLabel": "Vista de cuadrícula",

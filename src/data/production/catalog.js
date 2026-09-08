@@ -1257,6 +1257,12 @@ export const EXCLUDED_FROM_PLANT_TOTAL_AREA_IDS = new Set([
   'GERENTE',
   'SUPERVISOR',
   'ENTRENADOR',
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "que solo salga las
+  // areas de trabajo donde si va personal, son todas menos patines"): Patines son los
+  // carritos/equipo fisico del area, nunca un puesto de trabajo (ver equipment:true en
+  // SortingFloorPlan.jsx) -- a diferencia de Gerente de Sorting/Supervisor (SORT_GERENTE/
+  // SORT_SUPERVISOR), que el usuario SI quiere ver en "Resumen por area".
+  'SORT_PATINES',
 ])
 
 export function getAreaDetailVariant(workCenterId) {

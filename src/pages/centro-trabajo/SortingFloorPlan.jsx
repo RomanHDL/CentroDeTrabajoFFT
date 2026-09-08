@@ -98,34 +98,39 @@ function SimpleAreaBox({ area, onSelectArea, className, style }) {
   )
 }
 
-// Una "V" real: 2 personas en el extremo izquierdo, 2 en el derecho, convergiendo hacia el pallet
-// -- ver comentario de arriba. occupants ya viene ordenado por checkInAt (repository.js).
+// Una "V" real: 1 persona en cada uno de los 4 puntos (2 arriba, en las puntas de la V; 2 abajo,
+// en las puntas de la V invertida) -- a peticion explicita del usuario ("cada punto de extremo a
+// extremo lleva una persona"). occupants ya viene ordenado por checkInAt (repository.js).
 function VLineStation({ station, index }) {
   const { t } = useTranslation('centroTrabajo')
-  const left = station.occupants.slice(0, 2)
-  const right = station.occupants.slice(2, 4)
+  const [topLeft, topRight, bottomLeft, bottomRight] = station.occupants
   const hasPeople = station.occupants.length > 0
+  const nameOrVacant = (o) =>
+    o ? (
+      <p className="truncate font-semibold">{o.employee?.name || '—'}</p>
+    ) : (
+      <p className="text-muted-foreground/70">{t('sortingFloorPlan.vacantLabel')}</p>
+    )
   return (
     <div
       className={cn(
-        'flex flex-col items-center gap-1.5 rounded-xl border p-2.5 text-center text-[12px]',
+        'flex flex-col items-center gap-1 rounded-xl border p-2.5 text-center text-[12px]',
         hasPeople
           ? 'border-emerald-500/40 bg-emerald-500/[0.08]'
           : 'border-border bg-black/[.02] dark:bg-white/[.03]',
       )}
     >
-      <div
-        className="grid h-6 w-6 place-items-center rounded-md border border-dashed border-border/70 text-muted-foreground/70"
-        title={t('sortingFloorPlan.palletLabel')}
-      >
-        <Package className="h-3.5 w-3.5" />
+      {/* Puntas de la V (arriba, abre hacia arriba) -- 1 persona por punta. */}
+      <div className="grid w-full grid-cols-2 gap-1">
+        <div className="border-r border-dashed border-border/70 pr-1">{nameOrVacant(topLeft)}</div>
+        <div className="pl-1">{nameOrVacant(topRight)}</div>
       </div>
-      {/* V (abre hacia arriba) + tramo vertical BIEN visible + V invertida "parada" (la punta
-          hacia arriba, abre hacia abajo) -- a peticion explicita del usuario tras ver el primer
-          intento ("no es v una linea vertical y otra v parada la punta de la v invertida"): el
-          primer intento tenia el tramo vertical demasiado corto y se veia como una sola X. Dos
-          polylines simetricas que comparten los 2 puntos centrales (24,14) y (24,38), separados
-          24 unidades para que la linea vertical se lea como un tramo propio, no una bisagra. */}
+      {/* V + tramo vertical BIEN visible + V invertida "parada" (la punta hacia arriba, abre
+          hacia abajo) -- a peticion explicita del usuario tras ver el primer intento ("no es v
+          una linea vertical y otra v parada la punta de la v invertida"): el primer intento
+          tenia el tramo vertical demasiado corto y se veia como una sola X. Dos polylines
+          simetricas que comparten los 2 puntos centrales (24,14) y (24,38), separados 24
+          unidades para que la linea vertical se lea como un tramo propio, no una bisagra. */}
       <svg
         viewBox="0 0 48 56"
         className="h-10 w-12 text-muted-foreground/60"
@@ -149,30 +154,21 @@ function VLineStation({ station, index }) {
           strokeLinejoin="round"
         />
       </svg>
-      <p className="font-bold text-muted-foreground">{index + 1}</p>
+      {/* Puntas de la V invertida (abajo). */}
       <div className="grid w-full grid-cols-2 gap-1">
-        <div className="flex flex-col gap-0.5 border-r border-dashed border-border/70 pr-1">
-          {left.length > 0 ? (
-            left.map((o) => (
-              <p key={o.employeeId} className="truncate font-semibold">
-                {o.employee?.name || '—'}
-              </p>
-            ))
-          ) : (
-            <p className="text-muted-foreground/70">{t('sortingFloorPlan.vacantLabel')}</p>
-          )}
+        <div className="border-r border-dashed border-border/70 pr-1">
+          {nameOrVacant(bottomLeft)}
         </div>
-        <div className="flex flex-col gap-0.5 pl-1">
-          {right.length > 0 ? (
-            right.map((o) => (
-              <p key={o.employeeId} className="truncate font-semibold">
-                {o.employee?.name || '—'}
-              </p>
-            ))
-          ) : (
-            <p className="text-muted-foreground/70">{t('sortingFloorPlan.vacantLabel')}</p>
-          )}
-        </div>
+        <div className="pl-1">{nameOrVacant(bottomRight)}</div>
+      </div>
+      <p className="font-bold text-muted-foreground">{index + 1}</p>
+      {/* Pallet abajo de todo -- a peticion explicita del usuario ("el dibujo del pallet en vez
+          de que este ahi arriba es abajo"). */}
+      <div
+        className="grid h-6 w-6 place-items-center rounded-md border border-dashed border-border/70 text-muted-foreground/70"
+        title={t('sortingFloorPlan.palletLabel')}
+      >
+        <Package className="h-3.5 w-3.5" />
       </div>
     </div>
   )

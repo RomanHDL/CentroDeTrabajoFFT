@@ -245,6 +245,7 @@
   "lineasTab": {
     "title": "FFT 生产线（{{count}}）",
     "titleSorting": "Sorting 产线（{{count}}）",
+    "sortingLineName": "Sorting 产线 {{index}}",
     "tooltipInfo": "仅包含1号至10号产线——装箱、配件、码垛、项目产线及其他区域均归入“工作区域”。",
     "searchPlaceholder": "搜索产线...",
     "gridViewLabel": "网格视图",

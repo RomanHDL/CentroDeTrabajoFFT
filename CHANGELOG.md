@@ -729,6 +729,23 @@ para poder desplegar en el servidor privado (Coolify). Ver
     propio de Sorting) -- las 11 áreas reales (Conveyor, Línea, RCY, FRM, KITS, PNP, DMR/DML,
     DMA/DMT, Patines, Gerente de Sorting, Supervisor) aparecen con su real/ideal y estado, igual
     que en FFT.
+  - **"Resumen por área" ya no incluye Patines, a petición explícita del usuario** ("que solo
+    salga las áreas de trabajo donde sí va personal, son todas menos patines"): se agrega
+    `SORT_PATINES` a `EXCLUDED_FROM_PLANT_TOTAL_AREA_IDS` (catalog.js, el mismo criterio unificado
+    que ya excluye CALIDAD/GERENTE/SUPERVISOR/ENTRENADOR de FFT) -- Gerente de Sorting y
+    Supervisor SÍ se quedan (el usuario los quiere ahí, a diferencia de sus equivalentes en FFT).
+  - **Pestaña "Líneas" ahora muestra las 7 líneas de Sorting, 4 personas c/u, a petición
+    explícita del usuario** ("ahí en líneas hay 7 ok cada línea debe de llevar 4 personas"):
+    antes mostraba "(0)" porque SORT_LINEA es UNA sola área con 7 puestos reales adentro (a
+    diferencia de LINEA1..10 de FFT, que son 10 áreas de catálogo separadas) -- ahora
+    `LineasTab.jsx` lee esas 7 estaciones reales directo (mismo dato que `SortingFloorPlan.jsx`)
+    y las muestra como si fueran 7 líneas independientes ("Línea de Sorting 1..7"), cada una
+    0/4.
+  - **Rediseño de las estaciones de "Línea de Sorting", a petición explícita del usuario**
+    ("cada punto de extremo a extremo lleva una persona... el dibujo del pallet en vez de que
+    esté ahí arriba es abajo"): las 4 personas ahora se muestran una por cada punta real del
+    dibujo (2 arriba, en la V; 2 abajo, en la V invertida) en vez de 2 columnas de 2 nombres; el
+    ícono del pallet se mueve al final de la tarjeta (antes arriba de todo).
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

@@ -10,7 +10,7 @@ import {
   Users2,
   UserX,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import {
@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { fetchLineStationConfig } from '../../data/personnel/lineStationConfig'
+import { getLineWorkstationsWithOccupancy } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
 import { LINE_FAMILY_WORK_CENTERS } from '../../data/production/catalog'
@@ -116,31 +118,70 @@ export default function LineasTab({ onOpenLine }) {
   const areaGroup = useAreaGroup()
   const [query, setQuery] = useState('')
   const [view, setView] = useState('grid')
+  const [configVersion, setConfigVersion] = useState(0)
+
+  // 2026-09-08 (toggle FFT/Sorting, a peticion explicita del usuario -- "ahi en lineas hay 7 ok
+  // cada linea debe de llevar 4 personas"): SORT_LINEA es UNA sola area con 7 puestos reales
+  // adentro (a diferencia de LINEA1..10 de FFT, que son 10 areas de catalogo separadas) -- para
+  // que esta pestaña muestre las 7 como si fueran 7 "lineas" independientes, se leen sus
+  // estaciones reales directo (getLineWorkstationsWithOccupancy, mismo dato que ya usa
+  // SortingFloorPlan.jsx) en vez de LINE_FAMILY_WORK_CENTERS (vacio para Sorting a proposito,
+  // ver SORTING_LINE_FAMILY_WORK_CENTERS en catalogSorting.js). Requiere el mismo fetch de
+  // config real de la BD que SortingFloorPlan.jsx, o cae en el generador generico de 1 puesto.
+  useEffect(() => {
+    if (areaGroup !== 'SORTING') return
+    let cancelled = false
+    fetchLineStationConfig('SORT_LINEA').then(() => {
+      if (!cancelled) setConfigVersion((v) => v + 1)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [areaGroup])
 
   const lineas = LINE_FAMILY_WORK_CENTERS
 
-  const rows = useMemo(
-    () =>
-      lineas.map((linea) => {
-        const staffing = getAreaStaffing(linea.id)
-        const ideal = staffing.ideal || 0
-        const real = staffing.real || 0
+  // biome-ignore lint/correctness/useExhaustiveDependencies: configVersion fuerza recalcular tras el fetch real de estaciones, aunque no se lea en el callback
+  const rows = useMemo(() => {
+    if (areaGroup === 'SORTING') {
+      return getLineWorkstationsWithOccupancy('SORT_LINEA').map((station, idx) => {
+        const real = station.occupants.length
+        const ideal = station.capacity
         const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
         const missing = Math.max(ideal - real, 0)
-        const stationsCount = getWorkstationsForLine(linea.id).length
         return {
-          linea,
-          staffing,
+          linea: { id: 'SORT_LINEA', name: t('lineasTab.sortingLineName', { index: idx + 1 }) },
+          stationKey: `SORT_LINEA-${station.id}`,
+          staffing: { real, ideal },
           real,
           ideal,
           pct,
           missing,
           complete: real >= ideal && ideal > 0,
-          stationsCount,
+          stationsCount: 1,
         }
-      }),
-    [lineas],
-  )
+      })
+    }
+    return lineas.map((linea) => {
+      const staffing = getAreaStaffing(linea.id)
+      const ideal = staffing.ideal || 0
+      const real = staffing.real || 0
+      const pct = ideal > 0 ? Math.min((real / ideal) * 100, 100) : 0
+      const missing = Math.max(ideal - real, 0)
+      const stationsCount = getWorkstationsForLine(linea.id).length
+      return {
+        linea,
+        stationKey: linea.id,
+        staffing,
+        real,
+        ideal,
+        pct,
+        missing,
+        complete: real >= ideal && ideal > 0,
+        stationsCount,
+      }
+    })
+  }, [lineas, areaGroup, t, configVersion])
 
   const filteredRows = useMemo(
     () => rows.filter((r) => matchesQuery(r.linea, query)),
@@ -216,7 +257,7 @@ export default function LineasTab({ onOpenLine }) {
       {view === 'grid' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filteredRows.map((row) => (
-            <LineaCard key={row.linea.id} row={row} onOpenLine={onOpenLine} />
+            <LineaCard key={row.stationKey} row={row} onOpenLine={onOpenLine} />
           ))}
         </div>
       ) : (
@@ -327,11 +368,11 @@ function LineasListView({ rows, onOpenLine }) {
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const { linea, real, ideal, pct, missing, complete, stationsCount } = row
+            const { linea, stationKey, real, ideal, pct, missing, complete, stationsCount } = row
             const status = VISUAL_STATUS[visualStatusFor(real)]
             return (
               <TableRow
-                key={linea.id}
+                key={stationKey}
                 onClick={() => onOpenLine?.(linea.id)}
                 role="button"
                 tabIndex={0}
