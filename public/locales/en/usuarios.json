@@ -50,8 +50,8 @@
     "deleteError": "Could not delete the user"
   },
   "accessRequestsCard": {
-    "title": "SSO access requests",
-    "subtitle": "People who signed in with Nextcloud but don't have a local account yet -- create a new account with a role, link it to an existing account (if they already had access before SSO), or deny.",
+    "title": "Access requests",
+    "subtitle": "People who tried to log in (with Nextcloud or their employee number) but don't have an account yet -- create a new account with a role and password, link it to an existing account (Nextcloud only, if they already had access before SSO), or deny.",
     "loadError": "Could not load the requests.",
     "noteLabel": "Reason",
     "requestedAtLabel": "Requested",
@@ -67,7 +67,13 @@
     "existingUserLabel": "Account",
     "existingUserPlaceholder": "Select a user",
     "linkButton": "Link",
-    "linkedToast": "{{name}} can now log in with Nextcloud using their existing account."
+    "linkedToast": "{{name}} can now log in with Nextcloud using their existing account.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Full name",
+    "passwordLabel": "Temporary password",
+    "passwordPlaceholder": "8 characters minimum",
+    "employeeNumberLabel": "Employee #{{number}}",
+    "employeeNumberShort": "#{{number}}"
   },
   "adminToolsCard": {
     "title": "Administrative tools",

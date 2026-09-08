@@ -9,6 +9,7 @@ import accessRequestDecideHandler from '../api/access-requests/[id]/decide.js'
 import accessRequestsIndexHandler from '../api/access-requests/index.js'
 import changePasswordHandler from '../api/auth/change-password.js'
 import loginHandler from '../api/auth/login.js'
+import requestAccessHandler from '../api/auth/request-access.js'
 import logoutHandler from '../api/auth/logout.js'
 import oidcCallbackHandler from '../api/auth/oidc/callback.js'
 import oidcPendingHandler from '../api/auth/oidc/pending.js'
@@ -82,6 +83,7 @@ function wrapAsync(handler) {
 
 export function mountApiRoutes(app) {
   app.post('/api/auth/login', wrapAsync(loginHandler))
+  app.post('/api/auth/request-access', wrapAsync(requestAccessHandler))
   app.post('/api/auth/logout', wrapAsync(logoutHandler))
   app.get('/api/auth/session', wrapAsync(sessionHandler))
   app.post('/api/auth/change-password', wrapAsync(changePasswordHandler))

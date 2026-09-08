@@ -199,6 +199,32 @@ para poder desplegar en el servidor privado (Coolify). Ver
   "que esas notificaciones solo me lleguen a mí". Verificado en vivo con
   una solicitud de prueba: aparece en la campana, se puede rechazar
   desde ahí, y el contador se actualiza solo.
+- **Solicitud de acceso LOCAL (segundo origen, alterno a SSO).** A
+  petición explícita del usuario ("que salte un mensaje de que no estás
+  registrado... botón de mandar solicitud... me llegue el número de
+  empleado en automático"): si alguien intenta el login local (número de
+  empleado/contraseña) con un número que no tiene cuenta todavía,
+  `api/auth/login.js` ya no devuelve un error muerto -- responde
+  `404 {error, code:'NOT_REGISTERED'}` (tradeoff de seguridad conocido y
+  aceptado explícitamente: revela que el número no existe, aceptable
+  porque es un identificador interno, no un email de terceros).
+  `LoginPage.jsx` ofrece ahí mismo "Enviar solicitud de acceso" ->
+  `api/auth/request-access.js` (nuevo, sin sesión, re-valida en el
+  servidor). Llega a Usuarios > Solicitudes de acceso Y a la campana de
+  notificaciones, con el número de empleado ya listo -- el admin solo
+  agrega nombre, rol y una contraseña real al aprobar
+  (`mustChangePassword=true`, nunca la contraseña aleatoria que sí usan
+  las cuentas SSO). Requirió migración real (`drizzle/0014_access_
+  request_local_signup.sql`, aditiva): `AccessRequest.oidcSub`/`email`
+  pasan a nullable, nueva columna `AccessRequest.employeeNumber`.
+  `decide.js`/`AccessRequestDecideRow.jsx` distinguen el origen LOCAL vs
+  SSO por cuál de los dos campos viene lleno (nunca un campo `source`
+  aparte) -- oculta "Vincular a cuenta existente" para solicitudes
+  locales (no hay nada que vincular, es alguien nuevo de verdad).
+  Verificado en vivo de punta a punta con datos de prueba desechables:
+  login real con el número/contraseña nuevos, redirigido correctamente a
+  cambiar contraseña; ambos registros de prueba limpiados por completo
+  al terminar.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
@@ -348,6 +374,14 @@ para poder desplegar en el servidor privado (Coolify). Ver
   podía terminar logueado en Vercel sin sesión en Coolify (o viceversa),
   justo la confusión que el usuario quería evitar al agregar gente
   nueva.
+- **Nextcloud vuelve a ser el método principal/visible del login.** A
+  petición explícita del usuario, revierte (parcialmente) la entrada de
+  ayer: ya NO reemplaza al login local (eso sigue igual, corregido el
+  2026-09-07), pero tampoco se muestran los dos siempre juntos --
+  `LoginPage.jsx` muestra el botón de Nextcloud como principal y esconde
+  el número de empleado/contraseña detrás de un link secundario
+  ("Iniciar sesión con número de empleado") que lo revela con un clic.
+  Verificado visualmente en vivo, ambos modos.
 
 ### Fixed
 - **Modo oscuro.** `body` nunca definía un `color` base (solo

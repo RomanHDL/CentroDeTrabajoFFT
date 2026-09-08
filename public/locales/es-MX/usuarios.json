@@ -50,8 +50,8 @@
     "deleteError": "No se pudo eliminar el usuario"
   },
   "accessRequestsCard": {
-    "title": "Solicitudes de acceso SSO",
-    "subtitle": "Personas que iniciaron sesión con Nextcloud pero todavía no tienen cuenta local -- crea una cuenta nueva con un rol, vincúlala a una cuenta que ya existe (si la persona ya tenía acceso antes de SSO), o rechaza.",
+    "title": "Solicitudes de acceso",
+    "subtitle": "Personas que intentaron entrar (con Nextcloud o con su número de empleado) pero todavía no tienen cuenta -- crea una cuenta nueva con un rol y contraseña, vincúlala a una cuenta que ya existe (solo Nextcloud, si la persona ya tenía acceso antes de SSO), o rechaza.",
     "loadError": "No se pudieron cargar las solicitudes.",
     "noteLabel": "Motivo",
     "requestedAtLabel": "Solicitado",
@@ -67,7 +67,13 @@
     "existingUserLabel": "Cuenta",
     "existingUserPlaceholder": "Selecciona un usuario",
     "linkButton": "Vincular",
-    "linkedToast": "{{name}} ya puede iniciar sesión con Nextcloud usando su cuenta existente."
+    "linkedToast": "{{name}} ya puede iniciar sesión con Nextcloud usando su cuenta existente.",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre completo",
+    "passwordLabel": "Contraseña temporal",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "employeeNumberLabel": "Empleado #{{number}}",
+    "employeeNumberShort": "#{{number}}"
   },
   "adminToolsCard": {
     "title": "Herramientas administrativas",

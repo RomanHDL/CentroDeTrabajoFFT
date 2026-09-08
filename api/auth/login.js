@@ -17,7 +17,17 @@ export default async function handler(req, res) {
     .from(user)
     .where(or(eq(user.employeeNumber, identifier), eq(user.username, identifier)))
     .limit(1)
-  if (!found) return res.status(401).json({ error: 'Credenciales incorrectas' })
+  // 2026-09-08 (a peticion explicita del usuario, "que me notifique... que salte un mensaje
+  // de que no estas registrado... boton de mandar solicitud"): distinto de "credenciales
+  // incorrectas" (401, contraseña mal escrita para una cuenta que SI existe) -- este numero
+  // de empleado/username no tiene ningun User todavia, asi que el frontend puede ofrecer
+  // "Enviar solicitud de acceso" (api/auth/request-access.js) en vez de solo un error muerto.
+  // Tradeoff de seguridad conocido y aceptado explicitamente por el usuario: revela que un
+  // identificador NO existe (a diferencia del 401 generico de siempre) -- aceptable aqui
+  // porque el "identifier" es un numero de empleado interno, no email/username de terceros.
+  if (!found) {
+    return res.status(404).json({ error: 'No estás registrado en el sistema.', code: 'NOT_REGISTERED' })
+  }
   if (!found.active) return res.status(403).json({ error: 'Usuario inactivo' })
 
   const valid = await bcrypt.compare(password, found.passwordHash)

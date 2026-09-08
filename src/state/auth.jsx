@@ -18,6 +18,11 @@ export async function apiRequest(path, options = {}) {
   if (!res.ok) {
     const error = new Error(data?.error || `Error ${res.status}`)
     error.status = res.status
+    // 2026-09-08: algunos endpoints (api/auth/login.js) mandan un `code` propio ademas del
+    // status HTTP (ej. NOT_REGISTERED) para que el caller distinga casos que comparten el
+    // mismo status pero necesitan una UI distinta -- nunca inferir eso solo del texto del
+    // mensaje de error (que es para mostrar, no para comparar).
+    error.code = data?.code
     throw error
   }
   return data

@@ -14,6 +14,17 @@
 // (mismo endpoint, misma solicitud): en vez de insertar, hace UPDATE de oidcSub sobre un User
 // YA EXISTENTE (userId en el body) -- para vincular la identidad de Nextcloud a una cuenta que
 // ya tenia password local, sin crear una segunda cuenta para la misma persona.
+//
+// 2026-09-08 (a peticion explicita del usuario, segundo origen de solicitud -- ver
+// api/auth/request-access.js): una solicitud LOCAL (reqRow.employeeNumber lleno, oidcSub
+// null) se distingue de una SSO (oidcSub lleno) por cual de los 2 viene lleno, nunca un
+// campo aparte. "Aprobar" sobre una solicitud LOCAL es distinto: la cuenta SI hara login
+// local de verdad, asi que necesita una contraseña real que el admin escribe aqui mismo (no
+// una aleatoria) y mustChangePassword=true (mismo criterio que crear un usuario a mano en
+// Usuarios); el numero de empleado viene fijo de la solicitud, nunca de lo que el admin
+// escriba en el body. Tambien hace falta un `name` real -- Nextcloud lo manda solo, un
+// numero de empleado no trae nombre, asi que el admin lo escribe en el mismo formulario de
+// aprobar.
 import crypto from 'node:crypto'
 
 import bcrypt from 'bcryptjs'
@@ -34,7 +45,7 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
   // Coolify/dev (Express real, sin ese comportamiento) req.query.id siempre fue undefined:
   // "Aprobar"/"Rechazar" solicitudes de acceso nunca funciono ahi, solo en Vercel.
   const id = req.query.id ?? req.params?.id
-  const { action, role, employeeNumber, employeeId, userId } = req.body || {}
+  const { action, role, employeeNumber, employeeId, userId, name, password } = req.body || {}
   if (action !== 'approve' && action !== 'deny' && action !== 'link') {
     return res.status(400).json({ error: "action debe ser 'approve', 'deny' o 'link'" })
   }
@@ -91,21 +102,40 @@ export default requireModuleAccess('/usuarios', async (req, res) => {
     return res.status(400).json({ error: 'Rol inválido' })
   }
 
-  const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12)
+  const isLocal = Boolean(reqRow.employeeNumber)
+  const finalName = (name || reqRow.name || reqRow.email || '').trim()
+  if (!finalName) {
+    return res.status(400).json({ error: 'Falta el nombre de la persona.' })
+  }
+
+  let passwordHash
+  if (isLocal) {
+    if (!password || password.length < 8) {
+      return res
+        .status(400)
+        .json({ error: 'La contraseña temporal debe tener al menos 8 caracteres' })
+    }
+    passwordHash = await bcrypt.hash(password, 12)
+  } else {
+    // Cuenta SSO: el login real es siempre por Nextcloud, este hash nunca se comunica ni se
+    // usa -- solo existe porque User.passwordHash es NOT NULL.
+    passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12)
+  }
+
   let createdUser
   try {
     ;[createdUser] = await db
       .insert(userTable)
       .values({
-        employeeNumber: employeeNumber || null,
+        employeeNumber: isLocal ? reqRow.employeeNumber : employeeNumber || null,
         username: null,
-        name: reqRow.name || reqRow.email,
+        name: finalName,
         role,
         passwordHash,
         active: true,
-        mustChangePassword: false,
+        mustChangePassword: isLocal,
         employeeId: employeeId || null,
-        oidcSub: reqRow.oidcSub,
+        oidcSub: reqRow.oidcSub || null,
         updatedAt: new Date(),
       })
       .returning()

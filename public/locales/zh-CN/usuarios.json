@@ -50,8 +50,8 @@
     "deleteError": "无法删除该用户"
   },
   "accessRequestsCard": {
-    "title": "SSO 访问申请",
-    "subtitle": "已通过 Nextcloud 登录但还没有本地账号的人员 —— 可以创建带角色的新账号，绑定到已有账号（如果这个人在启用SSO之前就已经有权限），或拒绝申请。",
+    "title": "访问申请",
+    "subtitle": "尝试登录（通过Nextcloud或员工编号）但还没有账号的人员——可以创建带角色和密码的新账号，绑定到已有账号（仅限Nextcloud，如果这个人在启用SSO之前就已经有权限），或拒绝申请。",
     "loadError": "无法加载申请列表。",
     "noteLabel": "原因",
     "requestedAtLabel": "申请时间",
@@ -67,7 +67,13 @@
     "existingUserLabel": "账号",
     "existingUserPlaceholder": "选择一个用户",
     "linkButton": "绑定",
-    "linkedToast": "{{name}} 现在可以用他们已有的账号通过Nextcloud登录了。"
+    "linkedToast": "{{name}} 现在可以用他们已有的账号通过Nextcloud登录了。",
+    "nameLabel": "姓名",
+    "namePlaceholder": "全名",
+    "passwordLabel": "临时密码",
+    "passwordPlaceholder": "至少8个字符",
+    "employeeNumberLabel": "员工 #{{number}}",
+    "employeeNumberShort": "#{{number}}"
   },
   "adminToolsCard": {
     "title": "管理工具",

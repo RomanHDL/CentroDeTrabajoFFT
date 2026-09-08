@@ -43,6 +43,7 @@ export const RELEASES = [
           'addedDeleteUser',
           'addedLinkExistingAccount',
           'addedAccessRequestsInBell',
+          'addedLocalAccessRequest',
         ],
       },
       {
@@ -72,6 +73,7 @@ export const RELEASES = [
           'changedEstacionesGerenteFftName',
           'changedLoginBothMethods',
           'changedVercelRedirect',
+          'changedLoginNextcloudPrimary',
         ],
       },
       {

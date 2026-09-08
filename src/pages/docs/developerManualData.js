@@ -34,6 +34,34 @@ export const DATA_DICTIONARY = [
       ['mustChangePassword', 'Boolean', 'fuerza cambio de contraseña en el próximo login'],
       ['lastLoginAt', 'DateTime?', ''],
       ['employeeId', 'String? (FK Employee)', 'único, opcional -- no todo User es un Employee'],
+      [
+        'oidcSub',
+        'String?',
+        'único, identidad estable de Nextcloud (claims.sub) -- solo se llena vía SSO (login local no lo toca)',
+      ],
+    ],
+  },
+  {
+    model: 'AccessRequest',
+    purposeKey: 'developerManualData.dataDictionary_AccessRequest_purpose',
+    fields: [
+      ['id', 'String (cuid)', 'PK'],
+      [
+        'oidcSub / email',
+        'String? / String?',
+        'llenos cuando el origen es SSO (Nextcloud) -- ver employeeNumber para el otro origen',
+      ],
+      [
+        'employeeNumber',
+        'String?',
+        'lleno cuando el origen es login local con un número no registrado (api/auth/login.js, code NOT_REGISTERED)',
+      ],
+      ['name', 'String?', 'Nextcloud lo manda solo; un número de empleado no -- el admin lo escribe al aprobar'],
+      ['note', 'String?', 'motivo opcional, solo en el flujo SSO'],
+      ['status', 'AccessRequestStatus', 'PENDING | APPROVED | DENIED'],
+      ['decidedByUserId', 'String?', ''],
+      ['decidedAt', 'DateTime?', ''],
+      ['requestedAt', 'DateTime', ''],
     ],
   },
   {
@@ -388,6 +416,8 @@ export const DATA_DICTIONARY = [
 
 export const API_MAP = [
   ['/api/auth/{login,logout,session,change-password}', 'developerManualData.apiMap_auth'],
+  ['/api/auth/request-access', 'developerManualData.apiMap_authRequestAccess'],
+  ['/api/access-requests/*', 'developerManualData.apiMap_accessRequests'],
   ['/api/personnel/*', 'developerManualData.apiMap_personnel'],
   ['/api/users/*', 'developerManualData.apiMap_users'],
   ['/api/work-areas/[code]/workstations/*', 'developerManualData.apiMap_workAreaWorkstations'],

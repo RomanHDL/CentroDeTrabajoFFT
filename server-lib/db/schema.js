@@ -138,6 +138,15 @@ export const user = pgTable(
 // el admin elija, en vez de un sistema de scopes paralelo -- ver api/access-requests/*.js).
 // Se crea cuando alguien entra por SSO (claims.sub resuelto, ID valido) pero ningun User
 // local tiene ese oidcSub todavia.
+// 2026-09-08 (a peticion explicita del usuario, "que me notifique... boton de mandar
+// solicitud... me llegue el numero de empleado en automatico"): segundo origen posible de
+// una solicitud, alterno al de SSO de arriba -- alguien intenta el login LOCAL (numero de
+// empleado/contrasena) con un numero que no existe en User todavia (ver api/auth/login.js,
+// codigo NOT_REGISTERED) y pide acceso desde ahi mismo, sin pasar por Nextcloud. oidcSub/
+// email pasan a nullable (ya NO son "el" origen unico) y se agrega employeeNumber -- una
+// solicitud real trae SIEMPRE exactamente uno de los dos (oidcSub XOR employeeNumber),
+// nunca ambos ni ninguno; decide.js lo distingue por cual de los dos viene lleno, nunca por
+// un campo `source` aparte que se pudiera desincronizar del dato real.
 export const accessRequest = pgTable(
   'AccessRequest',
   {
@@ -145,8 +154,9 @@ export const accessRequest = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => cuid()),
-    oidcSub: text().notNull(),
-    email: text().notNull(),
+    oidcSub: text(),
+    email: text(),
+    employeeNumber: text(),
     name: text(),
     note: text(),
     status: accessRequestStatus().default('PENDING').notNull(),
@@ -160,6 +170,10 @@ export const accessRequest = pgTable(
     index('AccessRequest_oidcSub_idx').using(
       'btree',
       table.oidcSub.asc().nullsLast().op('text_ops'),
+    ),
+    index('AccessRequest_employeeNumber_idx').using(
+      'btree',
+      table.employeeNumber.asc().nullsLast().op('text_ops'),
     ),
     index('AccessRequest_status_idx').using('btree', table.status.asc().nullsLast().op('enum_ops')),
   ],
