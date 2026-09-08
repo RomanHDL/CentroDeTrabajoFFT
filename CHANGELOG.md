@@ -382,6 +382,12 @@ para poder desplegar en el servidor privado (Coolify). Ver
   el número de empleado/contraseña detrás de un link secundario
   ("Iniciar sesión con número de empleado") que lo revela con un clic.
   Verificado visualmente en vivo, ambos modos.
+- **Nueva causa de demora "Calidad".** A petición explícita del usuario,
+  se agrega al catálogo de `src/data/demoras/catalog.js`
+  (`DOWNTIME_REASONS`) entre "Defectos" y "Calificaciones distintas" --
+  el catálogo pasa de 14 a 15 opciones. `reasonKey` en `DowntimeRecord`
+  es texto libre (sin enum en la base de datos), así que no requiere
+  migración.
 
 ### Fixed
 - **Modo oscuro.** `body` nunca definía un `color` base (solo

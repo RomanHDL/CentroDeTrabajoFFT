@@ -74,6 +74,7 @@ export const RELEASES = [
           'changedLoginBothMethods',
           'changedVercelRedirect',
           'changedLoginNextcloudPrimary',
+          'changedDemorasAddCalidad',
         ],
       },
       {

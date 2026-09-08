@@ -22,6 +22,7 @@ export const DOWNTIME_REASONS = [
   { key: 'falta-bolsas', tag: null },
   { key: 'falta-herramientas', tag: null },
   { key: 'defectos', tag: null },
+  { key: 'calidad', tag: null },
   { key: 'calificaciones-distintas', tag: null },
   { key: 'duplicado', tag: null },
   { key: 'modelo', tag: null },
