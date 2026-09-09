@@ -187,6 +187,7 @@ export default function UsuariosPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
+            autoComplete="off"
           />
         </div>
         <div className="hidden flex-1 sm:block" />

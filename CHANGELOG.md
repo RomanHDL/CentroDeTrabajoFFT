@@ -813,6 +813,12 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (primer registro del día) en vez de `moveEmployee()` -- mismo patrón que ya usaba
   `handleAssignSuggested` en `LineDetailDrawer.jsx` para candidatos sugeridos sin asignación.
 
+- **El buscador de Usuarios se autocompletaba con el número de empleado de quien tenía la
+  sesión abierta.** El campo de número de empleado del login usa `autoComplete="username"` a
+  propósito (para que el navegador pueda ofrecer guardar la sesión) -- el navegador terminaba
+  reutilizando ese mismo valor guardado en el buscador de `UsuariosPage.jsx`, que no declaraba
+  ningún `autoComplete` propio. Se agrega `autoComplete="off"` explícito a ese campo.
+
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
   arriba: 3 bugs reales encontrados y corregidos en el camino -- ruta de
