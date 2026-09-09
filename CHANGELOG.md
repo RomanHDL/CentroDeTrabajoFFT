@@ -277,6 +277,16 @@ para poder desplegar en el servidor privado (Coolify). Ver
   con `idealHeadcount: null`). "Personal"/"Sin asignar"/"Bajas" siguen
   siendo vistas globales de personal (no cambian con el toggle, es
   comportamiento correcto: no son vistas "por área").
+- **Auto-migración de schema al arrancar** (`server-lib/db/runMigrations.js`,
+  llamado desde `prod-server.js` antes de `app.listen`). Aplica los 16
+  archivos SQL versionados de `drizzle/` vía `drizzle-orm`'s `migrate()`
+  contra `DATABASE_URL` en cada boot del contenedor -- idempotente (tabla
+  `__drizzle_migrations`), así que en un DB ya al día es un no-op. Corre
+  siempre desde dentro de Coolify, nunca desde afuera, así que llega a la
+  Postgres interna del proyecto sin depender de que el puerto externo esté
+  abierto. Habilitó el corte de Neon a la Postgres provisionada por Coolify
+  sin necesitar `drizzle-kit push` manual ni acceso de red externo al
+  servidor.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

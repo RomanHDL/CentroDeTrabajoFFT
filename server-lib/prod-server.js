@@ -16,9 +16,16 @@ import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { mountApiRoutes } from './api-routes.js'
 import { runPersonnelSync } from './personnel-sync.js'
+import { runMigrations } from './db/runMigrations.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
+
+// Antes de levantar el servidor: crea/actualiza el schema contra el
+// DATABASE_URL actual. Corre siempre desde dentro del contenedor de Coolify
+// (nunca desde fuera), asi que llega a la Postgres interna sin depender del
+// puerto externo/firewall.
+await runMigrations()
 
 const app = express()
 app.use(express.json())

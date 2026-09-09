@@ -47,6 +47,7 @@ export const RELEASES = [
           'addedDemorasCausesAdmin',
           'addedAreaGroupToggle',
           'addedDemorasLineMemory',
+          'addedDbAutoMigrate',
         ],
       },
       {
