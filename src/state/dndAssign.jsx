@@ -18,6 +18,7 @@ import { CURRENT_SHIFT, workCenterById } from '../data/production/catalog'
 import { getAreaStaffing, getEffectiveAreaForEmployee } from '../data/production/personnelByArea'
 import MoveConfirmDialog from '../pages/centro-trabajo/MoveConfirmDialog'
 import { showToast } from '../ui/toast'
+import { useAuth } from './auth'
 
 /* ─────────────────────────────────────────────
    Orquesta TODO movimiento/asignacion originado por drag & drop (o
@@ -46,6 +47,16 @@ const DndAssignContext = createContext(null)
 
 export function DndAssignProvider({ children }) {
   const { t } = useTranslation('app')
+  const { user } = useAuth()
+  // 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+  // solos, solo yo u otro administrador o supervisor pueden moverlo"):
+  // confirmSwap/confirmRelease abajo llamaban swapOrBumpStation/
+  // releaseAssignment DIRECTO, sin el mismo filtro isLider que
+  // MoveConfirmDialog.jsx ya aplica para un movimiento normal (ese siempre
+  // redirige a requestMove/aprobacion). El servidor ya rechaza esto para un
+  // LIDER (requireRole en swap.js/release.js), este aviso es solo para no
+  // mostrar un error crudo de red.
+  const isLider = user?.role === 'LIDER'
   const [stationPicker, setStationPicker] = useState(null) // { employee, current, targetAreaId }
   const [moveTarget, setMoveTarget] = useState(null) // { employee, currentAssignment, presetTo }
   const [releaseTarget, setReleaseTarget] = useState(null) // { employee, currentAssignment }
@@ -149,6 +160,11 @@ export function DndAssignProvider({ children }) {
 
   function confirmSwap() {
     if (!swapTarget) return
+    if (isLider) {
+      showToast(t('dndAssign.liderCannotDirectlyMove'), 'error')
+      setSwapTarget(null)
+      return
+    }
     const { employeeA, employeeB, targetAreaId, stationName } = swapTarget
     const res = swapOrBumpStation({
       employeeIdA: employeeA.id,
@@ -203,6 +219,11 @@ export function DndAssignProvider({ children }) {
 
   function confirmRelease() {
     if (!releaseTarget) return
+    if (isLider) {
+      showToast(t('dndAssign.liderCannotDirectlyMove'), 'error')
+      setReleaseTarget(null)
+      return
+    }
     const { employee, currentAssignment } = releaseTarget
     const areaName = workCenterById(currentAssignment.areaId)?.name || currentAssignment.areaId
     const res = releaseAssignment(employee.id, currentAssignment.areaId)

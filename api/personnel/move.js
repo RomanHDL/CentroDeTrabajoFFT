@@ -3,10 +3,17 @@
 // una nueva, nunca sobreescribe/borra la anterior.
 import { eq } from 'drizzle-orm'
 import { db, employee as employeeTable } from '../../server-lib/db/client.js'
-import { requireAuth } from '../../server-lib/auth.js'
+import { requireRole } from '../../server-lib/auth.js'
 import { resolveWorkstation, placeEmployee } from '../../server-lib/personnel.js'
 
-export default requireAuth(async (req, res) => {
+// 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+// solos, solo yo u otro administrador o supervisor pueden moverlo"):
+// antes esto solo exigia requireAuth (cualquier rol autenticado, incluido
+// LIDER, podia moverse directo pegandole a este endpoint) -- el cliente
+// (MoveConfirmDialog.jsx) ya redirigia a un LIDER por /request-move en vez
+// de aqui, pero eso era solo UI: nada del lado servidor lo impedia de
+// verdad. Mismo guard que ya usaban approve-move.js/reject-move.js.
+export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { employeeId, workAreaId, stationName, shift } = req.body || {}

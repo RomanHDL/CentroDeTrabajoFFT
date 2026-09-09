@@ -27,9 +27,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { cardClass, metricChipClass, progressBarClass } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
-import { getCurrentAssignment, reconcileLineAssignments } from '../../data/personnel/repository'
+import { getCurrentAssignment } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
-import { hasMultipleStations } from '../../data/personnel/workstations'
 import {
   canonicalOperationalAreaId,
   formatShiftSchedule,
@@ -401,32 +400,11 @@ export default function OperationalAreaDetail({
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza recalcular aunque no se lea en el callback (mismo patron en todo este folder)
   const available = useMemo(() => getAvailablePersonnelToday(), [version])
 
-  /* Reconciliacion de puestos reales al abrir el area (2026-08-26, a
-     peticion explicita del usuario: "te pasé los puestos... ya tú el
-     personal ponlos en los puestos" -- los puestos definidos en
-     CUSTOM_STATION_PLANS existian en el sistema pero nadie quedaba
-     realmente colocado en un puesto especifico, solo en la lista plana
-     de "Personal asignado"). Mismo mecanismo ya usado por WC LINEA/Midea
-     (reconcileLineAssignments, repository.js) -- idempotente, nunca
-     inventa una estacion extra, nunca toca a una BAJA, preserva
-     checkInAt/shift reales ya guardados. Solo corre para areas con mas
-     de 1 estacion real (Accesorios/Paletizado/Insumos) -- las demas
-     (Conveyors, etc.) siguen con su unico puesto generico, sin cambio.
-     Para el grupo fusionado de Insumos, se reconcilian TODOS los
-     miembros (incluye BOX_PREP/SUMINISTRO_MATERIAL) contra las 9
-     estaciones reales de INSUMOS -- su gente pasa a tener una asignacion
-     real en INSUMOS con puesto especifico, en vez de quedar "atrapada"
-     en su bucket de snapshot original sin puesto. */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: memberIds se recalcula desde workCenterId en cada render, incluirlo forzaria un loop -- mismo patron en todo este folder
-  useEffect(() => {
-    if (!open || !canonicalId || !hasMultipleStations(canonicalId)) return
-    const ids = memberIds
-      .flatMap((id) => getGroupPeople([id]))
-      .slice()
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-      .map((p) => p.id)
-    reconcileLineAssignments(canonicalId, ids)
-  }, [canonicalId, open])
+  // 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+  // solos, solo yo u otro administrador o supervisor pueden moverlo"):
+  // reconcileLineAssignments() se quito del auto-run al abrir esta pantalla
+  // (escribia asignaciones reales para cualquier rol solo por abrir). Ver
+  // el mismo cambio en LineDetailDrawer.jsx para el detalle completo.
   const filteredAvailable = useMemo(() => {
     const q = availableQuery.trim().toLowerCase()
     if (!q) return available

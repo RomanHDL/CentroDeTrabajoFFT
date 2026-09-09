@@ -46,7 +46,6 @@ import {
   checkInEmployee,
   getLineWorkstationsWithOccupancy,
   getSuggestedCandidates,
-  reconcileLineAssignments,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import {
@@ -263,20 +262,11 @@ export default function LineLikeAreaDetail({
     [stationGroups, RANK_SECTION_LABEL, t],
   )
 
-  // reconcileLineAssignments es para "corregir asignaciones huerfanas dentro de MI PROPIA
-  // area real" -- no aplica a una vista filtrada (stationSource) que ni siquiera tiene
-  // puestos propios: correrlo aqui no haria nada util (memberIds no tiene roster real) y
-  // podria confundirse con logica que le corresponde a la pantalla real de Paletizado.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: memberIds se recalcula desde workCenterId en cada render, incluirlo forzaria un loop -- mismo patron en todo este folder
-  useEffect(() => {
-    if (!open || !canonicalId || stationSource) return
-    const ids = memberIds
-      .flatMap((id) => getGroupPeople([id]))
-      .slice()
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-      .map((p) => p.id)
-    reconcileLineAssignments(canonicalId, ids)
-  }, [canonicalId, open, stationSource])
+  // 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+  // solos, solo yo u otro administrador o supervisor pueden moverlo"):
+  // reconcileLineAssignments() se quito del auto-run al abrir esta pantalla
+  // (escribia asignaciones reales para cualquier rol solo por abrir). Ver
+  // el mismo cambio en LineDetailDrawer.jsx para el detalle completo.
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null

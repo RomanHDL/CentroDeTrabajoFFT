@@ -51,7 +51,6 @@ import {
   checkInEmployee,
   getLineWorkstationsWithOccupancy,
   getSuggestedCandidates,
-  reconcileLineAssignments,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import {
@@ -387,22 +386,15 @@ export default function LineDetailDrawer({
     return { groups: [leadershipGroup, ...rest].filter(Boolean) }
   }, [stationCategories])
 
-  /* Reconcilia estaciones reales al abrir una WC LINEA -- corrige tanto a
-     quien ya esta en el area pero sin ninguna asignacion real hoy
-     (snapshot de BASE) COMO a quien ya tiene una asignacion real pero con
-     un stationId invalido/heredado -- ver reconcileLineAssignments en
-     repository.js para la regla completa. Orden estable por nombre
-     (nunca aleatorio); idempotente. */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: memberIds se recalcula desde workCenterId en cada render, incluirlo forzaria un loop -- mismo patron en todo este folder
-  useEffect(() => {
-    if (!open || !isStationBased || !canonicalId) return
-    const ids = memberIds
-      .flatMap((id) => getGroupPeople([id]))
-      .slice()
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-      .map((p) => p.id)
-    reconcileLineAssignments(canonicalId, ids)
-  }, [canonicalId, isStationBased, open])
+  // 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+  // solos, solo yo u otro administrador o supervisor pueden moverlo, tanto
+  // en centro de control como al darle a un area o puesto de trabajo"):
+  // reconcileLineAssignments() escribia asignaciones reales (auto check-in,
+  // auto-move a la siguiente estacion libre) SOLO por abrir esta pantalla,
+  // para CUALQUIER rol -- se quito el auto-run. Quien necesite estacion se
+  // sigue viendo en "Personal sin estacion" (getPeopleWithoutStation) y se
+  // corrige con la accion explicita "Asignar a estacion" (ver
+  // MoveConfirmDialog.jsx), nunca solo.
 
   const selectedStation = useMemo(() => {
     if (!workstations.length) return null

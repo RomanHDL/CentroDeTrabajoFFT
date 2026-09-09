@@ -4,11 +4,14 @@
 // swapOrBumpStation, server-lib/personnel.js, para el detalle completo del bug real que esto
 // corrige), este endpoint hace el intercambio COMPLETO en una sola transaccion server-side.
 import { eq } from 'drizzle-orm'
-import { requireAuth } from '../../server-lib/auth.js'
+import { requireRole } from '../../server-lib/auth.js'
 import { db, employee as employeeTable } from '../../server-lib/db/client.js'
 import { resolveWorkstation, swapOrBumpStation } from '../../server-lib/personnel.js'
 
-export default requireAuth(async (req, res) => {
+// 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+// solos, solo yo u otro administrador o supervisor pueden moverlo"): un
+// intercambio mueve a 2 personas a la vez -- mismo guard que move.js.
+export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { employeeId, workAreaId, stationName, shift } = req.body || {}

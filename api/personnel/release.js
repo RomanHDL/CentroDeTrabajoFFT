@@ -4,9 +4,12 @@
 // destino real) y un release no tiene destino.
 import { and, eq } from 'drizzle-orm'
 import { db, dailyAssignment } from '../../server-lib/db/client.js'
-import { requireAuth } from '../../server-lib/auth.js'
+import { requireRole } from '../../server-lib/auth.js'
 
-export default requireAuth(async (req, res) => {
+// 2026-09-09 (a peticion explicita del usuario -- "no quiero que se muevan
+// solos, solo yo u otro administrador o supervisor pueden moverlo"): quitar
+// a alguien de su puesto es tambien un movimiento -- mismo guard que move.js.
+export default requireRole(['SUPERVISOR', 'ADMINISTRADOR'], async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { employeeId } = req.body || {}
