@@ -819,6 +819,31 @@ para poder desplegar en el servidor privado (Coolify). Ver
   reutilizando ese mismo valor guardado en el buscador de `UsuariosPage.jsx`, que no declaraba
   ningún `autoComplete` propio. Se agrega `autoComplete="off"` explícito a ese campo.
 
+- **El personal podía moverse/asignarse "solo", sin acción explícita de un ADMINISTRADOR o
+  SUPERVISOR, a petición explícita del usuario ("no quiero que se muevan solos, solo yo u otro
+  administrador o supervisor pueden moverlo").** Auditoría completa de todos los caminos que
+  escriben una ubicación de personal; se encontraron y corrigieron 2 bugs reales:
+  1. `reconcileLineAssignments()` (`repository.js`) escribía asignaciones REALES (auto check-in,
+     auto-move a la siguiente estación libre) con solo **abrir** cualquier vista de área/línea
+     (WC LINEA, Midea, Paletizado, Accesorios, Insumos), para cualquier rol — se quitó el
+     auto-run de los 3 `useEffect` que lo disparaban (`LineDetailDrawer.jsx`,
+     `LineLikeAreaDetail.jsx`, `OperationalAreaDetail.jsx`). Quien necesita estación se sigue
+     viendo en "Personal sin estación" y se corrige con la acción explícita "Asignar a estación".
+  2. Los endpoints `/api/personnel/move`, `/release` y `/swap` solo exigían `requireAuth`
+     (cualquier rol autenticado), sin `requireRole` — un LIDER podía mover/quitar/intercambiar
+     personal pegándole al endpoint directo, saltándose por completo el flujo de aprobación
+     (`request-move`/`approve-move`) que el propio código ya documentaba como regla de negocio
+     pero solo aplicaba del lado del cliente. Ahora los 3 exigen
+     `requireRole(['SUPERVISOR', 'ADMINISTRADOR'])`, igual que ya hacían `approve-move.js`/
+     `reject-move.js`. El drag&drop (`dndAssign.jsx`) ahora también avisa con un mensaje claro
+     en vez de un error crudo si un LIDER intenta swap/release directo. `checkin.js` se deja sin
+     cambio (`requireAuth`) — el primer registro del día nunca fue "mover". Confirmado que esto
+     aplica igual para FFT y Sorting (y cualquier área futura): `repository.js` y las rutas
+     `api/personnel/*` son agnósticas de catálogo, nunca importan `catalogSorting.js` ni
+     `WORK_CENTERS` directo. Deploy/build revisado también: ningún script de `scripts/*.mjs`
+     está enganchado a un hook automático (`postinstall`/`prestart`), todos son one-offs
+     manuales.
+
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
   arriba: 3 bugs reales encontrados y corregidos en el camino -- ruta de
