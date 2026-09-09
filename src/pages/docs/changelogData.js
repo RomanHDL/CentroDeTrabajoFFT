@@ -49,6 +49,8 @@ export const RELEASES = [
           'addedDemorasLineMemory',
           'addedDbAutoMigrate',
           'addedBootstrapAdmin',
+          'addedOrganigramaContent',
+          'addedDemorasHistoryFilter',
         ],
       },
       {

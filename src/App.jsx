@@ -20,6 +20,7 @@ import HoraPorHoraPage from './pages/hora-por-hora/HoraPorHoraPage'
 import KpisPage from './pages/kpis/KpisPage'
 import ProduccionFftPage from './pages/produccion-fft/ProduccionFftPage'
 import RegistroPersonalPage from './pages/registro-personal/RegistroPersonalPage'
+import OrganigramaPage from './pages/organigrama/OrganigramaPage'
 import ComingSoonPage from './pages/shared/ComingSoonPage'
 import SortingPage from './pages/sorting/SortingPage'
 import UsuariosPage from './pages/usuarios/UsuariosPage'
@@ -197,7 +198,7 @@ export default function App() {
                   path="/organigrama"
                   element={
                     <RequireModuleAccess>
-                      <ComingSoonPage title={t('organigrama')} />
+                      <OrganigramaPage />
                     </RequireModuleAccess>
                   }
                 />

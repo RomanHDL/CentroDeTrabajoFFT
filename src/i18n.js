@@ -58,6 +58,7 @@ i18n
       'controlEquipo',
       'horaPorHora',
       'sorting',
+      'organigrama',
     ],
     defaultNS: 'common',
     detection: {

@@ -1,5 +1,6 @@
+import dayjs from 'dayjs'
 import { Settings } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -141,16 +142,44 @@ export default function DemorasPage() {
   const [loadingRecords, setLoadingRecords] = useState(true)
   const [dynamicReasons, setDynamicReasons] = useState([])
 
+  // Filtro por fechas del historial (2026-09-09, a peticion explicita del usuario): por default
+  // muestra los ultimos 7 dias (incluye hoy) -- mismo rango default que ya usa
+  // SortingHistoryView.jsx para su propio historico, para no inventar un criterio nuevo.
+  const [dateFrom, setDateFrom] = useState(dayjs().subtract(6, 'day').format('YYYY-MM-DD'))
+  const [dateTo, setDateTo] = useState(dayjs().format('YYYY-MM-DD'))
+
   const loadRecords = useCallback(async () => {
     setLoadingRecords(true)
     try {
-      const res = await fetch('/api/demoras', { credentials: 'include' })
+      const params = new URLSearchParams()
+      if (dateFrom) params.set('dateFrom', dateFrom)
+      if (dateTo) params.set('dateTo', dateTo)
+      const res = await fetch(`/api/demoras?${params}`, { credentials: 'include' })
       const data = await res.json().catch(() => null)
       setRecords(data?.records || [])
     } finally {
       setLoadingRecords(false)
     }
-  }, [])
+  }, [dateFrom, dateTo])
+
+  // Agrupado por dia calendario (2026-09-09, a peticion explicita del usuario -- "organiza bien
+  // el historial, estructuralo bien"): el servidor ya manda los registros ordenados desc por
+  // createdAt (ver api/demoras/index.js), asi que agrupar aqui solo junta filas consecutivas del
+  // mismo dia -- nunca reordena nada. Cada grupo guarda su fecha real (Date, no el string ya
+  // formateado) para poder mostrar el encabezado con dayjs.
+  const groupedRecords = useMemo(() => {
+    const groups = []
+    for (const record of records) {
+      const day = dayjs(record.createdAt).format('YYYY-MM-DD')
+      const last = groups[groups.length - 1]
+      if (last && last.day === day) {
+        last.records.push(record)
+      } else {
+        groups.push({ day, date: record.createdAt, records: [record] })
+      }
+    }
+    return groups
+  }, [records])
 
   // includeInactive=1 (2026-09-08): el Select de captura filtra .active localmente mas abajo,
   // pero el historial necesita poder resolver el nombre real de una causa YA desactivada (el
@@ -402,48 +431,90 @@ export default function DemorasPage() {
             <div className={cardHeaderClass}>
               <p className={cardHeaderTitleClass}>{t('historyTitle')}</p>
             </div>
+
+            <div className="flex flex-wrap items-end gap-3 border-b border-border px-5 py-3.5">
+              <div>
+                <Label className="mb-1.5 block text-xs">{t('historyDateFrom')}</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-[150px]"
+                />
+              </div>
+              <div>
+                <Label className="mb-1.5 block text-xs">{t('historyDateTo')}</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-[150px]"
+                />
+              </div>
+            </div>
+
             {loadingRecords ? (
               <div className="px-5 py-8">
                 <EmptyState compact title={t('loading')} />
               </div>
-            ) : records.length === 0 ? (
+            ) : groupedRecords.length === 0 ? (
               <div className="px-5 py-8">
                 <EmptyState compact title={t('historyEmpty')} />
               </div>
             ) : (
-              <div className="max-h-[560px] overflow-auto">
+              <div className="max-h-[620px] overflow-auto">
                 <table className="w-full border-collapse">
                   <thead className="sticky top-0 z-10 bg-card">
                     <tr className="border-b border-border">
                       <Th>{t('colReason')}</Th>
-                      <Th>{t('colArea')}</Th>
-                      <Th>{t('colDuration')}</Th>
-                      <Th>{t('colShift')}</Th>
+                      <Th className="whitespace-nowrap">{t('colArea')}</Th>
+                      <Th className="whitespace-nowrap">{t('colDuration')}</Th>
+                      <Th className="whitespace-nowrap">{t('colShift')}</Th>
                       <Th>{t('colCreatedBy')}</Th>
-                      <Th>{t('colCreatedAt')}</Th>
+                      <Th className="whitespace-nowrap">{t('colTime')}</Th>
                     </tr>
                   </thead>
                   <tbody>
-                    {records.map((r) => (
-                      <tr key={r.id} className="border-b border-border/60">
-                        <Td>
-                          <div className="flex items-center gap-1.5">
-                            <span className={cellTextClass}>
-                              {reasonLabel(t, r.reasonKey, dynamicReasonsByCode)}
-                            </span>
-                            {requiresFormalLog(r.durationMinutes) && (
-                              <span className="rounded bg-red-500/[0.12] px-1.5 py-0.5 text-[10px] font-bold text-red-600">
-                                {t('badgeRequiresLog')}
+                    {groupedRecords.map((group) => (
+                      <Fragment key={group.day}>
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="border-b border-border bg-black/[.02] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.03em] text-muted-foreground dark:bg-white/[.03]"
+                          >
+                            {dayjs(group.date).format('DD MMM YYYY')}
+                            {' · '}
+                            {t('historyDayCount', { count: group.records.length })}
+                          </td>
+                        </tr>
+                        {group.records.map((r) => (
+                          <tr key={r.id} className="border-b border-border/60">
+                            <Td className="max-w-[320px]">
+                              <span className={cellTextClass}>
+                                {reasonLabel(t, r.reasonKey, dynamicReasonsByCode)}
                               </span>
-                            )}
-                          </div>
-                        </Td>
-                        <Td>{workCenterById(r.areaId)?.name || r.areaId}</Td>
-                        <Td>{t('minutesValue', { count: r.durationMinutes })}</Td>
-                        <Td>{shiftDisplayLabel(t, r.shift)}</Td>
-                        <Td>{r.createdByName || '—'}</Td>
-                        <Td>{new Date(r.createdAt).toLocaleString()}</Td>
-                      </tr>
+                              {requiresFormalLog(r.durationMinutes) && (
+                                <span className="ml-1.5 inline-block rounded bg-red-500/[0.12] px-1.5 py-0.5 align-middle text-[10px] font-bold text-red-600">
+                                  {t('badgeRequiresLog')}
+                                </span>
+                              )}
+                            </Td>
+                            <Td className="whitespace-nowrap">
+                              {workCenterById(r.areaId)?.name || r.areaId}
+                            </Td>
+                            <Td className="whitespace-nowrap">
+                              {t('minutesValue', { count: r.durationMinutes })}
+                            </Td>
+                            <Td className="whitespace-nowrap">{shiftDisplayLabel(t, r.shift)}</Td>
+                            <Td>{r.createdByName || '—'}</Td>
+                            <Td className="whitespace-nowrap">
+                              {dayjs(r.createdAt).format('h:mm A')}
+                            </Td>
+                          </tr>
+                        ))}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -456,14 +527,19 @@ export default function DemorasPage() {
   )
 }
 
-function Th({ children }) {
+function Th({ children, className }) {
   return (
-    <th className="px-3.5 py-2.5 text-left text-[11px] font-bold uppercase tracking-[0.03em] text-muted-foreground">
+    <th
+      className={cn(
+        'px-3.5 py-2.5 text-left text-[11px] font-bold uppercase tracking-[0.03em] text-muted-foreground',
+        className,
+      )}
+    >
       {children}
     </th>
   )
 }
 
-function Td({ children }) {
-  return <td className={cn('px-3.5 py-2.5', cellTextClass)}>{children}</td>
+function Td({ children, className }) {
+  return <td className={cn('px-3.5 py-2.5', cellTextClass, className)}>{children}</td>
 }

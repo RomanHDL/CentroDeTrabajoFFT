@@ -465,6 +465,24 @@ para poder desplegar en el servidor privado (Coolify). Ver
   `AccessRequestDecideRow.jsx`), más los 2 scripts de consola
   (`create-initial-admin.mjs`, `reset-user-password.mjs`) y todos los
   textos/hints de los 3 idiomas que mencionaban el mínimo anterior.
+- **Módulo Organigrama, ya con contenido real** (a petición explícita del usuario):
+  reemplaza el "En desarrollo" que tenía esta ruta desde que se creó. Muestra la
+  primera hoja de `Estructura organizacional.docx` (organigrama real, con fotos y
+  nombres reales) exportada a imagen -- el resto del documento no se incluye, a
+  petición explícita del usuario ("solo la primera hoja"). `OrganigramaPage.jsx`
+  nuevo, reemplaza el `ComingSoonPage` solo en esta ruta (las demás rutas
+  "En desarrollo" quedan sin cambio). Actualizar el organigrama en el futuro es
+  reemplazar `public/organigrama/estructura-organizacional.png`, sin tocar código.
+- **Demoras de trabajo: filtro por fechas + historial reorganizado**, a petición
+  explícita del usuario ("filtro por fechas... organiza bien el historial...
+  estructúralo bien"). `/api/demoras` (GET) acepta `dateFrom`/`dateTo`
+  (`YYYY-MM-DD`, mismo `parseDateOnly` que ya usa `personnel.js`); el frontend
+  agrega selectores Desde/Hasta (default: últimos 7 días, mismo rango default que
+  ya usa el histórico de Sorting) y agrupa los registros por día calendario con un
+  encabezado por grupo, en vez de una tabla plana con fecha repetida en cada fila.
+  De paso se corrige que el badge "Reportable" se encimaba con el texto de causas
+  largas (ej. "Falta de herramientas...") cuando envolvía a 2 líneas -- ahora fluye
+  junto al texto en vez de en una fila `flex` aparte.
 
 ### Fixed
 - **Bug real en `drizzle/0000_aberrant_mariko_yashida.sql`**: varios índices

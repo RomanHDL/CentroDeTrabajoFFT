@@ -8,9 +8,10 @@
 // endpoint SOLO guarda/lista el registro de demora. No existe ni se intenta un bloqueo tecnico de
 // "no dejar clasificar la siguiente TV" -- eso queda como politica de proceso del supervisor, no
 // como gate de sistema.
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, gte, lt } from 'drizzle-orm'
 import { requireAuth } from '../../server-lib/auth.js'
 import { db, downtimeReason, downtimeRecord, user } from '../../server-lib/db/client.js'
+import { parseDateOnly } from '../../server-lib/personnel.js'
 import { canUserAccessModule } from '../../server-lib/permissionService.js'
 import { DOWNTIME_REASON_KEYS } from '../../src/data/demoras/catalog.js'
 
@@ -26,11 +27,25 @@ async function isValidReasonKey(reasonKey) {
   return Boolean(row)
 }
 
+// dateFrom/dateTo (2026-09-09, a peticion explicita del usuario -- "filtro por fechas" en el
+// historial): mismo parseDateOnly (YYYY-MM-DD -> medianoche UTC) que ya usa personnel.js. dateTo
+// se compara con `lt` contra el dia SIGUIENTE a medianoche -- asi incluye TODO ese dia sin
+// depender de las horas/minutos/milisegundos exactos que traiga cada createdAt real.
 async function handleGet(req, res) {
-  const { areaId, reasonKey } = req.query || {}
+  const { areaId, reasonKey, dateFrom, dateTo } = req.query || {}
   const conditions = []
   if (areaId) conditions.push(eq(downtimeRecord.areaId, areaId))
   if (reasonKey) conditions.push(eq(downtimeRecord.reasonKey, reasonKey))
+  if (dateFrom) {
+    const from = parseDateOnly(dateFrom)
+    if (!from) return res.status(400).json({ error: 'dateFrom invalido, usa YYYY-MM-DD.' })
+    conditions.push(gte(downtimeRecord.createdAt, from))
+  }
+  if (dateTo) {
+    const to = parseDateOnly(dateTo)
+    if (!to) return res.status(400).json({ error: 'dateTo invalido, usa YYYY-MM-DD.' })
+    conditions.push(lt(downtimeRecord.createdAt, new Date(to.getTime() + 24 * 60 * 60 * 1000)))
+  }
   const rows = await db
     .select({
       id: downtimeRecord.id,
