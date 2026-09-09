@@ -803,6 +803,16 @@ para poder desplegar en el servidor privado (Coolify). Ver
     ADMINISTRADOR de prueba); si no aparecía era porque ese primer paso no se había hecho
     todavía.
 
+- **Bug real: "Asignar a estación" fallaba con "El empleado no tiene una asignación activa
+  hoy"** para gente listada en "Personal sin estación" que nunca se había registrado en el día
+  (solo aparecía por su zona histórica de snapshot, `source: 'SNAPSHOT'` en
+  `getEffectiveTodayRoster`). El botón abría el diálogo de mover (`MoveConfirmDialog`), que
+  siempre llama a `moveEmployee()` -- una función que exige una `DailyAssignment` real de hoy
+  para "moverla desde ahí" y por diseño rechaza a cualquiera sin una. `MoveConfirmDialog` ahora
+  detecta `currentAssignment.source === 'SNAPSHOT'` y en ese caso llama a `checkInEmployee()`
+  (primer registro del día) en vez de `moveEmployee()` -- mismo patrón que ya usaba
+  `handleAssignSuggested` en `LineDetailDrawer.jsx` para candidatos sugeridos sin asignación.
+
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed
   arriba: 3 bugs reales encontrados y corregidos en el camino -- ruta de

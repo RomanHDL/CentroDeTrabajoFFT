@@ -14,9 +14,14 @@ import {
 } from '@/components/ui/select'
 import { alertToneClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
-import { getStationOccupancy, moveEmployee, requestMove } from '../../data/personnel/repository'
+import {
+  checkInEmployee,
+  getStationOccupancy,
+  moveEmployee,
+  requestMove,
+} from '../../data/personnel/repository'
 import { getWorkstationsForLine } from '../../data/personnel/workstations'
-import { WORK_CENTERS, workCenterById } from '../../data/production/catalog'
+import { CURRENT_SHIFT, WORK_CENTERS, workCenterById } from '../../data/production/catalog'
 import { useAuth } from '../../state/auth'
 
 function areaLabel(id) {
@@ -80,12 +85,28 @@ export default function MoveConfirmDialog({
       return
     }
 
-    const res = await moveEmployee({
-      employeeId: employee.id,
-      toAreaId,
-      toStationId,
-      shift: currentAssignment.shift,
-    })
+    // currentAssignment.source === 'SNAPSHOT' (getEffectiveTodayRoster,
+    // personnelByArea.js) significa que la persona NUNCA tuvo un check-in real
+    // hoy -- solo aparece por su zona historica. moveEmployee() exige una
+    // DailyAssignment real para "moverla desde ahi" y siempre falla con
+    // noActiveAssignmentToday en este caso (bug real reportado 2026-09-09,
+    // "Personal sin estacion" -> "Asignar a estacion"). Aqui equivale a un
+    // primer registro del dia, no a un movimiento.
+    const isFirstCheckIn = currentAssignment.source === 'SNAPSHOT'
+    const res = isFirstCheckIn
+      ? checkInEmployee({
+          employeeId: employee.id,
+          employeeNumber: employee.employeeNumber,
+          areaId: toAreaId,
+          stationId: toStationId,
+          shift: CURRENT_SHIFT,
+        })
+      : await moveEmployee({
+          employeeId: employee.id,
+          toAreaId,
+          toStationId,
+          shift: currentAssignment.shift,
+        })
     setSubmitting(false)
     if (res.status === 'OK') {
       onDone?.(res)
