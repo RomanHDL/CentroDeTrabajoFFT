@@ -34,6 +34,6 @@ CREATE TABLE "FiveSAuditAnswer" (
 ALTER TABLE "FiveSAudit" ADD CONSTRAINT "FiveSAudit_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "FiveSAudit" ADD CONSTRAINT "FiveSAudit_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "public"."Employee"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "FiveSAuditAnswer" ADD CONSTRAINT "FiveSAuditAnswer_auditId_fkey" FOREIGN KEY ("auditId") REFERENCES "public"."FiveSAudit"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "FiveSAudit_areaId_auditDate_idx" ON "FiveSAudit" USING btree ("areaId" text_ops,"auditDate" date_ops);--> statement-breakpoint
-CREATE INDEX "FiveSAudit_areaId_stationName_idx" ON "FiveSAudit" USING btree ("areaId" text_ops,"stationName" text_ops);--> statement-breakpoint
-CREATE INDEX "FiveSAuditAnswer_auditId_idx" ON "FiveSAuditAnswer" USING btree ("auditId" text_ops);
+CREATE INDEX "FiveSAudit_areaId_auditDate_idx" ON "FiveSAudit" USING btree ("areaId","auditDate");--> statement-breakpoint
+CREATE INDEX "FiveSAudit_areaId_stationName_idx" ON "FiveSAudit" USING btree ("areaId","stationName");--> statement-breakpoint
+CREATE INDEX "FiveSAuditAnswer_auditId_idx" ON "FiveSAuditAnswer" USING btree ("auditId");

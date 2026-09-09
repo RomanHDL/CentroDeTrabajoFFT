@@ -467,6 +467,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
   textos/hints de los 3 idiomas que mencionaban el mínimo anterior.
 
 ### Fixed
+- **Bug real en `drizzle/0000_aberrant_mariko_yashida.sql`**: varios índices
+  tenían operator classes de btree emparejadas con la columna equivocada
+  (ej. `"employeeId" date_ops` cuando `employeeId` es `text`, no `date`) --
+  nunca se había detectado porque esa migración (generada por introspección
+  contra Neon, que ya tenía las tablas) jamás se había ejecutado de verdad.
+  Al correr por primera vez contra una Postgres vacía (corte Neon → Coolify),
+  el `CREATE UNIQUE INDEX "Attendance_employeeId_date_shift_key"` fallaba y,
+  al correr cada migración dentro de una transacción, se revertía el archivo
+  completo -- ni siquiera `User` quedaba creada, y todo login daba 500. Se
+  quitaron las anotaciones de operator class explícitas en los 16 archivos
+  de `drizzle/` (son opcionales; Postgres infiere la correcta por el tipo
+  real de cada columna), eliminando el bug de raíz.
+
 - **Modo oscuro.** `body` nunca definía un `color` base (solo
   `font-family`), así que cualquier texto sin clase de color explícita
   (`text-2xl font-extrabold` sin `text-foreground`, ~40 casos reales

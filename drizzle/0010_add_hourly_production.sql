@@ -59,12 +59,12 @@ ALTER TABLE "HourlyProductionIncident" ADD CONSTRAINT "HourlyProductionIncident_
 ALTER TABLE "HourlyProductionIncident" ADD CONSTRAINT "HourlyProductionIncident_causeId_fkey" FOREIGN KEY ("causeId") REFERENCES "public"."HourlyProductionDowntimeCause"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "HourlyProductionIncident" ADD CONSTRAINT "HourlyProductionIncident_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "HourlyProductionIncident" ADD CONSTRAINT "HourlyProductionIncident_updatedByUserId_fkey" FOREIGN KEY ("updatedByUserId") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-CREATE UNIQUE INDEX "HourlyProductionSession_date_shift_areaId_key" ON "HourlyProductionSession" USING btree ("date" date_ops,"shift" text_ops,"areaId" text_ops);--> statement-breakpoint
-CREATE INDEX "HourlyProductionSession_areaId_date_idx" ON "HourlyProductionSession" USING btree ("areaId" text_ops,"date" date_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "HourlyProductionEntry_sessionId_startTime_key" ON "HourlyProductionEntry" USING btree ("sessionId" text_ops,"startTime" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "HourlyProductionDowntimeCause_code_key" ON "HourlyProductionDowntimeCause" USING btree ("code" text_ops);--> statement-breakpoint
-CREATE INDEX "HourlyProductionIncident_entryId_idx" ON "HourlyProductionIncident" USING btree ("entryId" text_ops);--> statement-breakpoint
-CREATE INDEX "HourlyProductionIncident_causeId_idx" ON "HourlyProductionIncident" USING btree ("causeId" text_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "HourlyProductionSession_date_shift_areaId_key" ON "HourlyProductionSession" USING btree ("date","shift","areaId");--> statement-breakpoint
+CREATE INDEX "HourlyProductionSession_areaId_date_idx" ON "HourlyProductionSession" USING btree ("areaId","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "HourlyProductionEntry_sessionId_startTime_key" ON "HourlyProductionEntry" USING btree ("sessionId","startTime");--> statement-breakpoint
+CREATE UNIQUE INDEX "HourlyProductionDowntimeCause_code_key" ON "HourlyProductionDowntimeCause" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "HourlyProductionIncident_entryId_idx" ON "HourlyProductionIncident" USING btree ("entryId");--> statement-breakpoint
+CREATE INDEX "HourlyProductionIncident_causeId_idx" ON "HourlyProductionIncident" USING btree ("causeId");--> statement-breakpoint
 INSERT INTO "HourlyProductionDowntimeCause" ("id", "name", "code", "sortOrder") VALUES
 ('hphcause00000000000000001', 'Falta de material virgen', 'falta-material-virgen', 10),
 ('hphcause00000000000000002', 'Falta de material de almacén', 'falta-material-almacen', 20),

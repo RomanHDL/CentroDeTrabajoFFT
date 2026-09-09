@@ -37,7 +37,7 @@ CREATE TABLE "EquipmentAuditAnswer" (
 ALTER TABLE "EquipmentItem" ADD CONSTRAINT "EquipmentItem_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "EquipmentAudit" ADD CONSTRAINT "EquipmentAudit_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "EquipmentAuditAnswer" ADD CONSTRAINT "EquipmentAuditAnswer_auditId_fkey" FOREIGN KEY ("auditId") REFERENCES "public"."EquipmentAudit"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "EquipmentItem_areaId_createdAt_idx" ON "EquipmentItem" USING btree ("areaId" text_ops,"createdAt" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "EquipmentItem_typeKey_idx" ON "EquipmentItem" USING btree ("typeKey" text_ops);--> statement-breakpoint
-CREATE INDEX "EquipmentAudit_areaId_auditDate_idx" ON "EquipmentAudit" USING btree ("areaId" text_ops,"auditDate" date_ops);--> statement-breakpoint
-CREATE INDEX "EquipmentAuditAnswer_auditId_idx" ON "EquipmentAuditAnswer" USING btree ("auditId" text_ops);
+CREATE INDEX "EquipmentItem_areaId_createdAt_idx" ON "EquipmentItem" USING btree ("areaId","createdAt");--> statement-breakpoint
+CREATE INDEX "EquipmentItem_typeKey_idx" ON "EquipmentItem" USING btree ("typeKey");--> statement-breakpoint
+CREATE INDEX "EquipmentAudit_areaId_auditDate_idx" ON "EquipmentAudit" USING btree ("areaId","auditDate");--> statement-breakpoint
+CREATE INDEX "EquipmentAuditAnswer_auditId_idx" ON "EquipmentAuditAnswer" USING btree ("auditId");

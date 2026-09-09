@@ -37,5 +37,5 @@ CREATE TABLE "ProcessAuditAnswer" (
 ALTER TABLE "ProcessAudit" ADD CONSTRAINT "ProcessAudit_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "ProcessAudit" ADD CONSTRAINT "ProcessAudit_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "public"."Employee"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "ProcessAuditAnswer" ADD CONSTRAINT "ProcessAuditAnswer_auditId_fkey" FOREIGN KEY ("auditId") REFERENCES "public"."ProcessAudit"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "ProcessAudit_areaId_auditDate_idx" ON "ProcessAudit" USING btree ("areaId" text_ops,"auditDate" date_ops);--> statement-breakpoint
-CREATE INDEX "ProcessAuditAnswer_auditId_idx" ON "ProcessAuditAnswer" USING btree ("auditId" text_ops);
+CREATE INDEX "ProcessAudit_areaId_auditDate_idx" ON "ProcessAudit" USING btree ("areaId","auditDate");--> statement-breakpoint
+CREATE INDEX "ProcessAuditAnswer_auditId_idx" ON "ProcessAuditAnswer" USING btree ("auditId");

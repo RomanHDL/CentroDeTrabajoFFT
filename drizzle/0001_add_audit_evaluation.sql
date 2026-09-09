@@ -17,4 +17,4 @@ CREATE TABLE "AuditEvaluation" (
 --> statement-breakpoint
 ALTER TABLE "AuditEvaluation" ADD CONSTRAINT "AuditEvaluation_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "public"."Employee"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "AuditEvaluation" ADD CONSTRAINT "AuditEvaluation_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "AuditEvaluation_employeeId_auditDate_idx" ON "AuditEvaluation" USING btree ("employeeId" text_ops,"auditDate" date_ops);
+CREATE INDEX "AuditEvaluation_employeeId_auditDate_idx" ON "AuditEvaluation" USING btree ("employeeId","auditDate");

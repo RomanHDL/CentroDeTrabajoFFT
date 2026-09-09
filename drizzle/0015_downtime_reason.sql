@@ -8,4 +8,4 @@ CREATE TABLE "DowntimeReason" (
 	"updatedAt" timestamp (3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "DowntimeReason_code_key" ON "DowntimeReason" USING btree ("code" text_ops);
+CREATE UNIQUE INDEX "DowntimeReason_code_key" ON "DowntimeReason" USING btree ("code");

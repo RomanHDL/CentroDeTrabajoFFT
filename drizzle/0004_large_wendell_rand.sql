@@ -12,6 +12,6 @@ CREATE TABLE "AccessRequest" (
 );
 --> statement-breakpoint
 ALTER TABLE "User" ADD COLUMN "oidcSub" text;--> statement-breakpoint
-CREATE INDEX "AccessRequest_oidcSub_idx" ON "AccessRequest" USING btree ("oidcSub" text_ops);--> statement-breakpoint
-CREATE INDEX "AccessRequest_status_idx" ON "AccessRequest" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_oidcSub_key" ON "User" USING btree ("oidcSub" text_ops);
+CREATE INDEX "AccessRequest_oidcSub_idx" ON "AccessRequest" USING btree ("oidcSub");--> statement-breakpoint
+CREATE INDEX "AccessRequest_status_idx" ON "AccessRequest" USING btree ("status");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_oidcSub_key" ON "User" USING btree ("oidcSub");

@@ -260,35 +260,35 @@ ALTER TABLE "User" ADD CONSTRAINT "User_employeeId_fkey" FOREIGN KEY ("employeeI
 ALTER TABLE "UserModulePermission" ADD CONSTRAINT "UserModulePermission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "Workstation" ADD CONSTRAINT "Workstation_workAreaId_fkey" FOREIGN KEY ("workAreaId") REFERENCES "public"."WorkArea"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "Workstation" ADD CONSTRAINT "Workstation_requiredSkillId_fkey" FOREIGN KEY ("requiredSkillId") REFERENCES "public"."Skill"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "Attendance_date_idx" ON "Attendance" USING btree ("date" date_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Attendance_employeeId_date_shift_key" ON "Attendance" USING btree ("employeeId" date_ops,"date" date_ops,"shift" text_ops);--> statement-breakpoint
-CREATE INDEX "BajaConflict_importBatchId_idx" ON "BajaConflict" USING btree ("importBatchId" text_ops);--> statement-breakpoint
-CREATE INDEX "BajaConflict_status_idx" ON "BajaConflict" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE INDEX "DailyAssignment_employeeId_date_idx" ON "DailyAssignment" USING btree ("employeeId" date_ops,"date" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "DailyAssignment_employeeId_date_key" ON "DailyAssignment" USING btree ("employeeId" date_ops,"date" date_ops) WHERE (status = 'ACTIVE'::"DailyAssignmentStatus");--> statement-breakpoint
-CREATE INDEX "DailyAssignment_workstationId_date_idx" ON "DailyAssignment" USING btree ("workstationId" date_ops,"date" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Employee_employeeNumber_key" ON "Employee" USING btree ("employeeNumber" text_ops);--> statement-breakpoint
-CREATE INDEX "Employee_fullName_idx" ON "Employee" USING btree ("fullName" text_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeImportSource_employeeId_idx" ON "EmployeeImportSource" USING btree ("employeeId" text_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeImportSource_importBatchId_idx" ON "EmployeeImportSource" USING btree ("importBatchId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "EmployeeImportSource_importBatchId_sourceSheet_sourceRowNum_key" ON "EmployeeImportSource" USING btree ("importBatchId" int4_ops,"sourceSheet" text_ops,"sourceRowNumber" text_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeMovement_employeeId_date_idx" ON "EmployeeMovement" USING btree ("employeeId" date_ops,"date" date_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeMovement_toWorkstationId_date_idx" ON "EmployeeMovement" USING btree ("toWorkstationId" text_ops,"date" date_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeReconciliationCandidate_existingEmployeeId_idx" ON "EmployeeReconciliationCandidate" USING btree ("existingEmployeeId" text_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeReconciliationCandidate_importBatchId_idx" ON "EmployeeReconciliationCandidate" USING btree ("importBatchId" text_ops);--> statement-breakpoint
-CREATE INDEX "EmployeeReconciliationCandidate_status_idx" ON "EmployeeReconciliationCandidate" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "EmployeeSkill_employeeId_skillId_key" ON "EmployeeSkill" USING btree ("employeeId" text_ops,"skillId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "ImportBatch_fileHash_key" ON "ImportBatch" USING btree ("fileHash" text_ops);--> statement-breakpoint
-CREATE INDEX "ImportedAttendanceReference_employeeId_idx" ON "ImportedAttendanceReference" USING btree ("employeeId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "ImportedAttendanceReference_employeeImportSourceId_key" ON "ImportedAttendanceReference" USING btree ("employeeImportSourceId" text_ops);--> statement-breakpoint
-CREATE INDEX "PendingMove_employeeId_date_idx" ON "PendingMove" USING btree ("employeeId" date_ops,"date" date_ops);--> statement-breakpoint
-CREATE INDEX "PendingMove_status_date_idx" ON "PendingMove" USING btree ("status" enum_ops,"date" date_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "RoleModulePermission_role_moduleKey_key" ON "RoleModulePermission" USING btree ("role" text_ops,"moduleKey" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Skill_code_key" ON "Skill" USING btree ("code" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_employeeId_key" ON "User" USING btree ("employeeId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_employeeNumber_key" ON "User" USING btree ("employeeNumber" text_ops);--> statement-breakpoint
-CREATE INDEX "User_role_idx" ON "User" USING btree ("role" enum_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_username_key" ON "User" USING btree ("username" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "UserModulePermission_userId_moduleKey_key" ON "UserModulePermission" USING btree ("userId" text_ops,"moduleKey" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "WorkArea_code_key" ON "WorkArea" USING btree ("code" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Workstation_workAreaId_name_key" ON "Workstation" USING btree ("workAreaId" text_ops,"name" text_ops);
+CREATE INDEX "Attendance_date_idx" ON "Attendance" USING btree ("date");--> statement-breakpoint
+CREATE UNIQUE INDEX "Attendance_employeeId_date_shift_key" ON "Attendance" USING btree ("employeeId","date","shift");--> statement-breakpoint
+CREATE INDEX "BajaConflict_importBatchId_idx" ON "BajaConflict" USING btree ("importBatchId");--> statement-breakpoint
+CREATE INDEX "BajaConflict_status_idx" ON "BajaConflict" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "DailyAssignment_employeeId_date_idx" ON "DailyAssignment" USING btree ("employeeId","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "DailyAssignment_employeeId_date_key" ON "DailyAssignment" USING btree ("employeeId","date") WHERE (status = 'ACTIVE'::"DailyAssignmentStatus");--> statement-breakpoint
+CREATE INDEX "DailyAssignment_workstationId_date_idx" ON "DailyAssignment" USING btree ("workstationId","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "Employee_employeeNumber_key" ON "Employee" USING btree ("employeeNumber");--> statement-breakpoint
+CREATE INDEX "Employee_fullName_idx" ON "Employee" USING btree ("fullName");--> statement-breakpoint
+CREATE INDEX "EmployeeImportSource_employeeId_idx" ON "EmployeeImportSource" USING btree ("employeeId");--> statement-breakpoint
+CREATE INDEX "EmployeeImportSource_importBatchId_idx" ON "EmployeeImportSource" USING btree ("importBatchId");--> statement-breakpoint
+CREATE UNIQUE INDEX "EmployeeImportSource_importBatchId_sourceSheet_sourceRowNum_key" ON "EmployeeImportSource" USING btree ("importBatchId","sourceSheet","sourceRowNumber");--> statement-breakpoint
+CREATE INDEX "EmployeeMovement_employeeId_date_idx" ON "EmployeeMovement" USING btree ("employeeId","date");--> statement-breakpoint
+CREATE INDEX "EmployeeMovement_toWorkstationId_date_idx" ON "EmployeeMovement" USING btree ("toWorkstationId","date");--> statement-breakpoint
+CREATE INDEX "EmployeeReconciliationCandidate_existingEmployeeId_idx" ON "EmployeeReconciliationCandidate" USING btree ("existingEmployeeId");--> statement-breakpoint
+CREATE INDEX "EmployeeReconciliationCandidate_importBatchId_idx" ON "EmployeeReconciliationCandidate" USING btree ("importBatchId");--> statement-breakpoint
+CREATE INDEX "EmployeeReconciliationCandidate_status_idx" ON "EmployeeReconciliationCandidate" USING btree ("status");--> statement-breakpoint
+CREATE UNIQUE INDEX "EmployeeSkill_employeeId_skillId_key" ON "EmployeeSkill" USING btree ("employeeId","skillId");--> statement-breakpoint
+CREATE UNIQUE INDEX "ImportBatch_fileHash_key" ON "ImportBatch" USING btree ("fileHash");--> statement-breakpoint
+CREATE INDEX "ImportedAttendanceReference_employeeId_idx" ON "ImportedAttendanceReference" USING btree ("employeeId");--> statement-breakpoint
+CREATE UNIQUE INDEX "ImportedAttendanceReference_employeeImportSourceId_key" ON "ImportedAttendanceReference" USING btree ("employeeImportSourceId");--> statement-breakpoint
+CREATE INDEX "PendingMove_employeeId_date_idx" ON "PendingMove" USING btree ("employeeId","date");--> statement-breakpoint
+CREATE INDEX "PendingMove_status_date_idx" ON "PendingMove" USING btree ("status","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "RoleModulePermission_role_moduleKey_key" ON "RoleModulePermission" USING btree ("role","moduleKey");--> statement-breakpoint
+CREATE UNIQUE INDEX "Skill_code_key" ON "Skill" USING btree ("code");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_employeeId_key" ON "User" USING btree ("employeeId");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_employeeNumber_key" ON "User" USING btree ("employeeNumber");--> statement-breakpoint
+CREATE INDEX "User_role_idx" ON "User" USING btree ("role");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_username_key" ON "User" USING btree ("username");--> statement-breakpoint
+CREATE UNIQUE INDEX "UserModulePermission_userId_moduleKey_key" ON "UserModulePermission" USING btree ("userId","moduleKey");--> statement-breakpoint
+CREATE UNIQUE INDEX "WorkArea_code_key" ON "WorkArea" USING btree ("code");--> statement-breakpoint
+CREATE UNIQUE INDEX "Workstation_workAreaId_name_key" ON "Workstation" USING btree ("workAreaId","name");

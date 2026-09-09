@@ -101,6 +101,7 @@ export const RELEASES = [
           'fixedAreaGroupFollowup2',
           'fixedAreaGroupFollowup3',
           'fixedAreaGroupFollowup4',
+          'fixedMigrationIndexOpclass',
         ],
       },
       {

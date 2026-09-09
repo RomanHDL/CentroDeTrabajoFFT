@@ -41,13 +41,13 @@ CREATE TABLE "HourlyProductionIncident" (
 	"updatedAt" timestamp (3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "HourlyProductionDowntimeCause_areaGroupKey_code_key" ON "HourlyProductionDowntimeCause" USING btree ("areaGroupKey" text_ops,"code" text_ops);
+CREATE UNIQUE INDEX "HourlyProductionDowntimeCause_areaGroupKey_code_key" ON "HourlyProductionDowntimeCause" USING btree ("areaGroupKey","code");
 --> statement-breakpoint
-CREATE INDEX "HourlyProductionDowntimeCause_areaGroupKey_idx" ON "HourlyProductionDowntimeCause" USING btree ("areaGroupKey" text_ops);
+CREATE INDEX "HourlyProductionDowntimeCause_areaGroupKey_idx" ON "HourlyProductionDowntimeCause" USING btree ("areaGroupKey");
 --> statement-breakpoint
-CREATE UNIQUE INDEX "HourlyProductionIncident_entryId_causeId_key" ON "HourlyProductionIncident" USING btree ("entryId" text_ops,"causeId" text_ops);
+CREATE UNIQUE INDEX "HourlyProductionIncident_entryId_causeId_key" ON "HourlyProductionIncident" USING btree ("entryId","causeId");
 --> statement-breakpoint
-CREATE INDEX "HourlyProductionIncident_causeId_idx" ON "HourlyProductionIncident" USING btree ("causeId" text_ops);
+CREATE INDEX "HourlyProductionIncident_causeId_idx" ON "HourlyProductionIncident" USING btree ("causeId");
 --> statement-breakpoint
 ALTER TABLE "HourlyProductionIncident" ADD CONSTRAINT "HourlyProductionIncident_entryId_fkey" FOREIGN KEY ("entryId") REFERENCES "public"."HourlyProductionEntry"("id") ON DELETE cascade ON UPDATE cascade;
 --> statement-breakpoint
