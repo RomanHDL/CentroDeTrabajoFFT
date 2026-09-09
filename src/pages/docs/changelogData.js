@@ -48,6 +48,7 @@ export const RELEASES = [
           'addedAreaGroupToggle',
           'addedDemorasLineMemory',
           'addedDbAutoMigrate',
+          'addedBootstrapAdmin',
         ],
       },
       {

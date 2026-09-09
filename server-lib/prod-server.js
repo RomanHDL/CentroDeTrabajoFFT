@@ -17,6 +17,7 @@ import express from 'express'
 import { mountApiRoutes } from './api-routes.js'
 import { runPersonnelSync } from './personnel-sync.js'
 import { runMigrations } from './db/runMigrations.js'
+import { runBootstrapAdmin } from './db/bootstrapAdmin.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -26,6 +27,7 @@ const distDir = path.join(__dirname, '..', 'dist')
 // (nunca desde fuera), asi que llega a la Postgres interna sin depender del
 // puerto externo/firewall.
 await runMigrations()
+await runBootstrapAdmin()
 
 const app = express()
 app.use(express.json())

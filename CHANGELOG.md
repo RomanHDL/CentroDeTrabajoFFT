@@ -287,6 +287,12 @@ para poder desplegar en el servidor privado (Coolify). Ver
   abierto. Habilitó el corte de Neon a la Postgres provisionada por Coolify
   sin necesitar `drizzle-kit push` manual ni acceso de red externo al
   servidor.
+- **Bootstrap del primer administrador via env vars** (`server-lib/db/
+  bootstrapAdmin.js`, mismo patrón `BOOTSTRAP_ADMIN_*` que ya usa cubicaje).
+  Corre después de `runMigrations()`, dentro del contenedor -- crea un
+  `User` con rol `ADMINISTRADOR` si `BOOTSTRAP_ADMIN_USERNAME` +
+  `BOOTSTRAP_ADMIN_PASSWORD` están seteadas y ese username no existe
+  todavía. Idempotente (no-op si ya existe o si las env vars faltan).
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
