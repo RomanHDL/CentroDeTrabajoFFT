@@ -33,7 +33,9 @@ await runMigrations()
 // ADMINISTRADOR, empleado 3647, ya existe) -- no hace falta que siga corriendo.
 
 const app = express()
-app.use(express.json())
+// Limite subido de 100kb (default de Express) a 8mb -- ver misma nota en dev-server.js (subir
+// foto del organigrama manda el recorte como base64 en el body JSON antes de optimizarlo).
+app.use(express.json({ limit: '8mb' }))
 
 mountApiRoutes(app)
 

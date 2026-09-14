@@ -54,6 +54,7 @@ export const RELEASES = [
           'addedDemorasExcelExport',
           'addedFftIndicatorsConnected',
           'addedDemorasSorting',
+          'addedOrganigramaPhotoUpload',
         ],
       },
       {

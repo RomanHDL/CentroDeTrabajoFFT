@@ -1582,3 +1582,41 @@ export const sortingEntry = pgTable(
       .onDelete('set null'),
   ],
 )
+
+// Foto real de una persona del Organigrama (2026-09-14, a peticion explicita del usuario --
+// "cambiar fotografia desde el propio organigrama", "guardado real y persistente"). El
+// organigrama en si SIGUE siendo datos estaticos (src/pages/organigrama/orgChartData.js) --
+// esta tabla es lo UNICO dinamico: una fila por persona que ya tenga una foto subida de verdad,
+// indexada por el mismo `id` string que ya usa orgChartData.js (ej. 'juan-sillas') -- nunca una
+// FK real a una tabla "OrgChartPerson" porque esa tabla no existe (esas personas no son filas de
+// Employee). `data` guarda la imagen YA optimizada (512x512 WebP) en base64 -- no hay Vercel
+// Blob/S3 configurado en el proyecto (confirmado antes de este cambio) y Coolify no persiste
+// escrituras a /public entre deploys, asi que el fallback correcto con la arquitectura actual
+// (Postgres via Drizzle) es guardarla aqui y servirla via /api/organigrama/:id/photo.
+export const orgChartPhoto = pgTable(
+  'OrgChartPhoto',
+  {
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => cuid()),
+    personId: text().notNull(),
+    mimeType: text().notNull(),
+    data: text().notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedByUserId: text().notNull(),
+  },
+  (table) => [
+    uniqueIndex('OrgChartPhoto_personId_key').using(
+      'btree',
+      table.personId.asc().nullsLast().op('text_ops'),
+    ),
+    foreignKey({
+      columns: [table.updatedByUserId],
+      foreignColumns: [user.id],
+      name: 'OrgChartPhoto_updatedByUserId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ],
+)

@@ -150,3 +150,53 @@ export const ORG_CHART = {
     },
   ],
 }
+
+/* Indices derivados de la jerarquia REAL del arbol (2026-09-14, a peticion explicita del
+   usuario -- "para localizar al jefe NO dependas unicamente de comparar nombres... utiliza
+   managerId o el identificador real"): se calculan UNA sola vez, caminando ORG_CHART, en vez de
+   mantener a mano una segunda copia de las relaciones (que se podria desincronizar). El campo
+   `manager` (texto, ej. "Oscar Enrique Pizano Guzman") sigue existiendo tal cual para mostrarlo
+   en pantalla -- estos indices son solo para NAVEGAR de forma robusta, nunca comparando ese
+   texto contra un nombre.
+
+   - ORG_CHART_BY_ID: id -> nodo completo (para resolver "el jefe de X" en O(1)).
+   - ORG_CHART_MANAGER_ID: id -> id del jefe directo (null si es la raiz, ej. Oscar).
+   - ORG_CHART_PERSON_IDS: Set con todos los ids reales -- lo usa tambien el backend
+     (api/organigrama/[id]/photo.js) para validar que un personId de una foto subida sea
+     realmente alguien del organigrama, sin duplicar esta lista a mano en 2 lugares. */
+function buildOrgChartIndexes(root) {
+  const byId = new Map()
+  const managerId = new Map()
+  const walk = (node, parentId) => {
+    byId.set(node.id, node)
+    managerId.set(node.id, parentId)
+    for (const child of node.children || []) walk(child, node.id)
+    for (const child of node.secondGroupChildren || []) walk(child, node.id)
+  }
+  walk(root, null)
+  return { byId, managerId }
+}
+
+const { byId: ORG_CHART_BY_ID, managerId: ORG_CHART_MANAGER_ID } = buildOrgChartIndexes(ORG_CHART)
+export const ORG_CHART_PERSON_IDS = new Set(ORG_CHART_BY_ID.keys())
+
+export function getOrgChartPersonById(id) {
+  return ORG_CHART_BY_ID.get(id) || null
+}
+
+export function getOrgChartManagerId(id) {
+  return ORG_CHART_MANAGER_ID.get(id) || null
+}
+
+/* Camino completo desde la raiz hasta `id` (incluido), para el breadcrumb "Ubicacion en el
+   organigrama" -- construido subiendo por ORG_CHART_MANAGER_ID, nunca inventando niveles. */
+export function getOrgChartPath(id) {
+  const path = []
+  let current = ORG_CHART_BY_ID.get(id)
+  while (current) {
+    path.unshift(current)
+    const parentId = ORG_CHART_MANAGER_ID.get(current.id)
+    current = parentId ? ORG_CHART_BY_ID.get(parentId) : null
+  }
+  return path
+}

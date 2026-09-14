@@ -318,6 +318,20 @@ para poder desplegar en el servidor privado (Coolify). Ver
   refrescar la página. Las causas dinámicas que un ADMINISTRADOR agregue después ("Configurar
   causas") también quedan fijas a un área (`DowntimeReason.areaGroup`, migración 0016) -- antes
   ese catálogo era global y una causa nueva se habría visto en las 2 áreas por error.
+- **Fotografía real y editable en el Organigrama**, a petición explícita del usuario ("cambiar
+  fotografía desde el propio organigrama... guardado real y persistente"). Las tarjetas del
+  árbol ahora muestran fotos más grandes y responsivas; al abrir el perfil de alguien con permiso
+  de edición (SUPERVISOR/ADMINISTRADOR, mismo esquema de roles del resto de la app -- el servidor
+  lo exige de forma independiente, nunca solo la UI) aparece un selector de archivo con recorte
+  cuadrado 1:1 (`react-easy-crop`), zoom y confirmación. La foto se optimiza en servidor con
+  `sharp` (512×512 WebP, validación real del archivo -- nunca confía en el `mimeType`/extensión
+  del cliente) y se guarda en una tabla nueva (`OrgChartPhoto`, migración `0017`) porque Coolify
+  no persiste escrituras a disco entre despliegues; se sirve dinámicamente vía
+  `GET /api/organigrama/:id/photo` con ETag/caché. El modal de perfil también se rediseñó (foto
+  grande, "Cambiar foto"/"Eliminar foto", y un renglón de "Jefe directo" ahora clickeable que
+  cierra el modal, hace scroll y centra la tarjeta del jefe real -- usando el id real de la
+  jerarquía, nunca comparando nombres -- con un resaltado temporal) más una nueva sección
+  "Ubicación en el organigrama" con el camino completo desde la raíz.
 
 ### Changed
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.

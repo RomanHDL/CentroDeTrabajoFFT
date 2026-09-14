@@ -12,7 +12,12 @@ import express from 'express'
 import { mountApiRoutes } from './api-routes.js'
 
 const app = express()
-app.use(express.json())
+// Limite subido de 100kb (default de Express) a 8mb (2026-09-14, a peticion explicita del
+// usuario -- subir/recortar foto del organigrama): el recorte final se manda como base64 en el
+// body JSON antes de que el servidor lo optimice con sharp -- 100kb se quedaba corto incluso
+// para una imagen chica ya recortada. 8mb cubre el limite real de archivo (5MB) mas el overhead
+// de base64 (~33%) con margen, sin abrir la puerta a bodies arbitrariamente grandes.
+app.use(express.json({ limit: '8mb' }))
 
 mountApiRoutes(app)
 

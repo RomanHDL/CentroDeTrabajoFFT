@@ -1,10 +1,13 @@
 import { Users } from 'lucide-react'
-import { Children, useState } from 'react'
+import { Children, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cardClass, pageClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
+import { useAuth } from '../../state/auth'
+import EmployeeProfileModal from './EmployeeProfileModal'
+import OrgChartAvatar from './OrgChartAvatar'
 import { ORG_CHART } from './orgChartData'
+import { fetchOrgChartPhotoManifest, getEffectivePhotoSrc } from './orgChartPhotos'
 
 // Modulo Organigrama (2026-09-11, reconstruccion completa a peticion explicita del usuario):
 // reemplaza la imagen plana estructura-organizacional.png (2026-09-09) por un arbol
@@ -41,7 +44,19 @@ import { ORG_CHART } from './orgChartData'
 // 3) Espaciado general reducido ~15-20% (stems mas cortos, un solo stem cuando no hay pill de
 //    grupo en vez de dos, padding del contenedor mas ajustado) -- misma jerarquia, mismos datos,
 //    solo mas compacto.
-const FALLBACK = '—'
+//
+// SEPTIMA PASADA (2026-09-14, foto real subible/editable + modal de perfil enriquecido, a
+// peticion explicita del usuario): las fotos ya no son SOLO las estaticas de orgChartData.js --
+// `photoVersions` (manifiesto de OrgChartPhoto, ver orgChartPhotos.js) se consulta una vez al
+// montar y decide, por persona, si mostrar la foto subida (con cache-busting) o la estatica.
+// Cada tarjeta registra su nodo DOM real (`nodeRefs`) para que "Jefe directo" (dentro de
+// EmployeeProfileModal, usando el id REAL del jefe via getOrgChartManagerId -- nunca comparando
+// nombres) pueda cerrar el modal, hacer scroll+centrar sobre la tarjeta correcta y resaltarla
+// brevemente (`highlightedId`), de forma generica para cualquier par jefe/subordinado. La edicion
+// de fotos (subir/eliminar) solo se ofrece si el rol del usuario ya tiene permiso de
+// escritura sobre el modulo (mismo esquema de roles que el resto de la app) -- el servidor
+// (api/organigrama/[id]/photo.js) igual lo exige de forma independiente, la UI nunca es la unica
+// barrera.
 const CARD_WIDTH = 208
 const ROW_GAP = 16
 
@@ -49,50 +64,31 @@ function rowWidth(count) {
   return count * CARD_WIDTH + (count - 1) * ROW_GAP
 }
 
-function initialsOf(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('')
-}
-
-function PersonAvatar({ person, size = 48 }) {
-  const style = { width: size, height: size, minWidth: size }
-  if (person.photo) {
-    return (
-      <img
-        src={person.photo}
-        alt={person.name}
-        style={style}
-        className="rounded-full border-2 border-blue-500 object-cover"
-      />
-    )
-  }
-  return (
-    <div
-      style={style}
-      className="flex items-center justify-center rounded-full border-2 border-blue-500 bg-blue-500/10 font-bold text-blue-600 dark:bg-blue-500/15 dark:text-blue-400"
-    >
-      {initialsOf(person.name)}
-    </div>
-  )
-}
-
 // Tarjeta horizontal -- ancho fijo (CARD_WIDTH, salvo cardWidth propio como el de Oscar) y
 // min-h fijo para que TODAS las tarjetas de una misma fila midan exactamente lo mismo sin
 // importar si el puesto es corto o largo. Ni el nombre ni el puesto usan `truncate`/ellipsis (a
-// peticion explicita del usuario, sexta pasada) -- ambos usan line-clamp-2 como tope real.
-function PersonNode({ person, onSelect }) {
+// peticion explicita del usuario, sexta pasada) -- ambos usan line-clamp-2 como tope real. Foto
+// mas grande y responsiva (septima pasada, pedido explicito: 56-64px movil / 64-72px tablet /
+// 72-84px escritorio) -- registra su propio nodo DOM (`registerRef`) para la navegacion por
+// "jefe directo", y se resalta temporalmente (`isHighlighted`) cuando se llega a ella por esa vía.
+function PersonNode({ person, onSelect, photoVersions, registerRef, isHighlighted }) {
+  const photoSrc = getEffectivePhotoSrc(person.id, person.photo, photoVersions)
   return (
     <button
+      ref={(el) => registerRef(person.id, el)}
       type="button"
-      onClick={() => onSelect(person)}
+      onClick={() => onSelect(person.id)}
       style={{ width: person.cardWidth || CARD_WIDTH }}
-      className="flex min-h-[80px] items-center gap-2.5 rounded-2xl border border-border bg-card p-2.5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md dark:bg-card/80"
+      className={cn(
+        'flex min-h-[92px] items-center gap-2.5 rounded-2xl border border-border bg-card p-2.5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md sm:min-h-[105px] dark:bg-card/80',
+        isHighlighted && 'ring-4 ring-blue-400/70 ring-offset-2 ring-offset-background',
+      )}
     >
-      <PersonAvatar person={person} />
+      <OrgChartAvatar
+        person={person}
+        photoSrc={photoSrc}
+        className="h-14 w-14 shrink-0 sm:h-16 sm:w-16 md:h-[76px] md:w-[76px]"
+      />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[13px] font-bold leading-tight">{person.name}</p>
         {person.title && (
@@ -177,19 +173,12 @@ function ConnectorRow({ label, children }) {
 // Funcion simple (NO componente) a proposito: debe devolver el arreglo de <TreeNode> como hijos
 // DIRECTOS de <ConnectorRow>, para que Children.toArray() ahi adentro vea cada hermano por
 // separado -- si fuera un componente, ConnectorRow solo veria UN hijo, no los N hermanos reales.
-function renderSiblingRow(people, onSelect) {
+function renderSiblingRow(people, ctx) {
   const rowW = rowWidth(people.length)
   return people.map((person, index) => {
     const positionInRow = index * (CARD_WIDTH + ROW_GAP) + CARD_WIDTH / 2
     const descendantShift = positionInRow - rowW / 2
-    return (
-      <TreeNode
-        key={person.id}
-        person={person}
-        onSelect={onSelect}
-        descendantShift={descendantShift}
-      />
-    )
+    return <TreeNode key={person.id} person={person} ctx={ctx} descendantShift={descendantShift} />
   })
 }
 
@@ -201,25 +190,31 @@ function renderSiblingRow(people, onSelect) {
 // (ver renderSiblingRow) para quedar centrados bajo SU tarjeta, no bajo el centro de la fila
 // Cain/Felipe. Solo desde `sm:` (via variable CSS) -- en mobile todo se apila en columna, sin
 // desplazamiento horizontal.
-function TreeNode({ person, onSelect, descendantShift = 0 }) {
+function TreeNode({ person, ctx, descendantShift = 0 }) {
   const hasChildren = person.children?.length > 0
   const hasSecondGroup = person.secondGroupChildren?.length > 0
   const shiftStyle = descendantShift ? { '--descendant-shift': `${descendantShift}px` } : undefined
   const shiftClass = descendantShift ? 'sm:ml-[var(--descendant-shift)]' : undefined
   return (
     <div className="flex flex-col items-center">
-      <PersonNode person={person} onSelect={onSelect} />
+      <PersonNode
+        person={person}
+        onSelect={ctx.onSelect}
+        photoVersions={ctx.photoVersions}
+        registerRef={ctx.registerRef}
+        isHighlighted={ctx.highlightedId === person.id}
+      />
       {hasChildren && (
         <div style={shiftStyle} className={shiftClass}>
           <ConnectorRow label={person.groupLabel}>
-            {renderSiblingRow(person.children, onSelect)}
+            {renderSiblingRow(person.children, ctx)}
           </ConnectorRow>
         </div>
       )}
       {hasSecondGroup && (
         <div style={shiftStyle} className={shiftClass}>
           <ConnectorRow label={person.secondGroupLabel}>
-            {renderSiblingRow(person.secondGroupChildren, onSelect)}
+            {renderSiblingRow(person.secondGroupChildren, ctx)}
           </ConnectorRow>
         </div>
       )}
@@ -227,18 +222,59 @@ function TreeNode({ person, onSelect, descendantShift = 0 }) {
   )
 }
 
-function InfoRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-border/60 py-2 text-sm last:border-b-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-semibold">{value || FALLBACK}</span>
-    </div>
-  )
-}
+const EDITOR_ROLES = ['ADMINISTRADOR', 'SUPERVISOR']
+const HIGHLIGHT_DURATION_MS = 1800
 
 export default function OrganigramaPage() {
   const { t } = useTranslation('organigrama')
-  const [selected, setSelected] = useState(null)
+  const { user } = useAuth()
+  const [selectedId, setSelectedId] = useState(null)
+  const [photoVersions, setPhotoVersions] = useState({})
+  const [highlightedId, setHighlightedId] = useState(null)
+  const nodeRefs = useRef(new Map())
+  const highlightTimerRef = useRef(null)
+
+  const canEdit = Boolean(user?.role && EDITOR_ROLES.includes(user.role))
+
+  useEffect(() => {
+    let cancelled = false
+    fetchOrgChartPhotoManifest()
+      .then((photos) => {
+        if (!cancelled) setPhotoVersions(photos)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => () => clearTimeout(highlightTimerRef.current), [])
+
+  const registerRef = useCallback((id, el) => {
+    if (el) nodeRefs.current.set(id, el)
+    else nodeRefs.current.delete(id)
+  }, [])
+
+  const navigateToPerson = useCallback((id) => {
+    setSelectedId(null)
+    clearTimeout(highlightTimerRef.current)
+    setTimeout(() => {
+      const el = nodeRefs.current.get(id)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
+      setHighlightedId(id)
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlightedId((current) => (current === id ? null : current))
+      }, HIGHLIGHT_DURATION_MS)
+    }, 50)
+  }, [])
+
+  const treeCtx = {
+    onSelect: setSelectedId,
+    photoVersions,
+    registerRef,
+    highlightedId,
+  }
 
   return (
     <div className={pageClass}>
@@ -262,33 +298,27 @@ export default function OrganigramaPage() {
 
       <div className={cn(cardClass, 'overflow-x-auto p-5 sm:p-6')}>
         <div className="flex min-w-fit flex-col items-center">
-          <TreeNode person={ORG_CHART} onSelect={setSelected} />
+          <TreeNode person={ORG_CHART} ctx={treeCtx} />
         </div>
       </div>
 
-      <Dialog open={Boolean(selected)} onOpenChange={(next) => !next && setSelected(null)}>
-        <DialogContent className="max-w-[420px]">
-          {selected && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selected.name}</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center gap-3 px-6 pb-2">
-                <PersonAvatar person={selected} size={112} />
-              </div>
-              <div className="px-6 pb-6">
-                <InfoRow label={t('infoPosition')} value={selected.title} />
-                <InfoRow label={t('infoArea')} value={selected.area} />
-                <InfoRow label={t('infoDepartment')} value={selected.department} />
-                <InfoRow label={t('infoManager')} value={selected.manager} />
-                <InfoRow label={t('infoHireDate')} value={selected.hireDate} />
-                <InfoRow label={t('infoPhone')} value={selected.phone} />
-                <InfoRow label={t('infoEmail')} value={selected.email} />
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <EmployeeProfileModal
+        personId={selectedId}
+        photoVersions={photoVersions}
+        canEdit={canEdit}
+        onClose={() => setSelectedId(null)}
+        onNavigate={navigateToPerson}
+        onPhotoChanged={(id, updatedAt) =>
+          setPhotoVersions((prev) => ({ ...prev, [id]: updatedAt }))
+        }
+        onPhotoRemoved={(id) =>
+          setPhotoVersions((prev) => {
+            const next = { ...prev }
+            delete next[id]
+            return next
+          })
+        }
+      />
     </div>
   )
 }

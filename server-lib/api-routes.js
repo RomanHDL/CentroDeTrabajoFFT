@@ -34,6 +34,8 @@ import horaPorHoraSessionByIdHandler from '../api/hora-por-hora/sessions/[id].js
 import horaPorHoraSessionsHistoryHandler from '../api/hora-por-hora/sessions/history.js'
 import horaPorHoraSessionsIndexHandler from '../api/hora-por-hora/sessions/index.js'
 import modulesIndexHandler from '../api/modules/index.js'
+import orgChartPersonPhotoHandler from '../api/organigrama/[id]/photo.js'
+import orgChartPhotosHandler from '../api/organigrama/photos.js'
 import moduleEffectiveUsersHandler from '../api/permissions/modules/[moduleKey]/users.js'
 import personnelApproveMoveHandler from '../api/personnel/approve-move.js'
 import personnelAreaHistoryHandler from '../api/personnel/area-history.js'
@@ -129,6 +131,11 @@ export function mountApiRoutes(app) {
     '/api/permissions/modules/:moduleKey/users',
     withDynamicParams(moduleEffectiveUsersHandler),
   )
+
+  app.get('/api/organigrama/photos', wrapAsync(orgChartPhotosHandler))
+  app.get('/api/organigrama/:id/photo', withDynamicParams(orgChartPersonPhotoHandler))
+  app.post('/api/organigrama/:id/photo', withDynamicParams(orgChartPersonPhotoHandler))
+  app.delete('/api/organigrama/:id/photo', withDynamicParams(orgChartPersonPhotoHandler))
 
   app.get('/api/personnel/employees', wrapAsync(personnelEmployeesHandler))
   app.get('/api/personnel/roster', wrapAsync(personnelRosterHandler))
