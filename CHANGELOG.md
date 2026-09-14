@@ -812,6 +812,20 @@ para poder desplegar en el servidor privado (Coolify). Ver
   se tocó.
 
 ### Fixed
+- **Check-ins que se perdían sin aviso** -- bug real reportado el primer día real de uso de
+  Asistencia ("Diego Marin registró gente hoy pero no se ven varios en mi layout"): investigado
+  contra la base real, de varias personas registradas en un dispositivo solo unas pocas llegaban
+  al servidor. `syncCheckIn` (`src/data/personnel/apiSync.js`) mandaba la confirmación al
+  servidor una sola vez, sin reintento, sin ningún aviso visible si fallaba (un hipo de red en
+  una tablet/escáner de piso bastaba para perder el registro por completo, aunque la pantalla de
+  quien lo hizo siguiera mostrando "registrado con éxito"). Ahora reintenta 2 veces (1.5s, 4s)
+  ante una falla de red o error 5xx real, distingue un 409 "ya se guardó" (la confirmación se
+  perdió, pero el registro sí llegó -- nunca se reintenta esto, evita duplicados) de un rechazo
+  real del servidor (estación llena, empleado de baja -- tampoco se reintenta, se muestra el
+  mensaje real de inmediato), y si aun así sigue fallando, muestra un toast real y visible
+  en el dispositivo donde se intentó, para que la persona sepa que debe repetirlo. Cambio
+  quirúrgico: `checkInEmployee` sigue siendo la misma función síncrona de siempre, cero cambios
+  en sus 8 puntos de uso reales.
 - **El store local (localStorage) nunca "se enteraba" cuando un `Employee` se borraba/desactivaba
   en el servidor** -- bug real encontrado en vivo esta sesión (borrar a alguien de la DB, o
   incluso borrarlo y que el sync de SmartControl lo recreara y se volviera a borrar, no cambiaba

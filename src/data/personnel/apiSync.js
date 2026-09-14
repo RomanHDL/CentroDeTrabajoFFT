@@ -61,7 +61,16 @@ async function apiFetch(path, options = {}) {
     ...options,
   })
   const data = await res.json().catch(() => null)
-  if (!res.ok) throw new Error((data && data.error) || `${path} -> ${res.status}`)
+  if (!res.ok) {
+    // `status`/`data` (2026-09-14, ver postCheckInWithRetry mas abajo): aditivo, ningun caller
+    // existente de apiFetch los leia antes (solo hacian console.error(e)/e.message) -- no cambia
+    // nada para ellos, solo agrega informacion que ahora SI necesita distinguir "fallo de red,
+    // vale la pena reintentar" de "el servidor rechazo esto de verdad, reintentar no ayuda".
+    const error = new Error(data?.error || `${path} -> ${res.status}`)
+    error.status = res.status
+    error.data = data
+    throw error
+  }
   return data
 }
 
@@ -108,6 +117,55 @@ function isPlaceholderNumber(number) {
    Si falla, solo se registra en consola: el siguiente poll reconcilia
    el estado real (ver pollOnce). ── */
 
+/* Reintentos para el checkin (2026-09-14, bug real reportado el primer dia real de uso de
+   Asistencia: "Diego Marin registro gente hoy pero no se ven varios en mi layout"). Investigado
+   contra la base real: de varias personas que un lider registro en su dispositivo, solo unas
+   pocas llegaron al servidor -- checkInEmployee siempre escribio local primero y este POST se
+   mandaba una sola vez, sin reintento, sin ningun aviso visible si fallaba (a diferencia de
+   syncMove/syncSetUnassignedReason, que desde antes son async/esperados y SI propagan el error
+   real -- ver sus propios comentarios). Un hipo de red en una tablet/escaner de piso (el caso
+   mas probable, nunca confirmable a posteriori porque no hay ningun log de ese intento fallido)
+   bastaba para perder el registro por completo, sin que quien lo hizo se enterara.
+
+   Arreglo MINIMO y de bajo riesgo para no tocar checkInEmployee (funcion SINCRONA, con 8
+   consumidores reales en 7 archivos distintos -- convertirla a async un dia de uso real en vivo
+   arriesgaria mucho mas de lo que arregla): syncCheckIn sigue siendo fire-and-forget desde la
+   perspectiva de quien la llama (mismo contrato, cero cambios en ningun caller), pero ahora
+   reintenta 2 veces (1.5s, luego 4s) antes de darse por vencido, y si aun asi falla, muestra un
+   toast real y visible en el dispositivo donde se hizo el registro -- para que quien lo intento
+   sepa AHI MISMO que debe repetirlo, en vez de creer que ya quedo guardado. */
+const CHECKIN_RETRY_DELAYS_MS = [1500, 4000]
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function postCheckInWithRetry(body, attempt = 0) {
+  try {
+    return await apiFetch('/api/personnel/checkin', { method: 'POST', body: JSON.stringify(body) })
+  } catch (e) {
+    // 409 CONFLICT con `assignment` real (checkin.js) = el intento anterior SI se guardo en el
+    // servidor -- solo se perdio la respuesta en el camino (timeout/red inestable), nunca el
+    // registro en si. Se trata como exito (nunca como error, nunca se reintenta -- reintentar
+    // aqui solo repetiria el mismo 409 para siempre): devuelve la asignacion real tal cual la
+    // trae el propio conflicto, para que linkServerId de todas formas conecte el id local con
+    // el real.
+    if (e.status === 409 && e.data?.assignment) {
+      return { employee: e.data.employee || null, assignment: e.data.assignment }
+    }
+    // Solo vale la pena reintentar una falla de RED real (fetch nunca llego a tener respuesta,
+    // e.status queda undefined) o un error 5xx del servidor (posible falla transitoria). Un 4xx
+    // real (estacion llena, empleado de baja, datos invalidos) es un rechazo autentico del
+    // servidor -- reintentarlo no cambia nada, solo retrasa mostrar el error real hasta 5.5s.
+    const isTransient = e.status == null || e.status >= 500
+    if (isTransient && attempt < CHECKIN_RETRY_DELAYS_MS.length) {
+      await wait(CHECKIN_RETRY_DELAYS_MS[attempt])
+      return postCheckInWithRetry(body, attempt + 1)
+    }
+    throw e
+  }
+}
+
 /* isNewEmployee (2026-08-27, corrige bug real de duplicados): SOLO checkInEmployee lo manda en
    true, y solo cuando la persona se acaba de crear AHI MISMO (createEmployee recien llamado) --
    es el UNICO caso legitimo donde no hay serverId todavia porque el empleado en verdad no existe
@@ -139,21 +197,29 @@ export function syncCheckIn({
     return
   }
   const placeholder = isPlaceholderNumber(employeeNumber)
-  apiFetch('/api/personnel/checkin', {
-    method: 'POST',
-    body: JSON.stringify({
-      employeeId: serverId || undefined,
-      employeeNumber: serverId || placeholder ? undefined : employeeNumber,
-      name: serverId ? undefined : name,
-      workAreaId: areaId,
-      stationName: stationId,
-      shift,
-    }),
+  postCheckInWithRetry({
+    employeeId: serverId || undefined,
+    employeeNumber: serverId || placeholder ? undefined : employeeNumber,
+    name: serverId ? undefined : name,
+    workAreaId: areaId,
+    stationName: stationId,
+    shift,
   })
     .then((data) => {
       if (data?.employee?.id) linkServerId(employeeId, data.employee.id)
     })
-    .catch((e) => console.error('[personnel-sync] checkin', e))
+    .catch((e) => {
+      console.error('[personnel-sync] checkin', e)
+      // Rechazo REAL del servidor (4xx que no sea el 409 "ya se guardo" de arriba -- ej.
+      // estacion llena, empleado de baja) ya trae un mensaje real y especifico (ver checkin.js)
+      // -- se muestra tal cual, nunca el generico de conexion, para no confundir "no llegue" con
+      // "si llegue pero fue rechazado por una razon real".
+      const isRealRejection = e.status && e.status < 500 && e.status !== 409
+      const message = isRealRejection
+        ? e.message
+        : `No se pudo confirmar el registro de ${name || employeeNumber || 'este empleado'} con el servidor. Verifica la conexión y regístralo de nuevo.`
+      showToast(message, 'error')
+    })
 }
 
 /* DELIBERADAMENTE async/esperado desde 2026-09-08 -- ya NO es fire-and-forget (corrige bug real

@@ -99,6 +99,7 @@ export const RELEASES = [
         labelKey: 'sectionFixed',
         itemKeys: [
           'fixedLineFamilySortOrder',
+          'fixedCheckinLostSilently',
           'fixedDarkMode',
           'fixedPlantTotalConsistency',
           'fixedHoraPorHoraDropdown',
