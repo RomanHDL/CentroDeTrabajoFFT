@@ -90,11 +90,13 @@ export const RELEASES = [
           'changedOrganigramaV2',
           'changedOrganigramaV3',
           'changedSortingLinesRenumbered',
+          'changedRegisterPersonnelRedesign',
         ],
       },
       {
         labelKey: 'sectionFixed',
         itemKeys: [
+          'fixedLineFamilySortOrder',
           'fixedDarkMode',
           'fixedPlantTotalConsistency',
           'fixedHoraPorHoraDropdown',

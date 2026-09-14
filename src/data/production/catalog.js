@@ -1482,9 +1482,21 @@ function applyActiveAreaGroup() {
   LINE_FAMILY_AREA_IDS = isSorting
     ? SORTING_LINE_FAMILY_AREA_IDS
     : new Set([...LINES_ONLY.map((w) => w.id), 'PROYECTO'])
+  // Bug real encontrado en vivo (2026-09-14, mientras se probaba el nuevo subselector "Línea"
+  // de Registrar personal): esta reasignación pisaba, desde que existe applyActiveAreaGroup(),
+  // el orden 0..10 que la definición original de LINE_FAMILY_WORK_CENTERS (mas abajo) SI
+  // calculaba -- como esta función corre una vez al cargar el módulo (linea `applyActiveAreaGroup()`
+  // al final de este archivo), el resultado ordenado nunca sobrevivía ni un render, y todo
+  // selector de "Línea" (Registrar personal, Líneas, Demoras, Hora por Hora, Auditoría, Control
+  // de Equipo -- todos documentados como "ya ordenado 0..10") en realidad mostraba el orden
+  // incidental de WORK_CENTERS (1..10, 0 al final). Se corrige repitiendo el mismo `.sort` aquí.
+  const sortByLineNumber = (a, b) => {
+    const numOf = (w) => (w.id === 'PROYECTO' ? 0 : Number(w.id.replace('LINEA', '')))
+    return numOf(a) - numOf(b)
+  }
   LINE_FAMILY_WORK_CENTERS = isSorting
     ? SORTING_LINE_FAMILY_WORK_CENTERS
-    : WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id))
+    : WORK_CENTERS.filter((w) => LINE_FAMILY_AREA_IDS.has(w.id)).sort(sortByLineNumber)
 }
 applyActiveAreaGroup()
 subscribeAreaGroup(applyActiveAreaGroup)

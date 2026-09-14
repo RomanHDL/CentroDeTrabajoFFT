@@ -334,6 +334,31 @@ para poder desplegar en el servidor privado (Coolify). Ver
   "Ubicación en el organigrama" con el camino completo desde la raíz.
 
 ### Changed
+- **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora
+  MUY CONTROLADA... no quiero que cambies su lógica actual"). Misma lógica de negocio de
+  siempre (búsqueda, asistencia, movimientos, capacidades, confirmaciones, turno persistido) --
+  solo cambia cómo se presenta:
+  - **Área / Línea simplificada**: el selector principal (en FFT, sin área fija) ahora solo
+    muestra las 9 áreas reales del layout físico (`registerPersonnelAreas.js`) -- Calidad/
+    Sellado/Suministro de material/Box Prep/Entrenador/Soporte/Gerente siguen existiendo tal
+    cual en `catalog.js`, solo se ocultan de este selector. Las 11 WC LINEA se agrupan bajo un
+    solo ítem "WC Líneas de producción (FFT)"; al elegirlo aparece un subselector "Línea" (WC
+    LINEA 0-10) -- `areaId` sigue siendo siempre el id real que ya esperaba el backend, el
+    agrupamiento es solo de interfaz. En Sorting, o con área ya fija, se sigue usando el
+    `<Select>` plano de siempre.
+  - **Rol / Estación en ventana flotante**: la cuadrícula de estaciones (capacidad/ocupación,
+    compatibilidad de habilidad -- misma lógica de siempre) ya no vive siempre visible en el
+    formulario; ahora un campo clickeable abre `StationPickerDialog`, que se comporta como panel
+    compacto centrado en monitor/laptop/tablet y como "bottom sheet" pegado abajo en pantallas
+    angostas (escáner industrial/celular).
+  - **Turno automático**: se quita el `<Select>` manual de Matutino/Vespertino/Nocturno -- ahora
+    es un indicador de solo lectura que reutiliza `getCurrentShift()` (la misma función que ya
+    calculaba el turno real por hora en otras pantallas, nunca duplicada).
+  - Cambiar de área (o de línea) limpia automáticamente la estación elegida.
+- Corrige un bug real preexistente en `LINE_FAMILY_WORK_CENTERS` (catalog.js): desde que existe
+  `applyActiveAreaGroup()`, el orden 0..10 documentado ahí nunca sobrevivía -- todo selector de
+  "Línea" (Registrar personal, Líneas, Demoras, Hora por Hora, Auditoría, Control de Equipo)
+  mostraba en realidad 1..10 seguido de 0. Se corrige repitiendo el mismo `.sort` al reasignar.
 - Formato de código en todo el repo (Biome), sin cambios de comportamiento.
 - Rediseño compacto de las cards "Estado general del día"/"Directorio
   rápido de personal"/"Alertas y pendientes" en el módulo de Personal.

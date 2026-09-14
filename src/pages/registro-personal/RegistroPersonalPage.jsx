@@ -25,7 +25,7 @@ export default function RegistroPersonalPage() {
 
   return (
     <div className={pageClass}>
-      <div className={`${cardClass} mx-auto max-w-[480px]`}>
+      <div className={`${cardClass} mx-auto max-w-[680px]`}>
         <div className="p-6">
           <p className="mb-4 text-[18px] font-extrabold">{t('registroPersonalPage.title')}</p>
           <RegisterPersonnelForm key={resetKey} onCancel={() => setResetKey((k) => k + 1)} />
