@@ -4,16 +4,25 @@
 // conservadoras, mismo criterio ya establecido en api/personnel/set-unassigned-reason.js ("nunca
 // buscar por nombre cuando no hay numero real, evita reactivar/pisar un fantasma"):
 //
-// - ALTA automatica: SOLO gente de WorkCenterID=49 (FFT/Refurbish Monterrey2, "home" real en
+// - ALTA automatica: gente de WorkCenterID=49 (FFT/Refurbish Monterrey2, "home" real en
 //   SmartControl, confirmado en vivo 2026-09-03 -- WorkCenterID=102/Calidad no tiene a NADIE como
-//   home, es solo donde se checan ocasionalmente los de FFT) que (a) tiene EmployeeNumber real
-//   (folio) en ADM.UsersComplement -- nunca folio vacio/nulo -- y (b) tiene una inspeccion propia
-//   real en los ultimos 30 dias -- confirmado con Roman que NO se quiere toda la plantilla base
-//   (144 personas activas en SmartControl), solo quien de verdad sigue trabajando. areaZona se
-//   guarda como 'PRODUCCION' (mismo valor real que ya usan Juan Godinez Bautista/Marco Andrade
-//   Garcia, gente real de FFT sin linea numerada conocida) -- nunca se inventa a que linea
-//   pertenece (mismo criterio ya documentado en src/data/production/personnelByArea.js, decision
-//   2026-08-25 "no inventar a que linea pertenecen").
+//   home, es solo donde se checan ocasionalmente los de FFT) que tiene EmployeeNumber real (folio)
+//   en ADM.UsersComplement -- nunca folio vacio/nulo. areaZona se guarda como null (2026-09-14,
+//   cambio explicito a peticion del usuario el dia del lanzamiento real de Asistencia -- "agrega a
+//   todos a sin asignar" -- para que cada alta nueva aterrice en "Sin asignar" y un lider la
+//   coloque el mismo dia que aparece, en vez de perderse silenciosa bajo un snapshot generico de
+//   'PRODUCCION'). `actividad` se llena con el nombre real de ADM.activities (uc.activityid) SI
+//   SmartControl lo trae capturado -- confirmado en vivo 2026-09-14 que solo ~30% del roster activo
+//   de FFT trae esto, el resto se deja null a proposito (nunca inventar la actividad de quien no la
+//   trae real).
+//
+//   HISTORIA (superada 2026-09-14): hasta esta fecha, ademas del folio real, se exigia una
+//   inspeccion propia en oe.WorkPlanInspection en los ultimos 30 dias (motivo: "no se quiere toda
+//   la plantilla base, solo quien de verdad sigue trabajando"). Confirmado en vivo 2026-09-14 que
+//   ese filtro dejaba fuera a 82 de 111 personas reales con folio (cualquiera que no fuera
+//   inspector/calidad, que es casi todo el piso) -- el usuario pidio explicitamente el roster
+//   activo COMPLETO ("si hay mucha gente... si porfa") y se agrego a mano ese mismo dia. Este
+//   archivo ya no aplica ese filtro de inspeccion -- IsActive=1 + folio real es suficiente.
 //
 // - BAJA automatica: cualquier Employee activo con employeeNumber real que matchea un folio de
 //   SmartControl (ADM.UsersComplement) cuya cuenta este IsActive=0 -- sin importar su area (el
@@ -25,15 +34,24 @@
 //   no rastrea (Cajas/Chofer/Capacitacion/Ingenieria, confirmado en vivo 2026-09-03: 17 folios
 //   reales sin match ahi, ninguno tocado).
 //
-// - Gente SIN folio (bucket "Proyecto") queda FUERA de este sync automatico a proposito -- no hay
+// - Gente SIN folio (bucket "Proyecto") sigue FUERA de este sync automatico a proposito -- no hay
 //   llave real para matchear/deduplicar sin adivinar, y ya hay variantes de nombre reales
-//   confirmadas esta sesion (Yesica/Yessica, Evelyn/Evelin) que harian un match por nombre
+//   confirmadas (Yesica/Yessica, Evelyn/Evelin, Erick Canon/Erik Cano Treviño -- este ultimo un
+//   duplicado real detectado y corregido a mano 2026-09-14) que harian un match por nombre
 //   peligroso. Se maneja a mano (ver scripts/backfill-calidad-personnel-2026-09-03.mjs para el
 //   alta manual, una sola vez, de los que Roman ya confirmo).
+//
+// - Reactivado en produccion 2026-09-14 (ver PERSONNEL_SYNC_PAUSED en prod-server.js) -- estuvo
+//   pausado desde 2026-09-11 porque cada corrida re-agregaba gente que el usuario habia BORRADO A
+//   MANO (delete real de la fila, no baja/desactivacion) de "Personal sin asignar". Este sync
+//   nunca reinserta a alguien cuyo folio siga existiendo en Employee (activo o no, ver
+//   `employeeByNumber` abajo) -- el problema de 09-11 solo puede repetirse si alguien vuelve a
+//   BORRAR (no desactivar) una fila real; la forma correcta de "quitar" a alguien de aqui en
+//   adelante es BAJA (active=false), nunca un delete.
 
 import { eq, isNotNull } from 'drizzle-orm'
 import sql from 'mssql'
-import { db, employee as employeeTable } from './db/client.js'
+import { db, employee as employeeTable, user as userTable } from './db/client.js'
 
 let poolPromise = null
 
@@ -80,7 +98,6 @@ async function getPool() {
 }
 
 const FFT_WORKCENTER_ID = 49
-const RECENT_ACTIVITY_DAYS = 30
 
 function buildFullName(r) {
   return [r.Name, r.SecondName, r.LastName, r.SecondLastName]
@@ -102,19 +119,18 @@ function formatFechaIngreso(hireDate) {
 }
 
 async function getActiveFolioedFftCandidates(pool) {
+  // Sin el filtro de "inspeccion propia reciente" (retirado 2026-09-14, ver nota grande arriba) --
+  // solo IsActive=1 + folio real. LEFT JOIN a ADM.activities para traer la actividad especifica
+  // real (uc.activityid) cuando SmartControl la tiene capturada; null cuando no (nunca se inventa).
   const result = await pool.request().query(`
-    SELECT DISTINCT uc.EmployeeNumber, uc.HireDate, ul.Name, ul.SecondName, ul.LastName, ul.SecondLastName
+    SELECT DISTINCT uc.EmployeeNumber, uc.HireDate, ul.Name, ul.SecondName, ul.LastName, ul.SecondLastName,
+      a.activityname_es AS ActivityNameEs
     FROM ADM.UsersLogin ul
     INNER JOIN ADM.UsersComplement uc ON uc.UserId = ul.UserId
+    LEFT JOIN ADM.activities a ON a.activityid = uc.activityid
     WHERE ul.WorkCenterID = ${FFT_WORKCENTER_ID}
       AND ul.IsActive = 1
       AND uc.EmployeeNumber IS NOT NULL AND LTRIM(RTRIM(uc.EmployeeNumber)) <> ''
-      AND ul.UserName IN (
-        SELECT DISTINCT I.InspectionBy
-        FROM oe.WorkPlanInspection I WITH (NOLOCK)
-        WHERE I.WorkCenterID = ${FFT_WORKCENTER_ID}
-          AND I.InspectionDate >= DATEADD(DAY, -${RECENT_ACTIVITY_DAYS}, GETDATE())
-      )
   `)
   return result.recordset
 }
@@ -165,12 +181,23 @@ export async function runPersonnelSync({ dryRun = false } = {}) {
     .where(isNotNull(employeeTable.employeeNumber))
   const employeeByNumber = new Map(allEmployees.map((e) => [String(e.employeeNumber).trim(), e]))
 
+  // Folios ya representados como User (lideres/supervisores con cuenta de login, ej. "Diego Marin",
+  // ver [[project_control_produccion...]] 2026-09-14) -- estos NO deben duplicarse como Employee de
+  // piso aunque su folio nunca haya tenido una fila en Employee. Confirmado en vivo 2026-09-14 que
+  // sin este chequeo el ALTA automatica volvia a insertar a Diego cada corrida.
+  const usersWithNumber = await db
+    .select({ employeeNumber: userTable.employeeNumber })
+    .from(userTable)
+    .where(isNotNull(userTable.employeeNumber))
+  const userNumbers = new Set(usersWithNumber.map((u) => String(u.employeeNumber).trim()))
+
   // 1) ALTA
   const candidates = await getActiveFolioedFftCandidates(pool)
   const added = []
   for (const c of candidates) {
     const number = String(c.EmployeeNumber).trim()
     if (employeeByNumber.has(number)) continue
+    if (userNumbers.has(number)) continue
     const fullName = buildFullName(c)
     if (!fullName) continue
     if (dryRun) {
@@ -182,7 +209,8 @@ export async function runPersonnelSync({ dryRun = false } = {}) {
       .values({
         employeeNumber: number,
         fullName,
-        areaZona: 'PRODUCCION',
+        areaZona: null,
+        actividad: c.ActivityNameEs || null,
         fechaIngreso: formatFechaIngreso(c.HireDate),
         active: true,
         smartControlSyncedAt: now,

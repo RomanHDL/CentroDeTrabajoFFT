@@ -57,6 +57,7 @@ export const RELEASES = [
           'addedOrganigramaPhotoUpload',
           'addedAsistenciaExcelExport',
           'addedAsistenciaMarkStatus',
+          'addedFftRosterBulkOnboardAndAutoSync',
         ],
       },
       {

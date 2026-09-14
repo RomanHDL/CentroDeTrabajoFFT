@@ -67,9 +67,16 @@ app.listen(PORT, '0.0.0.0', () => {
 // asistencia real de mañana): cada corrida (cada 30 min) volvia a dar de alta gente real de
 // SmartControl que el usuario ya habia borrado a mano de "Personal sin asignar" -- no era un bug,
 // es la automatizacion funcionando como se penso, pero el usuario prefirio pausarla mientras
-// arranca la captura real de mañana, para que nada aparezca solo mientras tanto. Reactivar: poner
-// PERSONNEL_SYNC_PAUSED en false cuando el usuario lo pida.
-const PERSONNEL_SYNC_PAUSED = true
+// arranca la captura real de mañana, para que nada aparezca solo mientras tanto.
+//
+// REACTIVADO 2026-09-14 (a peticion explicita del usuario, "que lo pongas en automatico al igual
+// los ingresos de nuevo personal y las bajas del personal en automatico", el mismo dia que se dio
+// de alta a mano el roster completo de FFT -- ver server-lib/personnel-sync.js para el criterio de
+// ALTA ampliado ese mismo dia). Importante: de aqui en adelante, quitar a alguien de "Personal sin
+// asignar" debe hacerse con BAJA (active=false, api/personnel/set-unassigned-reason.js), NUNCA un
+// delete real de la fila -- un delete real es exactamente lo que causo el problema de 09-11 (el
+// sync no tiene forma de saber que un folio borrado no debe reinsertarse).
+const PERSONNEL_SYNC_PAUSED = false
 const PERSONNEL_SYNC_INTERVAL_MS = 30 * 60 * 1000
 async function runPersonnelSyncSafely() {
   try {

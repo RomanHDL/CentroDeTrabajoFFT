@@ -363,6 +363,18 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (migración `0018`, `ALTER TYPE ... ADD VALUE`, aditiva -- nunca borra ni renombra los 3
   valores existentes): VACACIONES e INCAPACIDAD, que antes no existían en ningún lado del
   sistema.
+- **Alta masiva del roster real de FFT + sync automático reactivado.** El primer día real de
+  Asistencia expuso que "Personal sin asignar" solo alcanzaba a gente sin ningún área conocida --
+  no a los ~130 empleados reales de FFT (SmartControl, WorkCenterID=49) que simplemente nunca
+  habían entrado al sistema. Se dieron de alta a mano (folio real + sin folio, cruzando también
+  `ADM.Departments`/`ADM.JobTitle`/`ADM.activities` para llenar actividad real donde SmartControl
+  la trae capturada -- nunca inventada) y se colocó directo en su estación real a quien tenía una
+  actividad sin ambigüedad (Paletizado, Insumos, Limpieza general de área). El sync automático
+  Employee↔SmartControl (`server-lib/personnel-sync.js`, pausado desde 2026-09-11) se reactivó y
+  se amplió: ya no exige inspección propia reciente para el ALTA (dejaba fuera a ~75% del roster
+  real, casi cualquiera que no fuera inspector de calidad), las altas nuevas aterrizan en "Sin
+  asignar" (antes un snapshot genérico de 'PRODUCCION'), y se excluyen folios ya usados por una
+  cuenta de `User` (líderes/supervisores) para no duplicarlos como personal de piso.
 
 ### Changed
 - **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora
