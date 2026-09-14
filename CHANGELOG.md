@@ -1330,6 +1330,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
   real ahora es que las 4 personas se acomodan en una fila en vez de una V. Se cambia también
   `self-start` por `self-center` para que quede centrada verticalmente en su celda del grid en
   vez de pegada arriba.
+- **26 personas del alta masiva de FFT (arriba, "Added") quedaban invisibles en "Sin asignar"
+  incluso después de recargar la página** -- bug real encontrado en vivo el mismo día: cada una
+  de esas 26 ya existía, con el mismo nombre y folio, en el snapshot estático histórico de
+  2026-08-18 (`realPersonnelSnapshot.js`) con `areaZona: null` -- ese archivo marca como no
+  elegible (`eligible: false`) a cualquiera sin zona histórica conocida. `pollOnce()`
+  (`src/data/personnel/apiSync.js`), al ver que el nombre+folio de la fila real nueva coincidía
+  con esa entrada estática vieja, asumía que ya estaba bien representada y nunca creaba su fila
+  dinámica -- la única que no carga ese `eligible` obsoleto. Ahora, si el snapshot estático marca
+  no-elegible pero el servidor SÍ trae una fila real y activa con ese mismo nombre+folio (su sola
+  presencia en `/api/personnel/roster` ya prueba que está activo de verdad hoy), se crea la fila
+  dinámica de todos modos para que la realidad del servidor gane siempre sobre la inferencia
+  histórica. Las 8 bajas estáticas reales no se ven afectadas: nunca tienen fila real en Employee,
+  así que nunca llegan a esta comparación.
 
 ### Pending (bloqueado en credenciales externas — ver checklist entregado al usuario)
 - Ninguno -- SSO de Nextcloud confirmado funcionando en vivo (ver Fixed

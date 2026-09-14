@@ -464,10 +464,22 @@ async function pollOnce() {
       }
     } else {
       const staticEntry = EMPLOYEE_DIRECTORY.find((e) => e.id === localId)
+      // staticEntry.eligible !== false (2026-09-14, bug real encontrado en vivo el dia del alta
+      // masiva del roster FFT): el snapshot estatico marca eligible=false para cualquiera con
+      // areaZona null en el Excel historico de 2026-08-18 -- correcto EN SU MOMENTO (sin fila
+      // real en Employee, no habia forma de saber si seguia activo). Pero si HOY llega una fila
+      // real del servidor con el mismo nombre+folio (roster.js solo devuelve Employee.active=true,
+      // asi que su sola presencia aqui YA prueba que esta activo de verdad), ese eligible=false
+      // historico queda obsoleto y nunca debe ganarle a la realidad -- sin este chequeo, 26
+      // personas reales del alta masiva de FFT quedaban invisibles en "Sin asignar"/"Personal
+      // disponible" para siempre (nunca se creaba su fila dinamica, que es la unica que no carga
+      // el eligible viejo). BAJA estatica no se ve afectada: esas 8 personas nunca tuvieron/tendran
+      // una fila real en Employee, asi que jamas aparecen en `roster` para llegar hasta aqui.
       const staticMatchesServer =
         staticEntry &&
         staticEntry.name === row.fullName &&
-        freshNumber === (staticEntry.employeeNumber || 'PROYECTO')
+        freshNumber === (staticEntry.employeeNumber || 'PROYECTO') &&
+        staticEntry.eligible !== false
       if (!staticMatchesServer) {
         newDynamicEmployees.push({
           id: localId,
