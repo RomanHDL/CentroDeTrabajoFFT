@@ -13,6 +13,7 @@ import {
   CircleDashed,
   Clock,
   Crown,
+  Download,
   Dumbbell,
   Eye,
   Factory,
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import {
@@ -44,11 +46,19 @@ import {
 } from '@/lib/pageStyles'
 import { cn, hexToRgba } from '@/lib/utils'
 import { formatEmployeeNumber } from '../../data/personnel/employeeDisplay'
-import { getAbsentEmployeeIds, getAssignmentsForDate } from '../../data/personnel/repository'
+import {
+  getAbsentEmployeeIds,
+  getAllEmployees,
+  getAssignmentsForDate,
+  getBajaEmployees,
+  getLateEmployeeIds,
+} from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
+import { getWorkstation } from '../../data/personnel/workstations'
 import {
   canonicalOperationalAreaId,
   EXCLUDED_FROM_PLANT_TOTAL_AREA_IDS,
+  getShiftSchedule,
   LINE_FAMILY_AREA_IDS,
   operationalGroupMembers,
   WORK_CENTERS,
@@ -60,6 +70,7 @@ import {
 } from '../../data/production/personnelByArea'
 import { useAreaGroup } from '../../data/production/useAreaGroup'
 import { EmptyState } from '../../ui'
+import { showToast } from '../../ui/toast'
 import EmployeeAvatar from '../centro-trabajo/EmployeeAvatar'
 
 /* Modulo Asistencia (2026-09-01, a peticion explicita del usuario: "en mi
@@ -208,6 +219,124 @@ function attendanceStatusFor(person, t) {
   }
 
   return { chip: t('statusUnknown'), tone: 'default', detail: '—' }
+}
+
+// Traduce cada statusKey cerrado (mismo set que ATTENDANCE_STATUS_KEYS en
+// data/asistencia/exportExcel.js -- duplicado a proposito, NUNCA un import estatico de ese
+// archivo: importa `exceljs` en su cabecera, y el resto de esta pagina debe seguir sin cargarlo
+// hasta que alguien de verdad exporte, ver handleExportExcel mas abajo) a la etiqueta i18n que
+// ya usan las KPI cards del propio Excel.
+const EXPORT_STATUS_LABEL_KEYS = {
+  ASISTENCIA: 'export.kpiAsistencia',
+  RETARDO: 'export.kpiRetardo',
+  FALTA: 'export.kpiFalta',
+  INCAPACIDAD: 'export.kpiIncapacidad',
+  VACACIONES: 'export.kpiVacaciones',
+  BAJA: 'export.kpiBaja',
+  SIN_REGISTRO: 'export.kpiSinRegistro',
+}
+
+/* Fila normalizada para la exportacion a Excel (2026-09-14, a peticion explicita del usuario --
+   "reporte profesional de asistencia... con los datos reales que ya tiene el sistema"). NO
+   reimplementa attendanceStatusFor (arriba, orientado a un chip de UI) -- resuelve el mismo
+   universo de fuentes reales pero a un `statusKey` cerrado (ATTENDANCE_STATUS_KEYS,
+   exportExcel.js) para que el Excel pueda agrupar/colorear por estatus. Fuentes, en orden de
+   prioridad (nunca inventa un estado que no venga de una de estas):
+   1) Employee.status==='BAJA' (getBajaEmployees/getAllEmployees, mismo campo real que ya usa la
+      pestaña Bajas) -- gana sobre cualquier otra señal: alguien de baja no cuenta como falta.
+   2) todayAssignment real (checkInEmployee/moveEmployee de hoy) -> Asistencia.
+   3) Attendance.status='AUSENTE'/'RETARDO' de hoy (getAbsentEmployeeIds/getLateEmployeeIds,
+      consultas reales -- hoy casi siempre vacias porque ningun flujo las escribe todavia, ver
+      nota en roster.js, pero se leen tal cual, nunca se fuerza un valor).
+   4) unassignedReason='FALTA' (mecanismo real y vigente de "Personal sin asignar", set-
+      unassigned-reason.js) -> Falta, con observacion. 'TURNO' (mismo mecanismo, significa
+      "cambio de turno", no una falta) -> Sin registro, con esa observacion real.
+   5) Codigo HISTORICO F/I/V de la columna ASISTENCIA de BASE (2026-08-18, el mismo snapshot
+      que ya usa attendanceStatusFor arriba) -- unica fuente real disponible hoy para
+      Falta/Incapacidad/Vacaciones cuando no hay señal mas reciente; la observacion siempre
+      aclara que es un dato historico, nunca se presenta como confirmado hoy. 'A' (asistio
+      segun ese mismo Excel) NO cuenta como Asistencia de HOY -- cae en Sin registro, igual
+      criterio que ya usa el resto de esta pagina (el KPI "Presentes" tampoco lo cuenta). */
+function buildAttendanceExportRow(person, employee, ctx, t) {
+  const assignment = person.todayAssignment
+  const areaLabel = person._lineName || person._areaName || null
+  const stationLabel = assignment?.stationId || null
+  const workstation = assignment ? getWorkstation(assignment.areaId, assignment.stationId) : null
+  const roleLabel = workstation?.requiredRole || workstation?.role || null
+  const shiftRaw = assignment?.shift || null
+  const schedule = shiftRaw ? getShiftSchedule(shiftRaw) : null
+
+  let statusKey = 'SIN_REGISTRO'
+  let observaciones = null
+
+  if (employee?.status === 'BAJA') {
+    statusKey = 'BAJA'
+    observaciones = employee.unassignedReasonSetAt
+      ? t('export.obsBajaDate', {
+          date: dayjs(employee.unassignedReasonSetAt).format('DD/MM/YYYY'),
+        })
+      : null
+  } else if (assignment) {
+    statusKey = 'ASISTENCIA'
+  } else if (ctx.absentIds.has(person.id)) {
+    statusKey = 'FALTA'
+  } else if (ctx.lateIds.has(person.id)) {
+    statusKey = 'RETARDO'
+  } else if (employee?.unassignedReason === 'FALTA') {
+    statusKey = 'FALTA'
+    observaciones = t('export.obsMarkedFalta')
+  } else if (employee?.unassignedReason === 'TURNO') {
+    observaciones = t('export.obsShiftChange')
+  } else if (person.asistencia === 'F') {
+    statusKey = 'FALTA'
+    observaciones = t('export.obsHistoric', {
+      date: dayjs(BASE_SNAPSHOT_DATE).format('DD/MM/YYYY'),
+    })
+  } else if (person.asistencia === 'I') {
+    statusKey = 'INCAPACIDAD'
+    observaciones = t('export.obsHistoric', {
+      date: dayjs(BASE_SNAPSHOT_DATE).format('DD/MM/YYYY'),
+    })
+  } else if (person.asistencia === 'V') {
+    statusKey = 'VACACIONES'
+    observaciones = t('export.obsHistoric', {
+      date: dayjs(BASE_SNAPSHOT_DATE).format('DD/MM/YYYY'),
+    })
+  }
+
+  return {
+    employeeNumber: formatEmployeeNumber(employee?.employeeNumber || person.employeeNumber),
+    name: employee?.name || person.name,
+    areaLabel: areaLabel || '—',
+    stationLabel: stationLabel || '—',
+    roleLabel: roleLabel || '—',
+    shiftLabel: schedule?.label || shiftRaw || null,
+    expectedTime: schedule?.start || '—',
+    checkInTime: assignment?.checkInAt || '—',
+    statusKey,
+    statusLabel: t(EXPORT_STATUS_LABEL_KEYS[statusKey]),
+    observaciones: observaciones || '—',
+  }
+}
+
+function buildBajaOnlyExportRow(employee, t) {
+  return {
+    employeeNumber: formatEmployeeNumber(employee.employeeNumber),
+    name: employee.name,
+    areaLabel: '—',
+    stationLabel: '—',
+    roleLabel: '—',
+    shiftLabel: null,
+    expectedTime: '—',
+    checkInTime: '—',
+    statusKey: 'BAJA',
+    statusLabel: t('export.kpiBaja'),
+    observaciones: employee.unassignedReasonSetAt
+      ? t('export.obsBajaDate', {
+          date: dayjs(employee.unassignedReasonSetAt).format('DD/MM/YYYY'),
+        })
+      : '—',
+  }
 }
 
 /* Cobertura = presentes/total EN ESE MISMO CONJUNTO (nunca idealHeadcount
@@ -722,6 +851,73 @@ export default function AsistenciaPage() {
   const totalPeople = allPeopleFlat.length
   const coverageOverallPct = coveragePctOneDecimal(presentPeople.length, totalPeople)
 
+  // ── Exportar Excel (2026-09-14, a peticion explicita del usuario) ──────────────────────────
+  // Mismas 2 consultas reales que roster.js ya expone para "Inasistencia"/"Llegada tardia" --
+  // ver la nota grande de absentIds arriba: hoy casi siempre vacias porque ningun flujo real
+  // escribe esos estados todavia, pero son consultas reales, nunca un 0 fijo.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza releer el store sincronizado aunque no se lea en el callback
+  const lateIds = useMemo(() => new Set(getLateEmployeeIds()), [version])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza releer el store sincronizado aunque no se lea en el callback
+  const employeesById = useMemo(() => {
+    const map = new Map()
+    getAllEmployees().forEach((e) => {
+      map.set(e.id, e)
+    })
+    return map
+  }, [version])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza releer el store sincronizado aunque no se lea en el callback
+  const bajaEmployees = useMemo(() => getBajaEmployees(), [version])
+
+  // Union de 2 poblaciones reales, sin duplicar a nadie: `allPeopleFlat` (el mismo universo que
+  // ya usa TODA esta pagina) + `bajaEmployees` (getBajaEmployees, la misma fuente real de la
+  // pestaña Bajas de Centro de Trabajo) para quien quedo de baja sin conservar una ubicacion de
+  // area/linea rastreable aqui -- sin esta union, alguien de baja sin areaZona resoluble
+  // desaparecceria del reporte por completo en vez de aparecer como BAJA.
+  const exportRows = useMemo(() => {
+    const ctx = { absentIds, lateIds }
+    const seenIds = new Set()
+    const rows = allPeopleFlat.map((p) => {
+      seenIds.add(p.id)
+      return buildAttendanceExportRow(p, employeesById.get(p.id), ctx, t)
+    })
+    bajaEmployees.forEach((e) => {
+      if (seenIds.has(e.id)) return
+      seenIds.add(e.id)
+      rows.push(buildBajaOnlyExportRow(e, t))
+    })
+    return rows
+  }, [allPeopleFlat, employeesById, bajaEmployees, absentIds, lateIds, t])
+
+  const [isExporting, setIsExporting] = useState(false)
+
+  async function handleExportExcel() {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      // Import dinamico (mismo patron ya probado en DemorasPage.jsx/HoraPorHoraPage.jsx/
+      // SortingPage.jsx): exceljs agrega ~270 kB gzip al bundle -- se carga solo al dar clic en
+      // "Exportar Excel", nunca en el bundle inicial de Asistencia.
+      const { exportAsistenciaToExcel } = await import('../../data/asistencia/exportExcel')
+      const now = dayjs()
+      await exportAsistenciaToExcel({
+        rows: exportRows,
+        meta: {
+          periodLabel: now.format('DD/MM/YYYY'),
+          shiftLabel: t('export.allShifts'),
+          areaLabel: t('export.allAreas'),
+          dateFileLabel: now.format('YYYY-MM-DD'),
+          areaFilterLabel: null,
+        },
+        t,
+      })
+    } catch (error) {
+      console.error('exportAsistenciaToExcel failed', error)
+      showToast(t('exportError'), 'error')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   // Cobertura por area (vista "Cobertura", 1 fila por card de nivel 1 --
   // Lineas de produccion cuenta como una sola fila agregada, nunca 11).
   const coverageByArea = useMemo(() => {
@@ -964,6 +1160,27 @@ export default function AsistenciaPage() {
                 onClick={() => openMode('absences')}
               />
             </div>
+
+            {/* Exportar Excel (2026-09-14, a peticion explicita del usuario): reporte
+                profesional de asistencia con los datos reales ya calculados arriba
+                (exportRows) -- ver data/asistencia/exportExcel.js. `isExporting` evita doble
+                clic (dos descargas simultaneas); en celular/escaner angosto solo se ve
+                "Excel" (icono + texto corto) para no romper el wrap del toolbar. */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isExporting || totalPeople === 0}
+              onClick={handleExportExcel}
+            >
+              <Download className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">
+                {isExporting ? t('exportGenerating') : t('exportButton')}
+              </span>
+              <span className="sm:hidden">
+                {isExporting ? t('exportGenerating') : t('exportButtonShort')}
+              </span>
+            </Button>
 
             <p className="text-xs text-muted-foreground lg:ml-auto">
               {t('lastUpdated', { time: lastUpdated })}

@@ -332,6 +332,24 @@ para poder desplegar en el servidor privado (Coolify). Ver
   cierra el modal, hace scroll y centra la tarjeta del jefe real -- usando el id real de la
   jerarquía, nunca comparando nombres -- con un resaltado temporal) más una nueva sección
   "Ubicación en el organigrama" con el camino completo desde la raíz.
+- **Exportar Excel en Asistencia.** Botón "Exportar Excel" en el toolbar del módulo (icono de
+  descarga, sin crear una card nueva) genera un reporte profesional de un solo día (hoy --
+  la arquitectura de datos de esta página solo calcula el día actual, ver nota grande de
+  `AsistenciaPage.jsx`) con `exceljs` (mismo patrón ya probado en `data/demoras/exportExcel.js`:
+  estilos reales, gráficas dibujadas en `<canvas>` e incrustadas como imagen PNG -- ninguna
+  librería de Excel sin costo escribe gráficas nativas editables). 6 hojas: RESUMEN ASISTENCIA
+  (encabezado corporativo, KPIs, dona de distribución + barras por área/turno, resúmenes por
+  área/turno/estatus con fórmulas reales de porcentaje), DETALLE PERSONAL (autofilter,
+  encabezado congelado con `topLeftCell` -- el fix real del bug de duplicación visual de freeze
+  panes ya documentado en este mismo Changelog), FALTAS/INCAPACIDADES/VACACIONES/BAJAS
+  (filtradas). 7 estatus (Asistencia/Retardo/Falta/Incapacidad/Vacaciones/Baja/Sin registro)
+  resueltos con las fuentes reales que ya existían -- nunca un valor inventado: asignación real
+  de hoy, `Attendance.status` AUSENTE/RETARDO (consultas reales, casi siempre vacías porque
+  ningún flujo las escribe todavía), `Employee.status`/`unassignedReason` (BAJA/FALTA/TURNO,
+  mecanismo real de "Personal sin asignar") y, como último recurso, el código histórico F/I/V
+  del snapshot base de 2026-08-18 (mismo que ya usa esta página en pantalla), siempre marcado
+  como dato histórico en Observaciones. `exceljs` se carga con import dinámico solo al hacer
+  clic (no engorda el bundle inicial).
 
 ### Changed
 - **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora
