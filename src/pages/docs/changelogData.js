@@ -56,6 +56,7 @@ export const RELEASES = [
           'addedDemorasSorting',
           'addedOrganigramaPhotoUpload',
           'addedAsistenciaExcelExport',
+          'addedAsistenciaMarkStatus',
         ],
       },
       {

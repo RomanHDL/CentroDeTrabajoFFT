@@ -24,7 +24,10 @@ import { requireAuth } from '../../server-lib/auth.js'
 import { db, employee as employeeTable } from '../../server-lib/db/client.js'
 import { pgError } from '../../server-lib/db/pgError.js'
 
-const VALID_REASONS = new Set(['BAJA', 'TURNO', 'FALTA'])
+// VACACIONES/INCAPACIDAD (2026-09-14, migracion 0018, a peticion urgente del usuario): mismo
+// mecanismo real de siempre, ninguna desactiva al empleado (solo BAJA lo hace, ver el ternario
+// de `active` mas abajo, sin cambios).
+const VALID_REASONS = new Set(['BAJA', 'TURNO', 'FALTA', 'VACACIONES', 'INCAPACIDAD'])
 
 export default requireAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -40,11 +43,7 @@ export default requireAuth(async (req, res) => {
 
   let emp = null
   if (employeeId) {
-    ;[emp] = await db
-      .select()
-      .from(employeeTable)
-      .where(eq(employeeTable.id, employeeId))
-      .limit(1)
+    ;[emp] = await db.select().from(employeeTable).where(eq(employeeTable.id, employeeId)).limit(1)
     if (!emp) return res.status(404).json({ error: 'Empleado no encontrado.' })
   } else if (number) {
     ;[emp] = await db

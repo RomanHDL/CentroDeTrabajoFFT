@@ -20,10 +20,14 @@ import {
   Gem,
   GraduationCap,
   HelpCircle,
+  Palmtree,
   Search,
   Stamp,
+  Stethoscope,
+  Undo2,
   UserCog,
   Users,
+  UserX,
   Warehouse,
   Workflow,
   Wrench,
@@ -32,7 +36,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   cardClass,
   cardHeaderClass,
@@ -52,6 +56,7 @@ import {
   getAssignmentsForDate,
   getBajaEmployees,
   getLateEmployeeIds,
+  setEmployeeUnassignedReason,
 } from '../../data/personnel/repository'
 import { usePersonnelVersion } from '../../data/personnel/usePersonnelVersion'
 import { getWorkstation } from '../../data/personnel/workstations'
@@ -198,7 +203,44 @@ const HISTORIC_STATUS = {
   A: { i18nKey: 'statusAsistioHistorico', tone: 'default' },
 }
 
-function attendanceStatusFor(person, t) {
+// Motivo REAL y VIGENTE (2026-09-14, a peticion urgente del usuario -- "hoy es el primer dia
+// real de Asistencia... como sabemos los que faltaron, vacaciones, incapacidades"). Mismo
+// mecanismo real que ya existia para BAJA/TURNO/FALTA (Employee.unassignedReason,
+// set-unassigned-reason.js, usado hasta ahora solo desde PersonalSinAsignarTab.jsx) -- se le
+// agregan aqui 2 valores nuevos al enum real de Postgres (migracion 0018), VACACIONES/
+// INCAPACIDAD, y se lee POR PRIMERA VEZ desde esta pagina (antes esta pagina nunca consultaba
+// unassignedReason -- alguien marcado Falta desde "Sin asignar" seguia viendose "Pendiente"
+// aqui, un vacio real que este cambio corrige). Tiene prioridad sobre el codigo HISTORICO de
+// abajo (dato de hace un mes) -- nunca al reves: un motivo marcado HOY siempre gana sobre un
+// snapshot de 2026-08-18.
+const LIVE_REASON_STATUS = {
+  BAJA: { i18nKey: 'statusBajaLive', tone: 'bad' },
+  FALTA: { i18nKey: 'statusFaltaLive', tone: 'warn' },
+  VACACIONES: { i18nKey: 'statusVacacionesLive', tone: 'default' },
+  INCAPACIDAD: { i18nKey: 'statusIncapacidadLive', tone: 'warn' },
+  TURNO: { i18nKey: 'statusTurnoLive', tone: 'info' },
+}
+
+function liveReasonDetail(employee, t) {
+  return employee?.unassignedReasonSetAt
+    ? t('markStatusSetAt', { date: dayjs(employee.unassignedReasonSetAt).format('DD/MM/YYYY') })
+    : '—'
+}
+
+// `employee` (2026-09-14): registro REAL de Employee (getAllEmployees, join por id -- ver
+// employeesById mas abajo), ausente solo si el caller no lo resolvio (nunca null a proposito).
+// BAJA (employee.status, no unassignedReason -- BAJA desactiva de verdad) gana sobre CUALQUIER
+// otra señal, incluida una asignacion de hoy -- no debería poder coexistir (checkInEmployee ya
+// rechaza a alguien BAJA), pero si pasara, BAJA es la señal mas fuerte y real.
+function attendanceStatusFor(person, employee, t) {
+  if (employee?.status === 'BAJA') {
+    return {
+      chip: t('statusBajaLive'),
+      tone: 'bad',
+      detail: liveReasonDetail(employee, t),
+    }
+  }
+
   if (person.todayAssignment) {
     return {
       chip: t('statusPresentToday'),
@@ -206,6 +248,17 @@ function attendanceStatusFor(person, t) {
       detail: person.todayAssignment.checkInAt
         ? t('detailCheckedInAt', { time: person.todayAssignment.checkInAt })
         : '—',
+    }
+  }
+
+  const liveReason = employee?.unassignedReason
+    ? LIVE_REASON_STATUS[employee.unassignedReason]
+    : null
+  if (liveReason) {
+    return {
+      chip: t(liveReason.i18nKey),
+      tone: liveReason.tone,
+      detail: liveReasonDetail(employee, t),
     }
   }
 
@@ -285,6 +338,20 @@ function buildAttendanceExportRow(person, employee, ctx, t) {
   } else if (employee?.unassignedReason === 'FALTA') {
     statusKey = 'FALTA'
     observaciones = t('export.obsMarkedFalta')
+  } else if (employee?.unassignedReason === 'VACACIONES') {
+    statusKey = 'VACACIONES'
+    observaciones = employee.unassignedReasonSetAt
+      ? t('export.obsMarkedDate', {
+          date: dayjs(employee.unassignedReasonSetAt).format('DD/MM/YYYY'),
+        })
+      : null
+  } else if (employee?.unassignedReason === 'INCAPACIDAD') {
+    statusKey = 'INCAPACIDAD'
+    observaciones = employee.unassignedReasonSetAt
+      ? t('export.obsMarkedDate', {
+          date: dayjs(employee.unassignedReasonSetAt).format('DD/MM/YYYY'),
+        })
+      : null
   } else if (employee?.unassignedReason === 'TURNO') {
     observaciones = t('export.obsShiftChange')
   } else if (person.asistencia === 'F') {
@@ -419,8 +486,80 @@ const DEFAULT_AREA_VISUAL = { icon: Users, bg: 'bg-blue-500/[0.12]', text: 'text
    `photoUrl` es null/undefined (personal "sem34-N", filas de BASE sin
    foto, o cualquier empleado creado despues) -- no hace falta repetir
    esa logica aqui. */
-function EmployeeCard({ person, t }) {
-  const status = attendanceStatusFor(person, t)
+// Acciones reales disponibles para marcar a alguien (2026-09-14, a peticion urgente del
+// usuario) -- EXACTAMENTE los 5 valores del enum real UnassignedReason (migracion 0018,
+// server-lib/db/schema.js), nunca un valor inventado. Mismo icono que ya usa
+// PersonalSinAsignarTab.jsx para BAJA/TURNO/FALTA (UserX/Clock/CalendarX) + 2 nuevos
+// (Palmtree/Stethoscope) para los 2 valores nuevos.
+const REASON_ACTIONS = [
+  { key: 'FALTA', labelKey: 'markFaltaButton', icon: CalendarX },
+  { key: 'VACACIONES', labelKey: 'markVacacionesButton', icon: Palmtree },
+  { key: 'INCAPACIDAD', labelKey: 'markIncapacidadButton', icon: Stethoscope },
+  { key: 'BAJA', labelKey: 'markBajaButton', icon: UserX },
+  { key: 'TURNO', labelKey: 'markTurnoButton', icon: Clock },
+]
+
+// Menu real para marcar el estado de alguien que NO tiene asignacion de hoy (2026-09-14, a
+// peticion urgente del usuario -- "como vamos a saber los que faltaron, vacaciones,
+// incapacidades"). Llama exactamente la misma mutacion real que ya usaba
+// PersonalSinAsignarTab.jsx (setEmployeeUnassignedReason, repository.js) -- nunca una segunda
+// via de escritura. `saving` (por persona, ver savingReasonIds en el componente principal)
+// evita doble clic mientras la escritura real esta en curso.
+function StatusActionMenu({ person, employee, saving, onSetReason, t }) {
+  const [open, setOpen] = useState(false)
+  const currentReason = employee?.unassignedReason || null
+
+  const handlePick = (reason) => {
+    setOpen(false)
+    onSetReason(person, employee, reason)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={saving}
+          className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-full border border-border px-2 text-[10.5px] font-bold text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
+        >
+          <UserCog className="h-3 w-3" />
+          {t('markStatusButton')}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-2">
+        <p className="mb-1.5 px-1 text-[11px] font-bold uppercase text-muted-foreground">
+          {t('markStatusMenuTitle')}
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {REASON_ACTIONS.map(({ key, labelKey, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handlePick(key)}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] font-semibold hover:bg-accent"
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              {t(labelKey)}
+            </button>
+          ))}
+          {currentReason && (
+            <button
+              type="button"
+              onClick={() => handlePick(null)}
+              className="mt-1 flex items-center gap-2 rounded-md border-t border-border px-2 pt-2.5 pb-1.5 text-left text-[12.5px] font-semibold text-muted-foreground hover:bg-accent"
+            >
+              <Undo2 className="h-3.5 w-3.5 shrink-0" />
+              {t('clearReasonButton')}
+            </button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function EmployeeCard({ person, employee, saving, onSetReason, t }) {
+  const status = attendanceStatusFor(person, employee, t)
   return (
     <div className={cn(cardClass, 'p-2.5')}>
       <div className="flex items-start gap-2.5">
@@ -431,6 +570,15 @@ function EmployeeCard({ person, t }) {
           <div className="mt-1.5">
             <span className={metricChipClass(status.tone)}>{status.chip}</span>
           </div>
+          {!person.todayAssignment && (
+            <StatusActionMenu
+              person={person}
+              employee={employee}
+              saving={saving}
+              onSetReason={onSetReason}
+              t={t}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -443,8 +591,28 @@ function EmployeeCard({ person, t }) {
    estado ya lo decidio quien arma la lista (siempre uno de los 3 estados
    "de hoy" reales: presente/pendiente/inasistencia), asi que el badge es
    fijo por lista. Muestra tambien numero de empleado + area/linea actual,
-   pedido explicito del encargo. */
-function FlatPersonCard({ person, badgeTone, badgeLabel, showTime, t }) {
+   pedido explicito del encargo.
+
+   2026-09-14 (a peticion urgente del usuario): si la persona ya tiene un motivo REAL y VIGENTE
+   marcado (unassignedReason -- Falta/Vacaciones/Incapacidad/Baja/Turno), ese motivo real
+   reemplaza el badge fijo de la lista ("Pendiente" generico ya no tiene sentido si ya se sabe
+   que es, por ejemplo, Vacaciones) -- mismo LIVE_REASON_STATUS que ya usa attendanceStatusFor
+   arriba, una sola fuente de verdad para este mapeo. */
+function FlatPersonCard({
+  person,
+  employee,
+  badgeTone,
+  badgeLabel,
+  showTime,
+  saving,
+  onSetReason,
+  t,
+}) {
+  const liveReason = employee?.unassignedReason
+    ? LIVE_REASON_STATUS[employee.unassignedReason]
+    : null
+  const displayTone = liveReason ? liveReason.tone : badgeTone
+  const displayLabel = liveReason ? t(liveReason.i18nKey) : badgeLabel
   return (
     <div className={cn(cardClass, 'p-2.5')}>
       <div className="flex items-start gap-2.5">
@@ -460,8 +628,17 @@ function FlatPersonCard({ person, badgeTone, badgeLabel, showTime, t }) {
             </p>
           )}
           <div className="mt-1.5">
-            <span className={metricChipClass(badgeTone)}>{badgeLabel}</span>
+            <span className={metricChipClass(displayTone)}>{displayLabel}</span>
           </div>
+          {!person.todayAssignment && (
+            <StatusActionMenu
+              person={person}
+              employee={employee}
+              saving={saving}
+              onSetReason={onSetReason}
+              t={t}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -867,6 +1044,32 @@ export default function AsistenciaPage() {
   }, [version])
   // biome-ignore lint/correctness/useExhaustiveDependencies: version fuerza releer el store sincronizado aunque no se lea en el callback
   const bajaEmployees = useMemo(() => getBajaEmployees(), [version])
+
+  // Marcar estado real (2026-09-14, a peticion urgente del usuario -- "hoy es el primer dia
+  // real de Asistencia... como sabemos los que faltaron, vacaciones, incapacidades"): misma
+  // mutacion real de siempre (setEmployeeUnassignedReason, repository.js -- ya la usaba
+  // PersonalSinAsignarTab.jsx), ahora tambien disponible desde cualquier tarjeta de esta pagina
+  // (antes solo funcionaba para gente SIN ningun area conocida). `savingReasonIds` (por persona,
+  // no un solo booleano global) evita doble clic en la MISMA tarjeta sin bloquear las demas.
+  const [savingReasonIds, setSavingReasonIds] = useState(() => new Set())
+
+  async function handleSetReason(person, employee, reason) {
+    if (savingReasonIds.has(person.id)) return
+    setSavingReasonIds((prev) => new Set(prev).add(person.id))
+    try {
+      await setEmployeeUnassignedReason(employee || person, reason)
+      showToast(reason ? t('markStatusSuccess') : t('markStatusClearedSuccess'))
+    } catch (error) {
+      console.error('setEmployeeUnassignedReason failed', error)
+      showToast(t('markStatusError'), 'error')
+    } finally {
+      setSavingReasonIds((prev) => {
+        const next = new Set(prev)
+        next.delete(person.id)
+        return next
+      })
+    }
+  }
 
   // Union de 2 poblaciones reales, sin duplicar a nadie: `allPeopleFlat` (el mismo universo que
   // ya usa TODA esta pagina) + `bajaEmployees` (getBajaEmployees, la misma fuente real de la
@@ -1364,7 +1567,14 @@ export default function AsistenciaPage() {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {peopleToShow.map((person) => (
-                  <EmployeeCard key={person.id} person={person} t={t} />
+                  <EmployeeCard
+                    key={person.id}
+                    person={person}
+                    employee={employeesById.get(person.id)}
+                    saving={savingReasonIds.has(person.id)}
+                    onSetReason={handleSetReason}
+                    t={t}
+                  />
                 ))}
               </div>
             ))}
@@ -1378,6 +1588,9 @@ export default function AsistenciaPage() {
                   <FlatPersonCard
                     key={person.id}
                     person={person}
+                    employee={employeesById.get(person.id)}
+                    saving={savingReasonIds.has(person.id)}
+                    onSetReason={handleSetReason}
                     badgeTone="ok"
                     badgeLabel={t('statusPresentToday')}
                     showTime
@@ -1396,6 +1609,9 @@ export default function AsistenciaPage() {
                   <FlatPersonCard
                     key={person.id}
                     person={person}
+                    employee={employeesById.get(person.id)}
+                    saving={savingReasonIds.has(person.id)}
+                    onSetReason={handleSetReason}
                     badgeTone="warn"
                     badgeLabel={t('badgePending')}
                     showTime={false}
@@ -1417,6 +1633,9 @@ export default function AsistenciaPage() {
                   <FlatPersonCard
                     key={person.id}
                     person={person}
+                    employee={employeesById.get(person.id)}
+                    saving={savingReasonIds.has(person.id)}
+                    onSetReason={handleSetReason}
                     badgeTone="bad"
                     badgeLabel={t('badgeAbsence')}
                     showTime={false}

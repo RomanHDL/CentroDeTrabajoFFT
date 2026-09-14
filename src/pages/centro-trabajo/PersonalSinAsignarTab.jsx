@@ -127,7 +127,11 @@ export default function PersonalSinAsignarTab() {
     const q = query.trim().toLowerCase()
     const matches = people.filter((p) => {
       if (motivoFilter === 'SIN_REVISAR' && p.unassignedReason) return false
-      if (motivoFilter !== 'TODOS' && motivoFilter !== 'SIN_REVISAR' && p.unassignedReason !== motivoFilter) {
+      if (
+        motivoFilter !== 'TODOS' &&
+        motivoFilter !== 'SIN_REVISAR' &&
+        p.unassignedReason !== motivoFilter
+      ) {
         return false
       }
       if (!q) return true
@@ -138,7 +142,8 @@ export default function PersonalSinAsignarTab() {
     })
     if (motivoFilter !== 'TODOS') return matches
     return [...matches].sort(
-      (a, b) => (GROUP_PRIORITY[a.unassignedReason] || 0) - (GROUP_PRIORITY[b.unassignedReason] || 0),
+      (a, b) =>
+        (GROUP_PRIORITY[a.unassignedReason] || 0) - (GROUP_PRIORITY[b.unassignedReason] || 0),
     )
   }, [people, motivoFilter, query])
 
@@ -190,7 +195,10 @@ export default function PersonalSinAsignarTab() {
     setBulkActing(false)
     setSelectedIds(new Set())
     if (fail === 0) {
-      showToast(t('personalSinAsignarTab.bulkResultToast', { ok, total: targets.length }), 'success')
+      showToast(
+        t('personalSinAsignarTab.bulkResultToast', { ok, total: targets.length }),
+        'success',
+      )
     } else {
       showToast(
         t('personalSinAsignarTab.bulkResultPartialToast', { ok, total: targets.length, fail }),
@@ -265,8 +273,12 @@ export default function PersonalSinAsignarTab() {
                 <SelectItem value="SIN_REVISAR">
                   {t('personalSinAsignarTab.filterMotivoSinRevisar')}
                 </SelectItem>
-                <SelectItem value="FALTA">{t('personalSinAsignarTab.filterMotivoFalta')}</SelectItem>
-                <SelectItem value="TURNO">{t('personalSinAsignarTab.filterMotivoTurno')}</SelectItem>
+                <SelectItem value="FALTA">
+                  {t('personalSinAsignarTab.filterMotivoFalta')}
+                </SelectItem>
+                <SelectItem value="TURNO">
+                  {t('personalSinAsignarTab.filterMotivoTurno')}
+                </SelectItem>
                 <SelectItem value="BAJA">{t('personalSinAsignarTab.filterMotivoBaja')}</SelectItem>
               </SelectContent>
             </Select>
@@ -360,17 +372,38 @@ export default function PersonalSinAsignarTab() {
   )
 }
 
+// VACACIONES/INCAPACIDAD (2026-09-14, migracion 0018, a peticion urgente del usuario): 2
+// valores nuevos del mismo enum real -- se agregan aqui SOLO de forma defensiva (label/color)
+// para que esta pantalla nunca muestre un chip roto/vacio si alguien terminara con uno de
+// estos 2 motivos y ademas calificara para "Sin asignar" (areaZona nula); el flujo real para
+// marcarlos hoy vive en AsistenciaPage.jsx (StatusActionMenu), que SI cubre a cualquier
+// persona, no solo a quien no tiene area conocida.
 const REASON_LABEL_KEY = {
   BAJA: 'personalSinAsignarTab.reasonBajaLabel',
   TURNO: 'personalSinAsignarTab.reasonTurnoLabel',
   FALTA: 'personalSinAsignarTab.reasonFaltaLabel',
+  VACACIONES: 'personalSinAsignarTab.reasonVacacionesLabel',
+  INCAPACIDAD: 'personalSinAsignarTab.reasonIncapacidadLabel',
 }
 
 // Mismo vocabulario de color YA establecido en pageStyles.js (metricChipClass) -- bad=rojo,
 // info=azul, warn=ambar -- nunca un color nuevo inventado para este rediseño.
-const REASON_CHIP_TONE = { BAJA: 'bad', TURNO: 'info', FALTA: 'warn' }
+const REASON_CHIP_TONE = {
+  BAJA: 'bad',
+  TURNO: 'info',
+  FALTA: 'warn',
+  VACACIONES: 'default',
+  INCAPACIDAD: 'warn',
+}
 
-function PersonaSinAsignarItem({ person, saving, selected, selectable, onToggleSelect, onSetReason }) {
+function PersonaSinAsignarItem({
+  person,
+  saving,
+  selected,
+  selectable,
+  onToggleSelect,
+  onSetReason,
+}) {
   const { t } = useTranslation('centroTrabajo')
   const reason = person.unassignedReason || null
   return (
@@ -394,7 +427,10 @@ function PersonaSinAsignarItem({ person, saving, selected, selectable, onToggleS
             <p className="truncate text-[13px] font-bold leading-tight">{person.name}</p>
             {!reason && (
               <span
-                className={cn(metricChipClass('default'), 'h-5 shrink-0 rounded-full px-2 text-[10px]')}
+                className={cn(
+                  metricChipClass('default'),
+                  'h-5 shrink-0 rounded-full px-2 text-[10px]',
+                )}
               >
                 {t('personalSinAsignarTab.sinRevisarBadge')}
               </span>

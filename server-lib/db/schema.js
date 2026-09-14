@@ -73,7 +73,18 @@ export const skillLevel = pgEnum('SkillLevel', ['PUEDE_CUBRIR', 'INTERMEDIO', 'E
 // en "Personal sin asignar". BAJA ademas desactiva al empleado (Employee.active=false, mismo
 // mecanismo real que ya bloqueaba checkin/move -- ver placeEmployee, server-lib/personnel.js);
 // TURNO/FALTA son solo una etiqueta informativa, el empleado se queda activo.
-export const unassignedReason = pgEnum('UnassignedReason', ['BAJA', 'TURNO', 'FALTA'])
+// VACACIONES/INCAPACIDAD (2026-09-14, migracion 0018, a peticion urgente del usuario -- "hoy es
+// el primer dia real de Asistencia... como sabemos los que faltaron, vacaciones,
+// incapacidades"): mismo mecanismo real que ya existia para BAJA/TURNO/FALTA
+// (set-unassigned-reason.js), solo 2 valores nuevos agregados al enum real de Postgres -- nunca
+// se quita ni se renombra ninguno de los 3 originales.
+export const unassignedReason = pgEnum('UnassignedReason', [
+  'BAJA',
+  'TURNO',
+  'FALTA',
+  'VACACIONES',
+  'INCAPACIDAD',
+])
 export const userPermissionEffect = pgEnum('UserPermissionEffect', ['ALLOW', 'DENY'])
 export const userRole = pgEnum('UserRole', ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'])
 export const workstationCategory = pgEnum('WorkstationCategory', [

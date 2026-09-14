@@ -743,6 +743,8 @@
     "reasonBajaLabel": "Baja",
     "reasonTurnoLabel": "Cambio de turno",
     "reasonFaltaLabel": "Falta",
+    "reasonVacacionesLabel": "Vacaciones",
+    "reasonIncapacidadLabel": "Incapacidad",
     "markBajaButton": "Baja",
     "markTurnoButton": "Cambio de turno",
     "markFaltaButton": "Falta",

@@ -350,6 +350,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
   del snapshot base de 2026-08-18 (mismo que ya usa esta página en pantalla), siempre marcado
   como dato histórico en Observaciones. `exceljs` se carga con import dinámico solo al hacer
   clic (no engorda el bundle inicial).
+- **Marcar Falta/Vacaciones/Incapacidad/Baja/Cambio de turno desde Asistencia**, a petición
+  urgente del usuario ("hoy es el primer día real... cómo sabemos los que faltaron, vacaciones,
+  incapacidades"). El mecanismo real ya existía (`Employee.unassignedReason`,
+  `set-unassigned-reason.js`) pero solo se podía usar desde Centro de Trabajo → "Personal sin
+  asignar", una pantalla que solo alcanza a quien no tiene ningún área conocida -- no servía
+  para marcar a la mayoría del personal real, que sí tiene un área histórica. Ahora cada
+  tarjeta de persona en Asistencia (sin asignación de hoy) tiene un botón "Marcar estado" con
+  las 5 opciones reales; el estado marcado se refleja de inmediato en el chip de la tarjeta y
+  también en la exportación a Excel, con prioridad real (una asignación de hoy siempre gana
+  sobre una marca anterior). Se agregan 2 valores nuevos al enum real `UnassignedReason`
+  (migración `0018`, `ALTER TYPE ... ADD VALUE`, aditiva -- nunca borra ni renombra los 3
+  valores existentes): VACACIONES e INCAPACIDAD, que antes no existían en ningún lado del
+  sistema.
 
 ### Changed
 - **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora
