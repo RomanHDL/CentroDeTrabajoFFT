@@ -462,8 +462,11 @@ const FFT_WORK_CENTERS = [
     type: AREA_TYPES.PRODUCTION_LINE,
     isProduction: true,
     dailyTarget: null,
-    idealHeadcount: 10,
-  }, // 1 Calidad + 6 plan base (5 roles + 1 repetido: Montaje 2) + 1 Limpieza de caja + 2 Empaque
+    idealHeadcount: 9,
+  }, // 2026-09-15 (a peticion explicita del usuario): se quita Montaje de LINEA1 (los 2 puestos,
+  // "Montaje"/"Montaje 2", desactivados) y se agrega un 2o puesto de Limpieza de caja en su
+  // lugar -- 1 Calidad + 4 plan base (Prueba eléctrica, Limpieza de TV, Etiquetado, Suministro
+  // de Accesorios, ya sin Montaje ni su repetido) + 2 Limpieza de caja + 2 Empaque
   {
     id: 'LINEA2',
     name: 'WC LINEA 2',
