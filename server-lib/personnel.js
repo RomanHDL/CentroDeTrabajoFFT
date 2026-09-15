@@ -223,6 +223,57 @@ export async function placeEmployee({ employeeId, workstationId, shift, actingUs
   })
 }
 
+const DAILY_ATTENDANCE_STATUSES = new Set(['AUSENTE', 'RETARDO', 'PRESENTE'])
+
+/**
+ * Cambia el estado de asistencia de HOY para un empleado -- SIN tocar su asignacion real
+ * (Employee/DailyAssignment). Separacion explicita a peticion del usuario (2026-09-15, "Marcar
+ * falta" en el layout FFT, "FALTA NO SIGNIFICA SIN ASIGNAR, FALTA NO SIGNIFICA LIBERAR"): quien
+ * falta sigue siendo el titular real de su puesto -- solo cambia si vino o no, nunca donde esta
+ * ubicado. Nunca crea/borra/cierra ninguna fila de DailyAssignment; placeEmployee (arriba) sigue
+ * siendo el UNICO lugar que las toca.
+ *
+ * Upsert real sobre el mismo indice unico compuesto que ya usa placeEmployee para el pase de
+ * lista normal (employeeId, date, shift) -- nunca puede quedar mas de una fila de Attendance por
+ * persona/dia/turno sin importar cuantas veces se marque/corrija (misma proteccion real de
+ * concurrencia que un checkin duplicado, ahora reutilizada aqui). El turno usado es el de la
+ * asignacion ACTIVE real de hoy si existe (para que la fila de Attendance quede coherente con
+ * donde esta colocada la persona), 'GENERAL' si no tiene ninguna (ej. alguien en "Sin asignar").
+ *
+ * status='PRESENTE' es como "quitar falta"/confirmar llegada tardia sin repetir el checkin real
+ * (que fallaria con CONFLICT porque la asignacion nunca se toco) -- mismo AttendanceStatus real
+ * que ya escribe un checkin normal, ningun estado paralelo nuevo.
+ */
+export async function setDailyAttendanceStatus({ employeeId, status, actingUserId }) {
+  if (!DAILY_ATTENDANCE_STATUSES.has(status)) return { status: 'INVALID_STATUS' }
+  const [emp] = await db.select({ active: employee.active }).from(employee).where(eq(employee.id, employeeId)).limit(1)
+  if (!emp) return { status: 'NOT_FOUND' }
+  const today = todayDateOnly()
+  const [current] = await db
+    .select({ shift: dailyAssignment.shift })
+    .from(dailyAssignment)
+    .where(and(eq(dailyAssignment.employeeId, employeeId), eq(dailyAssignment.status, 'ACTIVE')))
+    .limit(1)
+  const effectiveShift = current?.shift || 'GENERAL'
+  const checkInAt = status === 'AUSENTE' ? null : new Date()
+  const [row] = await db
+    .insert(attendance)
+    .values({
+      employeeId,
+      date: today,
+      shift: effectiveShift,
+      checkInAt,
+      status,
+      registeredByUserId: actingUserId,
+    })
+    .onConflictDoUpdate({
+      target: [attendance.employeeId, attendance.date, attendance.shift],
+      set: { status, checkInAt, registeredByUserId: actingUserId },
+    })
+    .returning()
+  return { status: 'OK', attendance: row }
+}
+
 /**
  * Intercambia (SWAP) o "bombea" (BUMP) a un empleado hacia una estacion ya ocupada --
  * equivalente real de swapOrBumpStation (repository.js), pero ATOMICO en una sola transaccion

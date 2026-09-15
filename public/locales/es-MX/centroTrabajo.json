@@ -189,7 +189,8 @@
   },
   "lineStationCard": {
     "statusOccupied": "OCUPADA",
-    "statusAvailable": "DISPONIBLE"
+    "statusAvailable": "DISPONIBLE",
+    "statusAbsentToday": "FALTA HOY"
   },
   "employeeHistoryDialog": {
     "checkInLabel": "Entrada",
@@ -210,7 +211,21 @@
     "releaseButton": "Liberar asignación",
     "moveButton": "Mover empleado",
     "closeButton": "Cerrar",
-    "moveFeedback": "Empleado movido correctamente."
+    "moveFeedback": "Empleado movido correctamente.",
+    "absentTodayBadge": "🔴 Falta hoy",
+    "lateTodayBadge": "🟡 Retardo hoy",
+    "markAbsentButton": "Marcar falta",
+    "unmarkAbsentButton": "Quitar falta",
+    "markAbsentConfirmTitle": "Marcar falta",
+    "markAbsentConfirmDescription": "La persona conservará su asignación actual, pero será registrada con falta en la asistencia de hoy.",
+    "markAbsentConfirmButton": "Confirmar falta",
+    "unmarkAbsentConfirmTitle": "Quitar falta",
+    "unmarkAbsentConfirmDescription": "Se confirmará que la persona sí asistió hoy. Conserva exactamente la misma asignación.",
+    "unmarkAbsentConfirmButton": "Confirmar asistencia",
+    "cancelButton": "Cancelar",
+    "markAbsentFeedback": "Falta registrada. El empleado conserva su puesto.",
+    "unmarkAbsentFeedback": "Asistencia confirmada. El empleado conserva su puesto.",
+    "markAbsentErrorFallback": "No se pudo registrar la falta. Intenta de nuevo."
   },
   "lineWorkstationCard": {
     "editStationMenuItem": "Editar puesto",

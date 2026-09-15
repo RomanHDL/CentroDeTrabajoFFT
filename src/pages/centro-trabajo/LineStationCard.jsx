@@ -2,6 +2,7 @@ import { UserX } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn, hexToRgba } from '@/lib/utils'
 import { getPersonnelRank } from '../../data/personnel/rankSystem'
+import { getAbsentEmployeeIds } from '../../data/personnel/repository'
 import DraggablePersonChip from '../../ui/DraggablePersonChip'
 import { useEmployeeDropTargetStation } from '../../ui/dnd'
 import EmployeeAvatar from './EmployeeAvatar'
@@ -43,6 +44,13 @@ export default function LineStationCard({
   const { t } = useTranslation('centroTrabajo')
   const occupant = workstation.occupants[0] || null
   const available = workstation.isAvailable
+  // "Marcar falta" (2026-09-15, a peticion explicita del usuario -- "FALTA NO SIGNIFICA SIN
+  // ASIGNAR, FALTA NO SIGNIFICA LIBERAR"): el ocupante sigue siendo el titular real del puesto,
+  // solo cambia como se ve. Consulta directa (sin memo) a proposito -- es un simple .includes()
+  // sobre un arreglo ya cacheado localmente (repository.js/store.js), y este componente ya
+  // vuelve a renderizar solo cuando el arbol de arriba lo hace (usePersonnelVersion en el
+  // padre), mismo criterio que el resto de este archivo (getPersonnelRank, etc.).
+  const isAbsentToday = Boolean(occupant?.employee?.id) && getAbsentEmployeeIds().includes(occupant.employee.id)
   // Rango visual por área+puesto+rango (2026-08-27, a peticion explicita del usuario) -- por
   // defecto SOLO en areas LINE_LIKE (Familia C: Paletizado/Accesorios/Insumos/Midea/Conveyor
   // General). EXCEPCION explicita (misma fecha, segunda ronda del pedido): el puesto "Calidad"
@@ -62,12 +70,21 @@ export default function LineStationCard({
   const { isOver, dropProps } = useEmployeeDropTargetStation(workAreaId, workstation.name)
 
   const highlighted = isOver || selected
-  const accent = highlighted ? '#3B82F6' : occupant ? '#10B981' : '#F59E0B'
+  // Rojo discreto para "falta hoy" -- reutiliza EXACTAMENTE el mismo mecanismo de color de
+  // borde/fondo que ya existia para ocupado/disponible (hexToRgba(accent, ...) mas abajo), nunca
+  // una card roja intensa: mismas opacidades suaves, solo cambia el tono.
+  const accent = highlighted ? '#3B82F6' : isAbsentToday ? '#DC2626' : occupant ? '#10B981' : '#F59E0B'
 
   const cardStyle = {
     '--ls-border-light': highlighted ? accent : hexToRgba(accent, 0.35),
     '--ls-border-dark': highlighted ? accent : hexToRgba(accent, 0.4),
-    '--ls-bg-light': isOver ? hexToRgba(accent, 0.08) : occupant ? '#F7FEFB' : '#FFFCF5',
+    '--ls-bg-light': isOver
+      ? hexToRgba(accent, 0.08)
+      : isAbsentToday
+        ? hexToRgba(accent, 0.05)
+        : occupant
+          ? '#F7FEFB'
+          : '#FFFCF5',
     '--ls-bg-dark': isOver ? hexToRgba(accent, 0.18) : hexToRgba(accent, occupant ? 0.06 : 0.05),
     '--ls-accent-bg-light': hexToRgba(accent, 0.14),
     '--ls-accent-bg-dark': hexToRgba(accent, 0.22),
@@ -191,10 +208,14 @@ export default function LineStationCard({
       <p
         className={cn(
           'text-center text-[10px] font-extrabold tracking-[0.3px]',
-          occupant ? 'text-[#059669]' : 'text-[#B45309]',
+          isAbsentToday ? 'text-[#DC2626]' : occupant ? 'text-[#059669]' : 'text-[#B45309]',
         )}
       >
-        {occupant ? t('lineStationCard.statusOccupied') : t('lineStationCard.statusAvailable')}
+        {isAbsentToday
+          ? `🔴 ${t('lineStationCard.statusAbsentToday')}`
+          : occupant
+            ? t('lineStationCard.statusOccupied')
+            : t('lineStationCard.statusAvailable')}
       </p>
     </div>
   )

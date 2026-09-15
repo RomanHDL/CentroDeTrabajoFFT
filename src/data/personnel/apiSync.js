@@ -313,6 +313,27 @@ export async function syncSetUnassignedReason({ employeeId, employeeNumber, name
   return data
 }
 
+/* "Marcar falta" (2026-09-15, a peticion explicita del usuario -- "FALTA NO SIGNIFICA SIN
+   ASIGNAR, FALTA NO SIGNIFICA LIBERAR"): DELIBERADAMENTE async/esperado, mismo criterio que
+   syncSetUnassignedReason arriba -- esto SOLO escribe Attendance de hoy (server-lib/
+   set-attendance-status.js), nunca toca la asignacion real. Requiere serverId ya resuelto (a
+   diferencia de set-unassigned-reason, esta accion solo tiene sentido para alguien YA asignado
+   hoy, que por definicion ya paso por un checkin real y tiene serverId conocido). */
+export async function syncSetAttendanceStatus({ employeeId, status }) {
+  const serverId = serverIdByLocalId.get(employeeId)
+  if (!serverId) {
+    throw new Error(
+      '[personnel-sync] set-attendance-status: sin serverId todavia (aun no se sincroniza con el servidor), intenta de nuevo en unos segundos',
+    )
+  }
+  const data = await apiFetch('/api/personnel/set-attendance-status', {
+    method: 'POST',
+    body: JSON.stringify({ employeeId: serverId, status }),
+  })
+  markRecentWrite(employeeId)
+  return data
+}
+
 export function syncRelease({ employeeId }) {
   markRecentWrite(employeeId)
   const serverId = serverIdByLocalId.get(employeeId)

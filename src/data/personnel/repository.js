@@ -14,6 +14,7 @@ import {
   syncRelease,
   syncRequestMove,
   syncRestoreBaseline,
+  syncSetAttendanceStatus,
   syncSetUnassignedReason,
   syncSuppressBaseline,
   syncSwapOrBump,
@@ -33,11 +34,13 @@ import {
   readPendingMoves,
   readSkills,
   subscribe,
+  writeAbsentEmployeeIds,
   writeAssignments,
   writeAttendance,
   writeBaselineSuppressed,
   writeEmployeeStatusOverrides,
   writeEmployees,
+  writeLateEmployeeIds,
   writeMovements,
   writePendingMoves,
   writeSkills,
@@ -186,6 +189,28 @@ export async function setEmployeeUnassignedReason(person, reason) {
   writeEmployeeStatusOverrides(overrides)
   notify()
   return { status: 'OK', employee: data.employee }
+}
+
+/* "Marcar falta" en el layout FFT (2026-09-15, a peticion explicita del usuario) -- SEPARADO a
+   proposito de setEmployeeUnassignedReason: esto NUNCA toca la asignacion real ni "Sin asignar",
+   solo el estado de asistencia de HOY (reutiliza el AttendanceStatus real que ya existia --
+   PRESENTE/AUSENTE/RETARDO -- nunca un estado paralelo nuevo). DELIBERADAMENTE async/esperado,
+   mismo criterio que setEmployeeUnassignedReason: la UI debe reflejar lo que el servidor
+   confirmo, nunca un optimismo que un poll revierta 15s despues en silencio.
+   status: 'AUSENTE' | 'RETARDO' | 'PRESENTE' ('PRESENTE' = "quitar falta"/confirmar llegada sin
+   repetir el checkin real, que fallaria con CONFLICT porque la asignacion nunca se toco). */
+export async function setAttendanceStatus(employee, status) {
+  await syncSetAttendanceStatus({ employeeId: employee.id, status })
+  const absentIds = new Set(readAbsentEmployeeIds())
+  const lateIds = new Set(readLateEmployeeIds())
+  absentIds.delete(employee.id)
+  lateIds.delete(employee.id)
+  if (status === 'AUSENTE') absentIds.add(employee.id)
+  if (status === 'RETARDO') lateIds.add(employee.id)
+  writeAbsentEmployeeIds([...absentIds])
+  writeLateEmployeeIds([...lateIds])
+  notify()
+  return { status: 'OK' }
 }
 
 /* 'PROYECTO' (sin numero real todavia) y 'PENDIENTE' (placeholder de
@@ -351,17 +376,18 @@ export function getAssignmentsForArea(areaId, date = todayISO()) {
   return getAssignmentsForDate(date).filter((a) => a.areaId === areaId)
 }
 
-/* Ids de empleados con Attendance.status='AUSENTE' HOY (ver
-   api/personnel/roster.js/absentEmployeeIds y apiSync.js/pollOnce) --
-   hoy siempre vacio porque ningun flujo real escribe 'AUSENTE' todavia,
-   pero es una consulta real, no un valor fijo (ver comentario del
-   endpoint para el detalle). */
+/* Ids de empleados con Attendance.status='AUSENTE' HOY (ver api/personnel/roster.js/
+   absentEmployeeIds y apiSync.js/pollOnce). Desde 2026-09-15 (`setAttendanceStatus`,
+   "Marcar falta" en el layout FFT) este ya no esta siempre vacio -- es la fuente de verdad real
+   que el layout consulta para decidir si un puesto asignado se ve como "FALTA HOY" en vez de
+   "OCUPADA" (nunca su propio estado paralelo -- ver LineStationCard.jsx/EmployeeHistoryDialog.jsx). */
 export function getAbsentEmployeeIds() {
   return readAbsentEmployeeIds()
 }
 
 /* Ids de empleados con Attendance.status='RETARDO' HOY (2026-09-03, "Estado general del dia" de
-   Personal) -- mismo comentario que getAbsentEmployeeIds arriba, hoy siempre vacio. */
+   Personal). Mismo comentario que getAbsentEmployeeIds arriba: desde 2026-09-15 puede tener
+   datos reales via setAttendanceStatus (marcar falta y luego confirmar llegada tardia). */
 export function getLateEmployeeIds() {
   return readLateEmployeeIds()
 }

@@ -48,6 +48,7 @@ import personnelReleaseHandler from '../api/personnel/release.js'
 import personnelRequestMoveHandler from '../api/personnel/request-move.js'
 import personnelRestoreBaselineHandler from '../api/personnel/restore-baseline.js'
 import personnelRosterHandler from '../api/personnel/roster.js'
+import personnelSetAttendanceStatusHandler from '../api/personnel/set-attendance-status.js'
 import personnelSetUnassignedReasonHandler from '../api/personnel/set-unassigned-reason.js'
 import personnelSuppressBaselineHandler from '../api/personnel/suppress-baseline.js'
 import personnelSwapHandler from '../api/personnel/swap.js'
@@ -148,6 +149,7 @@ export function mountApiRoutes(app) {
   app.post('/api/personnel/reject-move', wrapAsync(personnelRejectMoveHandler))
   app.post('/api/personnel/suppress-baseline', wrapAsync(personnelSuppressBaselineHandler))
   app.post('/api/personnel/set-unassigned-reason', wrapAsync(personnelSetUnassignedReasonHandler))
+  app.post('/api/personnel/set-attendance-status', wrapAsync(personnelSetAttendanceStatusHandler))
   app.post('/api/personnel/restore-baseline', wrapAsync(personnelRestoreBaselineHandler))
   app.post('/api/personnel/sync-smartcontrol', wrapAsync(personnelSyncSmartControlHandler))
   app.get('/api/personnel/area-history', wrapAsync(personnelAreaHistoryHandler))

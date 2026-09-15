@@ -49,6 +49,7 @@ import {
 } from '../../data/personnel/lineVisualType'
 import {
   checkInEmployee,
+  getAbsentEmployeeIds,
   getLineWorkstationsWithOccupancy,
   getSuggestedCandidates,
 } from '../../data/personnel/repository'
@@ -408,6 +409,12 @@ export default function LineDetailDrawer({
   const selectedStationOccupantActividad = selectedStation?.occupants[0]?.employee?.id
     ? getActividadForEmployee(selectedStation.occupants[0].employee.id)
     : null
+  // "Marcar falta" (2026-09-15): el ocupante sigue siendo el titular real del puesto -- este
+  // panel de detalle no debe decir "OCUPADA" a secas si esta marcado con falta hoy, mismo
+  // criterio que LineStationCard.jsx.
+  const selectedStationAbsentToday = selectedStation?.occupants[0]?.employee?.id
+    ? getAbsentEmployeeIds().includes(selectedStation.occupants[0].employee.id)
+    : false
   const selectedStationVisualType = selectedStation
     ? getPersonnelVisualType({
         stationRole: selectedStation.role,
@@ -955,16 +962,28 @@ export default function LineDetailDrawer({
                           <span
                             className="h-2 w-2 rounded-full"
                             style={{
-                              backgroundColor: selectedStation.isAvailable ? '#F59E0B' : '#10B981',
+                              backgroundColor: selectedStationAbsentToday
+                                ? '#DC2626'
+                                : selectedStation.isAvailable
+                                  ? '#F59E0B'
+                                  : '#10B981',
                             }}
                           />
                           <p
                             className="text-[11px] font-extrabold tracking-[0.3px]"
-                            style={{ color: selectedStation.isAvailable ? '#B45309' : '#059669' }}
+                            style={{
+                              color: selectedStationAbsentToday
+                                ? '#DC2626'
+                                : selectedStation.isAvailable
+                                  ? '#B45309'
+                                  : '#059669',
+                            }}
                           >
-                            {selectedStation.isAvailable
-                              ? t('lineDetailDrawer.stationAvailableStatus')
-                              : t('lineDetailDrawer.stationOccupiedStatus')}
+                            {selectedStationAbsentToday
+                              ? `🔴 ${t('lineStationCard.statusAbsentToday')}`
+                              : selectedStation.isAvailable
+                                ? t('lineDetailDrawer.stationAvailableStatus')
+                                : t('lineDetailDrawer.stationOccupiedStatus')}
                           </p>
                         </div>
 

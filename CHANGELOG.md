@@ -363,6 +363,21 @@ para poder desplegar en el servidor privado (Coolify). Ver
   (migración `0018`, `ALTER TYPE ... ADD VALUE`, aditiva -- nunca borra ni renombra los 3
   valores existentes): VACACIONES e INCAPACIDAD, que antes no existían en ningún lado del
   sistema.
+- **"Marcar falta" en el layout FFT (Áreas de trabajo/Líneas), separado por completo de
+  asignación.** A petición explícita del usuario ("FALTA NO SIGNIFICA SIN ASIGNAR, FALTA NO
+  SIGNIFICA LIBERAR"): antes, la única forma de reflejar que alguien no vino era liberarlo (lo
+  mandaba a "Sin asignar", perdiendo su puesto). Ahora el panel de un empleado asignado
+  (`EmployeeHistoryDialog.jsx`) tiene un botón **"Marcar falta"** independiente de "Liberar"/
+  "Mover" (con su propia confirmación) que solo escribe `Attendance.status='AUSENTE'` de HOY --
+  nunca toca `DailyAssignment`. El empleado sigue viéndose en su misma línea/estación
+  (`LineStationCard.jsx`, la tarjeta de "Calidad 1"/etc.) con un badge rojo discreto
+  **"🔴 FALTA HOY"** en vez de "OCUPADA" -- nunca aparece como "DISPONIBLE" ni cuenta como
+  vacante. "Quitar falta" (mismo botón, invertido) confirma asistencia sin repetir un check-in
+  real. Reutiliza el `AttendanceStatus` real que ya existía en el schema (PRESENTE/AUSENTE/
+  RETARDO, nunca escrito hasta ahora) vía un único endpoint nuevo,
+  `POST /api/personnel/set-attendance-status` (mismo patrón que `set-unassigned-reason.js`) --
+  cero migraciones de base de datos. No incluye todavía la automatización de las 7:15am (no
+  existía ninguna tarea de ese tipo en el código; queda pendiente como una pieza separada).
 - **Alta masiva del roster real de FFT + sync automático reactivado.** El primer día real de
   Asistencia expuso que "Personal sin asignar" solo alcanzaba a gente sin ningún área conocida --
   no a los ~130 empleados reales de FFT (SmartControl, WorkCenterID=49) que simplemente nunca
