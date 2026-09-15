@@ -839,6 +839,19 @@ para poder desplegar en el servidor privado (Coolify). Ver
   se tocó.
 
 ### Fixed
+- **Vulnerabilidades reales reportadas por el escaneo automático del contenedor (Coolify).**
+  Verificado CVE por CVE contra las versiones realmente instaladas (no solo el nombre del
+  paquete): `brace-expansion` (ambos hallazgos) e `ip-address` (los 3 hallazgos) ya estaban en
+  versiones parchadas -- **falsos positivos**, sin cambio necesario. `js-yaml` (transitivo vía
+  `pm2`, CVE-2026-84375, DoS en parseo YAML) y `qs` (transitivo vía `express`/`body-parser`,
+  CVE-2026-82417/CVE-2026-82562, DoS) sí estaban en versiones vulnerables reales -- se fuerzan a
+  sus versiones parchadas (`js-yaml@^4.3.2`, `qs@^6.16.0`) vía `overrides` en
+  `pnpm-workspace.yaml` (nueva ubicación real de ese ajuste en pnpm 11, ya no en
+  `package.json`), sin esperar a que `pm2`/`express` suban su propia dependencia. De paso,
+  corregido un hallazgo aparte durante la misma investigación: `express` estaba mal declarado
+  en `devDependencies` pese a ser un import real en `server-lib/prod-server.js` (funcionaba
+  "de milagro" solo porque la instalación de producción actual no aplica `--omit=dev`) --
+  movido a `dependencies`, su lugar real.
 - **Check-ins que se perdían sin aviso** -- bug real reportado el primer día real de uso de
   Asistencia ("Diego Marin registró gente hoy pero no se ven varios en mi layout"): investigado
   contra la base real, de varias personas registradas en un dispositivo solo unas pocas llegaban

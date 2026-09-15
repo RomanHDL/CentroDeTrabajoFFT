@@ -2,3 +2,10 @@ allowBuilds:
   '@prisma/engines': true
   esbuild: true
   prisma: true
+# Parches de seguridad (2026-09-15, escaneo real del contenedor en Coolify):
+# js-yaml (transitivo via pm2) y qs (transitivo via express/body-parser) no son
+# dependencias directas -- se fuerza la version parchada aqui para toda la
+# arbol de dependencias, sin esperar a que pm2/express suban la suya.
+overrides:
+  js-yaml@<4.3.2: ^4.3.2
+  qs@<6.16.0: ^6.16.0
