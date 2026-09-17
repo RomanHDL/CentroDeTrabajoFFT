@@ -122,9 +122,12 @@ async function getActiveFolioedFftCandidates(pool) {
   // Sin el filtro de "inspeccion propia reciente" (retirado 2026-09-14, ver nota grande arriba) --
   // solo IsActive=1 + folio real. LEFT JOIN a ADM.activities para traer la actividad especifica
   // real (uc.activityid) cuando SmartControl la tiene capturada; null cuando no (nunca se inventa).
+  // ul.Turno (2026-09-17, "Personal"/"Personal sin asignar" divididos por turno real): entero real
+  // de ADM.UsersLogin, mapeado via mapTurno() abajo -- se trae aqui mismo para el ALTA, nunca una
+  // consulta aparte para gente nueva.
   const result = await pool.request().query(`
     SELECT DISTINCT uc.EmployeeNumber, uc.HireDate, ul.Name, ul.SecondName, ul.LastName, ul.SecondLastName,
-      a.activityname_es AS ActivityNameEs
+      a.activityname_es AS ActivityNameEs, ul.Turno
     FROM ADM.UsersLogin ul
     INNER JOIN ADM.UsersComplement uc ON uc.UserId = ul.UserId
     LEFT JOIN ADM.activities a ON a.activityid = uc.activityid
@@ -133,6 +136,17 @@ async function getActiveFolioedFftCandidates(pool) {
       AND uc.EmployeeNumber IS NOT NULL AND LTRIM(RTRIM(uc.EmployeeNumber)) <> ''
   `)
   return result.recordset
+}
+
+// Catalogo real ADM.Turno (SmartControl, confirmado en vivo 2026-09-17): turnoID=1 ->
+// 'Matutino', turnoID=2 -> 'Nocturno' -- los UNICOS 2 valores que existen hoy. Cualquier otro
+// entero (o null) se mapea a null a proposito -- nunca se inventa un turno que SmartControl no
+// trae capturado. NO CONFUNDIR con DailyAssignment.shift (turno de checkin, texto libre, ver
+// SHIFT_OPTIONS en src/data/production/catalog.js) -- este es el turno real/de casa de RRHH.
+function mapTurno(turnoId) {
+  if (turnoId === 1) return 'MATUTINO'
+  if (turnoId === 2) return 'NOCTURNO'
+  return null
 }
 
 async function getFolioActiveStatusMap(pool, employeeNumbers) {
@@ -150,6 +164,33 @@ async function getFolioActiveStatusMap(pool, employeeNumbers) {
     WHERE uc.EmployeeNumber IN (${placeholders.join(', ')})
   `)
   for (const r of result.recordset) map.set(String(r.EmployeeNumber).trim(), !!r.IsActive)
+  return map
+}
+
+// Backfill continuo del turno real (2026-09-17, a peticion explicita del usuario: "Personal"/
+// "Personal sin asignar" divididos por turno real de SmartControl, no inventado). Mismo patron
+// exacto que getFolioActiveStatusMap de arriba (mismo IN de folios activos ya conocidos
+// localmente), pero trayendo ul.Turno en vez de ul.IsActive -- se corre en CADA ejecucion normal
+// del sync (ya activo en produccion) para que un cambio de turno real capturado despues en
+// SmartControl (alguien que pasa de Matutino a Nocturno, o a quien apenas le capturan el dato)
+// se refleje solo, sin esperar a un backfill manual como el que se corrio una sola vez el
+// 2026-09-17 para los 115 empleados activos con folio que ya existian antes de que este campo
+// existiera (112 quedaron con turno real, 3 sin match en SmartControl -- confirmado en vivo).
+async function getFolioTurnoMap(pool, employeeNumbers) {
+  const map = new Map()
+  if (!employeeNumbers.length) return map
+  const request = pool.request()
+  const placeholders = employeeNumbers.map((n, i) => {
+    request.input(`t${i}`, sql.NVarChar, n)
+    return `@t${i}`
+  })
+  const result = await request.query(`
+    SELECT uc.EmployeeNumber, ul.Turno
+    FROM ADM.UsersComplement uc
+    INNER JOIN ADM.UsersLogin ul ON ul.UserId = uc.UserId
+    WHERE uc.EmployeeNumber IN (${placeholders.join(', ')})
+  `)
+  for (const r of result.recordset) map.set(String(r.EmployeeNumber).trim(), mapTurno(r.Turno))
   return map
 }
 
@@ -176,6 +217,7 @@ export async function runPersonnelSync({ dryRun = false } = {}) {
       employeeNumber: employeeTable.employeeNumber,
       fullName: employeeTable.fullName,
       active: employeeTable.active,
+      turno: employeeTable.turno,
     })
     .from(employeeTable)
     .where(isNotNull(employeeTable.employeeNumber))
@@ -213,6 +255,7 @@ export async function runPersonnelSync({ dryRun = false } = {}) {
         actividad: c.ActivityNameEs || null,
         fechaIngreso: formatFechaIngreso(c.HireDate),
         active: true,
+        turno: mapTurno(c.Turno),
         smartControlSyncedAt: now,
         updatedAt: now,
       })
@@ -251,5 +294,29 @@ export async function runPersonnelSync({ dryRun = false } = {}) {
     }
   }
 
-  return { skipped: false, ranAt: now.toISOString(), added, bajas }
+  // 3) Backfill continuo de turno (2026-09-17, ver comentario grande en getFolioTurnoMap): se
+  // corre sobre el mismo activeWithNumber de arriba (folios activos ya existentes localmente,
+  // sin importar su area) -- UPDATE solo si el valor real de SmartControl difiere del que ya
+  // esta guardado, para no generar ruido (fila tocada/updatedAt movido) en cada corrida cuando
+  // nada cambio de verdad.
+  const turnoMap = await getFolioTurnoMap(
+    pool,
+    activeWithNumber.map((e) => String(e.employeeNumber).trim()),
+  )
+  let turnosUpdated = 0
+  for (const e of activeWithNumber) {
+    const number = String(e.employeeNumber).trim()
+    if (!turnoMap.has(number)) continue
+    const realTurno = turnoMap.get(number)
+    if (realTurno === (e.turno ?? null)) continue
+    if (!dryRun) {
+      await db
+        .update(employeeTable)
+        .set({ turno: realTurno, smartControlSyncedAt: now, updatedAt: now })
+        .where(eq(employeeTable.id, e.id))
+    }
+    turnosUpdated += 1
+  }
+
+  return { skipped: false, ranAt: now.toISOString(), added, bajas, turnosUpdated }
 }

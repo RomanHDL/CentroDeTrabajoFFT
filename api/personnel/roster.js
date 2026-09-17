@@ -80,6 +80,9 @@ export default requireAuth(async (req, res) => {
         fullName: employeeTable.fullName,
         areaZona: employeeTable.areaZona,
         baselineSuppressed: employeeTable.baselineSuppressed,
+        // Turno REAL de SmartControl (2026-09-17, ver comentario del enum employeeTurno en
+        // schema.js) -- NO es lo mismo que placement.shift (turno del checkin) mas abajo.
+        turno: employeeTable.turno,
       })
       .from(employeeTable)
       .where(eq(employeeTable.active, true)),
@@ -135,6 +138,7 @@ export default requireAuth(async (req, res) => {
         unassignedReason: employeeTable.unassignedReason,
         unassignedReasonSetAt: employeeTable.unassignedReasonSetAt,
         unassignedReasonSetByUserId: employeeTable.unassignedReasonSetByUserId,
+        turno: employeeTable.turno,
       })
       .from(employeeTable)
       .where(or(eq(employeeTable.active, false), isNotNull(employeeTable.unassignedReason))),
@@ -208,6 +212,7 @@ export default requireAuth(async (req, res) => {
       fullName: employee.fullName,
       areaZona: employee.areaZona,
       baselineSuppressed: employee.baselineSuppressed,
+      turno: employee.turno,
     }
 
     const active = activeByEmployee.get(employee.id)

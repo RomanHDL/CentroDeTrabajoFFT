@@ -731,7 +731,12 @@
     "verSinAsignarActionDesc": "Personal pendiente",
     "asignarLineaActionDesc": "Ubicar personal en área",
     "moverPersonalActionDesc": "Cambiar de área o rol",
-    "verLayoutActionDesc": "Mapa completo del personal"
+    "verLayoutActionDesc": "Mapa completo del personal",
+    "scTurnoLabel": "Turno (SmartControl)",
+    "scTurnoColLabel": "Turno (SmartControl)",
+    "scTurnoMatutino": "Matutino",
+    "scTurnoNocturno": "Nocturno",
+    "scTurnoUnknown": "Sin turno detectado"
   },
   "personalSinAsignarTab": {
     "title": "Personal sin asignar",
@@ -778,7 +783,15 @@
     "emptyTitle": "Todo el personal está asignado",
     "emptyDescription": "No hay personas pendientes de clasificación.",
     "noResultsTitle": "Sin resultados",
-    "noResultsDescription": "Nadie coincide con esta búsqueda o filtro."
+    "noResultsDescription": "Nadie coincide con esta búsqueda o filtro.",
+    "turnoTabAll": "Todos ({{count}})",
+    "turnoTabMatutino": "Matutino ({{count}})",
+    "turnoTabNocturno": "Nocturno ({{count}})",
+    "turnoTabUnknown": "Sin turno detectado ({{count}})",
+    "scTurnoPrefix": "Turno (SmartControl):",
+    "scTurnoMatutino": "Matutino",
+    "scTurnoNocturno": "Nocturno",
+    "scTurnoUnknown": "Sin turno detectado"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "Justo ahora",

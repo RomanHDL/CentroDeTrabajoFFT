@@ -716,7 +716,12 @@
     "verSinAsignarActionDesc": "Pending personnel",
     "asignarLineaActionDesc": "Place personnel in an area",
     "moverPersonalActionDesc": "Change area or role",
-    "verLayoutActionDesc": "Full personnel map"
+    "verLayoutActionDesc": "Full personnel map",
+    "scTurnoLabel": "Shift (SmartControl)",
+    "scTurnoColLabel": "Shift (SmartControl)",
+    "scTurnoMatutino": "Morning",
+    "scTurnoNocturno": "Night",
+    "scTurnoUnknown": "Shift not detected"
   },
   "personalSinAsignarTab": {
     "title": "Unassigned Personnel",
@@ -761,7 +766,15 @@
     "emptyTitle": "Everyone is assigned",
     "emptyDescription": "No one is pending classification.",
     "noResultsTitle": "No results",
-    "noResultsDescription": "No one matches this search or filter."
+    "noResultsDescription": "No one matches this search or filter.",
+    "turnoTabAll": "All ({{count}})",
+    "turnoTabMatutino": "Morning ({{count}})",
+    "turnoTabNocturno": "Night ({{count}})",
+    "turnoTabUnknown": "Shift not detected ({{count}})",
+    "scTurnoPrefix": "Shift (SmartControl):",
+    "scTurnoMatutino": "Morning",
+    "scTurnoNocturno": "Night",
+    "scTurnoUnknown": "Shift not detected"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "Just now",

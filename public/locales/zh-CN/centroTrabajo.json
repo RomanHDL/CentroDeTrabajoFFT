@@ -716,7 +716,12 @@
     "verSinAsignarActionDesc": "待处理人员",
     "asignarLineaActionDesc": "将人员安置到区域",
     "moverPersonalActionDesc": "更改区域或角色",
-    "verLayoutActionDesc": "完整人员平面图"
+    "verLayoutActionDesc": "完整人员平面图",
+    "scTurnoLabel": "班次（SmartControl）",
+    "scTurnoColLabel": "班次（SmartControl）",
+    "scTurnoMatutino": "早班",
+    "scTurnoNocturno": "夜班",
+    "scTurnoUnknown": "未检测到班次"
   },
   "personalSinAsignarTab": {
     "title": "未分配人员",
@@ -761,7 +766,15 @@
     "emptyTitle": "今日所有人员均已分配",
     "emptyDescription": "目前没有待分类的人员。",
     "noResultsTitle": "无结果",
-    "noResultsDescription": "没有符合该搜索或筛选条件的人员。"
+    "noResultsDescription": "没有符合该搜索或筛选条件的人员。",
+    "turnoTabAll": "全部（{{count}}）",
+    "turnoTabMatutino": "早班（{{count}}）",
+    "turnoTabNocturno": "夜班（{{count}}）",
+    "turnoTabUnknown": "未检测到班次（{{count}}）",
+    "scTurnoPrefix": "班次（SmartControl）：",
+    "scTurnoMatutino": "早班",
+    "scTurnoNocturno": "夜班",
+    "scTurnoUnknown": "未检测到班次"
   },
   "operationalAreaDetail": {
     "relativeJustNow": "刚刚",

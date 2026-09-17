@@ -390,6 +390,21 @@ para poder desplegar en el servidor privado (Coolify). Ver
   real, casi cualquiera que no fuera inspector de calidad), las altas nuevas aterrizan en "Sin
   asignar" (antes un snapshot genérico de 'PRODUCCION'), y se excluyen folios ya usados por una
   cuenta de `User` (líderes/supervisores) para no duplicarlos como personal de piso.
+- **Turno REAL (SmartControl) en "Personal" y "Personal sin asignar".** Nuevo campo
+  `Employee.turno` (enum `EmployeeTurno`, migración `drizzle/0019_add_employee_turno.sql`) tomado
+  de `ADM.UsersLogin.Turno` en SmartControl (catálogo real `ADM.Turno`: 1 = Matutino, 2 =
+  Nocturno) -- `null` cuando SmartControl no lo trae capturado, nunca inventado.
+  `server-lib/personnel-sync.js` lo captura en cada ALTA nueva y además hace backfill continuo en
+  cada corrida normal (cada 30 min) para los folios activos ya existentes, actualizando solo
+  cuando el valor real cambia. Backfill inmediato corrido el 2026-09-17 sobre los 115 empleados
+  activos con folio: 95 Matutino, 17 Nocturno, 3 sin turno detectado en SmartControl. Expuesto por
+  `/api/personnel/roster` y sincronizado a cada dispositivo vía `apiSync.js`. En la UI es
+  DELIBERADAMENTE distinto del turno de check-in ya existente (`DailyAssignment.shift`, elegido a
+  mano al registrar a alguien en una estación): "Personal sin asignar" ahora tiene pestañas
+  Todos/Matutino/Nocturno/Sin turno detectado (nadie se oculta) y cada tarjeta muestra su turno
+  real con la etiqueta "Turno (SmartControl)"; "Personal" agrega un filtro y una columna nuevos
+  con la misma etiqueta "Turno (SmartControl)" en la tabla de Registro de hoy, sin tocar el
+  filtro/columna "Turno" (check-in) ya existentes.
 
 ### Changed
 - **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora

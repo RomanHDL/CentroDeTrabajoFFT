@@ -245,6 +245,11 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('TODAS')
   const [shiftFilter, setShiftFilter] = useState('TODOS')
+  // Turno REAL de SmartControl (2026-09-17, a peticion explicita del usuario) -- DELIBERADAMENTE
+  // separado de shiftFilter/r.shift (arriba, turno de CHECK-IN elegido a mano) para nunca
+  // confundir los dos conceptos. r.employee?.turno viene de Employee.turno (ver
+  // personnel-sync.js/roster.js), null = SmartControl no lo trae capturado.
+  const [scTurnoFilter, setScTurnoFilter] = useState('TODOS')
   const [estadoFilter, setEstadoFilter] = useState('TODOS')
   const [registerOpen, setRegisterOpen] = useState(false)
   const [selfAssignOpen, setSelfAssignOpen] = useState(false)
@@ -409,6 +414,10 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
       rosterRows.filter((r) => {
         if (areaFilter !== 'TODAS' && r.areaId !== areaFilter) return false
         if (shiftFilter !== 'TODOS' && r.shift !== shiftFilter) return false
+        if (scTurnoFilter !== 'TODOS') {
+          const turno = r.employee?.turno || null
+          if (scTurnoFilter === 'SIN_TURNO' ? turno : turno !== scTurnoFilter) return false
+        }
         if (queryNorm) {
           const num = (r.employeeNumber || '').toLowerCase()
           const name = (r.employee?.name || '').toLowerCase()
@@ -416,7 +425,7 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
         }
         return true
       }),
-    [rosterRows, areaFilter, shiftFilter, queryNorm],
+    [rosterRows, areaFilter, shiftFilter, scTurnoFilter, queryNorm],
   )
 
   const visibleRoster = showAllRoster ? filteredRoster : filteredRoster.slice(0, ROSTER_PAGE_SIZE)
@@ -690,6 +699,19 @@ export default function PersonalDeHoyTab({ onGoToAreas, onGoToSinAsignar }) {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[170px]">
+              <Select value={scTurnoFilter} onValueChange={setScTurnoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('personalDeHoyTab.scTurnoLabel')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">{t('personalDeHoyTab.todosLabel')}</SelectItem>
+                  <SelectItem value="MATUTINO">{t('personalDeHoyTab.scTurnoMatutino')}</SelectItem>
+                  <SelectItem value="NOCTURNO">{t('personalDeHoyTab.scTurnoNocturno')}</SelectItem>
+                  <SelectItem value="SIN_TURNO">{t('personalDeHoyTab.scTurnoUnknown')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="min-w-[150px]">
               <Select value={estadoFilter} onValueChange={setEstadoFilter}>
                 <SelectTrigger>
@@ -876,6 +898,7 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
               <TableHead>{t('personalDeHoyTab.colRol')}</TableHead>
               <TableHead>{t('personalDeHoyTab.entradaLabel')}</TableHead>
               <TableHead>{t('personalDeHoyTab.turnoLabel')}</TableHead>
+              <TableHead>{t('personalDeHoyTab.scTurnoColLabel')}</TableHead>
               <TableHead>{t('personalDeHoyTab.estadoLabel')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -907,6 +930,13 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
                   </TableCell>
                   <TableCell className={cellTextSecondaryClass}>{displayCheckIn}</TableCell>
                   <TableCell className={cellTextSecondaryClass}>{r.shift || '—'}</TableCell>
+                  <TableCell className={cellTextSecondaryClass}>
+                    {r.employee?.turno === 'MATUTINO'
+                      ? t('personalDeHoyTab.scTurnoMatutino')
+                      : r.employee?.turno === 'NOCTURNO'
+                        ? t('personalDeHoyTab.scTurnoNocturno')
+                        : t('personalDeHoyTab.scTurnoUnknown')}
+                  </TableCell>
                   <TableCell>
                     {r.source === 'SIN_ASIGNACION' ? (
                       <span className={statusChipClass('CANCELADA')}>
@@ -927,7 +957,7 @@ function RegistroDeHoyCard({ rows, total, allCount, showAll, onToggleShowAll, on
             })}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <EmptyState
                     compact
                     title={t('personalDeHoyTab.emptyFilterTitle')}

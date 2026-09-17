@@ -477,9 +477,19 @@ async function pollOnce() {
     // el efecto correcto es identico.
     const existingDynamic = dynamicEmployees.find((e) => e.id === localId)
     if (existingDynamic) {
-      if (existingDynamic.name !== row.fullName || existingDynamic.employeeNumber !== freshNumber) {
+      // turno (2026-09-17, "Personal"/"Personal sin asignar" por turno real de SmartControl):
+      // se autocura igual que name/employeeNumber -- el backfill continuo de personnel-sync.js
+      // puede resolver/actualizar el turno real de alguien DESPUES de que su fila dinamica local
+      // ya existiera, y este poll es lo unico que lo entera a este dispositivo.
+      const freshTurno = row.turno ?? null
+      if (
+        existingDynamic.name !== row.fullName ||
+        existingDynamic.employeeNumber !== freshNumber ||
+        (existingDynamic.turno ?? null) !== freshTurno
+      ) {
         existingDynamic.name = row.fullName
         existingDynamic.employeeNumber = freshNumber
+        existingDynamic.turno = freshTurno
         dynamicEmployeesHealed = true
         changed = true
       }
@@ -508,6 +518,7 @@ async function pollOnce() {
           name: row.fullName,
           status: staticEntry?.status || 'Activo',
           createdAt: null,
+          turno: row.turno ?? null,
         })
         changed = true
       }
@@ -808,6 +819,7 @@ async function pollOnce() {
           name: row.fullName,
           status: 'Activo',
           createdAt: null,
+          turno: row.turno ?? null,
         })
       }
     }

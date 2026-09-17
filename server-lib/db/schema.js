@@ -85,6 +85,15 @@ export const unassignedReason = pgEnum('UnassignedReason', [
   'VACACIONES',
   'INCAPACIDAD',
 ])
+// Turno REAL/de casa del empleado segun SmartControl (ADM.UsersLogin.Turno, catalogo real
+// ADM.Turno: turnoID=1->'Matutino', turnoID=2->'Nocturno', unicos 2 valores confirmados en vivo
+// 2026-09-17) -- NO CONFUNDIR con DailyAssignment.shift (turno de CHECK-IN, elegido a mano en el
+// layout, texto libre 'Matutino'/'Vespertino'/'Nocturno', ver SHIFT_OPTIONS en
+// src/data/production/catalog.js). Este campo es informativo/de referencia (de donde es la
+// persona en RRHH), nunca decide ubicacion ni pisa el turno de checkin. Nullable a proposito:
+// null = SmartControl no trae el dato para esa persona (nunca se inventa un default) -- ver
+// server-lib/personnel-sync.js para el sync real (alta + backfill continuo).
+export const employeeTurno = pgEnum('EmployeeTurno', ['MATUTINO', 'NOCTURNO'])
 export const userPermissionEffect = pgEnum('UserPermissionEffect', ['ALLOW', 'DENY'])
 export const userRole = pgEnum('UserRole', ['ADMINISTRADOR', 'SUPERVISOR', 'LIDER'])
 export const workstationCategory = pgEnum('WorkstationCategory', [
@@ -728,6 +737,10 @@ export const employee = pgTable(
     // Ultima vez que el sync automatico con SmartControl (server-lib/personnel-sync.js) toco esta
     // fila (alta o baja automatica) -- null = nunca tocada por el sync, sigue siendo 100% manual.
     smartControlSyncedAt: timestamp({ precision: 3, mode: 'date' }),
+    // Turno REAL de SmartControl (ver comentario del enum employeeTurno arriba) -- null =
+    // desconocido/no capturado ahi, nunca inventado. Poblado por personnel-sync.js (alta +
+    // backfill continuo de los folios activos ya existentes).
+    turno: employeeTurno(),
   },
   (table) => [
     uniqueIndex('Employee_employeeNumber_key').using(

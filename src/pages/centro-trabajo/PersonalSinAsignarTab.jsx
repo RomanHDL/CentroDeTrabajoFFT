@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   cardClass,
   cardHeaderClass,
@@ -107,6 +108,12 @@ export default function PersonalSinAsignarTab() {
   const version = usePersonnelVersion()
   const [query, setQuery] = useState('')
   const [motivoFilter, setMotivoFilter] = useState('TODOS')
+  // Turno REAL de SmartControl (2026-09-17, a peticion explicita del usuario -- dividir
+  // "Personal sin asignar" por turno real de casa, tomado de SmartControl, NUNCA inventado).
+  // DELIBERADAMENTE separado de motivoFilter (arriba) -- son 2 preguntas de negocio distintas.
+  // person.turno === null significa "SmartControl no trae el dato" -- nunca se oculta, se
+  // agrupa aparte en la pestaña "Sin turno detectado" (ver SIN_TURNO abajo).
+  const [turnoFilter, setTurnoFilter] = useState('TODOS')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [savingId, setSavingId] = useState(null)
   const [bulkActing, setBulkActing] = useState(false)
@@ -123,9 +130,22 @@ export default function PersonalSinAsignarTab() {
     return c
   }, [people])
 
+  const turnoCounts = useMemo(() => {
+    const c = { TODOS: people.length, MATUTINO: 0, NOCTURNO: 0, SIN_TURNO: 0 }
+    for (const p of people) {
+      if (p.turno === 'MATUTINO') c.MATUTINO += 1
+      else if (p.turno === 'NOCTURNO') c.NOCTURNO += 1
+      else c.SIN_TURNO += 1
+    }
+    return c
+  }, [people])
+
   const filteredPeople = useMemo(() => {
     const q = query.trim().toLowerCase()
     const matches = people.filter((p) => {
+      if (turnoFilter !== 'TODOS') {
+        if (turnoFilter === 'SIN_TURNO' ? p.turno : p.turno !== turnoFilter) return false
+      }
       if (motivoFilter === 'SIN_REVISAR' && p.unassignedReason) return false
       if (
         motivoFilter !== 'TODOS' &&
@@ -145,7 +165,7 @@ export default function PersonalSinAsignarTab() {
       (a, b) =>
         (GROUP_PRIORITY[a.unassignedReason] || 0) - (GROUP_PRIORITY[b.unassignedReason] || 0),
     )
-  }, [people, motivoFilter, query])
+  }, [people, motivoFilter, turnoFilter, query])
 
   function toggleSelect(id) {
     setSelectedIds((prev) => {
@@ -224,6 +244,25 @@ export default function PersonalSinAsignarTab() {
 
       {people.length > 0 && (
         <>
+          <div className="border-b border-border px-4 py-3">
+            <Tabs value={turnoFilter} onValueChange={setTurnoFilter}>
+              <TabsList>
+                <TabsTrigger value="TODOS">
+                  {t('personalSinAsignarTab.turnoTabAll', { count: turnoCounts.TODOS })}
+                </TabsTrigger>
+                <TabsTrigger value="MATUTINO">
+                  {t('personalSinAsignarTab.turnoTabMatutino', { count: turnoCounts.MATUTINO })}
+                </TabsTrigger>
+                <TabsTrigger value="NOCTURNO">
+                  {t('personalSinAsignarTab.turnoTabNocturno', { count: turnoCounts.NOCTURNO })}
+                </TabsTrigger>
+                <TabsTrigger value="SIN_TURNO">
+                  {t('personalSinAsignarTab.turnoTabUnknown', { count: turnoCounts.SIN_TURNO })}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 border-b border-border p-5 sm:grid-cols-2 md:grid-cols-4">
             {KPI_DEFS.map((def) => {
               const Icon = def.icon
@@ -396,6 +435,14 @@ const REASON_CHIP_TONE = {
   INCAPACIDAD: 'warn',
 }
 
+// Etiqueta del turno REAL de SmartControl (2026-09-17) -- deliberadamente distinta a
+// REASON_LABEL_KEY.TURNO ("Cambio de turno", un motivo manual de esta misma pantalla) para que
+// nunca se confundan visualmente.
+const SC_TURNO_LABEL_KEY = {
+  MATUTINO: 'personalSinAsignarTab.scTurnoMatutino',
+  NOCTURNO: 'personalSinAsignarTab.scTurnoNocturno',
+}
+
 function PersonaSinAsignarItem({
   person,
   saving,
@@ -438,6 +485,12 @@ function PersonaSinAsignarItem({
           </div>
           <p className="font-mono text-[11px] text-muted-foreground">
             {formatEmployeeNumber(person.employeeNumber)}
+          </p>
+          <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+            {t('personalSinAsignarTab.scTurnoPrefix')}{' '}
+            {person.turno
+              ? t(SC_TURNO_LABEL_KEY[person.turno])
+              : t('personalSinAsignarTab.scTurnoUnknown')}
           </p>
         </div>
       </div>

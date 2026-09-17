@@ -59,6 +59,7 @@ export const RELEASES = [
           'addedAsistenciaMarkStatus',
           'addedMarkAbsentSeparateFromAssignment',
           'addedFftRosterBulkOnboardAndAutoSync',
+          'addedEmployeeTurnoSmartControl',
         ],
       },
       {

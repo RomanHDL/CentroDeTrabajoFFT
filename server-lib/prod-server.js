@@ -85,7 +85,7 @@ async function runPersonnelSyncSafely() {
       console.log('[personnel-sync]', result.reason)
     } else {
       console.log(
-        `[personnel-sync] alta=${result.added.length} baja=${result.bajas.length} (${result.ranAt})`,
+        `[personnel-sync] alta=${result.added.length} baja=${result.bajas.length} turnos=${result.turnosUpdated ?? 0} (${result.ranAt})`,
       )
     }
   } catch (e) {
