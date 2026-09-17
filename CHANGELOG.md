@@ -839,6 +839,18 @@ para poder desplegar en el servidor privado (Coolify). Ver
   se tocó.
 
 ### Fixed
+- **"Le di a varios en Baja y solo se muestra uno"** -- bug real reportado en vivo: marcar BAJA a
+  varias personas seguidas hacía que la mayoría desapareciera de la pestaña "Bajas" en vez de
+  aparecer ahí. Causa raíz: la reconciliación de "empleado borrado del servidor" (`pollOnce()`,
+  `src/data/personnel/apiSync.js`) trataba a CUALQUIERA fuera de `roster` (que solo devuelve
+  `Employee.active=true`) como si hubiera sido borrado -- pero marcar BAJA es justo eso, poner
+  `active=false` a alguien que sigue existiendo de verdad. El resultado: en el poll inmediato
+  siguiente a marcar BAJA, se le borraba el vínculo local Y su fila dinámica completa, justo
+  antes de que el motivo de la baja pudiera aplicarse -- la persona quedaba invisible para
+  siempre en ese dispositivo. Ahora la reconciliación también considera "sigue existiendo" a
+  cualquiera presente en `statusOverrides` (que ya incluye a cualquiera con `active=false` o un
+  motivo real), y si su fila local ya se había borrado por este bug antes del fix, se
+  reconstruye sola con el nombre/folio reales del servidor -- nunca inventados.
 - **Vulnerabilidades reales reportadas por el escaneo automático del contenedor (Coolify).**
   Verificado CVE por CVE contra las versiones realmente instaladas (no solo el nombre del
   paquete): `brace-expansion` (ambos hallazgos) e `ip-address` (los 3 hallazgos) ya estaban en

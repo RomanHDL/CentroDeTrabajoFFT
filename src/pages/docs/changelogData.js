@@ -119,6 +119,7 @@ export const RELEASES = [
           'fixedAreaGroupFollowup4',
           'fixedMigrationIndexOpclass',
           'fixedStaleSnapshotEligibleBlocksNewHires',
+          'fixedBajaDisappearsAfterMultipleMarks',
           'fixedContainerScanVulnerabilities',
         ],
       },

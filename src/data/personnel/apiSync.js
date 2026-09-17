@@ -598,15 +598,28 @@ async function pollOnce() {
   })
 
   // Reconciliacion de bajas/borrados reales (2026-09-11, bug real encontrado en vivo: local solo
-  // agregaba/actualizaba, nunca se enteraba cuando un Employee se borraba o desactivaba del lado
-  // del servidor -- ese empleado quedaba "vivo" localmente para siempre (asignacion/movimiento
-  // viejo, visible en el layout) hasta que alguien borrara localStorage a mano. `roster` arriba ya
-  // trae SOLO Employee.active=true (ver api/personnel/roster.js) -- cualquier localId con un
-  // vinculo YA CONOCIDO (serverIdByLocalId, persistido, no solo lo visto en este poll) cuyo
-  // serverId ya no aparece en el roster de hoy fue borrado o dado de baja: se limpia su
-  // asignacion/movimiento/vinculo local. Nunca toca a alguien sin vinculo todavia (recien creado
-  // en este dispositivo, no es lo mismo que "ya no existe").
-  const currentServerIds = new Set(roster.map((r) => r.employeeId))
+  // agregaba/actualizaba, nunca se enteraba cuando un Employee se borraba del lado del servidor --
+  // ese empleado quedaba "vivo" localmente para siempre (asignacion/movimiento viejo, visible en
+  // el layout) hasta que alguien borrara localStorage a mano. `roster` arriba ya trae SOLO
+  // Employee.active=true (ver api/personnel/roster.js) -- cualquier localId con un vinculo YA
+  // CONOCIDO (serverIdByLocalId, persistido, no solo lo visto en este poll) cuyo serverId ya no
+  // aparece fue borrado: se limpia su asignacion/movimiento/vinculo local. Nunca toca a alguien
+  // sin vinculo todavia (recien creado en este dispositivo, no es lo mismo que "ya no existe").
+  //
+  // BUG REAL corregido 2026-09-17 ("le di a varios en Baja y solo se muestra uno"): la version
+  // original de este fix consideraba "borrado" a cualquiera fuera de `roster` -- pero
+  // `roster` SOLO trae active=true, asi que marcar BAJA a alguien (active=false, real, sigue
+  // existiendo) lo hacia calificar como "borrado" en el poll INMEDIATO siguiente: se le borraba
+  // el vinculo Y la fila dinamica local completa, justo antes de que el merge de abajo
+  // (`nextStatusOverrides`) pudiera usar ese mismo vinculo para encontrarlo. El resultado: BAJA
+  // se guardaba bien en el servidor, pero el override quedaba huerfano (sin empleado local al
+  // que aplicarse) y la persona desaparecia de "Bajas" en vez de aparecer ahi. `roster.js` ya
+  // devuelve `statusOverrides` con CUALQUIERA que tenga active=false O unassignedReason (ver ese
+  // archivo) -- alguien ahi sigue existiendo de verdad, nunca debe tratarse como borrado.
+  const currentServerIds = new Set([
+    ...roster.map((r) => r.employeeId),
+    ...serverStatusOverrides.map((r) => r.id),
+  ])
   const staleLocalIds = []
   serverIdByLocalId.forEach((sId, lId) => {
     if (!currentServerIds.has(sId)) staleLocalIds.push(lId)
@@ -770,12 +783,34 @@ async function pollOnce() {
     localIdByServerId.set(sId, localId)
   })
   const nextStatusOverrides = {}
+  // Autocuracion (2026-09-17, mismo bug de la reconciliacion de arriba): si a alguien YA se le
+  // habia borrado su fila dinamica local en un poll anterior (antes de este fix, por el bug de
+  // "activo=false = borrado"), no hay ningun localId que encontrar por link ni por numero -- se
+  // recrea aqui, mismo patron exacto que el alta nueva de roster.forEach() de arriba (usa
+  // unicamente el nombre/folio reales que ya trae esta misma fila del servidor, nunca inventa
+  // nada). Sin esto, la persona quedaria invisible en "Bajas" para siempre en este dispositivo.
+  const recreatedFromOverrides = []
   serverStatusOverrides.forEach((row) => {
     let localId = localIdByServerId.get(row.id)
     if (!localId && !isPlaceholderNumber(row.employeeNumber)) {
       localId = byNumber.get(row.employeeNumber)
     }
-    if (!localId) return
+    if (!localId) {
+      localId = row.id
+      const alreadyKnown =
+        dynamicEmployees.some((e) => e.id === localId) ||
+        newDynamicEmployees.some((e) => e.id === localId) ||
+        recreatedFromOverrides.some((e) => e.id === localId)
+      if (!alreadyKnown) {
+        recreatedFromOverrides.push({
+          id: localId,
+          employeeNumber: row.employeeNumber || 'PROYECTO',
+          name: row.fullName,
+          status: 'Activo',
+          createdAt: null,
+        })
+      }
+    }
     linkServerId(localId, row.id)
     nextStatusOverrides[localId] = {
       active: row.active,
@@ -787,6 +822,10 @@ async function pollOnce() {
       registeredByRole: row.registeredByRole ?? null,
     }
   })
+  if (recreatedFromOverrides.length) {
+    writeEmployees([...readEmployees(), ...recreatedFromOverrides])
+    changed = true
+  }
   const prevStatusOverrides = readEmployeeStatusOverrides()
   if (JSON.stringify(nextStatusOverrides) !== JSON.stringify(prevStatusOverrides)) {
     writeEmployeeStatusOverrides(nextStatusOverrides)
