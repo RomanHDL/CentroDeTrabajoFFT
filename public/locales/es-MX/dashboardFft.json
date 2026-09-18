@@ -59,5 +59,6 @@
   "todayResultTitle": "Resultado de hoy",
   "todayResultCurrentLabel": "piezas hoy",
   "todayResultPreviousLabel": "piezas semana anterior",
-  "weekTotalPreviousLabel": "Total semana pasada"
+  "weekTotalPreviousLabel": "Total semana pasada",
+  "todayProductionPreviousLabel": "Producción semana pasada"
 }

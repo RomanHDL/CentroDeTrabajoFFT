@@ -268,24 +268,44 @@ export default function DashboardFftPage() {
           min-h-[135px] SIEMPRE (TV y laptop) -- piso de legibilidad explicito, sin depender de que el
           contenido interno de cada card nunca cambie de alto. */}
       <div className="grid min-h-[135px] shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* "Producción hoy / Producción semana pasada" (2026-09-18, a peticion explicita del
+            usuario: quitar el titulo de arriba que quedaba repetido/vacio de contexto y en su
+            lugar usar el mismo patron de 2 numeros con etiqueta chica que ya tiene la card de al
+            lado -- mismos 2 numeros ya calculados (todayKpi.qty/.previousSameWeekday), 0 datos
+            nuevos. Ya NO se pasa `referenceValue` para no repetir el numero pasado 2 veces. */}
         <DashboardFftKpiCard
-          title={t('todayProductionTitle')}
-          value={data.todayKpi.qty}
+          displayValue={
+            <div className="flex items-end justify-center gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-[clamp(9px,0.5vw,10.5px)] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  {t('todayProductionTitle')}
+                </p>
+                <p>{formatInt(data.todayKpi.qty)}</p>
+              </div>
+              <span className="pb-[2px] font-black text-slate-300">/</span>
+              <div className="min-w-0">
+                <p className="truncate text-[clamp(9px,0.5vw,10.5px)] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  {t('todayProductionPreviousLabel')}
+                </p>
+                <p className="text-slate-400">{formatInt(data.todayKpi.previousSameWeekday)}</p>
+              </div>
+            </div>
+          }
           unit={t('unitPieces')}
           pctChange={data.todayKpi.pctChange}
-          referenceValue={data.todayKpi.previousSameWeekday}
           comparisonLabel={t('noComparisonLabel')}
         />
         {/* "Total semana actual / Total semana pasada" (2026-09-18, a peticion explicita del
             usuario: "para que veamos como vamos", despues pidio ademas una etiqueta chica arriba
             de CADA numero -- "para identificarlo mejor" -- porque el numero solo, sin contexto
-            propio, no dejaba claro cual de los 2 era cual). Mismos 2 numeros ya calculados
-            (weekTotalKpi.currentComparable/.previousComparable), 0 datos nuevos -- ya NO se pasa
-            `referenceValue` para no repetir el numero pasado 2 veces en la misma card. */}
+            propio, no dejaba claro cual de los 2 era cual; luego pidio quitar el titulo de arriba
+            de la card, que quedaba repitiendo esta misma etiqueta, y centrar el bloque). Mismos 2
+            numeros ya calculados (weekTotalKpi.currentComparable/.previousComparable), 0 datos
+            nuevos -- ya NO se pasa `referenceValue` para no repetir el numero pasado 2 veces en la
+            misma card. */}
         <DashboardFftKpiCard
-          title={t('weekTotalTitle')}
           displayValue={
-            <div className="flex items-end gap-2">
+            <div className="flex items-end justify-center gap-2">
               <div className="min-w-0">
                 <p className="truncate text-[clamp(9px,0.5vw,10.5px)] font-bold uppercase tracking-[0.08em] text-slate-400">
                   {t('weekTotalTitle')}

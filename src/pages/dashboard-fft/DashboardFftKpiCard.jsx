@@ -40,9 +40,11 @@ export default function DashboardFftKpiCard({
 
   return (
     <div className="flex h-full flex-col justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-[clamp(11px,0.72vw,15px)] font-bold uppercase tracking-[0.1em] text-slate-500">
-        {title}
-      </p>
+      {title && (
+        <p className="text-[clamp(11px,0.72vw,15px)] font-bold uppercase tracking-[0.1em] text-slate-500">
+          {title}
+        </p>
+      )}
       <div>
         {/* `<div>` en vez de `<p>` (2026-09-18): `displayValue` ahora puede ser un nodo JSX propio
             (ej. "Total semana actual" / "Total semana pasada" arriba de cada numero en la card de

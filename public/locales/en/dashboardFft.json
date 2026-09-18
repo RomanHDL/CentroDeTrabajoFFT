@@ -59,5 +59,6 @@
   "todayResultTitle": "Today's result",
   "todayResultCurrentLabel": "pieces today",
   "todayResultPreviousLabel": "pieces previous week",
-  "weekTotalPreviousLabel": "Previous week total"
+  "weekTotalPreviousLabel": "Previous week total",
+  "todayProductionPreviousLabel": "Previous week production"
 }

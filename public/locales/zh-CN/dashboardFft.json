@@ -59,5 +59,6 @@
   "todayResultTitle": "今日结果",
   "todayResultCurrentLabel": "今日件数",
   "todayResultPreviousLabel": "上周件数",
-  "weekTotalPreviousLabel": "上周累计"
+  "weekTotalPreviousLabel": "上周累计",
+  "todayProductionPreviousLabel": "上周产量"
 }
