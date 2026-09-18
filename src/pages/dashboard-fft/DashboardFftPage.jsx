@@ -57,6 +57,13 @@ const LIGHT_THEME_VARS = {
   '--input': '220 13% 88%',
   '--ring': '217 91% 45%',
   colorScheme: 'light',
+  // `color` NO se hereda "en vivo" desde una variable CSS redeclarada mas abajo -- `body` (fuera de
+  // esta pagina) ya resolvio su propio `color: hsl(var(--foreground))` con el valor de `.dark` si el
+  // admin tenia el tema oscuro activo, y ese valor YA RESUELTO es lo que baja por herencia (texto
+  // casi invisible en celdas sin clase de color propia, ej. los dias en WeeklySummaryTable). Fijar
+  // `color` aqui mismo, usando la MISMA variable que ya se redeclaro arriba en este objeto, fuerza a
+  // que se vuelva a resolver con el valor claro correcto antes de heredarse hacia abajo.
+  color: 'hsl(222 47% 11%)',
 }
 
 function useDashboardFftData() {
