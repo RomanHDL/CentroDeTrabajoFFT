@@ -35,7 +35,7 @@ export default function WeeklySummaryTable({ t, weeklySummaryTable }) {
                   key={row.date}
                   className={cn(
                     'border-b border-border/60 last:border-b-0',
-                    row.isToday && 'bg-[#EFF6FF] dark:bg-[rgba(59,130,246,.12)]',
+                    row.isToday && 'bg-[#EFF6FF]',
                   )}
                 >
                   <td className="px-4 py-2.5 font-semibold">{t(`weekday${row.label}`)}</td>

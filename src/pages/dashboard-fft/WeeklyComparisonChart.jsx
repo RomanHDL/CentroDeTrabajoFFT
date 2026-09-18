@@ -109,7 +109,7 @@ export default function WeeklyComparisonChart({ t, dailyComparison, weekTotalKpi
             key={d.date}
             className={
               d.isToday
-                ? 'mx-auto rounded-md border-2 border-[#0F2C59] px-2 py-0.5 text-[10.5px] font-bold text-[#0F2C59] dark:border-white dark:text-white'
+                ? 'mx-auto rounded-md border-2 border-[#0F2C59] px-2 py-0.5 text-[10.5px] font-bold text-[#0F2C59]'
                 : 'text-[10.5px] text-transparent'
             }
           >

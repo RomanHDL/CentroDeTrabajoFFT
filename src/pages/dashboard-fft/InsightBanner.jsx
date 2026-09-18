@@ -34,7 +34,7 @@ export default function InsightBanner({ t, insight }) {
   const TONE_CLASSES = {
     good: 'border-[#A7F3D0] bg-[#ECFDF5] text-[#065F46]',
     bad: 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]',
-    neutral: 'border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300',
+    neutral: 'border-slate-200 bg-slate-50 text-slate-600',
   }
 
   return (

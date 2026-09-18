@@ -15,11 +15,11 @@ export default function DashboardFftKpiCard({ title, value, unit, comparisonLabe
   const pctText = hasComparison ? formatPct(pctChange) : null
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900 sm:p-6">
-      <p className="text-[12.5px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+      <p className="text-[12.5px] font-bold uppercase tracking-[0.12em] text-slate-500">
         {title}
       </p>
-      <p className="mt-2.5 text-[44px] font-black leading-none tracking-tight text-[#0F2C59] dark:text-white sm:text-[52px]">
+      <p className="mt-2.5 text-[44px] font-black leading-none tracking-tight text-[#0F2C59] sm:text-[52px]">
         {formatInt(value)}
       </p>
       <p className="mt-1 text-[13px] font-medium text-slate-400">{unit}</p>

@@ -31,13 +31,13 @@ export default function MonthlyProgressCard({ t, monthly }) {
         <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
           {t('monthlyAccumulatedLabel')}
         </p>
-        <p className="mt-1.5 text-[40px] font-black leading-none tracking-tight text-[#0F2C59] dark:text-white">
+        <p className="mt-1.5 text-[40px] font-black leading-none tracking-tight text-[#0F2C59]">
           {formatInt(accumulated.currentQty)}
         </p>
 
         {hasGoal ? (
           <div className="mt-3">
-            <div className="h-2.5 overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.08]">
+            <div className="h-2.5 overflow-hidden rounded-full bg-black/[.06]">
               <div
                 className="h-full rounded-full bg-[#F97316]"
                 style={{ width: `${Math.max(0, goalPct)}%` }}

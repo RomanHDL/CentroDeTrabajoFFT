@@ -26,6 +26,39 @@ import WeeklySummaryTable from './WeeklySummaryTable'
 
 const AUTO_REFRESH_MS = 60000
 
+/* Forzar modo claro SIEMPRE (2026-09-17, a peticion explicita del usuario: "ese apartado debe
+   estar siempre en modo claro" -- es una pantalla fija de TV, no debe apagarse/oscurecerse solo
+   porque el admin que la configuro tenia el modo oscuro activo en su propia sesion). Quitar los
+   `dark:` de las clases con color literal (ej. `dark:bg-slate-950`) no bastaba: varios componentes
+   usan clases semanticas de shadcn (`text-muted-foreground`, `border-border`, `bg-popover`, ...)
+   que se resuelven via variables CSS (`hsl(var(--muted-foreground))`, etc.) y SI cambian con la
+   clase `.dark` de un ancestro (ver src/index.css). Redeclarar aqui, en la raiz de esta pagina, los
+   mismos valores de `:root` (nunca los de `.dark`) hace que TODO lo de adentro -- incluidas clases
+   semanticas nuevas que se agreguen despues, y el tooltip de Recharts -- se vea claro sin importar
+   el tema global, sin tener que auditar clase por clase cada vez. */
+const LIGHT_THEME_VARS = {
+  '--background': '220 27% 96%',
+  '--foreground': '222 47% 11%',
+  '--card': '0 0% 100%',
+  '--card-foreground': '222 47% 11%',
+  '--popover': '0 0% 100%',
+  '--popover-foreground': '222 47% 11%',
+  '--primary': '217 91% 45%',
+  '--primary-foreground': '0 0% 100%',
+  '--secondary': '220 14% 93%',
+  '--secondary-foreground': '222 47% 11%',
+  '--muted': '220 14% 93%',
+  '--muted-foreground': '220 9% 46%',
+  '--accent': '220 14% 93%',
+  '--accent-foreground': '222 47% 11%',
+  '--destructive': '0 84% 60%',
+  '--destructive-foreground': '0 0% 100%',
+  '--border': '220 13% 88%',
+  '--input': '220 13% 88%',
+  '--ring': '217 91% 45%',
+  colorScheme: 'light',
+}
+
 function useDashboardFftData() {
   const [data, setData] = useState(null) // null = cargando (primera carga)
   const [error, setError] = useState('')
@@ -78,7 +111,7 @@ export default function DashboardFftPage() {
 
   if (data === null && !error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]" style={LIGHT_THEME_VARS}>
         <p className="text-sm text-muted-foreground">{t('loadingMessage')}</p>
       </div>
     )
@@ -86,7 +119,7 @@ export default function DashboardFftPage() {
 
   if (error && data === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6" style={LIGHT_THEME_VARS}>
         <p className="text-center text-sm text-muted-foreground">{t('loadErrorGeneric')}</p>
       </div>
     )
@@ -94,7 +127,7 @@ export default function DashboardFftPage() {
 
   if (data?.configured === false) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6" style={LIGHT_THEME_VARS}>
         <p className="text-center text-sm text-muted-foreground">{t('notConfiguredMessage')}</p>
       </div>
     )
@@ -107,14 +140,14 @@ export default function DashboardFftPage() {
   // SmartControl vuelva a responder, sin que nadie tenga que recargar la TV a mano.
   if (!data.currentWeek) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6" style={LIGHT_THEME_VARS}>
         <p className="text-center text-sm text-muted-foreground">{t('fetchErrorBanner')}</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-8 dark:bg-slate-950">
+    <div className="min-h-screen bg-[#F8FAFC] pb-8" style={LIGHT_THEME_VARS}>
       <DashboardFftHeader
         t={t}
         currentWeek={data.currentWeek}
