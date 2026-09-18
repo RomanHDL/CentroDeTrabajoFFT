@@ -55,17 +55,27 @@ export function computeQueryRange(today) {
   return { from, to: today }
 }
 
-// Suma real (2026-09-18) de filas planas {size, code, name, qty} (salida de
-// getSizeByClassificationToday, YA filtrada a solo condiciones vendibles por el caller) a totales
-// por tamaño -- un LPN cuenta una sola vez por su ScreenSize real, sin importar cuantas
-// clasificaciones distintas tenga ese tamaño en el rango. `null` (ScreenSize sin resolver en
-// MM.SKUData) se conserva como categoria real "sin dato" en vez de descartarse en silencio.
-function sumRowsBySize(rows) {
+// Filtra filas reales {date, <keyField>, name?, qty} (salida de getClassificationByDayInRange/
+// getSizeByDayInRange, YA acotadas a condiciones vendibles por el caller) a solo las fechas de
+// `dateSet` (un set de 'YYYY-MM-DD', los dias COMPARABLES de una semana -- Lunes..hoy) y las suma
+// por `keyField`. Filtrar por fecha ANTES de sumar (en vez de pedirle el rango a SQL vía BETWEEN)
+// es lo que hace que esto cierre EXACTO contra dailyComparison/byDate: un LPN se atribuye al mismo
+// dia calendario real (CAST(InspectionDate AS DATE)) en los 2 lados, nunca a un rango con la cola
+// nocturna del Turno 2 contada de mas (ver comentario grande en binmanager-sql.js/
+// getClassificationByDayInRange sobre el bug real encontrado en vivo, 358 piezas de diferencia).
+function filterAndSumByKey(rows, dateSet, keyField) {
   const map = new Map()
   for (const r of rows) {
-    map.set(r.size, (map.get(r.size) ?? 0) + r.qty)
+    if (!dateSet.has(r.date)) continue
+    const existing = map.get(r[keyField])
+    if (existing) {
+      existing.qty += r.qty
+      if (!existing.name && r.name) existing.name = r.name
+    } else {
+      map.set(r[keyField], { [keyField]: r[keyField], name: r.name ?? null, qty: r.qty })
+    }
   }
-  return [...map.entries()].map(([size, qty]) => ({ size, qty }))
+  return [...map.values()]
 }
 
 // Arma una comparativa semana-actual-vs-anterior por categoria fija (condicion) o dinamica
@@ -118,26 +128,23 @@ function sumRange(byDate, fromDate, toDate, todayCap) {
  * peopleToday/peoplePreviousWeekday: conteos reales YA resueltos por el caller (distinct
  * usernames en BinManager ese dia exacto, misma fuente que "Personal activo hoy" de Producción
  * FFT) -- este modulo no toca SQL, solo reparte los numeros que le pasan.
- * conditionRowsCurrent/conditionRowsPrevious: [{code, name, qty}] -- salida real de
- * getProductionByClassificationToday (YA acotada por el caller a Lunes->hoy de cada semana, YA
- * filtrada a solo condiciones vendibles).
- * sizeRowsCurrent/sizeRowsPrevious: [{size, code, name, qty}] -- salida real de
- * getSizeByClassificationToday (mismos rangos/filtro que arriba); este modulo las suma por tamaño
- * (sumRowsBySize) antes de compararlas, un LPN nunca se cuenta 2 veces por traer 2 clasificaciones.
+ * conditionRows: [{date, code, name, qty}] -- salida real de getClassificationByDayInRange, mismo
+ * rango ANCHO que dailyRows (YA filtrada a solo condiciones vendibles por el caller) -- este modulo
+ * la filtra/suma el mismo dia calendario que dailyComparison (nunca via un BETWEEN de rango en SQL,
+ * ver comentario grande en binmanager-sql.js sobre por que eso no cierra exacto).
+ * sizeRows: [{date, size, qty}] -- salida real de getSizeByDayInRange, mismo criterio que arriba.
  * conditionCatalog: [{code, name}] -- catalogo REAL completo (getFilterOptions, sin rango de
  * fecha), ya filtrado por el caller a las 7 condiciones vendibles. Fuente de los nombres de la
- * leyenda -- separada de conditionRowsCurrent/Previous a proposito: una condicion vendible sin
- * ninguna pieza en las ultimas 2 semanas NO debe perder su nombre real en la leyenda.
+ * leyenda -- separada de conditionRows a proposito: una condicion vendible sin ninguna pieza en
+ * las ultimas 2 semanas NO debe perder su nombre real en la leyenda.
  */
 export function buildFftDashboardData({
   today,
   dailyRows,
   peopleToday,
   peoplePreviousWeekday,
-  conditionRowsCurrent,
-  conditionRowsPrevious,
-  sizeRowsCurrent,
-  sizeRowsPrevious,
+  conditionRows,
+  sizeRows,
   conditionCatalog,
 }) {
   const byDate = new Map(dailyRows.map((r) => [r.date, r.qty]))
@@ -248,9 +255,11 @@ export function buildFftDashboardData({
   // SELLABLE_CLASSIFICATION_CODES (las 7 siempre aparecen, aunque alguna tenga 0 esta semana, para
   // que el color de cada una nunca cambie de posicion run tras run); tamaños usa el catalogo real
   // encontrado (variable, ordenado ascendente, null al final como "sin dato"). ──
+  const currentComparableDates = new Set(comparableDays.map((d) => d.date))
+  const previousComparableDates = new Set(comparableDays.map((d) => d.previousDate))
   const conditionBreakdown = buildCategoryComparison(
-    conditionRowsCurrent,
-    conditionRowsPrevious,
+    filterAndSumByKey(conditionRows, currentComparableDates, 'code'),
+    filterAndSumByKey(conditionRows, previousComparableDates, 'code'),
     'code',
     SELLABLE_CLASSIFICATION_CODES,
   )
@@ -259,7 +268,11 @@ export function buildFftDashboardData({
     code,
     name: catalogByCode.get(code) ?? null,
   }))
-  const sizeBreakdown = buildCategoryComparison(sumRowsBySize(sizeRowsCurrent), sumRowsBySize(sizeRowsPrevious), 'size')
+  const sizeBreakdown = buildCategoryComparison(
+    filterAndSumByKey(sizeRows, currentComparableDates, 'size'),
+    filterAndSumByKey(sizeRows, previousComparableDates, 'size'),
+    'size',
+  )
 
   return {
     today: todayStr,

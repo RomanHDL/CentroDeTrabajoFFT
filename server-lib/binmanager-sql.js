@@ -427,6 +427,63 @@ export async function getSizeByClassificationToday({
   }))
 }
 
+/* Desglose por CONDICIÓN y por TAMAÑO, con el DÍA como dimensión extra (2026-09-18, para "Dashboard
+   FFT" -- funciones NUEVAS, deliberadamente separadas de getProductionByClassificationToday/
+   getSizeByClassificationToday de arriba en vez de agregarles CAST(InspectionDate AS DATE) al
+   GROUP BY: esas 2 ya las usa "Producción FFT" esperando UNA fila total por clasificación/tamaño en
+   todo el rango -- agregarles el dia ahi fragmentaria ese resultado y romperia esa pantalla.
+   El motivo real de necesitar el dia aqui: el Dashboard FFT compara semana-actual-vs-anterior
+   sumando SOLO los dias "Lunes..hoy" de cada semana (mismo criterio de "periodo comparable" que
+   dailyComparison en fftDashboardAggregation.js) -- pedirle a SQL directamente el rango
+   [lunes, hoy] con un solo BETWEEN NO cierra exacto contra esa suma dia-por-dia: la cola nocturna
+   del Turno 2 de "hoy" (que sigue hasta las 06:00 del dia siguiente, ver turno2Where arriba) se
+   cuenta completa dentro de ese BETWEEN, mientras que la comparativa diaria por CAST(fecha) le
+   atribuye esa cola al dia calendario siguiente (fuera del rango "Lunes..hoy"). Diferencia real
+   encontrada en vivo verificando este mismo dashboard: 4,642 vs 4,284 piezas de la semana anterior
+   (358 de diferencia, la cola nocturna completa de un jueves). Trayendo el dia real de cada fila y
+   sumando en JS (fftDashboardAggregation.js) por el mismo string de fecha que ya usa dailyRows, el
+   Dashboard FFT cierra exacto consigo mismo. */
+export async function getClassificationByDayInRange({
+  workCenterId = 49,
+  dateFrom,
+  dateTo,
+  classificationCodes,
+  shift,
+}) {
+  const pool = await getPool()
+  const request = pool.request()
+  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCodes, shift })
+  const result = await request.query(`
+    ${cte}
+    SELECT CAST(InspectionDate AS DATE) AS Day, ClassificationCode, ClassificationName, COUNT(*) AS Qty
+    FROM FilteredBase
+    GROUP BY CAST(InspectionDate AS DATE), ClassificationCode, ClassificationName
+  `)
+  return result.recordset.map((r) => ({
+    date: r.Day.toISOString().slice(0, 10),
+    code: r.ClassificationCode,
+    name: r.ClassificationName,
+    qty: r.Qty,
+  }))
+}
+
+export async function getSizeByDayInRange({ workCenterId = 49, dateFrom, dateTo, classificationCodes, shift }) {
+  const pool = await getPool()
+  const request = pool.request()
+  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCodes, shift })
+  const result = await request.query(`
+    ${cte}
+    SELECT CAST(InspectionDate AS DATE) AS Day, ScreenSize, COUNT(*) AS Qty
+    FROM FilteredBase
+    GROUP BY CAST(InspectionDate AS DATE), ScreenSize
+  `)
+  return result.recordset.map((r) => ({
+    date: r.Day.toISOString().slice(0, 10),
+    size: r.ScreenSize ?? null,
+    qty: r.Qty,
+  }))
+}
+
 /* Desglose de piezas por Tag en el rango (2026-09-02, a peticion explicita del usuario: "un
    rastreador de skus... ver en que pallet id se fue, si se fue en alguna orden... ver si hay
    duplicados"). Cierra el ultimo pendiente de una investigacion mucho mas vieja sobre tags

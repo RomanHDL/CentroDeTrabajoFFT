@@ -18,11 +18,11 @@
 // SOLO si el cliente no lo manda (primera carga antes de que JS corra, o un caller sin JS) --
 // documentado como fallback, no como fuente principal.
 import {
+  getClassificationByDayInRange,
   getDailyThroughput,
   getFilterOptions,
-  getProductionByClassificationToday,
   getProductionByUserToday,
-  getSizeByClassificationToday,
+  getSizeByDayInRange,
   isBinManagerSqlConfigured,
 } from '../../server-lib/binmanager-sql.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
@@ -31,7 +31,7 @@ import {
   computeQueryRange,
   SELLABLE_CLASSIFICATION_CODES,
 } from '../../server-lib/fftDashboardAggregation.js'
-import { addDays, dateOnly, isoWeekday, startOfIsoWeek, toDateOnlyString } from '../../shared/isoWeek.js'
+import { dateOnly, toDateOnlyString } from '../../shared/isoWeek.js'
 
 const FFT_WORK_CENTER_ID = 49
 
@@ -80,78 +80,53 @@ export default requireModuleAccess(
       // mismo dia de la semana pasada -- 7 dias exactos antes de "hoy", nunca otro dia.
       new Date(today.getTime() - 7 * 86400000),
     )
-    // Rango Lunes->hoy de cada semana (2026-09-18, para "Producción por condición"/"...pulgadas") --
-    // mismo criterio de "periodo comparable" que weekTotalKpi en fftDashboardAggregation.js, pero
-    // resuelto aqui porque estas 2 consultas nuevas viajan a SQL con un rango explicito (a
-    // diferencia de dailyRows, que trae TODO el rango ancho de computeQueryRange y se reparte en el
-    // modulo puro).
-    const currentWeekMonday = startOfIsoWeek(today)
-    const previousWeekMonday = addDays(currentWeekMonday, -7)
-    const previousWeekComparableEnd = addDays(previousWeekMonday, isoWeekday(today))
 
     let dailyRows
     let peopleTodayRows
     let peoplePreviousWeekdayRows
-    let conditionRowsCurrent
-    let conditionRowsPrevious
-    let sizeRowsCurrent
-    let sizeRowsPrevious
+    let conditionRows
+    let sizeRows
     let conditionCatalog
     try {
-      ;[
-        dailyRows,
-        peopleTodayRows,
-        peoplePreviousWeekdayRows,
-        conditionRowsCurrent,
-        conditionRowsPrevious,
-        sizeRowsCurrent,
-        sizeRowsPrevious,
-        conditionCatalog,
-      ] = await Promise.all([
-        getDailyThroughput({
-          workCenterId,
-          dateFrom: from,
-          dateTo: to,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getProductionByUserToday({
-          workCenterId,
-          dateFrom: today,
-          dateTo: today,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getProductionByUserToday({
-          workCenterId,
-          dateFrom: dateOnly(previousWeekdayStr),
-          dateTo: dateOnly(previousWeekdayStr),
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getProductionByClassificationToday({
-          workCenterId,
-          dateFrom: currentWeekMonday,
-          dateTo: today,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getProductionByClassificationToday({
-          workCenterId,
-          dateFrom: previousWeekMonday,
-          dateTo: previousWeekComparableEnd,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getSizeByClassificationToday({
-          workCenterId,
-          dateFrom: currentWeekMonday,
-          dateTo: today,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getSizeByClassificationToday({
-          workCenterId,
-          dateFrom: previousWeekMonday,
-          dateTo: previousWeekComparableEnd,
-          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-        }),
-        getFilterOptions(),
-      ])
+      // conditionRows/sizeRows usan el MISMO rango ancho {from,to} que dailyRows (nunca un
+      // BETWEEN de solo "Lunes->hoy" -- ver comentario grande en binmanager-sql.js/
+      // getClassificationByDayInRange sobre el bug real de 358 piezas que eso causaba). El modulo
+      // puro (fftDashboardAggregation.js) filtra/suma por el mismo dia calendario exacto que ya
+      // usa dailyComparison, para que los 3 cierren consistentes entre si.
+      ;[dailyRows, peopleTodayRows, peoplePreviousWeekdayRows, conditionRows, sizeRows, conditionCatalog] =
+        await Promise.all([
+          getDailyThroughput({
+            workCenterId,
+            dateFrom: from,
+            dateTo: to,
+            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+          }),
+          getProductionByUserToday({
+            workCenterId,
+            dateFrom: today,
+            dateTo: today,
+            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+          }),
+          getProductionByUserToday({
+            workCenterId,
+            dateFrom: dateOnly(previousWeekdayStr),
+            dateTo: dateOnly(previousWeekdayStr),
+            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+          }),
+          getClassificationByDayInRange({
+            workCenterId,
+            dateFrom: from,
+            dateTo: to,
+            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+          }),
+          getSizeByDayInRange({
+            workCenterId,
+            dateFrom: from,
+            dateTo: to,
+            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+          }),
+          getFilterOptions(),
+        ])
     } catch (err) {
       // Best-effort: mismo criterio que fft-summary.js -- si SmartControl no responde, el
       // dashboard debe seguir cargando (vacio) en vez de un 500 crudo en la pantalla de la TV.
@@ -163,10 +138,8 @@ export default requireModuleAccess(
       dailyRows,
       peopleToday: peopleTodayRows.length,
       peoplePreviousWeekday: peoplePreviousWeekdayRows.length,
-      conditionRowsCurrent,
-      conditionRowsPrevious,
-      sizeRowsCurrent,
-      sizeRowsPrevious,
+      conditionRows,
+      sizeRows,
       // getFilterOptions() trae el catalogo COMPLETO (todas las clasificaciones reales, no solo
       // vendibles) -- se filtra aqui a las 7 vendibles antes de armar la leyenda.
       conditionCatalog: conditionCatalog.classifications.filter((c) =>
