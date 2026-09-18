@@ -7,7 +7,7 @@ import { useEffectiveModules } from '@/state/auth'
 import ConditionRankingCard from './ConditionRankingCard'
 import DashboardFftHeader from './DashboardFftHeader'
 import DashboardFftKpiCard from './DashboardFftKpiCard'
-import { formatPct } from './formatters'
+import { formatInt, formatPct } from './formatters'
 import MonthlyWeeksChart from './MonthlyWeeksChart'
 import SizeCompactList from './SizeCompactList'
 import TodayResultCard from './TodayResultCard'
@@ -276,12 +276,17 @@ export default function DashboardFftPage() {
           referenceValue={data.todayKpi.previousSameWeekday}
           comparisonLabel={t('noComparisonLabel')}
         />
+        {/* "Total semana actual / Total semana pasada" (2026-09-18, a peticion explicita del
+            usuario: "para que veamos como vamos") -- el numero grande ahora muestra AMBOS totales
+            juntos (antes solo mostraba el actual, con el pasado chico entre parentesis debajo del
+            %). Mismos 2 numeros ya calculados (weekTotalKpi.currentComparable/.previousComparable),
+            0 datos nuevos -- ya NO se pasa `referenceValue` para no repetir el numero pasado 2
+            veces en la misma card. */}
         <DashboardFftKpiCard
           title={t('weekTotalTitle')}
-          value={data.weekTotalKpi.currentComparable}
+          displayValue={`${formatInt(data.weekTotalKpi.currentComparable)} / ${formatInt(data.weekTotalKpi.previousComparable)}`}
           unit={t('unitPieces')}
           pctChange={data.weekTotalKpi.pctChange}
-          referenceValue={data.weekTotalKpi.previousComparable}
           comparisonLabel={t('noComparisonLabel')}
         />
         <DashboardFftKpiCard

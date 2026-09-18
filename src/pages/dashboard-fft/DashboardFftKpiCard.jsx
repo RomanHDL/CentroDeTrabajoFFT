@@ -46,7 +46,7 @@ export default function DashboardFftKpiCard({
       <div>
         <p
           className={cn(
-            'text-[clamp(28px,3vw,52px)] font-black leading-none tracking-tight',
+            'whitespace-nowrap text-[clamp(22px,2.6vw,46px)] font-black leading-none tracking-tight',
             toneColorClass,
           )}
         >
