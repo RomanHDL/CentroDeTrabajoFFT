@@ -53,5 +53,10 @@
   "conditionTableTitle": "品相表",
   "colCondition": "品相",
   "crosstabTitle": "汇总：按尺寸和品相划分的数量",
-  "colTotalGeneral": "总计"
+  "colTotalGeneral": "总计",
+  "vsWeekTitle": "对比上周",
+  "comparablePeriodLabel": "可比周期",
+  "todayResultTitle": "今日结果",
+  "todayResultCurrentLabel": "今日件数",
+  "todayResultPreviousLabel": "上周件数"
 }

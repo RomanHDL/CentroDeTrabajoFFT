@@ -53,5 +53,10 @@
   "conditionTableTitle": "Condition table",
   "colCondition": "Condition",
   "crosstabTitle": "Summary: units by size and classification",
-  "colTotalGeneral": "Grand total"
+  "colTotalGeneral": "Grand total",
+  "vsWeekTitle": "Vs. previous week",
+  "comparablePeriodLabel": "Comparable period",
+  "todayResultTitle": "Today's result",
+  "todayResultCurrentLabel": "pieces today",
+  "todayResultPreviousLabel": "pieces previous week"
 }
