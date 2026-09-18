@@ -66,7 +66,12 @@ export default function MonthlyWeeksChart({ t, weeks }) {
           <p className={tvSectionSubtitleClass}>{t('monthlyByWeekSubtitle')}</p>
         </div>
       </div>
-      <div className="min-h-0 flex-1 px-3 pb-1 pt-4">
+      {/* min-h-[140px] (arreglo 2026-09-18): mismo criterio que el min-h-[200px] de
+          WeeklyComparisonChart.jsx -- sin un piso explicito, un flex-1 dentro de una fila muy
+          comprimida puede resolver a unos pocos px, y Recharts deja de pintar cualquier barra en vez
+          de dibujarlas mas delgadas (a diferencia de WeeklyComparisonChart, que si tenia este piso y
+          por eso nunca mostro el problema). */}
+      <div className="min-h-[140px] flex-1 px-3 pb-1 pt-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="rgba(100,116,139,.12)" />
