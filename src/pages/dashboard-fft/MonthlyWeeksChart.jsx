@@ -78,7 +78,15 @@ export default function MonthlyWeeksChart({ t, weeks }) {
             />
             <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={40} />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(59,130,246,.06)' }} />
-            <Bar dataKey="displayQty" radius={[4, 4, 0, 0]} maxBarSize={56}>
+            {/* isAnimationActive=false -- mismo arreglo que WeeklyComparisonChart.jsx (2026-09-18,
+                modo laptop): el layout en 2 pasos del contenedor (grid + min-height) interrumpia la
+                animacion de entrada y dejaba las barras sin pintar. */}
+            <Bar
+              dataKey="displayQty"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={56}
+              isAnimationActive={false}
+            >
               {data.map((row) => (
                 <Cell
                   key={row.key}

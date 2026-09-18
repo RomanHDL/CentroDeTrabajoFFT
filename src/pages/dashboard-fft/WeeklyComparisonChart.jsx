@@ -136,12 +136,19 @@ export default function WeeklyComparisonChart({ t, dailyComparison, weekTotalKpi
               />
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12 }} width={44} />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(59,130,246,.06)' }} />
+              {/* isAnimationActive=false (arreglo 2026-09-18, modo laptop): en modo laptop el
+                  contenedor real (CSS Grid + min-height) se asienta en 2 pasos de layout en vez de 1
+                  (a diferencia del flex-grow de una sola pasada del modo TV) -- ResponsiveContainer
+                  reporta 2 tamaños seguidos, y la animacion de entrada de Recharts quedaba
+                  interrumpida a medio camino, dejando <g class="recharts-bar-rectangle"> vacio (barras
+                  invisibles). Reproducido en vivo, confirmado que no es solo timing de animacion. */}
               <Bar
                 dataKey="previousQty"
                 name={t('previousWeekSeries')}
                 fill={COLOR_PREVIOUS}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={44}
+                isAnimationActive={false}
               >
                 {/* La etiqueta "—" de un dia futuro se ancla en la barra de la semana anterior (la
                     unica que si tiene altura real ese dia) para que nunca aparezca pegada al eje. */}
@@ -158,6 +165,7 @@ export default function WeeklyComparisonChart({ t, dailyComparison, weekTotalKpi
                 fill={COLOR_CURRENT}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={44}
+                isAnimationActive={false}
               >
                 <LabelList
                   dataKey="pctChange"
