@@ -28,6 +28,16 @@ import { dateOnly, toDateOnlyString } from '../../shared/isoWeek.js'
 
 const FFT_WORK_CENTER_ID = 49
 
+// Condiciones vendibles (2026-09-18, a peticion explicita del usuario: "solo sea las condiciones
+// vendibles") -- lista fija, verificada en vivo contra el catalogo real de
+// OE.WorkPlanItemClassifications (via /api/production/fft-summary -> filters.classifications): los
+// codigos reales llevan un guion al inicio (-GRA "Renewed A", -GRB "Renewed"/"Renewed B", -GRC
+// "Renewed C", -ICB "Incomplete"/"Incomplete B", -ICC "Incomplete C", -ICD "Incomplete D", -ICX
+// "Incomplete X"). El resto del catalogo (Damage/Scrap/Pending/NC/DNP/etc.) queda fuera a
+// proposito -- SOLO para este dashboard, "Producción FFT" sigue mostrando todas las clasificaciones
+// sin este filtro (su propio dropdown "Clasificación" no se toca).
+const SELLABLE_CLASSIFICATION_CODES = ['-GRA', '-GRB', '-GRC', '-ICB', '-ICC', '-ICD', '-ICX']
+
 const EMPTY_RESPONSE = {
   configured: false,
   updatedAt: null,
@@ -76,12 +86,23 @@ export default requireModuleAccess(
     let peoplePreviousWeekdayRows
     try {
       ;[dailyRows, peopleTodayRows, peoplePreviousWeekdayRows] = await Promise.all([
-        getDailyThroughput({ workCenterId, dateFrom: from, dateTo: to }),
-        getProductionByUserToday({ workCenterId, dateFrom: today, dateTo: today }),
+        getDailyThroughput({
+          workCenterId,
+          dateFrom: from,
+          dateTo: to,
+          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+        }),
+        getProductionByUserToday({
+          workCenterId,
+          dateFrom: today,
+          dateTo: today,
+          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+        }),
         getProductionByUserToday({
           workCenterId,
           dateFrom: dateOnly(previousWeekdayStr),
           dateTo: dateOnly(previousWeekdayStr),
+          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
         }),
       ])
     } catch (err) {

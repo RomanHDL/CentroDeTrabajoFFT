@@ -103,7 +103,7 @@ async function getPool() {
    "Todas"/Turno 2 del DIA ANTERIOR, a donde realmente pertenece, nunca se pierde. */
 function buildFilteredBaseCte(
   request,
-  { workCenterId, dateFrom, dateTo, classificationCode, size, shift },
+  { workCenterId, dateFrom, dateTo, classificationCode, classificationCodes, size, shift },
 ) {
   request.input('workCenterId', sql.Int, workCenterId)
   request.input('dateFrom', sql.Date, dateFrom)
@@ -126,6 +126,18 @@ function buildFilteredBaseCte(
   if (classificationCode) {
     request.input('classificationCode', sql.NVarChar, classificationCode)
     extraWhere += ' AND WPIC.ClassificationCode = @classificationCode'
+  }
+  // `classificationCodes` (2026-09-18, a peticion explicita del usuario para "Dashboard FFT": solo
+  // contar condiciones vendibles) -- lista fija, SEPARADA del filtro `classificationCode` de arriba
+  // (singular, ya usado por "Producción FFT" via su dropdown) para no tocar ese comportamiento.
+  // Códigos reales verificados en vivo contra /api/production/fft-summary (filters.classifications)
+  // -- todos llevan un guion al inicio (-GRA, -ICB, ...), nunca sin el.
+  if (Array.isArray(classificationCodes) && classificationCodes.length > 0) {
+    const placeholders = classificationCodes.map((code, i) => {
+      request.input(`ccList${i}`, sql.NVarChar, code)
+      return `@ccList${i}`
+    })
+    extraWhere += ` AND WPIC.ClassificationCode IN (${placeholders.join(', ')})`
   }
   if (size !== undefined && size !== null && size !== '') {
     request.input('size', sql.Int, Number(size))
@@ -209,12 +221,21 @@ export async function getProductionByUserToday({
   dateFrom,
   dateTo,
   classificationCode,
+  classificationCodes,
   size,
   shift,
 }) {
   const pool = await getPool()
   const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCode, size, shift })
+  const cte = buildFilteredBaseCte(request, {
+    workCenterId,
+    dateFrom,
+    dateTo,
+    classificationCode,
+    classificationCodes,
+    size,
+    shift,
+  })
   const result = await request.query(`
     ${cte}
     SELECT InspectionBy, COUNT(*) AS Qty
@@ -267,12 +288,21 @@ export async function getDailyThroughput({
   dateFrom,
   dateTo,
   classificationCode,
+  classificationCodes,
   size,
   shift,
 }) {
   const pool = await getPool()
   const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCode, size, shift })
+  const cte = buildFilteredBaseCte(request, {
+    workCenterId,
+    dateFrom,
+    dateTo,
+    classificationCode,
+    classificationCodes,
+    size,
+    shift,
+  })
   const result = await request.query(`
     ${cte}
     SELECT CAST(InspectionDate AS DATE) AS Day, COUNT(*) AS Qty
