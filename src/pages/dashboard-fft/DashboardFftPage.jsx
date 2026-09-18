@@ -1,6 +1,9 @@
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
+import { cn } from '@/lib/utils'
+import { useEffectiveModules } from '@/state/auth'
 import ConditionRankingCard from './ConditionRankingCard'
 import DashboardFftHeader from './DashboardFftHeader'
 import DashboardFftKpiCard from './DashboardFftKpiCard'
@@ -39,11 +42,20 @@ import WeeklySummaryTable from './WeeklySummaryTable'
    Lo que SI cambia es la distribucion: en vez de una columna larga que obligaba a hacer scroll
    (InsightBanner + WeeklyComparisonChart + MonthlyWeeksChart + 2 CategoryComparisonChart +
    ConditionTable + ConditionSizeCrosstabTable + WeeklySummaryTable, uno debajo del otro), ahora es
-   un layout de una sola pantalla con flexbox (h-screen + flex-col + overflow-hidden en pantallas
-   >=1024px de ancho, ver comentario en el className de abajo) donde cada seccion recibe una
-   FRACCION del alto disponible via flex-1/min-h-0 (nunca un pixel fijo que sume mas que 1080px) --
-   asi la misma pagina se ve completa tanto en 1920x1080 como en 3840x2160 sin tocar el CSS por
-   resolucion, solo estirando proporcionalmente.
+   un layout de una sola pantalla con flexbox donde cada seccion recibe una FRACCION del alto
+   disponible via flex-1/min-h-0 -- asi la misma pagina se ve completa tanto en 1920x1080 como en
+   3840x2160 sin tocar el CSS por resolucion, solo estirando proporcionalmente.
+
+   ARREGLO 2026-09-18 (responsive laptop, a peticion explicita del usuario: "en LAPTOP todos los
+   bloques se estan comprimiendo verticalmente porque... se implemento la regla de hacer caber
+   absolutamente todo dentro de 100vh"): el h-screen/overflow-hidden/flex-1-a-0% de arriba SOLO debe
+   aplicar en el kiosco de TV real -- estaba gateado por el breakpoint de ANCHO `lg:` (>=1024px), pero
+   una laptop puede ser igual de ancha que la TV con mucho menos alto util (~800-900px tras la barra
+   del navegador), y con poco alto libre el flex-grow de esas secciones colapsaba hacia 0. Ahora el
+   gate es `isTvMode` (ver useIsTvMode abajo, basado en el modulo efectivo del usuario / `?tv=`,
+   NUNCA en window.innerWidth/screen.width) -- modo TV mantiene el h-screen/flex-1 de siempre sin
+   cambios; modo laptop usa alto natural + scroll normal + min-height explicito por seccion (ver cada
+   className mas abajo) en vez de flex-basis 0%.
 
    ConditionTable.jsx y ConditionSizeCrosstabTable.jsx (la tabla grande de 7 filas y la tabla cruzada
    condicion×tamaño) YA NO SE RENDERIZAN en esta pantalla TV -- ocupaban demasiado alto para una
@@ -144,9 +156,29 @@ function useDashboardFftData() {
   return { data, error }
 }
 
+/* Modo TV (compacto, h-screen, sin scroll) vs. modo laptop/admin (alto natural, scroll normal) --
+   arreglo 2026-09-18 a peticion explicita del usuario: el layout "todo cabe en 100vh" es correcto
+   SOLO para la TV fisica de 65" (o cualquiera navegando con el usuario dedicado `tv.fft`, cuyo
+   `effectiveModules` es exactamente `['/dashboard-fft']` -- mismo dato que ya usa BackLink en
+   DashboardFftHeader.jsx para decidir si mostrar "← Volver"). Un admin/supervisor entrando a ver la
+   TV SIEMPRE tiene mas de un modulo, asi que cae en modo laptop automaticamente sin necesitar ningun
+   parametro. NUNCA se decide por window.innerWidth/screen.width -- una laptop tambien puede ser
+   1920px de ancho, ese ancho no distingue nada.
+   `?tv=1`/`?tv=0` es solo un override manual para poder probar cualquiera de los 2 modos desde un
+   navegador normal (sin loguearse como `tv.fft`), nunca se usa en produccion real. */
+function useIsTvMode() {
+  const { modules } = useEffectiveModules()
+  const [searchParams] = useSearchParams()
+  const override = searchParams.get('tv')
+  if (override === '1') return true
+  if (override === '0') return false
+  return Array.isArray(modules) && modules.length === 1 && modules[0] === '/dashboard-fft'
+}
+
 export default function DashboardFftPage() {
   const { t } = useTranslation('dashboardFft')
   const { data, error } = useDashboardFftData()
+  const isTvMode = useIsTvMode()
 
   if (data === null && !error) {
     return (
@@ -205,14 +237,17 @@ export default function DashboardFftPage() {
       : null
 
   return (
-    // `lg:h-screen lg:overflow-hidden` -- SOLO a partir de 1024px de ancho (breakpoint `lg` de
-    // Tailwind) el layout se fija al alto exacto del viewport y deja de poder hacer scroll: esa es
-    // la resolucion objetivo real (TV 1920x1080/4K), a peticion explicita del usuario ("en TV Full
-    // HD NO quiero scroll... en tablet puede aparecer scroll si es estrictamente necesario"). Por
-    // debajo de 1024px (tablet/laptop chico) el flujo es el normal de un documento (alto automatico,
-    // scroll si hace falta) para no romper la pantalla en un dispositivo mas chico que una TV.
+    // Modo TV: h-screen + overflow-hidden + gap comprimido por vh -- todo cabe exacto en el
+    // viewport, nunca hace scroll (pantalla fija de planta). Modo laptop/admin: SOLO min-h-screen
+    // (alto natural de documento) + overflow visible + gap fijo comodo -- el contenido puede superar
+    // el viewport y hace scroll normal, a proposito (arreglo 2026-09-18: antes esto se activaba con
+    // `lg:` -- solo por ANCHO >=1024px -- y una laptop Full HD tan ancha como la TV pero con ~800-900px
+    // utiles de alto terminaba aplastando las graficas contra 0px; ver useIsTvMode arriba).
     <div
-      className="flex min-h-screen flex-col gap-3 bg-[#F7F9FC] p-[clamp(14px,1.5vw,28px)] lg:h-screen lg:gap-[clamp(10px,1vh,14px)] lg:overflow-hidden"
+      className={cn(
+        'flex min-h-screen flex-col gap-4 bg-[#F7F9FC] p-[clamp(14px,1.5vw,28px)]',
+        isTvMode && 'h-screen gap-3 overflow-hidden lg:gap-[clamp(10px,1vh,14px)]',
+      )}
       style={LIGHT_THEME_VARS}
     >
       <DashboardFftHeader
@@ -229,8 +264,10 @@ export default function DashboardFftPage() {
       )}
 
       {/* Fila de 4 KPIs -- altura de contenido natural (shrink-0), nunca flex-1: son cards cortas,
-          darles mas alto solo robaria espacio a las graficas de abajo, que son lo mas importante. */}
-      <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+          darles mas alto solo robaria espacio a las graficas de abajo, que son lo mas importante.
+          min-h-[135px] SIEMPRE (TV y laptop) -- piso de legibilidad explicito, sin depender de que el
+          contenido interno de cada card nunca cambie de alto. */}
+      <div className="grid min-h-[135px] shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
         <DashboardFftKpiCard
           title={t('todayProductionTitle')}
           value={data.todayKpi.qty}
@@ -274,7 +311,12 @@ export default function DashboardFftPage() {
           el 4K no use "cards gigantes" sino "escalado proporcional": con un ancho fijo la tarjeta de
           la derecha se veria angosta en 1920 y desproporcionadamente chica en 3840, con fracciones
           mantiene la MISMA proporcion 65-70%/30-35% en cualquier resolucion. */}
-      <div className="grid min-h-0 flex-[3] grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
+      <div
+        className={cn(
+          'grid grid-cols-1 items-stretch gap-3 lg:grid-cols-[2fr_1fr]',
+          isTvMode ? 'min-h-0 flex-[3]' : 'min-h-[380px] lg:min-h-[420px]',
+        )}
+      >
         <WeeklyComparisonChart
           t={t}
           dailyComparison={data.dailyComparison}
@@ -284,13 +326,18 @@ export default function DashboardFftPage() {
       </div>
 
       {/* Segunda fila: semanas del mes / condicion (ranking compacto) / pulgadas (lista compacta). */}
-      <div className="grid min-h-0 flex-[2] grid-cols-1 gap-3 lg:grid-cols-3">
+      <div
+        className={cn(
+          'grid grid-cols-1 items-stretch gap-3 lg:grid-cols-3',
+          isTvMode ? 'min-h-0 flex-[2]' : 'min-h-[280px] lg:min-h-[320px]',
+        )}
+      >
         <MonthlyWeeksChart t={t} weeks={data.monthly.weeks} />
         <ConditionRankingCard t={t} rows={data.conditionBreakdown} />
         <SizeCompactList t={t} rows={data.sizeBreakdown} />
       </div>
 
-      <WeeklySummaryTable t={t} weeklySummaryTable={data.weeklySummaryTable} />
+      <WeeklySummaryTable t={t} weeklySummaryTable={data.weeklySummaryTable} isTvMode={isTvMode} />
     </div>
   )
 }

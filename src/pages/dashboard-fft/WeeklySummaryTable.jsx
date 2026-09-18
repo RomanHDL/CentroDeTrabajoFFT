@@ -10,12 +10,12 @@ import { tvCardClassAuto, tvCardHeaderClass, tvSectionTitleClass } from './tvSty
    vez de 7 filas verticales, para caber en 1 sola pantalla de TV sin scroll. Un dia futuro
    (`isFuture`) sigue mostrando "—" en vez de "0"/"-100%" -- nunca se infiere produccion cero de un
    dia que todavia no paso. */
-export default function WeeklySummaryTable({ t, weeklySummaryTable }) {
+export default function WeeklySummaryTable({ t, weeklySummaryTable, isTvMode }) {
   const { rows, total } = weeklySummaryTable
   const totalDiff = total.currentQty - total.previousQty
 
   return (
-    <div className={tvCardClassAuto}>
+    <div className={cn(tvCardClassAuto, !isTvMode && 'min-h-[230px] lg:min-h-[250px]')}>
       <div className={tvCardHeaderClass()}>
         <p className={tvSectionTitleClass}>{t('summaryTableTitle')}</p>
       </div>
