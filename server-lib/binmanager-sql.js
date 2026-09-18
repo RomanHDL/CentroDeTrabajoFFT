@@ -149,8 +149,21 @@ function buildFilteredBaseCte(
         ROW_NUMBER() OVER (PARTITION BY I.LicensePlateNumber ORDER BY I.InspectionDate DESC, I.InspectionID DESC) AS RN
       FROM oe.WorkPlanInspection I WITH (NOLOCK)
       INNER JOIN OE.WorkPlanItemClassifications WPIC WITH (NOLOCK) ON WPIC.ClassificationID = I.ClassificationID
+      -- Excluir personal de OPEN CELL (ADM.Departments.DepartmentID = 1850) que por error de
+      -- configuracion en SmartControl tiene su WorkCenterID puesto en 49 (FFT) -- investigado en
+      -- vivo 2026-09-18 a peticion explicita del usuario ("erick canon que area esta"): el
+      -- ClassificationCode/WorkCenterID por si solos NO distinguen FFT de OpenCell (mismo work
+      -- center numerico), la fuente real es ADM.UsersLogin.DepartamentId resuelto via
+      -- ADM.Departments. LEFT JOIN (no INNER) a proposito: un InspectionBy sin match en
+      -- ADM.UsersLogin (cuenta borrada/inactiva) se sigue contando como FFT por defecto, nunca se
+      -- excluye por ausencia de dato -- solo se excluye con confirmacion POSITIVA de que su
+      -- departamento real es OPEN CELL. Afecta a TODAS las funciones de este archivo (comparten
+      -- esta CTE) -- correcto a proposito: "Producción FFT" y "Dashboard FFT" deben reportar el
+      -- mismo numero real de producción FFT, sin la contaminación de OpenCell en ninguna de las 2.
+      LEFT JOIN ADM.UsersLogin UL WITH (NOLOCK) ON UL.UserName = I.InspectionBy
       WHERE I.WorkCenterID = @workCenterId
         AND ${shiftWhere}
+        AND (UL.DepartamentId IS NULL OR UL.DepartamentId <> 1850)
     ),
     FilteredBase AS (
       SELECT
