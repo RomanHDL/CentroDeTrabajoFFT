@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import CategoryComparisonChart, { CATEGORY_COLORS } from './CategoryComparisonChart'
+import ConditionTable from './ConditionTable'
 import DashboardFftHeader from './DashboardFftHeader'
 import DashboardFftKpiCard from './DashboardFftKpiCard'
 import InsightBanner from './InsightBanner'
@@ -232,6 +233,12 @@ export default function DashboardFftPage() {
             rows={data.sizeBreakdown}
             getLabel={(row) => (row.size === null ? t('sizeUnknownLabel') : `${row.size}"`)}
           />
+        </div>
+
+        {/* Tabla de las 7 condiciones con su numero exacto (2026-09-18, a peticion explicita del
+            usuario, complementa al grafico de barras de arriba). */}
+        <div className="mb-4">
+          <ConditionTable t={t} conditionBreakdown={data.conditionBreakdown} />
         </div>
 
         <WeeklySummaryTable t={t} weeklySummaryTable={data.weeklySummaryTable} />

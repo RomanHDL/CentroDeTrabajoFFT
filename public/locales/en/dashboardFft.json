@@ -49,5 +49,7 @@
   "conditionChartSubtitle": "Current week vs. previous week, sellable conditions only",
   "sizeChartTitle": "Production by screen size",
   "sizeChartSubtitle": "Current week vs. previous week, sellable conditions only",
-  "sizeUnknownLabel": "No data"
+  "sizeUnknownLabel": "No data",
+  "conditionTableTitle": "Condition table",
+  "colCondition": "Condition"
 }

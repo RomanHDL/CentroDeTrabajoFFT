@@ -17,21 +17,14 @@
 // nunca se usa el "hoy" UTC del servidor para este modulo. Fallback a la fecha UTC del servidor
 // SOLO si el cliente no lo manda (primera carga antes de que JS corra, o un caller sin JS) --
 // documentado como fallback, no como fuente principal.
-import {
-  getClassificationByDayInRange,
-  getDailyThroughput,
-  getFilterOptions,
-  getProductionByUserToday,
-  getSizeByDayInRange,
-  isBinManagerSqlConfigured,
-} from '../../server-lib/binmanager-sql.js'
+import { getDayBreakdown, getFilterOptions, getProductionByUserToday, isBinManagerSqlConfigured } from '../../server-lib/binmanager-sql.js'
 import { requireModuleAccess } from '../../server-lib/auth.js'
 import {
   buildFftDashboardData,
   computeQueryRange,
   SELLABLE_CLASSIFICATION_CODES,
 } from '../../server-lib/fftDashboardAggregation.js'
-import { dateOnly, toDateOnlyString } from '../../shared/isoWeek.js'
+import { addDays, dateOnly, toDateOnlyString } from '../../shared/isoWeek.js'
 
 const FFT_WORK_CENTER_ID = 49
 
@@ -81,65 +74,61 @@ export default requireModuleAccess(
       new Date(today.getTime() - 7 * 86400000),
     )
 
-    let dailyRows
+    // Un dia por cada fecha real del rango ancho (2026-09-18, a peticion explicita del usuario: "que
+    // este los datos como el dashboard de la empresa" -- una consulta de rango amplio via BETWEEN
+    // cuenta la cola nocturna del Turno 2 de la noche anterior como si fuera del dia siguiente,
+    // cosa que el dashboard REAL de BinManager no hace, ver comentario grande en
+    // binmanager-sql.js/getDayBreakdown). Se pide UN dia a la vez -- mismo patron exacto que ya usa
+    // fft-summary.js para su "totalToday" real -- y se corren todos en paralelo (Promise.all).
+    const dateList = []
+    for (let d = from; d <= to; d = addDays(d, 1)) dateList.push(d)
+
     let peopleTodayRows
     let peoplePreviousWeekdayRows
-    let conditionRows
-    let sizeRows
+    let dayBreakdownByDate
     let conditionCatalog
     try {
-      // conditionRows/sizeRows usan el MISMO rango ancho {from,to} que dailyRows (nunca un
-      // BETWEEN de solo "Lunes->hoy" -- ver comentario grande en binmanager-sql.js/
-      // getClassificationByDayInRange sobre el bug real de 358 piezas que eso causaba). El modulo
-      // puro (fftDashboardAggregation.js) filtra/suma por el mismo dia calendario exacto que ya
-      // usa dailyComparison, para que los 3 cierren consistentes entre si.
-      ;[dailyRows, peopleTodayRows, peoplePreviousWeekdayRows, conditionRows, sizeRows, conditionCatalog] =
-        await Promise.all([
-          getDailyThroughput({
-            workCenterId,
-            dateFrom: from,
-            dateTo: to,
-            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-          }),
-          getProductionByUserToday({
-            workCenterId,
-            dateFrom: today,
-            dateTo: today,
-            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-          }),
-          getProductionByUserToday({
-            workCenterId,
-            dateFrom: dateOnly(previousWeekdayStr),
-            dateTo: dateOnly(previousWeekdayStr),
-            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-          }),
-          getClassificationByDayInRange({
-            workCenterId,
-            dateFrom: from,
-            dateTo: to,
-            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-          }),
-          getSizeByDayInRange({
-            workCenterId,
-            dateFrom: from,
-            dateTo: to,
-            classificationCodes: SELLABLE_CLASSIFICATION_CODES,
-          }),
-          getFilterOptions(),
-        ])
+      ;[peopleTodayRows, peoplePreviousWeekdayRows, dayBreakdownByDate, conditionCatalog] = await Promise.all([
+        getProductionByUserToday({
+          workCenterId,
+          dateFrom: today,
+          dateTo: today,
+          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+        }),
+        getProductionByUserToday({
+          workCenterId,
+          dateFrom: dateOnly(previousWeekdayStr),
+          dateTo: dateOnly(previousWeekdayStr),
+          classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+        }),
+        Promise.all(
+          dateList.map((d) =>
+            getDayBreakdown({
+              workCenterId,
+              date: d,
+              classificationCodes: SELLABLE_CLASSIFICATION_CODES,
+            }).then((rows) => ({ date: toDateOnlyString(d), rows })),
+          ),
+        ),
+        getFilterOptions(),
+      ])
     } catch (err) {
       // Best-effort: mismo criterio que fft-summary.js -- si SmartControl no responde, el
       // dashboard debe seguir cargando (vacio) en vez de un 500 crudo en la pantalla de la TV.
       return res.status(200).json({ ...EMPTY_RESPONSE, configured: true, error: err.message })
     }
 
+    // Aplana {date, rows:[{code,name,size,qty}]}[] a un solo array con la fecha ya pegada a cada
+    // fila -- fftDashboardAggregation.js deriva de aqui tanto el total diario como los desgloses
+    // por condicion/tamaño, todos desde el MISMO dato de origen (nunca 3 consultas independientes
+    // que puedan desalinearse entre si).
+    const dayRows = dayBreakdownByDate.flatMap(({ date, rows }) => rows.map((r) => ({ ...r, date })))
+
     const data = buildFftDashboardData({
       today,
-      dailyRows,
+      dayRows,
       peopleToday: peopleTodayRows.length,
       peoplePreviousWeekday: peoplePreviousWeekdayRows.length,
-      conditionRows,
-      sizeRows,
       // getFilterOptions() trae el catalogo COMPLETO (todas las clasificaciones reales, no solo
       // vendibles) -- se filtra aqui a las 7 vendibles antes de armar la leyenda.
       conditionCatalog: conditionCatalog.classifications.filter((c) =>

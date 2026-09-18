@@ -427,58 +427,47 @@ export async function getSizeByClassificationToday({
   }))
 }
 
-/* Desglose por CONDICIÓN y por TAMAÑO, con el DÍA como dimensión extra (2026-09-18, para "Dashboard
-   FFT" -- funciones NUEVAS, deliberadamente separadas de getProductionByClassificationToday/
-   getSizeByClassificationToday de arriba en vez de agregarles CAST(InspectionDate AS DATE) al
-   GROUP BY: esas 2 ya las usa "Producción FFT" esperando UNA fila total por clasificación/tamaño en
-   todo el rango -- agregarles el dia ahi fragmentaria ese resultado y romperia esa pantalla.
-   El motivo real de necesitar el dia aqui: el Dashboard FFT compara semana-actual-vs-anterior
-   sumando SOLO los dias "Lunes..hoy" de cada semana (mismo criterio de "periodo comparable" que
-   dailyComparison en fftDashboardAggregation.js) -- pedirle a SQL directamente el rango
-   [lunes, hoy] con un solo BETWEEN NO cierra exacto contra esa suma dia-por-dia: la cola nocturna
-   del Turno 2 de "hoy" (que sigue hasta las 06:00 del dia siguiente, ver turno2Where arriba) se
-   cuenta completa dentro de ese BETWEEN, mientras que la comparativa diaria por CAST(fecha) le
-   atribuye esa cola al dia calendario siguiente (fuera del rango "Lunes..hoy"). Diferencia real
-   encontrada en vivo verificando este mismo dashboard: 4,642 vs 4,284 piezas de la semana anterior
-   (358 de diferencia, la cola nocturna completa de un jueves). Trayendo el dia real de cada fila y
-   sumando en JS (fftDashboardAggregation.js) por el mismo string de fecha que ya usa dailyRows, el
-   Dashboard FFT cierra exacto consigo mismo. */
-export async function getClassificationByDayInRange({
-  workCenterId = 49,
-  dateFrom,
-  dateTo,
-  classificationCodes,
-  shift,
-}) {
+/* Desglose por condición + tamaño de UN SOLO DÍA (2026-09-18, para "Dashboard FFT" -- funcion NUEVA,
+   deliberadamente separada de getProductionByClassificationToday/getSizeByClassificationToday de
+   arriba, que ya usa "Producción FFT" esperando UNA fila total por clasificación/tamaño en TODO el
+   rango que le pidan -- agregarles el dia ahi fragmentaria ese resultado y romperia esa pantalla.
+
+   HISTORIA (2026-09-18, corregido 2 veces el mismo dia): la primera version de esto pedia el rango
+   ancho completo [inicio de semana anterior, hoy] en una sola consulta con CAST(InspectionDate AS
+   DATE) en el GROUP BY. Eso cerraba bien "Producción por condición"/"...pulgadas" contra la tabla
+   diaria del Dashboard FFT (arreglo real: 358 piezas de diferencia por la cola nocturna del Turno 2
+   contada de mas en un rango ancho), PERO el usuario reporto en vivo que el numero de "Producción
+   hoy" no coincidia con el dashboard real de BinManager (mostraba piezas de la madrugada -cola del
+   Turno 2 de AYER- como si fueran de "hoy", cuando el dashboard real de la empresa NO las cuenta
+   asi -- verificado comparando contra /api/production/fft-summary?dateFrom=hoy&dateTo=hoy, que SI
+   coincide con el sistema real porque usa exactamente este mismo patron de UN SOLO DIA).
+
+   Fix definitivo: consultar SIEMPRE dia por dia (dateFrom=dateTo=ese dia, EXACTO mismo patron que ya
+   usa fft-summary.js para su "totalToday" -- la fuente de verdad real). Un query de un solo dia NO
+   agarra la cola nocturna entrante de la noche anterior (turno2Where con dateFrom=dateTo=D solo
+   busca la cola SALIENTE de D hacia D+1, nunca la ENTRANTE de D-1 hacia D) -- eso es justo lo que el
+   dashboard real de la empresa tampoco cuenta, asi que consultando dia por dia esto queda IDENTICO
+   al sistema real por construccion, no por coincidencia. El caller (api/production/fft-dashboard.js)
+   llama esto en paralelo (Promise.all) para cada dia del rango que necesite. */
+export async function getDayBreakdown({ workCenterId = 49, date, classificationCodes, shift }) {
   const pool = await getPool()
   const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCodes, shift })
+  const cte = buildFilteredBaseCte(request, {
+    workCenterId,
+    dateFrom: date,
+    dateTo: date,
+    classificationCodes,
+    shift,
+  })
   const result = await request.query(`
     ${cte}
-    SELECT CAST(InspectionDate AS DATE) AS Day, ClassificationCode, ClassificationName, COUNT(*) AS Qty
+    SELECT ClassificationCode, ClassificationName, ScreenSize, COUNT(*) AS Qty
     FROM FilteredBase
-    GROUP BY CAST(InspectionDate AS DATE), ClassificationCode, ClassificationName
+    GROUP BY ClassificationCode, ClassificationName, ScreenSize
   `)
   return result.recordset.map((r) => ({
-    date: r.Day.toISOString().slice(0, 10),
     code: r.ClassificationCode,
     name: r.ClassificationName,
-    qty: r.Qty,
-  }))
-}
-
-export async function getSizeByDayInRange({ workCenterId = 49, dateFrom, dateTo, classificationCodes, shift }) {
-  const pool = await getPool()
-  const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCodes, shift })
-  const result = await request.query(`
-    ${cte}
-    SELECT CAST(InspectionDate AS DATE) AS Day, ScreenSize, COUNT(*) AS Qty
-    FROM FilteredBase
-    GROUP BY CAST(InspectionDate AS DATE), ScreenSize
-  `)
-  return result.recordset.map((r) => ({
-    date: r.Day.toISOString().slice(0, 10),
     size: r.ScreenSize ?? null,
     qty: r.Qty,
   }))

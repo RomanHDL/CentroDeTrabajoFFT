@@ -49,5 +49,7 @@
   "conditionChartSubtitle": "本周与上周对比，仅限可售品相",
   "sizeChartTitle": "按屏幕尺寸划分的产量",
   "sizeChartSubtitle": "本周与上周对比，仅限可售品相",
-  "sizeUnknownLabel": "无数据"
+  "sizeUnknownLabel": "无数据",
+  "conditionTableTitle": "品相表",
+  "colCondition": "品相"
 }

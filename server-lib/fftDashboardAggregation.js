@@ -6,8 +6,9 @@
 //
 // "Pieza" usa EXACTAMENTE la misma definicion que Producción FFT (ver comentario grande en
 // server-lib/binmanager-sql.js/buildFilteredBaseCte): este modulo nunca cuenta nada por su cuenta,
-// solo recibe filas YA agregadas por dia via getDailyThroughput (la misma funcion que ya usa
-// Producción FFT) y las reparte en semanas/meses ISO reales.
+// solo recibe filas YA agregadas dia-por-dia via getDayBreakdown (mismo patron de un-solo-dia que
+// fft-summary.js usa para su "totalToday" real, para que "hoy" coincida con el dashboard real de
+// la empresa) y las reparte en semanas/meses ISO reales.
 //
 // "Hoy" es SIEMPRE el que manda el cliente (dayjs().format('YYYY-MM-DD'), hora real del navegador
 // de la TV en planta) -- nunca el "hoy" UTC del servidor. Mismo criterio ya documentado
@@ -55,14 +56,12 @@ export function computeQueryRange(today) {
   return { from, to: today }
 }
 
-// Filtra filas reales {date, <keyField>, name?, qty} (salida de getClassificationByDayInRange/
-// getSizeByDayInRange, YA acotadas a condiciones vendibles por el caller) a solo las fechas de
-// `dateSet` (un set de 'YYYY-MM-DD', los dias COMPARABLES de una semana -- Lunes..hoy) y las suma
-// por `keyField`. Filtrar por fecha ANTES de sumar (en vez de pedirle el rango a SQL vía BETWEEN)
-// es lo que hace que esto cierre EXACTO contra dailyComparison/byDate: un LPN se atribuye al mismo
-// dia calendario real (CAST(InspectionDate AS DATE)) en los 2 lados, nunca a un rango con la cola
-// nocturna del Turno 2 contada de mas (ver comentario grande en binmanager-sql.js/
-// getClassificationByDayInRange sobre el bug real encontrado en vivo, 358 piezas de diferencia).
+// Filtra filas reales {date, code, size, name?, qty} (salida de getDayBreakdown, YA acotadas a
+// condiciones vendibles por el caller) a solo las fechas de `dateSet` (un set de 'YYYY-MM-DD', los
+// dias COMPARABLES de una semana -- Lunes..hoy) y las suma por `keyField` ('code' o 'size' --
+// cualquier otro campo de la fila, como el que no sea el keyField, se ignora al sumar). Como
+// dayRows ya viene dia-por-dia (mismo patron de un-solo-dia que el dashboard real), esto cierra
+// exacto contra dailyComparison/byDate por construccion.
 function filterAndSumByKey(rows, dateSet, keyField) {
   const map = new Map()
   for (const r of rows) {
@@ -120,34 +119,28 @@ function sumRange(byDate, fromDate, toDate, todayCap) {
 }
 
 /**
- * dailyRows: [{ date: 'YYYY-MM-DD', qty }] -- salida real de getDailyThroughput (server-lib/
- * binmanager-sql.js), ya trae SOLO los dias con al menos 1 pieza real (dias sin produccion
- * simplemente no aparecen -- se tratan como 0 mas abajo, NUNCA como "sin dato").
+ * dayRows: [{date, code, name, size, qty}] -- salida real de getDayBreakdown (server-lib/
+ * binmanager-sql.js), UNA fila por cada combinacion real (dia, condicion, tamaño) que tuvo al
+ * menos 1 pieza -- el caller (api/production/fft-dashboard.js) ya la trajo dia-por-dia (mismo
+ * patron de un-solo-dia que usa fft-summary.js para su "totalToday" real, ver comentario grande en
+ * binmanager-sql.js/getDayBreakdown sobre por que un rango ancho vía BETWEEN NO coincide con el
+ * dashboard real de la empresa: cuenta de mas la cola nocturna del Turno 2 de la noche anterior).
+ * Esta es la UNICA fuente de datos de piezas de todo el modulo -- el total diario (byDate),
+ * "Producción por condición" y "Producción por pulgadas" se derivan los 3 de aqui mismo, nunca de
+ * 3 consultas separadas que puedan desalinearse entre si.
  * today: Date (fecha calendario UTC medianoche, ver shared/isoWeek.js/dateOnly) -- resuelta por el
  * caller a partir del parametro real del cliente.
  * peopleToday/peoplePreviousWeekday: conteos reales YA resueltos por el caller (distinct
  * usernames en BinManager ese dia exacto, misma fuente que "Personal activo hoy" de Producción
  * FFT) -- este modulo no toca SQL, solo reparte los numeros que le pasan.
- * conditionRows: [{date, code, name, qty}] -- salida real de getClassificationByDayInRange, mismo
- * rango ANCHO que dailyRows (YA filtrada a solo condiciones vendibles por el caller) -- este modulo
- * la filtra/suma el mismo dia calendario que dailyComparison (nunca via un BETWEEN de rango en SQL,
- * ver comentario grande en binmanager-sql.js sobre por que eso no cierra exacto).
- * sizeRows: [{date, size, qty}] -- salida real de getSizeByDayInRange, mismo criterio que arriba.
  * conditionCatalog: [{code, name}] -- catalogo REAL completo (getFilterOptions, sin rango de
  * fecha), ya filtrado por el caller a las 7 condiciones vendibles. Fuente de los nombres de la
- * leyenda -- separada de conditionRows a proposito: una condicion vendible sin ninguna pieza en
- * las ultimas 2 semanas NO debe perder su nombre real en la leyenda.
+ * leyenda -- separada de dayRows a proposito: una condicion vendible sin ninguna pieza en las
+ * ultimas 2 semanas NO debe perder su nombre real en la leyenda.
  */
-export function buildFftDashboardData({
-  today,
-  dailyRows,
-  peopleToday,
-  peoplePreviousWeekday,
-  conditionRows,
-  sizeRows,
-  conditionCatalog,
-}) {
-  const byDate = new Map(dailyRows.map((r) => [r.date, r.qty]))
+export function buildFftDashboardData({ today, dayRows, peopleToday, peoplePreviousWeekday, conditionCatalog }) {
+  const byDate = new Map()
+  for (const r of dayRows) byDate.set(r.date, (byDate.get(r.date) ?? 0) + r.qty)
   const todayStr = toDateOnlyString(today)
 
   const currentWeekMonday = startOfIsoWeek(today)
@@ -258,8 +251,8 @@ export function buildFftDashboardData({
   const currentComparableDates = new Set(comparableDays.map((d) => d.date))
   const previousComparableDates = new Set(comparableDays.map((d) => d.previousDate))
   const conditionBreakdown = buildCategoryComparison(
-    filterAndSumByKey(conditionRows, currentComparableDates, 'code'),
-    filterAndSumByKey(conditionRows, previousComparableDates, 'code'),
+    filterAndSumByKey(dayRows, currentComparableDates, 'code'),
+    filterAndSumByKey(dayRows, previousComparableDates, 'code'),
     'code',
     SELLABLE_CLASSIFICATION_CODES,
   )
@@ -269,8 +262,8 @@ export function buildFftDashboardData({
     name: catalogByCode.get(code) ?? null,
   }))
   const sizeBreakdown = buildCategoryComparison(
-    filterAndSumByKey(sizeRows, currentComparableDates, 'size'),
-    filterAndSumByKey(sizeRows, previousComparableDates, 'size'),
+    filterAndSumByKey(dayRows, currentComparableDates, 'size'),
+    filterAndSumByKey(dayRows, previousComparableDates, 'size'),
     'size',
   )
 
