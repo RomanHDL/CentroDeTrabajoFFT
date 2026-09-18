@@ -54,6 +54,7 @@ i18n
       'evaluaciones',
       'asistencia',
       'produccionFft',
+      'dashboardFft',
       'demoras',
       'controlEquipo',
       'horaPorHora',

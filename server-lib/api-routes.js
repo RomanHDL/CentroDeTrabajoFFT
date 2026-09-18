@@ -55,6 +55,7 @@ import personnelSwapHandler from '../api/personnel/swap.js'
 import personnelSyncSmartControlHandler from '../api/personnel/sync-smartcontrol.js'
 import processAuditByIdHandler from '../api/process-audits/[id].js'
 import processAuditsIndexHandler from '../api/process-audits/index.js'
+import productionFftDashboardHandler from '../api/production/fft-dashboard.js'
 import productionFftSummaryHandler from '../api/production/fft-summary.js'
 import productionSkuTrackerHandler from '../api/production/sku-tracker.js'
 import productionTaktRealHandler from '../api/production/takt-real.js'
@@ -156,6 +157,7 @@ export function mountApiRoutes(app) {
   app.get('/api/personnel/movements-today', wrapAsync(personnelMovementsTodayHandler))
   app.get('/api/production/takt-real', wrapAsync(productionTaktRealHandler))
   app.get('/api/production/fft-summary', wrapAsync(productionFftSummaryHandler))
+  app.get('/api/production/fft-dashboard', wrapAsync(productionFftDashboardHandler))
   app.get('/api/production/sku-tracker', wrapAsync(productionSkuTrackerHandler))
 
   app.get('/api/dashboard/trends', wrapAsync(dashboardTrendsHandler))

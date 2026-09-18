@@ -405,6 +405,25 @@ para poder desplegar en el servidor privado (Coolify). Ver
   real con la etiqueta "Turno (SmartControl)"; "Personal" agrega un filtro y una columna nuevos
   con la misma etiqueta "Turno (SmartControl)" en la tabla de Registro de hoy, sin tocar el
   filtro/columna "Turno" (check-in) ya existentes.
+- **Dashboard FFT (`/dashboard-fft`), pantalla nueva para TV de planta.** Vista SEPARADA de
+  "Producción FFT" (esa página no cambió de comportamiento; solo ganó un botón "Dashboard FFT"
+  en su encabezado que abre esta ruta nueva) -- comparación semanal/mensual de producción real,
+  reutilizando exactamente la misma integración SmartControl/BinManager (`server-lib/binmanager-sql.js`,
+  mismas funciones `getDailyThroughput`/`getProductionByUserToday` que ya usa Producción FFT, misma
+  definición de "pieza"). Nueva utilidad de semana ISO 8601 consolidada (`shared/isoWeek.js`,
+  verificada contra el cruce de año diciembre/enero) y una agregación pura (`server-lib/
+  fftDashboardAggregation.js`) que calcula: semana actual vs. anterior (comparación siempre
+  mismo-día-contra-mismo-día, día futuro muestra "—" nunca 0), total semanal usando solo el
+  período comparable, producción por cada semana ISO real que toca el mes (4/5/6 según el mes),
+  y avance mensual acumulado vs. el mismo rango de días del mes anterior. Sin meta semanal/mensual
+  configurada en ningún lado del sistema todavía -- esos KPIs se ocultan por completo en vez de
+  inventar un número. Auto-refresco cada 60s (pausado con la pestaña oculta, mismo patrón que
+  `apiSync.js`). Ruta montada FUERA de `AppLayout` (sin sidebar/menú, modo TV real, igual que
+  `/cambiar-contraseña`), protegida por el mismo sistema de permisos por módulo (nunca un rol
+  nuevo): se dio de alta un usuario real `TV FFT Producción` (folio 99001, rol LIDER -- el menos
+  privilegiado existente) con override individual `ALLOW` solo en `/dashboard-fft` y `DENY`
+  explícito en todos los demás módulos protegidos, así que entra directo a esta pantalla al
+  loguearse y no puede acceder a ningún otro módulo aunque intente la URL directa.
 
 ### Changed
 - **Rediseño del formulario "Registrar personal"**, a petición explícita del usuario ("mejora

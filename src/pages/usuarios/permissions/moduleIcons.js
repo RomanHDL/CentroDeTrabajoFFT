@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   ListFilter,
   Map as MapIcon,
+  MonitorPlay,
   Network,
   Star,
   Timer,
@@ -55,6 +56,7 @@ const ICONS = {
   Wrench: Wrench,
   Timer: Timer,
   ListFilter: ListFilter,
+  MonitorPlay: MonitorPlay,
 }
 
 export function getModuleIcon(iconKey) {

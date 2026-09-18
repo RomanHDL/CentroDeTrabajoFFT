@@ -60,6 +60,7 @@ export const RELEASES = [
           'addedMarkAbsentSeparateFromAssignment',
           'addedFftRosterBulkOnboardAndAutoSync',
           'addedEmployeeTurnoSmartControl',
+          'addedDashboardFft',
         ],
       },
       {

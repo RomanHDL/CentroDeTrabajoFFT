@@ -1,12 +1,21 @@
 import dayjs from 'dayjs'
-import { LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, MonitorPlay } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { cardClass, pageSubtitleClass, pageTitleClass } from '@/lib/pageStyles'
 import { cn } from '@/lib/utils'
 
 /* Header del modulo "Producción FFT" (2026-09-02, rediseño visual sobre mockup adjunto -- ver
    ProduccionFftPage.jsx para la nota completa). "En vivo" y "Última actualización" salen del
    `updatedAt` real que el backend devuelve en cada respuesta de /api/production/fft-summary --
-   nunca un timestamp hardcodeado ni una animacion de "live" sin dato real detras. */
+   nunca un timestamp hardcodeado ni una animacion de "live" sin dato real detras.
+
+   Boton "Dashboard FFT" (2026-09-17, a peticion explicita del usuario -- "en la página actual de
+   Producción FFT, agregar un botón visible arriba"): abre /dashboard-fft, la vista NUEVA y
+   SEPARADA para TV de planta -- Producción FFT en si NO cambia de comportamiento, solo gana este
+   acceso directo. Si el usuario actual no tiene permiso sobre /dashboard-fft, RequireModuleAccess
+   de esa ruta lo redirige igual que cualquier otro modulo sin permiso -- este boton no necesita
+   verificar el permiso de antemano. */
 export default function ProductionHeader({ t, updatedAt }) {
   return (
     <div className={cn(cardClass, 'mb-4')}>
@@ -26,12 +35,20 @@ export default function ProductionHeader({ t, updatedAt }) {
             <p className={pageSubtitleClass}>{t('pageSubtitle')}</p>
           </div>
         </div>
-        {updatedAt && (
-          <p className="shrink-0 text-[11.5px] text-muted-foreground">
-            {t('lastUpdatedLabel')}{' '}
-            <span className="font-semibold text-foreground">{dayjs(updatedAt).format('DD/MM/YYYY HH:mm')}</span>
-          </p>
-        )}
+        <div className="flex shrink-0 items-center gap-3">
+          {updatedAt && (
+            <p className="text-[11.5px] text-muted-foreground">
+              {t('lastUpdatedLabel')}{' '}
+              <span className="font-semibold text-foreground">{dayjs(updatedAt).format('DD/MM/YYYY HH:mm')}</span>
+            </p>
+          )}
+          <Button asChild size="sm" className="bg-[#0F2C59] font-bold normal-case hover:bg-[#0F2C59]/90">
+            <Link to="/dashboard-fft">
+              <MonitorPlay className="h-4 w-4" />
+              {t('dashboardFftButtonLabel')}
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   )

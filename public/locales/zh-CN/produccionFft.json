@@ -40,6 +40,7 @@
   "duplicateLabel": "重复",
   "liveLabel": "实时",
   "lastUpdatedLabel": "最后更新:",
+  "dashboardFftButtonLabel": "FFT 仪表盘",
   "filterSite": "站点 / 工厂",
   "filterArea": "区域 / 产线",
   "filterFrom": "从",

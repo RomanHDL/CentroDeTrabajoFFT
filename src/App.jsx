@@ -11,6 +11,7 @@ import RequestAccessPage from './pages/auth/RequestAccessPage'
 import CentroTrabajoPage from './pages/centro-trabajo/CentroTrabajoPage'
 import ControlEquipoPage from './pages/control-equipo/ControlEquipoPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import DashboardFftPage from './pages/dashboard-fft/DashboardFftPage'
 import DemorasPage from './pages/demoras/DemorasPage'
 import ChangelogPage from './pages/docs/ChangelogPage'
 import DeveloperManualPage from './pages/docs/DeveloperManualPage'
@@ -245,6 +246,22 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <ChangePasswordPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* "Dashboard FFT" (2026-09-17, a peticion explicita del usuario): TAMBIEN fuera del
+                AppLayout, mismo patron exacto que /cambiar-contrasena arriba -- pantalla de TV,
+                nunca debe verse sidebar/menu. RequireModuleAccess (no AppLayout) sigue siendo el
+                guard real de acceso por modulo: si el usuario TV (o cualquiera) intenta otra ruta
+                protegida sin permiso, ese guard ya lo redirige (ver RequireModuleAccess.jsx). */}
+              <Route
+                path="/dashboard-fft"
+                element={
+                  <ProtectedRoute>
+                    <RequireModuleAccess>
+                      <DashboardFftPage />
+                    </RequireModuleAccess>
                   </ProtectedRoute>
                 }
               />

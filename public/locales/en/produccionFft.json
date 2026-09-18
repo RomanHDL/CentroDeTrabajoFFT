@@ -40,6 +40,7 @@
   "duplicateLabel": "Duplicate",
   "liveLabel": "Live",
   "lastUpdatedLabel": "Last updated:",
+  "dashboardFftButtonLabel": "FFT Dashboard",
   "filterSite": "Site / Plant",
   "filterArea": "Area / Line",
   "filterFrom": "From",

@@ -493,6 +493,25 @@ export const MODULE_REGISTRY = [
     group: 'P',
     order: 20,
   },
+  // 2026-09-17 (a peticion explicita del usuario -- "Dashboard FFT" para TV de planta, produccion
+  // comparativa semanal/mensual): modulo NUEVO y SEPARADO de "Producción FFT" (arriba) -- misma
+  // fuente real (SmartControl/BinManager via server-lib/binmanager-sql.js, cero duplicacion de la
+  // integracion), pero agregada por semana/mes ISO en vez de filtros operativos. Reutiliza el
+  // sistema de permisos POR MODULO (nunca un rol nuevo, decision explicita del usuario) para poder
+  // dar de alta un usuario "TV" que SOLO vea esta pantalla -- ver server-lib/db/schema.js
+  // (UserRole/RoleModulePermission/UserModulePermission) para el mecanismo real.
+  {
+    key: '/dashboard-fft',
+    name: 'Dashboard FFT',
+    description: 'Producción comparativa semanal y mensual del work center FFT, pensada para TV de planta',
+    icon: 'MonitorPlay',
+    active: true,
+    permissionProtected: true,
+    systemReserved: false,
+    labelKey: 'dashboardFft',
+    group: 'P',
+    order: 22,
+  },
   // 2026-09-04 (rediseño de sidebar, a peticion explicita del usuario):
   // Manual de Usuario / Developer Manual / Cambios se incorporan al registro
   // central para que el sidebar tenga UNA sola fuente de verdad -- pero
