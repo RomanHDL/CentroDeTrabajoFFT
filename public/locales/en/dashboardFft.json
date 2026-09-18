@@ -58,5 +58,6 @@
   "comparablePeriodLabel": "Comparable period",
   "todayResultTitle": "Today's result",
   "todayResultCurrentLabel": "pieces today",
-  "todayResultPreviousLabel": "pieces previous week"
+  "todayResultPreviousLabel": "pieces previous week",
+  "weekTotalPreviousLabel": "Previous week total"
 }

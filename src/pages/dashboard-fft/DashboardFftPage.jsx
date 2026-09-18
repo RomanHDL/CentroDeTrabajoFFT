@@ -277,14 +277,30 @@ export default function DashboardFftPage() {
           comparisonLabel={t('noComparisonLabel')}
         />
         {/* "Total semana actual / Total semana pasada" (2026-09-18, a peticion explicita del
-            usuario: "para que veamos como vamos") -- el numero grande ahora muestra AMBOS totales
-            juntos (antes solo mostraba el actual, con el pasado chico entre parentesis debajo del
-            %). Mismos 2 numeros ya calculados (weekTotalKpi.currentComparable/.previousComparable),
-            0 datos nuevos -- ya NO se pasa `referenceValue` para no repetir el numero pasado 2
-            veces en la misma card. */}
+            usuario: "para que veamos como vamos", despues pidio ademas una etiqueta chica arriba
+            de CADA numero -- "para identificarlo mejor" -- porque el numero solo, sin contexto
+            propio, no dejaba claro cual de los 2 era cual). Mismos 2 numeros ya calculados
+            (weekTotalKpi.currentComparable/.previousComparable), 0 datos nuevos -- ya NO se pasa
+            `referenceValue` para no repetir el numero pasado 2 veces en la misma card. */}
         <DashboardFftKpiCard
           title={t('weekTotalTitle')}
-          displayValue={`${formatInt(data.weekTotalKpi.currentComparable)} / ${formatInt(data.weekTotalKpi.previousComparable)}`}
+          displayValue={
+            <div className="flex items-end gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-[clamp(9px,0.5vw,10.5px)] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  {t('weekTotalTitle')}
+                </p>
+                <p>{formatInt(data.weekTotalKpi.currentComparable)}</p>
+              </div>
+              <span className="pb-[2px] font-black text-slate-300">/</span>
+              <div className="min-w-0">
+                <p className="truncate text-[clamp(9px,0.5vw,10.5px)] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  {t('weekTotalPreviousLabel')}
+                </p>
+                <p className="text-slate-400">{formatInt(data.weekTotalKpi.previousComparable)}</p>
+              </div>
+            </div>
+          }
           unit={t('unitPieces')}
           pctChange={data.weekTotalKpi.pctChange}
           comparisonLabel={t('noComparisonLabel')}

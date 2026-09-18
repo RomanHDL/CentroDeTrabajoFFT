@@ -58,5 +58,6 @@
   "comparablePeriodLabel": "Periodo comparable",
   "todayResultTitle": "Resultado de hoy",
   "todayResultCurrentLabel": "piezas hoy",
-  "todayResultPreviousLabel": "piezas semana anterior"
+  "todayResultPreviousLabel": "piezas semana anterior",
+  "weekTotalPreviousLabel": "Total semana pasada"
 }

@@ -44,14 +44,18 @@ export default function DashboardFftKpiCard({
         {title}
       </p>
       <div>
-        <p
+        {/* `<div>` en vez de `<p>` (2026-09-18): `displayValue` ahora puede ser un nodo JSX propio
+            (ej. "Total semana actual" / "Total semana pasada" arriba de cada numero en la card de
+            semana), no solo texto plano -- sigue funcionando identico para los 3 KPIs que pasan un
+            string. */}
+        <div
           className={cn(
             'whitespace-nowrap text-[clamp(22px,2.6vw,46px)] font-black leading-none tracking-tight',
             toneColorClass,
           )}
         >
           {mainValue}
-        </p>
+        </div>
         <p className="mt-1 text-[clamp(10px,0.6vw,13px)] font-medium text-slate-400">{unit}</p>
       </div>
 
