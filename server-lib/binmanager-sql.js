@@ -143,6 +143,22 @@ function buildFilteredBaseCte(
     request.input('size', sql.Int, Number(size))
     extraWhere += ' AND M.ScreenSize = @size'
   }
+  // Excepcion puntual (2026-09-18, a peticion explicita del usuario, decidida a proposito DESPUES
+  // de investigar: "erick.canon82 tiene su cuenta ACTUAL bien puesta en FFT, no lo excluyas por
+  // completo -- pero quitale SOLO lo de -GRA"). erick.canon82 es el mismo empleado real que
+  // erik.cano90 (misma persona, verificado via SecondName/SecondLastName identicos en
+  // ADM.UsersLogin: "Tomas"/"Treviño") -- erik.cano90 es su cuenta VIEJA de OPEN CELL (inactiva
+  // desde 2026-08-05), erick.canon82 es su cuenta ACTUAL, correctamente transferida a FFT
+  // (REPARACION TV "A"). El usuario decidio explicitamente NO excluir su produccion completa (ya
+  // es FFT real) pero SI excluir unicamente sus piezas -GRA, por su historial en OpenCell -- ambas
+  // cuentas se listan por si algun dia vuelve a usar la vieja. Nunca se toca este `-GRA` a secas si
+  // lo produce cualquier OTRO usuario -- este filtro es POR PERSONA, no por clasificacion en
+  // general.
+  const GRA_EXCLUDED_USERS = ['erick.canon82', 'erik.cano90']
+  const graExcludePlaceholders = GRA_EXCLUDED_USERS.map((username, i) => {
+    request.input(`graExcludeUser${i}`, sql.NVarChar, username)
+    return `@graExcludeUser${i}`
+  })
   return `
     WITH RankedInspections AS (
       SELECT I.LicensePlateNumber, I.ClassificationID, I.InspectionBy, I.InspectionDate,
@@ -164,6 +180,7 @@ function buildFilteredBaseCte(
       WHERE I.WorkCenterID = @workCenterId
         AND ${shiftWhere}
         AND (UL.DepartamentId IS NULL OR UL.DepartamentId <> 1850)
+        AND NOT (I.InspectionBy IN (${graExcludePlaceholders.join(', ')}) AND WPIC.ClassificationCode = '-GRA')
     ),
     FilteredBase AS (
       SELECT
