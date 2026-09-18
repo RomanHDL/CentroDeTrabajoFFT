@@ -51,5 +51,7 @@
   "sizeChartSubtitle": "Current week vs. previous week, sellable conditions only",
   "sizeUnknownLabel": "No data",
   "conditionTableTitle": "Condition table",
-  "colCondition": "Condition"
+  "colCondition": "Condition",
+  "crosstabTitle": "Summary: units by size and classification",
+  "colTotalGeneral": "Grand total"
 }

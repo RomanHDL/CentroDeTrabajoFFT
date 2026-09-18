@@ -43,6 +43,7 @@ const EMPTY_RESPONSE = {
   conditionLegend: [],
   conditionBreakdown: [],
   sizeBreakdown: [],
+  conditionSizeCrosstab: { sizes: [], rows: [], totalsBySize: {}, grandTotal: 0 },
   monthly: null,
   insight: null,
 }

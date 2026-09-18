@@ -108,6 +108,44 @@ function buildCategoryComparison(currentRows, previousRows, keyField, fixedKeys)
   })
 }
 
+// "Tabla cruzada" condición × tamaño (2026-09-18, a peticion explicita del usuario -- mismo formato
+// que "RESUMEN: unidades por tamaño y clasificación" del dashboard REAL de la empresa
+// (binmanager.mitechnologiesinc.com/.../FFTDashboardProduction), filtrado a las 7 condiciones
+// vendibles). `rows` filas ya vienen SOLO de `dayRows` filtradas por fecha (mismo criterio de
+// "periodo comparable" que el resto del dashboard), agrupadas por (code, size). Los tamaños
+// (columnas) son la union real encontrada esta semana, ordenados ascendente, con "null" (sin dato)
+// SIEMPRE al final -- nunca se esconde, mismo criterio que sizeBreakdown de arriba.
+function buildConditionSizeCrosstab(rows, fixedCodes) {
+  const bySize = new Map() // size -> Map(code -> qty)
+  for (const r of rows) {
+    if (!fixedCodes.includes(r.code)) continue
+    if (!bySize.has(r.size)) bySize.set(r.size, new Map())
+    const codeMap = bySize.get(r.size)
+    codeMap.set(r.code, (codeMap.get(r.code) ?? 0) + r.qty)
+  }
+  const sizes = [...bySize.keys()].sort((a, b) => {
+    if (a === null) return 1
+    if (b === null) return -1
+    return a - b
+  })
+  const rowsOut = fixedCodes.map((code) => {
+    const bySizeForCode = {}
+    let total = 0
+    for (const size of sizes) {
+      const qty = bySize.get(size)?.get(code) ?? 0
+      bySizeForCode[size ?? 'null'] = qty
+      total += qty
+    }
+    return { code, bySize: bySizeForCode, total }
+  })
+  const totalsBySize = {}
+  for (const size of sizes) {
+    totalsBySize[size ?? 'null'] = rowsOut.reduce((s, r) => s + r.bySize[size ?? 'null'], 0)
+  }
+  const grandTotal = rowsOut.reduce((s, r) => s + r.total, 0)
+  return { sizes, rows: rowsOut, totalsBySize, grandTotal }
+}
+
 function sumRange(byDate, fromDate, toDate, todayCap) {
   if (fromDate > todayCap) return null // el rango completo todavia no ha pasado -- nunca 0 inventado
   const cappedTo = toDate > todayCap ? todayCap : toDate
@@ -266,6 +304,12 @@ export function buildFftDashboardData({ today, dayRows, peopleToday, peoplePrevi
     filterAndSumByKey(dayRows, previousComparableDates, 'size'),
     'size',
   )
+  const conditionSizeCrosstab = buildConditionSizeCrosstab(
+    dayRows.filter((r) => currentComparableDates.has(r.date)),
+    SELLABLE_CLASSIFICATION_CODES,
+  )
+  // Nombres reales para las filas de la tabla cruzada -- mismo catalogo completo que conditionLegend.
+  conditionSizeCrosstab.rows = conditionSizeCrosstab.rows.map((r) => ({ ...r, name: catalogByCode.get(r.code) ?? null }))
 
   return {
     today: todayStr,
@@ -290,6 +334,7 @@ export function buildFftDashboardData({ today, dayRows, peopleToday, peoplePrevi
     conditionLegend,
     conditionBreakdown,
     sizeBreakdown,
+    conditionSizeCrosstab,
     monthly,
     insight: todayKpi,
   }

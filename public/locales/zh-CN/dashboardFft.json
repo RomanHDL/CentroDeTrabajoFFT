@@ -51,5 +51,7 @@
   "sizeChartSubtitle": "本周与上周对比，仅限可售品相",
   "sizeUnknownLabel": "无数据",
   "conditionTableTitle": "品相表",
-  "colCondition": "品相"
+  "colCondition": "品相",
+  "crosstabTitle": "汇总：按尺寸和品相划分的数量",
+  "colTotalGeneral": "总计"
 }

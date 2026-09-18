@@ -51,5 +51,7 @@
   "sizeChartSubtitle": "Semana actual vs. semana anterior, solo condiciones vendibles",
   "sizeUnknownLabel": "Sin dato",
   "conditionTableTitle": "Tabla de condiciones",
-  "colCondition": "Condición"
+  "colCondition": "Condición",
+  "crosstabTitle": "Resumen: unidades por tamaño y clasificación",
+  "colTotalGeneral": "Total general"
 }

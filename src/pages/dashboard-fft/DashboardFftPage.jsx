@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import CategoryComparisonChart, { CATEGORY_COLORS } from './CategoryComparisonChart'
+import ConditionSizeCrosstabTable from './ConditionSizeCrosstabTable'
 import ConditionTable from './ConditionTable'
 import DashboardFftHeader from './DashboardFftHeader'
 import DashboardFftKpiCard from './DashboardFftKpiCard'
@@ -239,6 +240,13 @@ export default function DashboardFftPage() {
             usuario, complementa al grafico de barras de arriba). */}
         <div className="mb-4">
           <ConditionTable t={t} conditionBreakdown={data.conditionBreakdown} />
+        </div>
+
+        {/* Tabla cruzada condicion x tamaño (2026-09-18, a peticion explicita del usuario -- mismo
+            formato que "RESUMEN: unidades por tamaño y clasificación" del dashboard real de la
+            empresa, filtrado a las 7 condiciones vendibles). */}
+        <div className="mb-4">
+          <ConditionSizeCrosstabTable t={t} conditionSizeCrosstab={data.conditionSizeCrosstab} />
         </div>
 
         <WeeklySummaryTable t={t} weeklySummaryTable={data.weeklySummaryTable} />
