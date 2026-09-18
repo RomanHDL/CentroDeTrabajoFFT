@@ -1,10 +1,10 @@
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import CategoryComparisonChart, { CATEGORY_COLORS } from './CategoryComparisonChart'
 import DashboardFftHeader from './DashboardFftHeader'
 import DashboardFftKpiCard from './DashboardFftKpiCard'
 import InsightBanner from './InsightBanner'
-import MonthlyProgressCard from './MonthlyProgressCard'
 import MonthlyWeeksChart from './MonthlyWeeksChart'
 import WeeklyComparisonChart from './WeeklyComparisonChart'
 import WeeklySummaryTable from './WeeklySummaryTable'
@@ -208,9 +208,30 @@ export default function DashboardFftPage() {
           <WeeklyComparisonChart t={t} dailyComparison={data.dailyComparison} weekTotalKpi={data.weekTotalKpi} />
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[62fr_38fr]">
+        <div className="mb-4">
           <MonthlyWeeksChart t={t} weeks={data.monthly.weeks} />
-          <MonthlyProgressCard t={t} monthly={data.monthly} />
+        </div>
+
+        {/* "Producción por condición" y "Producción por pulgadas" (2026-09-18, a peticion explicita
+            del usuario, reemplazan a "Avance mensual") -- mismo componente compartido
+            (CategoryComparisonChart), solo cambia la fuente de datos y la etiqueta del eje X. */}
+        <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <CategoryComparisonChart
+            title={t('conditionChartTitle')}
+            subtitle={t('conditionChartSubtitle')}
+            rows={data.conditionBreakdown}
+            getLabel={(row) => row.code}
+            legendItems={data.conditionLegend.map((c, i) => ({
+              color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+              label: c.name ? `${c.code} · ${c.name}` : c.code,
+            }))}
+          />
+          <CategoryComparisonChart
+            title={t('sizeChartTitle')}
+            subtitle={t('sizeChartSubtitle')}
+            rows={data.sizeBreakdown}
+            getLabel={(row) => (row.size === null ? t('sizeUnknownLabel') : `${row.size}"`)}
+          />
         </div>
 
         <WeeklySummaryTable t={t} weeklySummaryTable={data.weeklySummaryTable} />

@@ -18,6 +18,13 @@ import { addDays, isoWeekday, isoWeekInfo, isoWeeksTouchingMonth, startOfIsoWeek
 
 export const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom']
 
+// Condiciones vendibles (2026-09-18, a peticion explicita del usuario) -- unica fuente real de
+// verdad de estos 7 codigos, importada tanto por api/production/fft-dashboard.js (para filtrar las
+// consultas SQL) como usada aqui abajo (para el orden fijo de "Producción por condición", necesario
+// para que cada condicion siempre tenga el mismo color en la TV run tras run). Codigos verificados
+// en vivo contra el catalogo real de OE.WorkPlanItemClassifications -- todos con guion al inicio.
+export const SELLABLE_CLASSIFICATION_CODES = ['-GRA', '-GRB', '-GRC', '-ICB', '-ICC', '-ICD', '-ICX']
+
 // Mismo criterio exacto que pctChange() de api/production/fft-summary.js (no se extrae a un
 // modulo compartido a proposito -- ese archivo ya funciona en producción y esta tarea no debe
 // tocarlo para no arriesgar "Producción FFT"; se repite aqui la misma logica minima en vez de
@@ -48,6 +55,50 @@ export function computeQueryRange(today) {
   return { from, to: today }
 }
 
+// Suma real (2026-09-18) de filas planas {size, code, name, qty} (salida de
+// getSizeByClassificationToday, YA filtrada a solo condiciones vendibles por el caller) a totales
+// por tamaño -- un LPN cuenta una sola vez por su ScreenSize real, sin importar cuantas
+// clasificaciones distintas tenga ese tamaño en el rango. `null` (ScreenSize sin resolver en
+// MM.SKUData) se conserva como categoria real "sin dato" en vez de descartarse en silencio.
+function sumRowsBySize(rows) {
+  const map = new Map()
+  for (const r of rows) {
+    map.set(r.size, (map.get(r.size) ?? 0) + r.qty)
+  }
+  return [...map.entries()].map(([size, qty]) => ({ size, qty }))
+}
+
+// Arma una comparativa semana-actual-vs-anterior por categoria fija (condicion) o dinamica
+// (tamaño de pantalla) -- mismo criterio de "mismo periodo comparable" ya usado en el resto de este
+// archivo (currentRows/previousRows ya vienen acotados por el caller a Lunes->hoy de cada semana).
+// `fixedKeys` (si se da) fuerza el orden Y garantiza que las 7 condiciones vendibles aparezcan
+// siempre, aunque una tenga 0 piezas esta semana (nunca desaparece del grafico); si no se da
+// (tamaños de pantalla, catalogo variable), se usa la union real de claves encontradas, ordenada.
+function buildCategoryComparison(currentRows, previousRows, keyField, fixedKeys) {
+  const currentMap = new Map(currentRows.map((r) => [r[keyField], r]))
+  const previousMap = new Map(previousRows.map((r) => [r[keyField], r]))
+  const keys =
+    fixedKeys ??
+    [...new Set([...currentMap.keys(), ...previousMap.keys()])].sort((a, b) => {
+      if (a === null) return 1
+      if (b === null) return -1
+      return a - b
+    })
+  return keys.map((key) => {
+    const cur = currentMap.get(key)
+    const prev = previousMap.get(key)
+    const currentQty = cur?.qty ?? 0
+    const previousQty = prev?.qty ?? 0
+    return {
+      [keyField]: key,
+      name: cur?.name ?? prev?.name ?? null,
+      currentQty,
+      previousQty,
+      pctChange: pctChange(currentQty, previousQty),
+    }
+  })
+}
+
 function sumRange(byDate, fromDate, toDate, todayCap) {
   if (fromDate > todayCap) return null // el rango completo todavia no ha pasado -- nunca 0 inventado
   const cappedTo = toDate > todayCap ? todayCap : toDate
@@ -67,8 +118,28 @@ function sumRange(byDate, fromDate, toDate, todayCap) {
  * peopleToday/peoplePreviousWeekday: conteos reales YA resueltos por el caller (distinct
  * usernames en BinManager ese dia exacto, misma fuente que "Personal activo hoy" de Producción
  * FFT) -- este modulo no toca SQL, solo reparte los numeros que le pasan.
+ * conditionRowsCurrent/conditionRowsPrevious: [{code, name, qty}] -- salida real de
+ * getProductionByClassificationToday (YA acotada por el caller a Lunes->hoy de cada semana, YA
+ * filtrada a solo condiciones vendibles).
+ * sizeRowsCurrent/sizeRowsPrevious: [{size, code, name, qty}] -- salida real de
+ * getSizeByClassificationToday (mismos rangos/filtro que arriba); este modulo las suma por tamaño
+ * (sumRowsBySize) antes de compararlas, un LPN nunca se cuenta 2 veces por traer 2 clasificaciones.
+ * conditionCatalog: [{code, name}] -- catalogo REAL completo (getFilterOptions, sin rango de
+ * fecha), ya filtrado por el caller a las 7 condiciones vendibles. Fuente de los nombres de la
+ * leyenda -- separada de conditionRowsCurrent/Previous a proposito: una condicion vendible sin
+ * ninguna pieza en las ultimas 2 semanas NO debe perder su nombre real en la leyenda.
  */
-export function buildFftDashboardData({ today, dailyRows, peopleToday, peoplePreviousWeekday }) {
+export function buildFftDashboardData({
+  today,
+  dailyRows,
+  peopleToday,
+  peoplePreviousWeekday,
+  conditionRowsCurrent,
+  conditionRowsPrevious,
+  sizeRowsCurrent,
+  sizeRowsPrevious,
+  conditionCatalog,
+}) {
   const byDate = new Map(dailyRows.map((r) => [r.date, r.qty]))
   const todayStr = toDateOnlyString(today)
 
@@ -161,35 +232,34 @@ export function buildFftDashboardData({ today, dailyRows, peopleToday, peoplePre
     }
   })
 
-  // ── "Avance mensual" -- acumulado del mes actual (hasta hoy) vs el MISMO RANGO de dias del mes
-  // anterior (nunca el mes anterior completo). Sin meta real configurada en ningun lado del
-  // sistema (ver moduleRegistry/PRUEBAS del Dashboard FFT) -- goal SIEMPRE null, el frontend oculta
-  // la barra de progreso por completo cuando la ve. ──
-  const dayOfMonth = today.getUTCDate()
-  const currentMonthAccumulated = sumRange(byDate, firstDayOfMonth, today, today) ?? 0
-  const prevMonthIndex0 = monthIndex0 - 1
-  const prevMonthYear = prevMonthIndex0 < 0 ? monthYear - 1 : monthYear
-  const prevMonthMonth0 = (prevMonthIndex0 + 12) % 12
-  const prevMonthLastDay = new Date(Date.UTC(prevMonthYear, prevMonthMonth0 + 1, 0)).getUTCDate()
-  const comparableDayCountMonth = Math.min(dayOfMonth, prevMonthLastDay)
-  const prevMonthFrom = new Date(Date.UTC(prevMonthYear, prevMonthMonth0, 1))
-  const prevMonthTo = new Date(Date.UTC(prevMonthYear, prevMonthMonth0, comparableDayCountMonth))
-  const prevMonthAccumulated = sumRange(byDate, prevMonthFrom, prevMonthTo, prevMonthTo) ?? 0
-
+  // "Avance mensual" (acumulado del mes vs mismo rango del mes anterior) se quito de este
+  // dashboard el 2026-09-18 a peticion explicita del usuario, reemplazado por las 2 comparativas
+  // de abajo (condicion/tamaño) -- "Producción por semana del mes" (monthWeeks) SI se conserva, no
+  // se pidio quitarla.
   const monthly = {
     year: monthYear,
     month: monthIndex0 + 1, // 1-12, mas natural para mostrar en UI que 0-11
     weeks: monthWeeks,
-    accumulated: {
-      currentQty: currentMonthAccumulated,
-      comparableDayCount: comparableDayCountMonth,
-      previousRangeQty: prevMonthAccumulated,
-      previousRangeFrom: toDateOnlyString(prevMonthFrom),
-      previousRangeTo: toDateOnlyString(prevMonthTo),
-      pctChange: pctChange(currentMonthAccumulated, prevMonthAccumulated),
-      goal: null, // nunca inventar una meta -- ver comentario arriba
-    },
   }
+
+  // ── "Producción por condición" y "Producción por pulgadas" (2026-09-18, a peticion explicita
+  // del usuario: "para que veamos cual condicion sale mas", mismo estilo comparativo semana-actual-
+  // vs-anterior que el resto del dashboard). Condiciones usa el orden FIJO de
+  // SELLABLE_CLASSIFICATION_CODES (las 7 siempre aparecen, aunque alguna tenga 0 esta semana, para
+  // que el color de cada una nunca cambie de posicion run tras run); tamaños usa el catalogo real
+  // encontrado (variable, ordenado ascendente, null al final como "sin dato"). ──
+  const conditionBreakdown = buildCategoryComparison(
+    conditionRowsCurrent,
+    conditionRowsPrevious,
+    'code',
+    SELLABLE_CLASSIFICATION_CODES,
+  )
+  const catalogByCode = new Map((conditionCatalog ?? []).map((c) => [c.code, c.name]))
+  const conditionLegend = SELLABLE_CLASSIFICATION_CODES.map((code) => ({
+    code,
+    name: catalogByCode.get(code) ?? null,
+  }))
+  const sizeBreakdown = buildCategoryComparison(sumRowsBySize(sizeRowsCurrent), sumRowsBySize(sizeRowsPrevious), 'size')
 
   return {
     today: todayStr,
@@ -211,6 +281,9 @@ export function buildFftDashboardData({ today, dailyRows, peopleToday, peoplePre
     weeklyGoalKpi: null, // nunca inventar una meta semanal real -- ver PRUEBAS OBLIGATORIAS
     dailyComparison,
     weeklySummaryTable,
+    conditionLegend,
+    conditionBreakdown,
+    sizeBreakdown,
     monthly,
     insight: todayKpi,
   }

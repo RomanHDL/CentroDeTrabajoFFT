@@ -260,12 +260,21 @@ export async function getProductionByClassificationToday({
   dateFrom,
   dateTo,
   classificationCode,
+  classificationCodes,
   size,
   shift,
 }) {
   const pool = await getPool()
   const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCode, size, shift })
+  const cte = buildFilteredBaseCte(request, {
+    workCenterId,
+    dateFrom,
+    dateTo,
+    classificationCode,
+    classificationCodes,
+    size,
+    shift,
+  })
   const result = await request.query(`
     ${cte}
     SELECT ClassificationCode, ClassificationName, COUNT(*) AS Qty
@@ -388,12 +397,21 @@ export async function getSizeByClassificationToday({
   dateFrom,
   dateTo,
   classificationCode,
+  classificationCodes,
   size,
   shift,
 }) {
   const pool = await getPool()
   const request = pool.request()
-  const cte = buildFilteredBaseCte(request, { workCenterId, dateFrom, dateTo, classificationCode, size, shift })
+  const cte = buildFilteredBaseCte(request, {
+    workCenterId,
+    dateFrom,
+    dateTo,
+    classificationCode,
+    classificationCodes,
+    size,
+    shift,
+  })
   const result = await request.query(`
     ${cte}
     SELECT ScreenSize, ClassificationCode, ClassificationName, COUNT(*) AS Qty
