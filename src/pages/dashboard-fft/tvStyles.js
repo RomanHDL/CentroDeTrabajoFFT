@@ -11,6 +11,16 @@ import { cn } from '@/lib/utils'
 export const tvCardClass =
   'flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white'
 
+// Variante para una tarjeta que es hija DIRECTA del flex-col raiz de la pagina (no una celda de
+// grid) y debe quedarse a su alto de contenido natural (shrink-0), ej. WeeklySummaryTable. `h-full`
+// de `tvCardClass` seria un bug aqui: en un flex item con flex-basis:auto (que es lo que da
+// `shrink-0` sin una clase flex-grow explicita), `height:100%` SE CONVIERTE en el flex-basis --
+// la tarjeta pediria el 100% del alto del viewport y le robaria todo el espacio disponible a los
+// bloques de graficas de arriba (reproducido en vivo el 2026-09-18: las 2 filas de graficas
+// colapsaban a 0px de alto exactamente por esto).
+export const tvCardClassAuto =
+  'flex shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white'
+
 export function tvCardHeaderClass(extra) {
   return cn(
     'flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5',

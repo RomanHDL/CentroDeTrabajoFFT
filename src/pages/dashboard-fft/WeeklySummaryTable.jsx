@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { formatInt, formatPct } from './formatters'
-import { tvCardClass, tvCardHeaderClass, tvSectionTitleClass } from './tvStyles'
+import { tvCardClassAuto, tvCardHeaderClass, tvSectionTitleClass } from './tvStyles'
 
 /* "Resumen diario de la semana" -- rediseño 2026-09-18 (TV, a peticion explicita del usuario:
    "disposición horizontal... esta estructura ocupa muchísimo menos espacio vertical"). Misma fuente
@@ -15,7 +15,7 @@ export default function WeeklySummaryTable({ t, weeklySummaryTable }) {
   const totalDiff = total.currentQty - total.previousQty
 
   return (
-    <div className={cn(tvCardClass, 'shrink-0')}>
+    <div className={tvCardClassAuto}>
       <div className={tvCardHeaderClass()}>
         <p className={tvSectionTitleClass}>{t('summaryTableTitle')}</p>
       </div>
